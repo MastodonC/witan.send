@@ -33,4 +33,4 @@
           result        (apply merge (wex/run!! workspace' {}))]
       (is result)
       (println result)
-      (is ({:send-projection {}  :send-costs {}} result)))))
+      (is (= {:send-projection {}  :send-costs {}} result)))))

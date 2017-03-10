@@ -1,6 +1,6 @@
 (ns witan.send.utils
-    (:require [clojure.core.matrix.dataset :as ds]
-              [witan.workspace-api.utils :as utils]))
+  (:require [clojure.core.matrix.dataset :as ds]
+            [witan.workspace-api.utils :as utils]))
 
 (defn year? [n] (and (>= n 1900) (<= n 2100)))
 
