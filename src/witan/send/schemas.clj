@@ -26,29 +26,44 @@
   (s/constrained s/Int u/year?))
 
 (def PopulationSYA
-  {})
-;;dataset with Year, Age, Population
+  (make-ordered-ds-schema [[:age (s/constrained s/Int u/SENDage?)]
+                           [:year (s/constrained s/Int u/year?)]
+                           [:population s/Int]]))
 
 (def TransitionMatrix
   {})
 ;;map with age keys and corresponding transition matrices- see markov demo. Actual placement types are: Mainstream, Special, Other. Actual need types are: ASD, SLCN, LD, SPLD, BESM, PSI, OTHER. 
 
 (def SENDSchemaGrouped
-  {})
-;;dataset with year, age, need type, placement type, population
+  (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]
+                           [:age (s/constrained s/Int u/SENDage?)]
+                           [:need s/Str]
+                           [:placement s/Str]
+                           [:population s/Int]]))
 
 (def SENDSchemaIndividual
-  {})
-;;dataset with at minimum simulation number, id,  year, age, state. Possibly need type and placement type as well, otherwise these can be worked out from state at end (or converted to state at beginning)
+  (make-ordered-ds-schema [[:id s/Int]
+                           [:year (s/constrained s/Int u/year?)]
+                           [:age (s/constrained s/Int u/SENDage?)]
+                           [:state s/Keyword]]))
 
 (def SENDSchemaGroupedWithCI
-  {})
-;;dataset with year, age, state, mean population, 95% CI lower bound, 95% CI upper bound (gets rid of simulation number from SENDSchemaGrouped)
+  (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]
+                           [:age (s/constrained s/Int u/SENDage?)]
+                           [:need s/Str]
+                           [:placement s/Str]
+                           [:population java.lang.double]
+                           [:lower-bound-95-CI java.lang.double]
+                           [:upper-bound-95-CI java.lang.double]]))
 
 (def CostProfile
-  {})
-;;depends on what data the LAs can provide. simplest is average cost per pupil. most complex is cost for each need type + placement type combo.
+  (make-ordered-ds-schema [[:need s/Str]
+                           [:placement s/Str]
+                           [:cost-per-pupil java.lang.double]]))
 
 (def YearlyCost
-  {})
-;;dataset with year, mean total cost = mean population * cost profile, 95% CI lower bound for cost = 95% lower CI for population * cost profile, 95% CI upper bound for cost = 95% upper CI for population * cost profile
+  (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]
+                           [:need s/Str]
+                           [:placement s/Str]
+                           [:cost java.lang.double]]))
+
