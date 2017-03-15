@@ -8,7 +8,9 @@
                  [org.clojure/data.csv "0.1.3"]
                  [witan.workspace-api "0.1.22"]
                  [prismatic/schema "1.1.3"]
-                 [schema-contrib "0.1.3"]]
+                 [schema-contrib "0.1.3"]
+                 [instaparse "1.4.3"]
+                 [rm-hull/markov-chains "0.1.0"]]
   :main ^:skip-aot witan.send
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[witan.workspace-executor "0.2.6"

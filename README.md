@@ -1,36 +1,47 @@
 # witan.send
 
-FIXME: description
+[![CircleCI](https://circleci.com/gh/MastodonC/witan.send.svg?style=svg)](https://circleci.com/gh/MastodonC/witan.send)
 
-## Installation
+## Description
 
-Download from http://example.com/FIXME.
+Special educational needs and disability (demand and costs) model in development to be used on MastodonC's [Witan](http://www.mastodonc.com/products/witan/) city decision-making platform or as a standalone modelling library.
 
-## Usage
 
-FIXME: explanation
+## Development tools
 
-    $ java -jar witan.send-0.1.0-standalone.jar [args]
+When combining functions into a model there are useful tools to take advantage of, thanks to dependencies for `witan.workspace-executor` and `witan.workspace-api`.
 
-## Options
+#### To visualise a model workflow, you need to:
 
-FIXME: listing of options this app accepts.
+1) Install `Graphviz`:
 
-## Examples
+- Ubuntu: `$ sudo apt-get install graphviz`
 
-...
+- MacOS: `$ brew install graphviz`
 
-### Bugs
+For any OS you should also be able to install it with "pip": `$ pip install graphviz`.
 
-...
+2) Use the `view-workflow` function using the household model workflow (hh-model-workflow)
+as follows:
 
-### Any Other Sections
-### That You Think
-### Might be Useful
+```Clojure
+(witan.workspace-executor.core/view-workflow hh-model-workflow)
+```
+#### To print logs, use the `set-api-logging!` function:
+
+```Clojure
+(witan.workspace-api/set-api-logging! println)
+```
+Whenever a `defworkflowfn` is called logs will be written to your repl or terminal. It's very  useful for debugging purpose.
+
+Turn it off with:
+```Clojure
+(witan.workspace-api/set-api-logging! identity)
+```
 
 ## License
 
-Copyright © 2017 FIXME
+Copyright © 2017 MastodonC Ltd
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
