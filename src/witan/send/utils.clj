@@ -4,6 +4,8 @@
 
 (defn year? [n] (and (>= n 1900) (<= n 2100)))
 
+(defn SENDage? [n] (and (>= n 0) (<= n 26)))
+
 (defn order-ds
   [dataset col-key]
   (utils/property-holds? dataset ds/dataset? "Not a dataset")
