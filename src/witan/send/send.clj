@@ -74,18 +74,12 @@
    :witan/version "1.0.0"
    :witan/input-schema {:historic-population sc/SENDSchemaIndividual
                         :extra-population sc/SENDSchemaIndividual}
-   :witan/output-schema {:total-population sc/SENDSchemaIndividual}}
-  [{:keys [historic-population extra-population]} _]
-  {:total-population {}})
-
-(defworkflowfn get-current-year-1-0-0
-  {:witan/name :send/get-current-year
-   :witan/version "1.0.0"
-   :witan/input-schema {}
    :witan/param-schema {:projection-start-year sc/YearSchema}
-   :witan/output-schema {:current-year-in-loop sc/YearSchema}}
-  [_ {:keys [projection-start-year]}]
-  {:current-year-in-loop projection-start-year})
+   :witan/output-schema {:total-population sc/SENDSchemaIndividual
+                         :current-year-in-loop sc/YearSchema}}
+  [{:keys [historic-population extra-population]} {:keys [projection-start-year]}]
+  {:total-population {}
+   :current-year-in-loop projection-start-year})
 
 ;;Functions in loop
 (defworkflowfn select-starting-population-1-0-0
@@ -94,9 +88,11 @@
    :witan/input-schema {:total-population sc/SENDSchemaIndividual
                         :current-year-in-loop sc/YearSchema}
    :witan/output-schema {:current-population sc/SENDSchemaIndividual
+                         :total-population sc/SENDSchemaIndividual
                          :current-year-in-loop sc/YearSchema}}
   [{:keys [total-population current-year-in-loop]} _]
   {:current-population {}
+   :total-population total-population
    :current-year-in-loop current-year-in-loop})
 
 (defworkflowfn get-transition-matrix-1-0-0
@@ -114,11 +110,14 @@
    :witan/version "1.0.0"
    :witan/input-schema {:current-population sc/SENDSchemaIndividual
                         :transition-matrix sc/TransitionMatrix
+                        :total-population sc/SENDSchemaIndividual
                         :current-year-in-loop sc/YearSchema}
    :witan/output-schema {:current-population sc/SENDSchemaIndividual
+                         :total-population sc/SENDSchemaIndividual
                          :current-year-in-loop sc/YearSchema}}
-  [{:keys [current-population transition-matrix current-year-in-loop]} _]
+  [{:keys [current-population transition-matrix total-population current-year-in-loop]} _]
   {:current-population {}
+   :total-population total-population
    :current-year-in-loop current-year-in-loop})
 
 (defworkflowfn append-to-total-population-1-0-0

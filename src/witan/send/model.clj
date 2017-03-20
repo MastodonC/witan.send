@@ -20,8 +20,6 @@
    [:get-historic-population :add-extra-population]
    [:population-change :add-extra-population]
    [:add-extra-population :select-starting-population]
-   [:get-current-year :select-starting-population]
-   [:add-extra-population :append-to-total-population]
 
    ;;Loop
    [:select-starting-population :apply-state-changes]
@@ -83,11 +81,7 @@
    {:witan/name :add-extra-population
     :witan/version "1.0.0"
     :witan/type :function
-    :witan/fn :send/add-extra-population}
-   {:witan/name :get-current-year
-    :witan/version "1.0.0"
-    :witan/type :function
-    :witan/fn :send/get-current-year
+    :witan/fn :send/add-extra-population
     :witan/params {:projection-start-year 2017}}
 
    ;;Workflow functions in the loop
@@ -144,7 +138,6 @@
                    send/get-historic-population-1-0-0
                    send/population-change-1-0-0
                    send/add-extra-population-1-0-0
-                   send/get-current-year-1-0-0
                    send/select-starting-population-1-0-0
                    send/apply-state-changes-1-0-0
                    send/get-transition-matrix-1-0-0
