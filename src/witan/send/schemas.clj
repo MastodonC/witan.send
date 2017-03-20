@@ -26,13 +26,13 @@
   (s/constrained s/Int u/year?))
 
 (def PopulationSYA
-  (make-ordered-ds-schema [[:age (s/constrained s/Int u/SENDage?)]
-                           [:year (s/constrained s/Int u/year?)]
+  (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]
+                           [:age (s/constrained s/Int u/SENDage?)]
                            [:population s/Int]]))
 
 (def TransitionMatrix
   {})
-;;map with age keys and corresponding transition matrices- see markov demo. Actual placement types are: Mainstream, Special, Other. Actual need types are: ASD, SLCN, LD, SPLD, BESM, PSI, OTHER. 
+;;map with age keys and corresponding transition matrices- see markov demo. Actual placement types are: Mainstream, Special, Other. Actual need types are: ASD, SLCN, LD, SPLD, BESM, PSI, OTHER.
 
 (def SENDSchemaGrouped
   (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]
@@ -52,18 +52,17 @@
                            [:age (s/constrained s/Int u/SENDage?)]
                            [:need s/Str]
                            [:placement s/Str]
-                           [:population java.lang.double]
-                           [:lower-bound-95-CI java.lang.double]
-                           [:upper-bound-95-CI java.lang.double]]))
+                           [:population double]
+                           [:lower-bound-95-CI double]
+                           [:upper-bound-95-CI double]]))
 
 (def CostProfile
   (make-ordered-ds-schema [[:need s/Str]
                            [:placement s/Str]
-                           [:cost-per-pupil java.lang.double]]))
+                           [:cost-per-pupil double]]))
 
 (def YearlyCost
   (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]
                            [:need s/Str]
                            [:placement s/Str]
-                           [:cost java.lang.double]]))
-
+                           [:cost double]]))
