@@ -4,8 +4,7 @@
             [witan.send.schemas :as sc]
             [witan.send.test-utils :as tu]
             [clojure.core.matrix.dataset :as ds]
-            [witan.datasets :as wds]
-            [clj-time.core :as t]))
+            [witan.datasets :as wds]))
 
 (def test-inputs
   {:historic-0-25-population ["data/demo/Population_0_25.csv" sc/PopulationSYA]
