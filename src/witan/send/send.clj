@@ -7,8 +7,7 @@
             [witan.send.schemas :as sc]
             [witan.datasets :as wds]
             [clojure.core.matrix.dataset :as ds]
-            [witan.send.utils :as u]
-            [clojure.core.matrix :as mx]))
+            [witan.send.utils :as u]))
 
 ;;Inputs
 (definput historic-0-25-population-1-0-0
