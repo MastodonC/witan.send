@@ -14,4 +14,6 @@
   :main ^:skip-aot witan.send
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[witan.workspace-executor "0.2.6"
-                                   :exclusions [witan.workspace-api]]]}})
+                                   :exclusions [witan.workspace-api]]
+                                  [criterium "0.4.4"]
+                                  [clj-time "0.13.0"]]}})

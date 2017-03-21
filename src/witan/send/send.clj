@@ -6,6 +6,7 @@
             [schema.core :as s]
             [witan.send.schemas :as sc]
             [clojure.core.matrix.dataset :as ds]
+            [clojure.core.matrix :as mx]
             [witan.datasets :as wds]))
 
 ;;Inputs
@@ -45,6 +46,7 @@
    :witan/key :transitions-reduced-secondary-joiners
    :witan/schema sc/TransitionMatrix})
 
+;;Pre-loop functions
 (defn add-state-to-send-population
   [historic-send-population]
   (-> historic-send-population
@@ -64,36 +66,62 @@
         (ds/select-columns [:year :age :state :count])
         (ds/join-rows send-population-with-states))))
 
-(defn groups-to-individuals
-  ([grouped-population frequency-column]
-   (groups-to-individuals grouped-population frequency-column 1))
-  ([grouped-population frequency-column starting-id]
-   (let [number-rows (first (:shape grouped-population))
-         row-seq (range 0 number-rows)
-         freqs (ds/column grouped-population frequency-column)
-         rows-to-select (into [] (reduce concat
-                                         (map (fn [freq val] (repeat freq val))
-                                              freqs row-seq)))
-         ids (range starting-id (+ starting-id (count rows-to-select)))]
-     (-> grouped-population
-         (ds/remove-columns [frequency-column])
-         (ds/select-rows rows-to-select)
-         (ds/add-column :id ids)))))
+(defn grps-to-indiv [repeat-data non-freq-col-names non-freq-col-data]
+  (reduce merge (into [] (map (fn [colname colvalues]
+                                {colname (repeat-data colvalues)})
+                              non-freq-col-names non-freq-col-data))))
 
-(defn add-simulation-numbers
-  [dataset num-simulations]
-  (let [number-rows (first (:shape dataset))
-        row-seq (range 0 number-rows)
-        rows-to-select (into [] (reduce concat
-                                        (map (fn [val] (repeat num-simulations val))
-                                             row-seq)))
-        sim-numbers (into [] (flatten (for [n row-seq]
-                                        (range 1 (inc num-simulations)))))]
-    (-> dataset
-        (ds/select-rows rows-to-select)
-        (ds/add-column :sim-num sim-numbers))))
+(defn add-simul-nbs [indiv-data col-freqs num-sims]
+  (merge indiv-data
+         {:sim-num
+          (flatten (into [] (repeat (apply + col-freqs) (range 1 (inc num-sims)))))}))
 
-;;Pre-loop functions
+(defn add-ids [data-with-sims num-sims range-individuals]
+  (merge data-with-sims
+         {:id (into [] (mapcat (fn [n] (into [] (repeat num-sims n))) range-individuals))}))
+
+(defn to-dataset [data] (ds/dataset data))
+
+(defn data-transformation
+  [dataset frequency-column num-sims]
+  (let [groups-data (wds/select-from-ds dataset {frequency-column {:gt 0}})
+        groups-matrix-data (:columns groups-data)
+        index-col (.indexOf (:column-names dataset) frequency-column)
+        col-freqs (nth groups-matrix-data index-col)
+        other-cols (vec (clojure.set/difference (set (:column-names groups-data))
+                                                #{frequency-column}))
+        ;;(remove #(= frequency-column %) (:column-names dataset))
+        index-other-col (mapv #(.indexOf (:column-names groups-data) %) other-cols)
+        matrix-other-cols (vec (clojure.set/difference (set groups-matrix-data)
+                                                       (set [col-freqs])))
+        ;;(mx/select groups-matrix-data index-other-col :all)
+        counts-individs-with-sims (map #(* num-sims %) col-freqs)
+        repeat-data (fn [col-data] (into [] (mapcat (fn [count val] (into [] (repeat count val)))
+                                                    counts-individs-with-sims col-data)))
+        range-individuals (range 1 (inc (apply + col-freqs)))]
+    ;; 1-Execution time mean : 12.27 ms / 2.72 ms / 3.30 ms
+
+    (-> (grps-to-indiv repeat-data other-cols matrix-other-cols) ;;Execution time mean : 2.82 ms
+        (add-simul-nbs col-freqs num-sims) ;; Execution time mean : 8.09 ms
+        (add-ids num-sims range-individuals) ;; Execution time mean : 206.001840 ms
+        ds/dataset)
+
+    ;; Execution time mean : 240.53 ms
+
+    ;; (->> (map (fn [colname colvalues]
+    ;;             {colname (repeat-data colvalues)})
+    ;;           other-cols matrix-other-cols) ;; Execution time mean : 12.98 ms
+    ;;      (reduce merge) ;; Execution time mean : 12.33 ms
+    ;;      (merge {:sim-num
+    ;;              (flatten (repeat (apply + col-freqs) (range 1 (inc num-sims))))})
+    ;;      ;; Execution time mean : 13.59 ms
+    ;;      (merge {:id (mapcat (fn [n] (repeat num-sims n)) range-individuals)})
+    ;;      ;; Execution time mean : 13.31 ms
+    ;;      ds/dataset
+    ;;      ;;Execution time mean : 89.21 ms
+    ;;      )
+    ))
+
 (defworkflowfn get-historic-population-1-0-0
   {:witan/name :send/get-historic-population
    :witan/version "1.0.0"
@@ -109,8 +137,9 @@
                               population-with-states
                               (add-non-send-to-send-population send-with-states
                                                                historic-0-25-population)]
-                          (-> population-with-states
-                              groups-to-individuals :count))})
+                          (data-transformation population-with-states
+                                               :count
+                                               number-of-simulations))})
 
 (defworkflowfn population-change-1-0-0
   {:witan/name :send/population-change
