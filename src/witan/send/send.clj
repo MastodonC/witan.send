@@ -152,8 +152,12 @@
                                      (fn [y] (= y (dec projection-start-year))))
         popn-proj (wds/filter-dataset population-projection
                                       [:year]
+<<<<<<< HEAD
                                       (fn [y] (and (>= y projection-start-year)
                                                    (<= y projection-end-year))))
+=======
+                                      (fn [y] (and (>= y projection-start-year) (<= y projection-end-year))))
+>>>>>>> Population change function
         lag-amount (- projection-end-year (dec projection-start-year))
         full-popn (-> hist-popn
                       ds/row-maps
