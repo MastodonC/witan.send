@@ -4,7 +4,9 @@
             [witan.send.schemas :as sc]
             [witan.send.test-utils :as tu]
             [clojure.core.matrix.dataset :as ds]
-            [witan.datasets :as wds]))
+            [witan.datasets :as wds]
+            [criterium.core :refer [with-progress-reporting bench]]
+            [clj-time.core :as t]))
 
 (def test-inputs
   {:historic-0-25-population ["data/demo/Population_0_25.csv" sc/PopulationSYA]
@@ -60,6 +62,7 @@
         add-state-to-send-population
         (add-non-send-to-send-population historic-0-25-population))))
 
+<<<<<<< HEAD
 (defmacro is-valid-result?
   [result num-sims result-keys]
   `(do
@@ -126,6 +129,65 @@
           indiv-data-with-sims (add-simul-nbs indiv-data col-freqs 1)
           result (add-ids indiv-data-with-sims 1 range-individuals)]
       (is-valid-result? result num-sims #{:age :state :year :sim-num :id}))))
+=======
+(deftest grps-to-indiv-test
+  (testing "Going from group data to individuals data"
+    (let [groups-data (wds/select-from-ds population-with-states {:count {:gt 0}})
+          groups-matrix-data (:columns groups-data)
+          index-col (.indexOf (:column-names population-with-states) :count)
+          col-freqs (nth groups-matrix-data index-col)
+          other-cols (vec (clojure.set/difference (set (:column-names groups-data))
+                                                  #{:count}))
+          index-other-col (mapv #(.indexOf (:column-names groups-data) %) other-cols)
+          matrix-other-cols (vec (clojure.set/difference (set groups-matrix-data)
+                                                         (set [col-freqs])))
+          counts-individs-with-sims (map #(* 1 %) col-freqs)
+          repeat-data (fn [col-data] (mapcat (fn [count val] (repeat count val))
+                                             counts-individs-with-sims col-data))
+          result (grps-to-indiv repeat-data other-cols matrix-other-cols)]
+      (is (= '(:age :state :year) (keys result)))
+      (is (= 198372 (count (:age result)))))))
+
+(deftest add-simul-nbs-test
+  (testing "Adding simulation numbers to individuals data"
+    (let [groups-data (wds/select-from-ds population-with-states {:count {:gt 0}})
+          groups-matrix-data (:columns groups-data)
+          index-col (.indexOf (:column-names population-with-states) :count)
+          col-freqs (nth groups-matrix-data index-col)
+          other-cols (vec (clojure.set/difference (set (:column-names groups-data))
+                                                  #{:count}))
+          index-other-col (mapv #(.indexOf (:column-names groups-data) %) other-cols)
+          matrix-other-cols (vec (clojure.set/difference (set groups-matrix-data)
+                                                         (set [col-freqs])))
+          counts-individs-with-sims (map #(* 1 %) col-freqs)
+          repeat-data (fn [col-data] (mapcat (fn [count val] (repeat count val))
+                                             counts-individs-with-sims col-data))
+          indiv-data (grps-to-indiv repeat-data other-cols matrix-other-cols)
+          result (add-simul-nbs indiv-data col-freqs 1)]
+      (is (= '(:age :state :year :sim-num) (keys result)))
+      (is (= 198372 (count (:age result)))))))
+
+(deftest add-ids-test
+  (testing "Adding ids to each row, taking into account simulations"
+    (let [groups-data (wds/select-from-ds population-with-states {:count {:gt 0}})
+          groups-matrix-data (:columns groups-data)
+          index-col (.indexOf (:column-names population-with-states) :count)
+          col-freqs (nth groups-matrix-data index-col)
+          other-cols (vec (clojure.set/difference (set (:column-names groups-data))
+                                                  #{:count}))
+          index-other-col (mapv #(.indexOf (:column-names groups-data) %) other-cols)
+          matrix-other-cols (vec (clojure.set/difference (set groups-matrix-data)
+                                                         (set [col-freqs])))
+          counts-individs-with-sims (map #(* 1 %) col-freqs)
+          repeat-data (fn [col-data] (mapcat (fn [count val] (repeat count val))
+                                             counts-individs-with-sims col-data))
+          range-individuals (range 1 (inc (apply + col-freqs)))
+          indiv-data (grps-to-indiv repeat-data other-cols matrix-other-cols)
+          indiv-data-with-sims (add-simul-nbs indiv-data col-freqs 1)
+          result (add-ids indiv-data-with-sims 1 range-individuals)]
+      (is (= '(:age :state :year :sim-num :id) (keys result)))
+      (is (= 198372 (count (:age result)))))))
+>>>>>>> Debugging issues when running fn on full dataset
 
 (deftest data-transformation-test
   (testing "Go from group data to individuals data with ids and simulation number"
@@ -135,6 +197,7 @@
       (is (= (set (:columns individuals-data-with-sims))
              (set (:columns transformed-data)))))))
 
+<<<<<<< HEAD
 (deftest get-historic-population-1-0-0-test
   (testing "The historic population has send states, ids and simulation numbers associated to it"
     (time
@@ -152,3 +215,16 @@
        (is (some #{:year} (:column-names historic-population)))
        (is (some #{:age} (:column-names historic-population)))
        (is-valid-result-ds? historic-population 1)))))
+=======
+;; (deftest get-historic-population-1-0-0-test
+;;   (testing "The historic population has send states, ids and simulation numbers associated to it"
+;;     (let [historic-popn (get-historic-population-1-0-0 {:historic-0-25-population
+;;                                                         historic-0-25-population
+;;                                                         :historic-send-population
+;;                                                         historic-send-population}
+;;                                                        {:projection-start-year 2017
+;;                                                         :number-of-simulations 1})]
+;;       (is (some :state (:column-names historic-popn)))
+;;       (is (some :id (:column-names historic-popn)))
+;;       (is (some :sim-num (:column-names historic-popn))))))
+>>>>>>> Debugging issues when running fn on full dataset

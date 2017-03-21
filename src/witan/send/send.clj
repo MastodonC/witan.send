@@ -46,54 +46,6 @@
    :witan/key :transitions-reduced-secondary-joiners
    :witan/schema sc/TransitionMatrix})
 
-(defn add-state-to-send-population
-  [historic-send-population]
-  (-> historic-send-population
-      (wds/add-derived-column :state [:need :placement]
-                              (fn [n p] (keyword (str n "-" p))))
-      (ds/select-columns [:year :age :state :population])
-      (ds/rename-columns {:population :count})))
-
-(defn add-non-send-to-send-population
-  [send-population-with-states historic-0-25-population]
-  (let [send-totals (wds/rollup send-population-with-states :sum :count [:age])]
-    (-> historic-0-25-population
-        (wds/left-join send-totals [:age])
-        (wds/add-derived-column :count [:population :count]
-                                (fn [p s] (- p s)))
-        (ds/add-column :state (repeat :Non-SEND))
-        (ds/select-columns [:year :age :state :count])
-        (ds/join-rows send-population-with-states))))
-
-(defn groups-to-individuals
-  ([grouped-population frequency-column]
-   (groups-to-individuals grouped-population frequency-column 1))
-  ([grouped-population frequency-column starting-id]
-   (let [number-rows (first (:shape grouped-population))
-         row-seq (range 0 number-rows)
-         freqs (ds/column grouped-population frequency-column)
-         rows-to-select (into [] (reduce concat
-                                         (map (fn [freq val] (repeat freq val))
-                                              freqs row-seq)))
-         ids (range starting-id (+ starting-id (count rows-to-select)))]
-     (-> grouped-population
-         (ds/remove-columns [frequency-column])
-         (ds/select-rows rows-to-select)
-         (ds/add-column :id ids)))))
-
-(defn add-simulation-numbers
-  [dataset num-simulations]
-  (let [number-rows (first (:shape dataset))
-        row-seq (range 0 number-rows)
-        rows-to-select (into [] (reduce concat
-                                        (map (fn [val] (repeat num-simulations val))
-                                             row-seq)))
-        sim-numbers (into [] (flatten (for [n row-seq]
-                                        (range 1 (inc num-simulations)))))]
-    (-> dataset
-        (ds/select-rows rows-to-select)
-        (ds/add-column :sim-num sim-numbers))))
-
 ;;Pre-loop functions
 (defn add-state-to-send-population
   [historic-send-population]
