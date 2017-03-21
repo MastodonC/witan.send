@@ -4,7 +4,10 @@
                                          defworkflowpred
                                          defworkflowoutput]]
             [schema.core :as s]
-            [witan.send.schemas :as sc]))
+            [witan.send.schemas :as sc]
+            [witan.datasets :as wds]
+            [clojure.core.matrix.dataset :as ds]
+            [witan.send.utils :as u]))
 
 ;;Inputs
 (definput historic-0-25-population-1-0-0
@@ -67,7 +70,42 @@
    :witan/output-schema {:extra-population sc/SENDSchemaIndividual}}
   [{:keys [historic-0-25-population population-projection]}
    {:keys [projection-start-year projection-end-year number-of-simulations]}]
-  {:extra-population {}})
+  (let [hist-popn (wds/filter-dataset historic-0-25-population
+                                     [:year]
+                                     (fn [y] (= y (dec projection-start-year))))
+        popn-proj (wds/filter-dataset population-projection
+                                      [:year]
+                                      (fn [y] (and (>= y projection-start-year) (<= y projection-end-year))))
+        lag-amount (- projection-end-year (dec projection-start-year))
+        full-popn (-> hist-popn
+                      ds/row-maps
+                      (concat (ds/row-maps popn-proj))
+                      ds/dataset
+                      (u/order-ds [:age :year])
+                      (as-> data (ds/add-column data :aged-on-population
+                                                (u/lag data :population lag-amount)))
+                      (ds/rename-columns {:year :previous-year})
+                      (wds/add-derived-column :year [:previous-year] inc))
+        popn-diff (-> popn-proj
+                      (wds/left-join full-popn [:age :year])
+                      (wds/add-derived-column :population-diff
+                                              [:population :aged-on-population]
+                                              -))                            
+        popn-to-remove (-> popn-diff
+                           (wds/filter-dataset [:population-diff] (fn [p] (< p 0)))
+                           (ds/rename-columns {:population-diff :excess-population})
+                           (ds/select-columns [:year :age :excess-population]))                            
+        extra-popn (-> popn-diff
+                       (wds/filter-dataset [:population-diff] (fn [p] (>= p 0)))
+                       (ds/rename-columns {:population-diff :extra-population})
+                       (ds/select-columns [:year :age :extra-population])
+                       (u/groups-to-individuals :extra-population))
+        number-rows (first (:shape extra-popn))
+        extra-popn-state-id (-> extra-popn
+                                (ds/add-column :state (repeat number-rows :Non-SEND))
+                                (ds/add-column :id (range 1 (inc number-rows))))]
+
+    {:extra-population (u/add-simulation-numbers extra-popn-state-id number-of-simulations)}))
 
 (defworkflowfn add-extra-population-1-0-0
   {:witan/name :send/add-extra-population
