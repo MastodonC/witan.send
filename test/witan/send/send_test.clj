@@ -4,7 +4,9 @@
             [witan.send.schemas :as sc]
             [witan.send.test-utils :as tu]
             [clojure.core.matrix.dataset :as ds]
-            [witan.datasets :as wds]))
+            [witan.datasets :as wds]
+            [criterium.core :refer [with-progress-reporting bench]]
+            [clj-time.core :as t]))
 
 (def test-inputs
   {:historic-0-25-population ["data/demo/Population_0_25.csv" sc/PopulationSYA]
