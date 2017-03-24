@@ -95,10 +95,10 @@
                        :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND
                        :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND
                        :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND]
-               :id [1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10 11 11 12 12 13 13 14 14 15 15
-                    16 16 17 17 18 18 19 19 20 20 21 21 22 22 23 23 24 24]
                :sim-num [1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2
-                         1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2]}))
+                         1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2]
+               :id [1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10 11 11 12 12 13 13 14 14 15 15
+                    16 16 17 17 18 18 19 19 20 20 21 21 22 22 23 23 24 24]}))
 
 (def population-with-states
   (let [historic-send-population (get-individual-input :historic-send-population)
@@ -361,3 +361,11 @@
              (set (wds/subset-ds transition-matrix :cols :to-state))))
       (is (= (set (wds/subset-ds new-matrix :cols :probability))
              (set (wds/subset-ds transition-matrix :cols :probability)))))))
+
+(deftest select-starting-population-1-0-0-test
+  (testing "select current year from total population"
+    (let [{:keys [current-population]} (select-starting-population-1-0-0
+                                        {:total-population population-total
+                                         :current-year-in-loop 2017})]
+      (is (every? (partial =  2017)
+                  (ds/column current-population :year))))))
