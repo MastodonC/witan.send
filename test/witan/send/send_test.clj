@@ -454,3 +454,51 @@
                                          :current-year-in-loop 2016})]
       (is (every? #(= :ASD-Mainstream (:state %))
                   (ds/row-maps (wds/select-from-ds current-population {:age {:eq 1}})))))))
+
+(deftest append-to-total-population-1-0-0-test
+  (testing "The newly adjusted individuals are added to the total population"
+    (let [current-year-in-loop 2016
+          {:keys [historic-population]}
+          (get-historic-population-1-0-0 {:historic-0-25-population
+                                          (get-individual-input :historic-0-25-population)
+                                          :historic-send-population
+                                          (get-individual-input :historic-send-population)}
+                                         {:projection-start-year 2017
+                                          :number-of-simulations 1})
+          {:keys [extra-population]}
+          (population-change-1-0-0 {:historic-0-25-population
+                                    (get-individual-input :historic-0-25-population)
+                                    :population-projection
+                                    (get-individual-input :population-projection)}
+                                   {:projection-start-year 2017
+                                    :projection-end-year 2019
+                                    :number-of-simulations 1})
+          {:keys [total-population]}
+          (add-extra-population-1-0-0 {:historic-population historic-population
+                                       :extra-population extra-population}
+                                      {:projection-start-year 2017})
+          starting-population (:current-population (select-starting-population-1-0-0
+                                                    {:total-population total-population
+                                                     :current-year-in-loop current-year-in-loop}))
+          transition-matrix (get-individual-input :transition-matrix)
+          {:keys [current-population]} (apply-state-changes-1-0-0
+                                        {:current-population starting-population
+                                         :transition-matrix transition-matrix
+                                         :total-population total-population
+                                         :current-year-in-loop current-year-in-loop})
+          [new-total-population new-current-year-in-loop]
+          ((juxt :total-population
+                 :current-year-in-loop) (append-to-total-population-1-0-0
+                                         {:total-population total-population
+                                          :current-population current-population
+                                          :current-year-in-loop current-year-in-loop}))]
+      (is (= (inc current-year-in-loop) new-current-year-in-loop))
+      (is (= (first (:shape new-total-population))
+             (+ (first (:shape current-population))
+                (first (:shape total-population)))))
+      ;; assumes that prior to appending, all individuals from new-current-year-in-loop would be :Non-SEND.
+      ;; Post-append, this will no longer be true
+      (is (not (every? #(= :Non-SEND %)
+                       (-> new-total-population
+                           (wds/select-from-ds {:year {:eq new-current-year-in-loop}})
+                           (ds/column :state))))))))
