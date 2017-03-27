@@ -45,8 +45,8 @@
   (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]
                            [:age (s/constrained s/Int u/SENDage?)]
                            [:state s/Keyword]
-                           [:id s/Int]
-                           [:sim-num s/Int]]))
+                           [:sim-num s/Int]
+                           [:id s/Int]]))
 
 (def SENDSchemaGroupedWithCI
   (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]
