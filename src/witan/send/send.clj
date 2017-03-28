@@ -6,7 +6,8 @@
             [schema.core :as s]
             [witan.send.schemas :as sc]
             [clojure.core.matrix.dataset :as ds]
-            [witan.datasets :as wds]))
+            [witan.datasets :as wds]
+            [witan.send.utils :as u]))
 
 ;;Inputs
 (definput historic-0-25-population-1-0-0
@@ -47,6 +48,8 @@
 
 ;;Pre-loop functions
 (defn add-state-to-send-population
+  "Adds a 'state' column to a dataset with a need and placement column.
+   Returns the dataset with the need and placememnt column removed."
   [historic-send-population]
   (-> historic-send-population
       (wds/add-derived-column :state [:need :placement]
@@ -55,6 +58,10 @@
       (ds/rename-columns {:population :count})))
 
 (defn add-non-send-to-send-population
+  "Given the SEND population by SYA & state, and the 0-25 population by SYA,
+   calculates the number of Non-SEND pupils in the 0-25 population and adds
+   them to the SEND population to make one dataset with the full 0-25 population
+   grouped by age and state."
   [send-population-with-states historic-0-25-population]
   (let [send-totals (wds/rollup send-population-with-states :sum :count [:age])
         num-rows (first (:shape historic-0-25-population))]
@@ -66,26 +73,36 @@
         (ds/select-columns [:year :age :state :count])
         (ds/join-rows send-population-with-states))))
 
-(defn grps-to-indiv [repeat-data non-freq-col-names non-freq-col-data]
+(defn grps-to-indiv
+  "Creates a data structure with one row per individual and per simulation."
+  [repeat-data non-freq-col-names non-freq-col-data]
   (reduce merge (into [] (map (fn [colname colvalues]
                                 {colname (repeat-data colvalues)})
                               non-freq-col-names non-freq-col-data))))
 
-(defn add-simul-nbs [indiv-data col-freqs num-sims]
+(defn add-simul-nbs
+  "Add a column with simulation numbers to the data structure with individual rows."
+  [indiv-data col-freqs num-sims]
   (merge indiv-data
          {:sim-num
           (into [] (take (* num-sims (apply + col-freqs)) (cycle (range 1 (inc num-sims)))))}))
 
-(defn add-ids [data-with-sims num-sims range-individuals]
+(defn add-ids
+  "Adds a column with an id per individual to the data structure with individual rows
+   and simulation numbers."
+  [data-with-sims num-sims range-individuals]
   (merge data-with-sims
          {:id (into [] (mapcat (fn [n] (into [] (repeat num-sims n))) range-individuals))}))
 
 (defn select-cols
-  "Analogue of select-keys for vectors - thanks Henry!"
-  [coll ids] (mapv (partial nth coll) ids))
+  "Analogue of select-keys for vectors - Reusing a fn by Henry Garner."
+  [coll ids]
+  (mapv (partial nth coll) ids))
 
 (defn prepare-for-data-transformation
-  [dataset frequency-column num-sims]
+  "Performs steps ahead of the transformation (see fn below).
+   It prepares the repeat of rows taking into account the number of individuals and simulations."
+  [dataset frequency-column num-sims id-start-num]
   (let [groups-data (wds/select-from-ds dataset {frequency-column {:gt 0}})
         groups-matrix-data (:columns groups-data)
         index-col (.indexOf (:column-names dataset) frequency-column)
@@ -97,7 +114,7 @@
         repeat-data (fn [col-data] (into [] (mapcat (fn [count val]
                                                       (into [] (repeat count val)))
                                                     counts-individs-with-sims col-data)))
-        range-individuals (range 1 (inc (apply + col-freqs)))]
+        range-individuals (range id-start-num (+ id-start-num (apply + col-freqs)))]
     {:repeat-data repeat-data
      :other-cols other-cols
      :matrix-other-cols matrix-other-cols
@@ -105,18 +122,25 @@
      :range-individuals range-individuals}))
 
 (defn data-transformation
-  [dataset frequency-column num-sims]
-  (let [{:keys [repeat-data other-cols matrix-other-cols col-freqs range-individuals]}
-        (prepare-for-data-transformation
-         dataset
-         frequency-column
-         num-sims)]
-    (-> (grps-to-indiv repeat-data other-cols matrix-other-cols)
-        (add-simul-nbs col-freqs num-sims)
-        (add-ids num-sims range-individuals)
-        ds/dataset)))
+  "Transforms a dataset with groups to a dataset with individuals, ids and simulation numbers."
+  ([dataset frequency-column num-sims]
+   (data-transformation dataset frequency-column num-sims 1))
+  ([dataset frequency-column num-sims id-start-num]
+   (let [{:keys [repeat-data other-cols matrix-other-cols
+                 col-freqs range-individuals]}
+         (prepare-for-data-transformation
+          dataset
+          frequency-column
+          num-sims
+          id-start-num)]
+     (-> (grps-to-indiv repeat-data other-cols matrix-other-cols)
+         (add-simul-nbs col-freqs num-sims)
+         (add-ids num-sims range-individuals)
+         ds/dataset))))
 
 (defworkflowfn get-historic-population-1-0-0
+  "Outputs the population for the last year of historic data, with one
+   row for each individual/year/simulation. Also includes age & state columns"
   {:witan/name :send/get-historic-population
    :witan/version "1.0.0"
    :witan/input-schema {:historic-0-25-population sc/PopulationSYA
@@ -135,7 +159,61 @@
                                                :count
                                                number-of-simulations))})
 
+(defn lag
+  "Dataset must be kept chronologically ordered in order to work correctly.
+   Shifts the specified column down by the specified number of rows, filling
+   in zeros at the top of the column and dropping the shifted values at the end."
+  ([dataset col-key]
+   (-> dataset
+       (ds/to-map)
+       (col-key)
+       (#(cons 0 %))
+       (butlast)))
+  ([dataset col-key lag-amount]
+   (-> dataset
+       (ds/to-map)
+       (col-key)
+       (#(concat (repeat lag-amount 0) %))
+       (as-> d (drop-last lag-amount d)))))
+
+(defn calc-population-difference
+  "Given the historic 0-25 population and a population projection,
+   calculates the difference in population between the aged-on population
+   and the projected population each year to understand how the population changes."
+  [historic-popn popn-projection projection-start-year projection-end-year]
+  (let [lag-amount (- (inc projection-end-year) (dec projection-start-year))
+        full-popn (-> historic-popn
+                      ds/row-maps
+                      (concat (ds/row-maps popn-projection))
+                      ds/dataset
+                      (u/order-ds [:age :year])
+                      (as-> data (ds/add-column data :aged-on-population
+                                                (lag data :population lag-amount)))
+                      (ds/rename-columns {:year :previous-year})
+                      (wds/add-derived-column :year [:previous-year] inc))]
+    (-> (ds/rename-columns popn-projection {:population :population-from-proj})
+        (wds/left-join full-popn [:age :year])
+        (wds/add-derived-column :population-diff
+                                [:population-from-proj :aged-on-population]
+                                -))))
+
+(defn transform-extra-population-data
+  "Given the population change each year, returns a dataset that has
+   one row per individual & simulation for each extra member of the population who
+   needs to be added in the future."
+ [popn-diff num-sims id-start-num]
+ (let [number-rows (first (:shape popn-diff))]
+   (-> popn-diff
+       (wds/filter-dataset [:population-diff] (fn [p] (>= p 0)))
+       (ds/add-column :state (repeat number-rows :Non-SEND))
+       (ds/rename-columns {:population-diff :extra-population})
+       (ds/select-columns [:year :age :state :extra-population])
+       (data-transformation :extra-population num-sims id-start-num))))
+
 (defworkflowfn population-change-1-0-0
+  "Calculates how many extra Non-SEND must be added each year
+   due to population growth. Returns a dataset with one row for each
+   individual in each simulation"
   {:witan/name :send/population-change
    :witan/version "1.0.0"
    :witan/input-schema {:historic-0-25-population sc/PopulationSYA
@@ -146,9 +224,21 @@
    :witan/output-schema {:extra-population sc/SENDSchemaIndividual}}
   [{:keys [historic-0-25-population population-projection]}
    {:keys [projection-start-year projection-end-year number-of-simulations]}]
-  {:extra-population {}})
+  {:extra-population
+   (let [hist-popn (wds/filter-dataset historic-0-25-population [:year]
+                                       (fn [y] (= y (dec projection-start-year))))
+         popn-proj (wds/filter-dataset population-projection [:year]
+                                       (fn [y] (and (>= y projection-start-year)
+                                                    (<= y projection-end-year))))
+         id-start-num (inc (apply + (ds/column historic-0-25-population :population)))
+         popn-diff (calc-population-difference hist-popn popn-proj
+                                               projection-start-year
+                                               projection-end-year)]
+     (transform-extra-population-data popn-diff number-of-simulations id-start-num))})
 
 (defworkflowfn add-extra-population-1-0-0
+  "Combines the historic population with the extra population added in later years due to
+   population change, to give the total population going into the loop."
   {:witan/name :send/add-extra-population
    :witan/version "1.0.0"
    :witan/input-schema {:historic-population sc/SENDSchemaIndividual
@@ -162,6 +252,10 @@
 
 ;;Functions in loop
 (defworkflowfn select-starting-population-1-0-0
+  "Selects the rows of the total population that correspond to the individuals who
+   were present in the year before the current year and who need to have their state
+   assigned for the current year (e.g. for current year 2017, will select population
+   from 2016)"
   {:witan/name :send/select-starting-population
    :witan/version "1.0.0"
    :witan/input-schema {:total-population sc/SENDSchemaIndividual
@@ -175,6 +269,7 @@
    :current-year-in-loop current-year-in-loop})
 
 (defworkflowfn get-transition-matrix-1-0-0
+  "Selects the desired transition matrix"
   {:witan/name :send/get-transition-matrix
    :witan/version "1.0.0"
    :witan/input-schema {:transitions-default sc/TransitionMatrix
@@ -185,6 +280,8 @@
   {:transition-matrix {}})
 
 (defworkflowfn apply-state-changes-1-0-0
+  "Using the transition matrix, calculates the new state for each individual in the population.
+   Also updates the age and year of the population dataset."
   {:witan/name :send/apply-state-changes
    :witan/version "1.0.0"
    :witan/input-schema {:current-population sc/SENDSchemaIndividual
@@ -200,6 +297,7 @@
    :current-year-in-loop current-year-in-loop})
 
 (defworkflowfn append-to-total-population-1-0-0
+  "Adds the newly calculated states of the individuals for this year to the total population dataset"
   {:witan/name :send/append-to-total-population
    :witan/version "1.0.0"
    :witan/input-schema {:total-population sc/SENDSchemaIndividual
@@ -216,6 +314,7 @@
    :cost-profile {}})
 
 (defworkflowpred finish-looping?-1-0-0
+  "Predicate that returns true until the current year in the loop is equal to the projection end year"
   {:witan/name :send/send-loop-pred
    :witan/version "1.0.0"
    :witan/input-schema {:current-year-in-loop sc/YearSchema}
@@ -225,14 +324,20 @@
 
 ;;Post-loop functions
 (defn group-send-projection
+  "Given the output from the loop which is a row for each individual and simulation and year, groups
+   the data and converts it back to groups of individuals with the mean value from all the simulations
+   as well as confidence intervals."
   [total-population]
   {:send-projection {}})
 
 (defn apply-costs
+  "Multiplies the cost profile by the number of individuals to get the total cost"
   [{:keys [send-projection cost-profile]}]
   {:send-costs {}})
 
 (defworkflowoutput post-loop-steps-1-0-0
+  "Groups the individual data from the loop to get a demand projection, and applies the cost profile
+   to get the total cost."
   {:witan/name :send/post-loop-steps
    :witan/version "1.0.0"
    :witan/input-schema {:total-population sc/SENDSchemaIndividual
