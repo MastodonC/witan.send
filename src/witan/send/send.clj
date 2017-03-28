@@ -4,7 +4,9 @@
                                          defworkflowpred
                                          defworkflowoutput]]
             [schema.core :as s]
-            [witan.send.schemas :as sc]))
+            [witan.send.schemas :as sc]
+            [clojure.core.matrix.dataset :as ds]
+            [witan.datasets :as wds]))
 
 ;;Inputs
 (definput historic-0-25-population-1-0-0
@@ -44,6 +46,76 @@
    :witan/schema sc/TransitionMatrix})
 
 ;;Pre-loop functions
+(defn add-state-to-send-population
+  [historic-send-population]
+  (-> historic-send-population
+      (wds/add-derived-column :state [:need :placement]
+                              (fn [n p] (keyword (str n "-" p))))
+      (ds/select-columns [:year :age :state :population])
+      (ds/rename-columns {:population :count})))
+
+(defn add-non-send-to-send-population
+  [send-population-with-states historic-0-25-population]
+  (let [send-totals (wds/rollup send-population-with-states :sum :count [:age])
+        num-rows (first (:shape historic-0-25-population))]
+    (-> historic-0-25-population
+        (wds/left-join send-totals [:age])
+        (wds/add-derived-column :count [:population :count]
+                                -)
+        (ds/add-column :state (repeat num-rows :Non-SEND))
+        (ds/select-columns [:year :age :state :count])
+        (ds/join-rows send-population-with-states))))
+
+(defn grps-to-indiv [repeat-data non-freq-col-names non-freq-col-data]
+  (reduce merge (into [] (map (fn [colname colvalues]
+                                {colname (repeat-data colvalues)})
+                              non-freq-col-names non-freq-col-data))))
+
+(defn add-simul-nbs [indiv-data col-freqs num-sims]
+  (merge indiv-data
+         {:sim-num
+          (into [] (take (* num-sims (apply + col-freqs)) (cycle (range 1 (inc num-sims)))))}))
+
+(defn add-ids [data-with-sims num-sims range-individuals]
+  (merge data-with-sims
+         {:id (into [] (mapcat (fn [n] (into [] (repeat num-sims n))) range-individuals))}))
+
+(defn select-cols
+  "Analogue of select-keys for vectors - thanks Henry!"
+  [coll ids] (mapv (partial nth coll) ids))
+
+(defn prepare-for-data-transformation
+  [dataset frequency-column num-sims]
+  (let [groups-data (wds/select-from-ds dataset {frequency-column {:gt 0}})
+        groups-matrix-data (:columns groups-data)
+        index-col (.indexOf (:column-names dataset) frequency-column)
+        col-freqs (nth groups-matrix-data index-col)
+        other-cols (into [] (remove #{frequency-column} (:column-names groups-data)))
+        index-other-cols (mapv #(.indexOf (:column-names groups-data) %) other-cols)
+        matrix-other-cols (select-cols groups-matrix-data index-other-cols)
+        counts-individs-with-sims (map #(* num-sims %) col-freqs)
+        repeat-data (fn [col-data] (into [] (mapcat (fn [count val]
+                                                      (into [] (repeat count val)))
+                                                    counts-individs-with-sims col-data)))
+        range-individuals (range 1 (inc (apply + col-freqs)))]
+    {:repeat-data repeat-data
+     :other-cols other-cols
+     :matrix-other-cols matrix-other-cols
+     :col-freqs col-freqs
+     :range-individuals range-individuals}))
+
+(defn data-transformation
+  [dataset frequency-column num-sims]
+  (let [{:keys [repeat-data other-cols matrix-other-cols col-freqs range-individuals]}
+        (prepare-for-data-transformation
+         dataset
+         frequency-column
+         num-sims)]
+    (-> (grps-to-indiv repeat-data other-cols matrix-other-cols)
+        (add-simul-nbs col-freqs num-sims)
+        (add-ids num-sims range-individuals)
+        ds/dataset)))
+
 (defworkflowfn get-historic-population-1-0-0
   {:witan/name :send/get-historic-population
    :witan/version "1.0.0"
@@ -54,7 +126,14 @@
    :witan/output-schema {:historic-population sc/SENDSchemaIndividual}}
   [{:keys [historic-0-25-population historic-send-population]}
    {:keys [projection-start-year number-of-simulations]}]
-  {:historic-population {}})
+  {:historic-population (let [send-with-states (add-state-to-send-population
+                                                historic-send-population)
+                              population-with-states
+                              (add-non-send-to-send-population send-with-states
+                                                               historic-0-25-population)]
+                          (data-transformation population-with-states
+                                               :count
+                                               number-of-simulations))})
 
 (defworkflowfn population-change-1-0-0
   {:witan/name :send/population-change
