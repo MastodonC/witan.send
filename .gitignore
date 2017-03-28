@@ -1,3 +1,6 @@
+*~
+*#
+#*
 /target
 /classes
 /checkouts
@@ -8,4 +11,3 @@ pom.xml.asc
 /.lein-*
 /.nrepl-port
 *.DS_Store
-

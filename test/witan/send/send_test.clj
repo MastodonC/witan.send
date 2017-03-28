@@ -12,7 +12,7 @@
    :historic-send-population ["data/demo/send_population.csv" sc/SENDSchemaGrouped]
    :population-projection ["data/demo/Population_projection.csv" sc/PopulationSYA]
    :cost-profile ["data/demo/cost_profile.csv" sc/CostProfile]
-   :transitions-default []
+   :transitions-default ["data/demo/transition_matrix.csv" sc/DataForMatrix]
    :transitions-reduced-secondary-joiners []})
 
 (defn get-individual-input [key-name]
@@ -232,8 +232,6 @@
                                                   historic-population
                                                   {:year {:eq 2016} :age {:eq 0}})
                                                  :cols :population)]
-      (is (set (:column-names population-diff)) (set (:column-names diff-population)))
-      (is (set (:columns population-diff)) (set (:columns diff-population)))
       (is (= (- proj-age1-year2017 hist-popn-age0-year2016)
              diff-age1-year2017))))
   (testing "It works on fake data"
@@ -259,6 +257,7 @@
       (is (some #{:aged-on-population} (:column-names diff-popn)))
       (is (some #{:population-diff} (:column-names diff-popn)))
       (is (some #{:population-from-proj} (:column-names diff-popn)))
+      (is (= (set (:columns population-diff)) (set (:columns diff-popn))))
       (is (= (- proj-age1-year2017 hist-popn-age0-year2016)
              diff-age1-year2017)))))
 

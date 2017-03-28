@@ -38,13 +38,13 @@
   {:witan/name :send/transitions-default
    :witan/version "1.0.0"
    :witan/key :transitions-default
-   :witan/schema sc/TransitionMatrix})
+   :witan/schema sc/DataForMatrix})
 
 (definput transitions-reduced-secondary-joiners-1-0-0
   {:witan/name :send/transitions-reduced-secondary-joiners
    :witan/version "1.0.0"
    :witan/key :transitions-reduced-secondary-joiners
-   :witan/schema sc/TransitionMatrix})
+   :witan/schema sc/DataForMatrix})
 
 ;;Pre-loop functions
 (defn add-state-to-send-population
@@ -275,12 +275,13 @@
   "Selects the desired transition matrix"
   {:witan/name :send/get-transition-matrix
    :witan/version "1.0.0"
-   :witan/input-schema {:transitions-default sc/TransitionMatrix
-                        :transitions-reduced-secondary-joiners sc/TransitionMatrix}
+   :witan/input-schema {:transitions-default sc/DataForMatrix
+                        :transitions-reduced-secondary-joiners sc/DataForMatrix}
    :witan/param-schema {:scenario (s/enum :default :reduced-secondary-joiners)}
    :witan/output-schema {:transition-matrix sc/TransitionMatrix}}
   [{:keys [transitions-default transitions-reduced-secondary-joiners]} {:keys [scenario]}]
-  {:transition-matrix {}})
+  (let [full-default-matrix (u/full-trans-mat transitions-default)] ;; creates matrix from dataset
+    {:transition-matrix {}}))
 
 (defworkflowfn apply-state-changes-1-0-0
   "Using the transition matrix, calculates the new state for each individual in the population.
