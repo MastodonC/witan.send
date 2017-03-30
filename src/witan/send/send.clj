@@ -164,17 +164,20 @@
    Shifts the specified column down by the specified number of rows, filling
    in zeros at the top of the column and dropping the shifted values at the end."
   ([dataset col-key]
-   (-> dataset
-       (ds/to-map)
-       (col-key)
-       (#(cons 0 %))
-       (butlast)))
+   (let [data (-> dataset
+                  (ds/to-map)
+                  (col-key))]
+     (->> data
+          (cons 0)
+          (butlast))))
   ([dataset col-key lag-amount]
-   (-> dataset
-       (ds/to-map)
-       (col-key)
-       (#(concat (repeat lag-amount 0) %))
-       (as-> d (drop-last lag-amount d)))))
+   (let [data  (-> dataset
+                   (ds/to-map)
+                   (col-key)
+                   )]
+     (->> data
+          (concat (repeat lag-amount 0))
+          (drop-last lag-amount)))))
 
 (defn calc-population-difference
   "Given the historic 0-25 population and a population projection,
