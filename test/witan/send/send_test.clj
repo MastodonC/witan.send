@@ -34,8 +34,8 @@
                :age   [0 0 0 0 0 0 2 2]
                :state [:Non-SEND :Non-SEND :Non-SEND :Non-SEND
                        :Non-SEND :Non-SEND :PSI-Mainstream :PSI-Mainstream]
-               :id    [1 1 2 2 3 3 4 4]
-               :sim-num [1 2 1 2 1 2 1 2]}))
+               :sim-num [1 2 1 2 1 2 1 2]
+               :id    [1 1 2 2 3 3 4 4]}))
 
 (def historic-data
   (ds/dataset {:year  [2016 2016 2016]
@@ -73,10 +73,33 @@
                        :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND
                        :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND
                        :Non-SEND :Non-SEND :Non-SEND :Non-SEND]
-               :id [5 5 6 6 7 7 8 8 9 9 10 10 11 11 12 12 13 13 14 14 15 15 16 16
-                    17 17 18 18 19 19 20 20 21 21 22 22 23 23 24 24]
                :sim-num [1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2
-                         1 2 1 2 1 2 1 2 1 2]}))
+                         1 2 1 2 1 2 1 2 1 2]
+               :id [5 5 6 6 7 7 8 8 9 9 10 10 11 11 12 12 13 13 14 14 15 15 16 16
+                    17 17 18 18 19 19 20 20 21 21 22 22 23 23 24 24]}))
+
+(def population-total
+  (ds/dataset {:year [2014 2014 2014 2014 2014 2014 2016 2016
+                      2017 2017 2017 2017 2017 2017 2017 2017
+                      2017 2017 2017 2017 2017 2017 2017 2017
+                      2017 2017
+                      2018 2018 2018 2018 2018 2018
+                      2019 2019 2019 2019 2019 2019 2019 2019
+                      2019 2019 2019 2019 2019 2019 2019 2019]
+               :age [0 0 0 0 0 0 2 2 0 0 0 0 1 1 1 1 2 2 2 2 2 2 2 2 2 2
+                     0 0 1 1 2 2 0 0 0 0 1 1 1 1 2 2 2 2 2 2 2 2]
+               :state [:Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND
+                       :PSI-Mainstream :PSI-Mainstream :Non-SEND :Non-SEND :Non-SEND
+                       :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND
+                       :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND
+                       :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND
+                       :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND
+                       :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND
+                       :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND]
+               :id [1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10 11 11 12 12 13 13 14 14 15 15
+                    16 16 17 17 18 18 19 19 20 20 21 21 22 22 23 23 24 24]
+               :sim-num [1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2
+                         1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2]}))
 
 (def population-with-states
   (let [historic-send-population (get-individual-input :historic-send-population)
@@ -286,3 +309,17 @@
       (is (= (set (:column-names extra-population)) (set (:column-names extra-individuals))))
       (is (= (set (:columns extra-population)) (set (:columns extra-individuals))))
       (is-valid-result-ds? extra-population 2 40))))
+
+(deftest add-extra-population-1-0-0-test
+  (testing "The datasets out of both data prep steps are joined correctly"
+    (let [{:keys [total-population]}
+          (add-extra-population-1-0-0 {:historic-population individuals-data-with-sims
+                                       :extra-population extra-individuals}
+                                      {:projection-start-year 2017})]
+      (is (= (set (:column-names total-population))
+             (set (:column-names population-total))))
+      (is (= (set (:columns total-population))
+             (set (:columns population-total))))
+      (is (= (first (:shape total-population))
+             (+ (first (:shape individuals-data-with-sims))
+                (first (:shape extra-individuals))))))))
