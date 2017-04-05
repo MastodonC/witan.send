@@ -250,7 +250,7 @@
    :witan/output-schema {:total-population sc/SENDSchemaIndividual
                          :current-year-in-loop sc/YearSchema}}
   [{:keys [historic-population extra-population]} {:keys [projection-start-year]}]
-  {:total-population {}
+  {:total-population (ds/join-rows historic-population extra-population)
    :current-year-in-loop projection-start-year})
 
 ;;Functions in loop
