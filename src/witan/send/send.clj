@@ -34,22 +34,16 @@
    :witan/key :cost-profile
    :witan/schema sc/CostProfile})
 
-(definput transitions-default-1-0-0
-  {:witan/name :send/transitions-default
+(definput transition-matrix-1-0-0
+  {:witan/name :send/transition-matrix
    :witan/version "1.0.0"
-   :witan/key :transitions-default
-   :witan/schema sc/DataForMatrix})
-
-(definput transitions-reduced-secondary-joiners-1-0-0
-  {:witan/name :send/transitions-reduced-secondary-joiners
-   :witan/version "1.0.0"
-   :witan/key :transitions-reduced-secondary-joiners
+   :witan/key :transition-matrix
    :witan/schema sc/DataForMatrix})
 
 ;;Pre-loop functions
 (defn add-state-to-send-population
   "Adds a 'state' column to a dataset with a need and placement column.
-   Returns the dataset with the need and placememnt column removed."
+   Returns the dataset with the need and placement column removed."
   [historic-send-population]
   (-> historic-send-population
       (wds/add-derived-column :state [:need :placement]
@@ -173,8 +167,7 @@
   ([dataset col-key lag-amount]
    (let [data  (-> dataset
                    (ds/to-map)
-                   (col-key)
-                   )]
+                   (col-key))]
      (->> data
           (concat (repeat lag-amount 0))
           (drop-last lag-amount)))))
@@ -204,14 +197,14 @@
   "Given the population change each year, returns a dataset that has
    one row per individual & simulation for each extra member of the population who
    needs to be added in the future."
- [popn-diff num-sims id-start-num]
- (let [number-rows (first (:shape popn-diff))]
-   (-> popn-diff
-       (wds/filter-dataset [:population-diff] (fn [p] (>= p 0)))
-       (ds/add-column :state (repeat number-rows :Non-SEND))
-       (ds/rename-columns {:population-diff :extra-population})
-       (ds/select-columns [:year :age :state :extra-population])
-       (data-transformation :extra-population num-sims id-start-num))))
+  [popn-diff num-sims id-start-num]
+  (let [number-rows (first (:shape popn-diff))]
+    (-> popn-diff
+        (wds/filter-dataset [:population-diff] (fn [p] (>= p 0)))
+        (ds/add-column :state (repeat number-rows :Non-SEND))
+        (ds/rename-columns {:population-diff :extra-population})
+        (ds/select-columns [:year :age :state :extra-population])
+        (data-transformation :extra-population num-sims id-start-num))))
 
 (defworkflowfn population-change-1-0-0
   "Calculates how many extra Non-SEND must be added each year
@@ -271,17 +264,31 @@
    :total-population total-population
    :current-year-in-loop current-year-in-loop})
 
-(defworkflowfn get-transition-matrix-1-0-0
+(defworkflowfn adjust-joiners-transition-1-0-0
   "Selects the desired transition matrix"
-  {:witan/name :send/get-transition-matrix
+  {:witan/name :send/adjust-joiners-transition
    :witan/version "1.0.0"
-   :witan/input-schema {:transitions-default sc/DataForMatrix
-                        :transitions-reduced-secondary-joiners sc/DataForMatrix}
-   :witan/param-schema {:scenario (s/enum :default :reduced-secondary-joiners)}
-   :witan/output-schema {:transition-matrix sc/TransitionMatrix}}
-  [{:keys [transitions-default transitions-reduced-secondary-joiners]} {:keys [scenario]}]
-  (let [full-default-matrix (u/full-trans-mat transitions-default)] ;; creates matrix from dataset
-    {:transition-matrix {}}))
+   :witan/input-schema {:transition-matrix sc/DataForMatrix}
+   :witan/param-schema {:age sc/AgeSchema :multiplier double}
+   :witan/output-schema {:transition-matrix sc/DataForMatrix}}
+  [{:keys [transition-matrix]} {:keys [age multiplier]}]
+  (let [matrix-rows (ds/row-maps transition-matrix)
+        from-non-send-and-age (fn [m] (and (= (:from-state m) :Non-SEND) (= (:age m) age)))
+        bucket-fn (fn [row] (cond
+                              (not (from-non-send-and-age row)) :non-selected-rows
+                              (and (from-non-send-and-age row)
+                                   (= (:to-state row) :Non-SEND)) :selected-rows-non-send
+                              :else :selected-rows))
+        {:keys [selected-rows selected-rows-non-send non-selected-rows]}
+        (group-by bucket-fn matrix-rows)
+        adjust-send-matrix (mapv (fn [m]
+                                   (update m :probability #(* % multiplier))) selected-rows)
+        total-send (transduce (map :probability) + adjust-send-matrix)
+        adjust-non-send-matrix (mapv (fn [m]
+                                       (assoc m :probability (- 1 total-send)))
+                                     selected-rows-non-send)
+        adjusted-matrix (concat adjust-send-matrix adjust-non-send-matrix non-selected-rows)]
+    {:transition-matrix (ds/dataset adjusted-matrix)}))
 
 (defworkflowfn apply-state-changes-1-0-0
   "Using the transition matrix, calculates the new state for each individual in the population.
@@ -289,16 +296,17 @@
   {:witan/name :send/apply-state-changes
    :witan/version "1.0.0"
    :witan/input-schema {:current-population sc/SENDSchemaIndividual
-                        :transition-matrix sc/TransitionMatrix
+                        :transition-matrix sc/DataForMatrix
                         :total-population sc/SENDSchemaIndividual
                         :current-year-in-loop sc/YearSchema}
    :witan/output-schema {:current-population sc/SENDSchemaIndividual
                          :total-population sc/SENDSchemaIndividual
                          :current-year-in-loop sc/YearSchema}}
   [{:keys [current-population transition-matrix total-population current-year-in-loop]} _]
-  {:current-population {}
-   :total-population total-population
-   :current-year-in-loop current-year-in-loop})
+  (let [adjusted-matrix (u/full-trans-mat sc/States [0 26] transition-matrix)]
+    {:current-population {}
+     :total-population total-population
+     :current-year-in-loop current-year-in-loop}))
 
 (defworkflowfn append-to-total-population-1-0-0
   "Adds the newly calculated states of the individuals for this year to the total population dataset"

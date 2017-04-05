@@ -12,8 +12,7 @@
    [:historic-send-population :get-historic-population]
    [:historic-0-25-population :population-change]
    [:population-projection :population-change]
-   [:transitions-default :get-transition-matrix]
-   [:transitions-reduced-secondary-joiners :get-transition-matrix]
+   [:transition-matrix :adjust-joiners-transition]
    [:cost-profile :append-to-total-population]
 
    ;;Pre-loop
@@ -23,7 +22,7 @@
 
    ;;Loop
    [:select-starting-population :apply-state-changes]
-   [:get-transition-matrix :apply-state-changes]
+   [:adjust-joiners-transition :apply-state-changes]
    [:apply-state-changes :append-to-total-population]
    [:append-to-total-population [:finish-looping? :post-loop-steps
                                  :select-starting-population]]])
@@ -53,15 +52,10 @@
     :witan/params {:src ""}}
 
    ;;Inputs for scenarios
-   {:witan/name :transitions-default
+   {:witan/name :transition-matrix
     :witan/version "1.0.0"
     :witan/type :input
-    :witan/fn :send/transitions-default
-    :witan/params {:src ""}}
-   {:witan/name :transitions-reduced-secondary-joiners
-    :witan/version "1.0.0"
-    :witan/type :input
-    :witan/fn :send/transitions-reduced-secondary-joiners
+    :witan/fn :send/transition-matrix
     :witan/params {:src ""}}
 
    ;;Workflow functions pre-loop
@@ -93,11 +87,11 @@
     :witan/version "1.0.0"
     :witan/type :function
     :witan/fn :send/apply-state-changes}
-   {:witan/name :get-transition-matrix
+   {:witan/name :adjust-joiners-transition
     :witan/version "1.0.0"
     :witan/type :function
-    :witan/fn :send/get-transition-matrix
-    :witan/params {:scenario :default}}
+    :witan/fn :send/adjust-joiners-transition
+    :witan/params {:age 11 :multiplier 0.1}}
    {:witan/name :append-to-total-population
     :witan/version "1.0.0"
     :witan/type :function
@@ -133,14 +127,13 @@
                    send/historic-send-population-1-0-0
                    send/population-projection-1-0-0
                    send/cost-profile-1-0-0
-                   send/transitions-default-1-0-0
-                   send/transitions-reduced-secondary-joiners-1-0-0
+                   send/transition-matrix-1-0-0
                    send/get-historic-population-1-0-0
                    send/population-change-1-0-0
                    send/add-extra-population-1-0-0
                    send/select-starting-population-1-0-0
                    send/apply-state-changes-1-0-0
-                   send/get-transition-matrix-1-0-0
+                   send/adjust-joiners-transition-1-0-0
                    send/append-to-total-population-1-0-0
                    send/finish-looping?-1-0-0
                    send/post-loop-steps-1-0-0))

@@ -48,7 +48,7 @@
              :SLCN-Other
              :SPLD-Mainstream
              :SPLD-Special
-             :SPLCD-Other
+             :SPLD-Other
              :UO-Mainstream
              :UO-Special
              :UO-Other
@@ -70,9 +70,12 @@
 (def TransitionMatrix
   {AgeGroupsSchema TransitionMatrixSchema})
 
+(def AgeSchema (s/constrained s/Int u/SENDage?))
+
 (def DataForMatrix
-  (make-ordered-ds-schema [[:age (apply s/enum (conj (range 1 27) "all"))]
-                           [:state (s/constrained s/Keyword (fn [s] (some #(= s %) States)))]
+  (make-ordered-ds-schema [[:age AgeSchema]
+                           [:from-state (s/constrained s/Keyword (fn [s] (some #(= s %) States)))]
+                           [:to-state (s/constrained s/Keyword (fn [s] (some #(= s %) States)))]
                            [:probability double]]))
 
 (def SENDSchemaGrouped

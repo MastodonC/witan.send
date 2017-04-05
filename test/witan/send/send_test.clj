@@ -12,8 +12,7 @@
    :historic-send-population ["data/demo/send_population.csv" sc/SENDSchemaGrouped]
    :population-projection ["data/demo/Population_projection.csv" sc/PopulationSYA]
    :cost-profile ["data/demo/cost_profile.csv" sc/CostProfile]
-   :transitions-default ["data/demo/transition_matrix.csv" sc/DataForMatrix]
-   :transitions-reduced-secondary-joiners []})
+   :transition-matrix ["data/demo/transition_matrix.csv" sc/DataForMatrix]})
 
 (defn get-individual-input [key-name]
   (tu/read-inputs
@@ -322,3 +321,43 @@
       (is (= (first (:shape total-population))
              (+ (first (:shape individuals-data-with-sims))
                 (first (:shape extra-individuals))))))))
+
+(def old-matrix (ds/dataset [{:age 10 :from-state :Non-SEND
+                              :to-state :ASD-Mainstream :probability 0.3}
+                             {:age 10 :from-state :Non-SEND
+                              :to-state :Non-SEND :probability 0.7}
+                             {:age 11 :from-state :Non-SEND
+                              :to-state :ASD-Mainstream :probability 1.0}
+                             {:age 11 :from-state :Non-SEND
+                              :to-state :Non-SEND :probability 0.0}
+                             {:age 12 :from-state :Non-SEND
+                              :to-state :ASD-Mainstream :probability 0.2}
+                             {:age 12 :from-state :Non-SEND
+                              :to-state :Non-SEND :probability 0.8}]))
+
+(def new-matrix (ds/dataset [{:age 10 :from-state :Non-SEND
+                              :to-state :ASD-Mainstream :probability 0.3}
+                             {:age 10 :from-state :Non-SEND
+                              :to-state :Non-SEND :probability 0.7}
+                             {:age 11 :from-state :Non-SEND
+                              :to-state :ASD-Mainstream :probability 0.1}
+                             {:age 11 :from-state :Non-SEND
+                              :to-state :Non-SEND :probability 0.9}
+                             {:age 12 :from-state :Non-SEND
+                              :to-state :ASD-Mainstream :probability 0.2}
+                             {:age 12 :from-state :Non-SEND
+                              :to-state :Non-SEND :probability 0.8}]))
+
+(deftest adjust-joiners-transition-1-0-0-test
+  (testing "The right age group probability is updated using the multiplier param"
+    (let [{:keys [transition-matrix]} (adjust-joiners-transition-1-0-0
+                                       {:transition-matrix old-matrix}
+                                       {:age 11 :multiplier 0.1})]
+      (is (= (set (wds/subset-ds new-matrix :cols :age))
+             (set (wds/subset-ds transition-matrix :cols :age))))
+      (is (= (set (wds/subset-ds new-matrix :cols :from-state))
+             (set (wds/subset-ds transition-matrix :cols :from-state))))
+      (is (= (set (wds/subset-ds new-matrix :cols :to-state))
+             (set (wds/subset-ds transition-matrix :cols :to-state))))
+      (is (= (set (wds/subset-ds new-matrix :cols :probability))
+             (set (wds/subset-ds transition-matrix :cols :probability)))))))
