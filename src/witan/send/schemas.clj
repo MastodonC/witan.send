@@ -30,9 +30,53 @@
                            [:age (s/constrained s/Int u/SENDage?)]
                            [:population s/Int]]))
 
+(def States [:Non-SEND
+             :ASD-Mainstream
+             :ASD-Special
+             :ASD-Other
+             :BESM-Mainstream
+             :BESM-Special
+             :BESM-Other
+             :LD-Mainstream
+             :LD-Special
+             :LD-Other
+             :PSI-Mainstream
+             :PSI-Special
+             :PSI-Other
+             :SLCN-Mainstream
+             :SLCN-Special
+             :SLCN-Other
+             :SPLD-Mainstream
+             :SPLD-Special
+             :SPLD-Other
+             :UO-Mainstream
+             :UO-Special
+             :UO-Other
+             :Too-old])
+
+(def SendStatesSchema
+  [(apply s/enum States)])
+
+(def ProbabilitiesSchema
+  (reduce merge
+          (map #(hash-map % double) States)))
+
+(def TransitionMatrixSchema
+  {SendStatesSchema ProbabilitiesSchema})
+
+(def AgeGroupsSchema
+  (apply s/enum (map #((comp keyword str) %) (range 1 27))))
+
 (def TransitionMatrix
-  {})
-;;map with age keys and corresponding transition matrices- see markov demo. Actual placement types are: Mainstream, Special, Other. Actual need types are: ASD, SLCN, LD, SPLD, BESM, PSI, OTHER.
+  {AgeGroupsSchema TransitionMatrixSchema})
+
+(def AgeSchema (s/constrained s/Int u/SENDage?))
+
+(def DataForMatrix
+  (make-ordered-ds-schema [[:age AgeSchema]
+                           [:from-state (s/constrained s/Keyword (fn [s] (some #(= s %) States)))]
+                           [:to-state (s/constrained s/Keyword (fn [s] (some #(= s %) States)))]
+                           [:probability double]]))
 
 (def SENDSchemaGrouped
   (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]

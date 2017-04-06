@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [schema.coerce :as coerce]
             [witan.send.schemas :as sc]
+            [schema.core :as s]
             [clojure.core.matrix.dataset :as ds]
             [clojure.data.csv :as data-csv]))
 
@@ -43,5 +44,5 @@
       (as-> {:keys [column-names columns]} (ds/dataset column-names columns))))
 
 (defn read-inputs [data input _ schema]
-  (let [[filepath fileschema] (get data (:witan/name input))]
-    (csv-to-dataset filepath fileschema)))
+  (let [[data-location fileschema] (get data (:witan/name input))]
+    (csv-to-dataset data-location fileschema)))
