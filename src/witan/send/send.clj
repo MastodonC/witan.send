@@ -260,7 +260,7 @@
                          :total-population sc/SENDSchemaIndividual
                          :current-year-in-loop sc/YearSchema}}
   [{:keys [total-population current-year-in-loop]} _]
-  {:current-population {}
+  {:current-population (wds/select-from-ds total-population {:year {:eq current-year-in-loop}})
    :total-population total-population
    :current-year-in-loop current-year-in-loop})
 
