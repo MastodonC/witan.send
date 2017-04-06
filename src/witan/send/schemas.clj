@@ -64,13 +64,10 @@
 (def TransitionMatrixSchema
   {SendStatesSchema ProbabilitiesSchema})
 
-(def AgeGroupsSchema
-  (apply s/enum (map #((comp keyword str) %) (range 1 27))))
+(def AgeSchema (s/constrained s/Int u/SENDage?))
 
 (def TransitionMatrix
-  {AgeGroupsSchema TransitionMatrixSchema})
-
-(def AgeSchema (s/constrained s/Int u/SENDage?))
+  {AgeSchema TransitionMatrixSchema})
 
 (def DataForMatrix
   (make-ordered-ds-schema [[:age AgeSchema]

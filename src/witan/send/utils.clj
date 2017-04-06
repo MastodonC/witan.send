@@ -38,7 +38,12 @@
                                  (assoc acc (:to-state row) (:probability row)))
                                {} field-rows)))) {} fields)))
 
-(defn full-trans-mat [fields [min-age max-age] dataset]
+(defn full-trans-mat
+  "This returns a transition matrix in the format needed to apply the state changes.
+   Note: it only works if the dataset passed in contains all the states and age groups.
+   Future improvement: the function should always return a full matrix, the default
+   being individuals staying in their original state."
+  [fields [min-age max-age] dataset]
   (reduce (fn [acc age]
-            (assoc acc (-> age str keyword) (get-matrix-prob-for-age age fields dataset)))
+            (assoc acc age (get-matrix-prob-for-age age fields dataset)))
           {} (range min-age (inc max-age))))
