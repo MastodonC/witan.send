@@ -7,7 +7,8 @@
             [witan.send.schemas :as sc]
             [clojure.core.matrix.dataset :as ds]
             [witan.datasets :as wds]
-            [witan.send.utils :as u]))
+            [witan.send.utils :as u]
+            [markov-chains.core :as mc]))
 
 ;;Inputs
 (definput historic-0-25-population-1-0-0
@@ -303,8 +304,18 @@
                          :total-population sc/SENDSchemaIndividual
                          :current-year-in-loop sc/YearSchema}}
   [{:keys [current-population transition-matrix total-population current-year-in-loop]} _]
-  (let [adjusted-matrix (u/full-trans-mat sc/States [0 26] transition-matrix)]
-    {:current-population {}
+  (let [adjusted-matrix (u/full-trans-mat sc/States [0 26] transition-matrix)
+        new-states (wds/add-derived-column
+                    current-population
+                    :state [:age :state]
+                    (fn [a s] (first (into [] (take 1 (mc/generate [s] (get adjusted-matrix a)))))))
+        new-population (-> new-states
+                           (wds/add-derived-column :year [:year] inc)
+                           (wds/add-derived-column :age [:age] (fn [x]
+                                                                 (if (< x 26)
+                                                                   (inc x)
+                                                                   x))))]
+    {:current-population new-population
      :total-population total-population
      :current-year-in-loop current-year-in-loop}))
 

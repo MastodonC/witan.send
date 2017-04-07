@@ -369,3 +369,88 @@
                                          :current-year-in-loop 2017})]
       (is (every? (partial =  2017)
                   (ds/column current-population :year))))))
+
+(def trans-matrix (ds/dataset [{:age 2 :from-state :PSI-Mainstream
+                                :to-state :PSI-Special :probability 0.7}
+                               {:age 2 :from-state :PSI-Mainstream
+                                :to-state :Non-SEND :probability 0.3}]))
+
+(defn modify-trans-matrix [transition-matrix]
+  (let [matrix-rows (ds/row-maps transition-matrix)
+        from-non-send-and-age (fn [m] (and (= (:from-state m) :Non-SEND) (= (:age m) 0)))
+        bucket-fn (fn [row] (cond
+                              (not (from-non-send-and-age row)) :non-selected-rows
+                              (and (from-non-send-and-age row)
+                                   (= (:to-state row) :ASD-Mainstream)) :selected-rows-send
+                              :else :selected-rows))
+        {:keys [selected-rows selected-rows-send non-selected-rows]}
+        (group-by bucket-fn matrix-rows)
+        update-non-send (mapv (fn [m]
+                                (assoc m :probability 0.0)) selected-rows)
+        update-send (mapv (fn [m]
+                            (assoc m :probability 1.0)) selected-rows-send)]
+    (ds/dataset (concat non-selected-rows update-non-send update-send))))
+
+(deftest apply-state-changes-1-0-0-test
+  (testing "The new population is created correctly"
+    (let [{:keys [historic-population]}
+          (get-historic-population-1-0-0 {:historic-0-25-population
+                                          (get-individual-input :historic-0-25-population)
+                                          :historic-send-population
+                                          (get-individual-input :historic-send-population)}
+                                         {:projection-start-year 2017
+                                          :number-of-simulations 1})
+          {:keys [extra-population]}
+          (population-change-1-0-0 {:historic-0-25-population
+                                    (get-individual-input :historic-0-25-population)
+                                    :population-projection
+                                    (get-individual-input :population-projection)}
+                                   {:projection-start-year 2017
+                                    :projection-end-year 2019
+                                    :number-of-simulations 1})
+          {:keys [total-population]}
+          (add-extra-population-1-0-0 {:historic-population historic-population
+                                       :extra-population extra-population}
+                                      {:projection-start-year 2017})
+          starting-population (:current-population (select-starting-population-1-0-0
+                                                    {:total-population total-population
+                                                     :current-year-in-loop 2016}))
+          transition-matrix (get-individual-input :transition-matrix)
+          {:keys [current-population]} (apply-state-changes-1-0-0
+                                        {:current-population starting-population
+                                         :transition-matrix transition-matrix
+                                         :total-population total-population
+                                         :current-year-in-loop 2016})]
+      (is (every? #(= % 2017) (ds/column current-population :year)))))
+  (testing "The probabilities are applied correctly. Here we modify the transition matrix for
+            all the individuals age 0 non-send to transition to asd-mainstream at age 1."
+    (let [{:keys [historic-population]}
+          (get-historic-population-1-0-0 {:historic-0-25-population
+                                          (get-individual-input :historic-0-25-population)
+                                          :historic-send-population
+                                          (get-individual-input :historic-send-population)}
+                                         {:projection-start-year 2017
+                                          :number-of-simulations 1})
+          {:keys [extra-population]}
+          (population-change-1-0-0 {:historic-0-25-population
+                                    (get-individual-input :historic-0-25-population)
+                                    :population-projection
+                                    (get-individual-input :population-projection)}
+                                   {:projection-start-year 2017
+                                    :projection-end-year 2019
+                                    :number-of-simulations 1})
+          {:keys [total-population]}
+          (add-extra-population-1-0-0 {:historic-population historic-population
+                                       :extra-population extra-population}
+                                      {:projection-start-year 2017})
+          starting-population (:current-population (select-starting-population-1-0-0
+                                                    {:total-population total-population
+                                                     :current-year-in-loop 2016}))
+          transition-matrix (modify-trans-matrix (get-individual-input :transition-matrix))
+          {:keys [current-population]} (apply-state-changes-1-0-0
+                                        {:current-population starting-population
+                                         :transition-matrix transition-matrix
+                                         :total-population total-population
+                                         :current-year-in-loop 2016})]
+      (is (every? #(= :ASD-Mainstream (:state %))
+                  (ds/row-maps (wds/select-from-ds current-population {:age {:eq 1}})))))))
