@@ -508,3 +508,51 @@
                        (-> new-total-population
                            (wds/select-from-ds {:year {:eq new-current-year-in-loop}})
                            (ds/column :state))))))))
+
+(deftest group-send-projection-test
+  (let [current-year-in-loop 2016
+        {:keys [historic-population]}
+        (get-historic-population-1-0-0 {:historic-0-25-population
+                                        (reduce-input :historic-0-25-population :age 3)
+                                        :historic-send-population
+                                        (reduce-input :historic-send-population :age 3)}
+                                       {:projection-start-year 2017
+                                        :number-of-simulations 2})
+        {:keys [extra-population]}
+        (population-change-1-0-0 {:historic-0-25-population
+                                  (reduce-input :historic-0-25-population :age 3)
+                                  :population-projection
+                                  (reduce-input :population-projection :age 3)}
+                                 {:projection-start-year 2017
+                                  :projection-end-year 2019
+                                  :number-of-simulations 2})
+        {:keys [total-population]}
+        (add-extra-population-1-0-0 {:historic-population historic-population
+                                     :extra-population extra-population}
+                                    {:projection-start-year 2017})
+        starting-population (:current-population (select-starting-population-1-0-0
+                                                  {:total-population total-population
+                                                   :current-year-in-loop
+                                                   current-year-in-loop}))
+        transition-matrix (reduce-input :transition-matrix :age 3)
+        {:keys [current-population]} (apply-state-changes-1-0-0
+                                      {:current-population starting-population
+                                       :transition-matrix transition-matrix
+                                       :total-population total-population
+                                       :current-year-in-loop current-year-in-loop})
+        [new-total-population new-current-year-in-loop]
+        ((juxt :total-population
+               :current-year-in-loop) (append-to-total-population-1-0-0
+                                       {:total-population total-population
+                                        :current-population current-population
+                                        :current-year-in-loop current-year-in-loop}))
+        transformed-popn (:send-projection (group-send-projection new-total-population))]
+    (testing "The projections are grouped by age, need and placement"
+      (is (some #{:need} (:column-names transformed-popn)))
+      (is (some #{:placement} (:column-names transformed-popn)))
+      (is (some #{:low-ci} (:column-names transformed-popn)))
+      (is (some #{:high-ci} (:column-names transformed-popn)))
+      (is (some #{:mean} (:column-names transformed-popn)))
+      (is (some #{:year} (:column-names transformed-popn)))
+      (is (some #{:age} (:column-names transformed-popn))))
+    (testing "Average and confidence interval are calculated over the number of simulations")))

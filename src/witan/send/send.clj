@@ -7,6 +7,7 @@
             [witan.send.schemas :as sc]
             [clojure.core.matrix.dataset :as ds]
             [witan.datasets :as wds]
+            [witan.datasets.stats :as wst]
             [witan.send.utils :as u]
             [markov-chains.core :as mc]))
 
@@ -320,7 +321,8 @@
      :current-year-in-loop current-year-in-loop}))
 
 (defworkflowfn append-to-total-population-1-0-0
-  "Adds the newly calculated states of the individuals for this year to the total population dataset"
+  "Adds the newly calculated states of the individuals for
+   this year to the total population dataset"
   {:witan/name :send/append-to-total-population
    :witan/version "1.0.0"
    :witan/input-schema {:total-population sc/SENDSchemaIndividual
@@ -333,7 +335,8 @@
    :current-year-in-loop (inc current-year-in-loop)})
 
 (defworkflowpred finish-looping?-1-0-0
-  "Predicate that returns true until the current year in the loop is equal to the projection end year"
+  "Predicate that returns true until the current year in the loop
+   is equal to the projection end year"
   {:witan/name :send/send-loop-pred
    :witan/version "1.0.0"
    :witan/input-schema {:current-year-in-loop sc/YearSchema}
@@ -342,12 +345,61 @@
   (> current-year-in-loop projection-end-year))
 
 ;;Post-loop functions
+(defn quantile ;; from criterium
+               ;; https://crossclj.info/ns/criterium/0.4.4/criterium.stats.html#_quantile
+  "Calculate the quantile of a sorted data set
+   References: http://en.wikipedia.org/wiki/Quantile"
+  [quantile data]
+  (let [n (dec (count data))
+        interp (fn [x]
+                 (let [f (Math/floor x)
+                       i (long f)
+                       p (- x f)]
+                   (+ (* p (nth data (inc i))) (* (- 1.0 p) (nth data i)))))]
+    (interp (* quantile n))))
+
+(defn quantile* ;; from https://gist.github.com/scottdw/2960070
+  ([p vs]
+   (let [svs (sort vs)]
+     (quantile* p (count vs) svs (first svs) (last svs))))
+  ([p c svs mn mx]
+   (let [pic (* p (inc c))
+         k (int pic)
+         d (- pic k)
+         ndk (if (zero? k) mn (nth svs (dec k)))]
+     (cond
+       (zero? k) mn
+       (= c (dec k)) mx
+       (= c k) mx
+       :else (+ ndk (* d (- (nth svs k) ndk)))))))
+
+(defn confidence-interval-and-mean
+  "Takes in a dataset of send projections and outputs average and confidence interval boundaries."
+  [grouped-projection]
+  (->> grouped-projection
+       (pmap (fn [[k v]] (let [state (:state k)
+                               sims-counts (frequencies (ds/column v :sim-num))
+                               mean (/ (apply + (vals sims-counts)) (count sims-counts))
+                               sorted-counts (sort (vals sims-counts))
+                               low-ci (quantile* 0.25 sorted-counts)
+                               high-ci (quantile* 0.975 sorted-counts)
+                               split-keyword (fn [kw] (clojure.string/split (name kw) #"-"))
+                               need (if (= state :Non-SEND) state
+                                        (keyword (first (split-keyword state))))
+                               placement (if (= state :Non-SEND) state
+                                             (keyword (second (split-keyword state))))]
+                           (assoc k :mean mean :low-ci low-ci :high-ci high-ci
+                                  :need need :placement placement))))
+       ds/dataset))
+
 (defn group-send-projection
-  "Given the output from the loop which is a row for each individual and simulation and year, groups
-   the data and converts it back to groups of individuals with the mean value from all the simulations
-   as well as confidence intervals."
+  "Given the output from the loop which is a row for each individual and
+   simulation and year, groups the data and converts it back to groups of
+   individuals with the mean value from all the simulations as well as confidence intervals."
   [total-population]
-  {:send-projection {}})
+  {:send-projection (->  total-population
+                         (wds/group-ds [:year :age :state])
+                         confidence-interval-and-mean)})
 
 (defn apply-costs
   "Multiplies the cost profile by the number of individuals to get the total cost"
