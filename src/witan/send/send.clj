@@ -249,7 +249,7 @@
 
 ;;Functions in loop
 (defworkflowfn select-starting-population-1-0-0
-  "Selects the rows of the total population that correspond to the individuals who
+  "Selects the rows from the total population that correspond to the individuals who
    were present in the year before the current year and who need to have their state
    assigned for the current year (e.g. for current year 2017, will select population
    from 2016)"
@@ -325,16 +325,12 @@
    :witan/version "1.0.0"
    :witan/input-schema {:total-population sc/SENDSchemaIndividual
                         :current-population sc/SENDSchemaIndividual
-                        :current-year-in-loop sc/YearSchema
-                        :cost-profile sc/CostProfile}
+                        :current-year-in-loop sc/YearSchema}
    :witan/output-schema {:total-population sc/SENDSchemaIndividual
-                         :current-year-in-loop sc/YearSchema
-                         :cost-profile sc/CostProfile}}
-  [{:keys [total-population current-population current-year-in-loop
-           cost-profile]} _]
-  {:total-population {}
-   :current-year-in-loop (inc current-year-in-loop)
-   :cost-profile {}})
+                         :current-year-in-loop sc/YearSchema}}
+  [{:keys [total-population current-population current-year-in-loop]} _]
+  {:total-population (ds/join-rows total-population current-population)
+   :current-year-in-loop (inc current-year-in-loop)})
 
 (defworkflowpred finish-looping?-1-0-0
   "Predicate that returns true until the current year in the loop is equal to the projection end year"

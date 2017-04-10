@@ -21,6 +21,11 @@
    []
    (get test-inputs key-name)))
 
+(defn reduce-input [key-name column value]
+  (-> key-name
+      get-individual-input
+      (wds/select-from-ds {column {:lte value}})))
+
 ;; Use fake population datasets for testing
 (def grouped-data
   (ds/dataset {:year  [2014 2015 2016]
@@ -101,8 +106,8 @@
                     16 16 17 17 18 18 19 19 20 20 21 21 22 22 23 23 24 24]}))
 
 (def population-with-states
-  (let [historic-send-population (get-individual-input :historic-send-population)
-        historic-0-25-population (get-individual-input :historic-0-25-population)]
+  (let [historic-send-population (reduce-input :historic-send-population :age 6)
+        historic-0-25-population (reduce-input :historic-0-25-population :age 6)]
     (-> historic-send-population
         add-state-to-send-population
         (add-non-send-to-send-population historic-0-25-population))))
@@ -142,7 +147,7 @@
 ;; Tests
 (deftest add-state-to-send-population-test
   (testing "The states are added and need, placement are removed"
-    (let [historic-send-population (get-individual-input :historic-send-population)
+    (let [historic-send-population (reduce-input :historic-send-population :age 6)
           send-with-states (add-state-to-send-population historic-send-population)]
       (is (= (:column-names send-with-states)
              [:year :age :state :count]))
@@ -150,8 +155,8 @@
 
 (deftest add-non-send-to-send-population-test
   (testing "Creates a population with send and non-send"
-    (let [historic-send-population (get-individual-input :historic-send-population)
-          historic-0-25-population (get-individual-input :historic-0-25-population)
+    (let [historic-send-population (reduce-input :historic-send-population :age 6)
+          historic-0-25-population (reduce-input :historic-0-25-population :age 6)
           send-with-states (add-state-to-send-population historic-send-population)
           popn-with-states (add-non-send-to-send-population send-with-states
                                                             historic-0-25-population)]
@@ -168,7 +173,7 @@
            num-sims
            1)
           result (grps-to-indiv repeat-data other-cols matrix-other-cols)]
-      (is-valid-result? result num-sims #{:age :state :year} 198372))))
+      (is-valid-result? result num-sims #{:age :state :year} 52243))))
 
 (deftest add-simul-nbs-test
   (testing "Adding simulation numbers to individuals data"
@@ -181,7 +186,7 @@
            1)
           indiv-data (grps-to-indiv repeat-data other-cols matrix-other-cols)
           result (add-simul-nbs indiv-data col-freqs 1)]
-      (is-valid-result? result num-sims #{:age :state :year :sim-num} 198372))))
+      (is-valid-result? result num-sims #{:age :state :year :sim-num} 52243))))
 
 (deftest add-ids-test
   (testing "Adding ids to each row, taking into account simulations"
@@ -195,7 +200,7 @@
           indiv-data (grps-to-indiv repeat-data other-cols matrix-other-cols)
           indiv-data-with-sims (add-simul-nbs indiv-data col-freqs 1)
           result (add-ids indiv-data-with-sims 1 range-individuals)]
-      (is-valid-result? result num-sims #{:age :state :year :sim-num :id} 198372))))
+      (is-valid-result? result num-sims #{:age :state :year :sim-num :id} 52243))))
 
 (deftest data-transformation-test
   (testing "Go from group data to individuals data with ids and simulation number"
@@ -207,8 +212,8 @@
 
 (deftest calc-population-difference-test
   (testing "the population difference is calculated correctly"
-    (let [historic-population (get-individual-input :historic-0-25-population)
-          population-projection (get-individual-input :population-projection)
+    (let [historic-population (reduce-input :historic-0-25-population :age 6)
+          population-projection (reduce-input :population-projection :age 6)
           projection-start-year 2017
           projection-end-year 2019
           hist-popn (wds/filter-dataset historic-population [:year]
@@ -262,39 +267,38 @@
 
 (deftest get-historic-population-1-0-0-test
   (testing "The historic population has send states, ids and simulation numbers associated to it"
-    (time
-     (let [{:keys [historic-population]}
-           (get-historic-population-1-0-0 {:historic-0-25-population
-                                           (get-individual-input :historic-0-25-population)
-                                           :historic-send-population
-                                           (get-individual-input :historic-send-population)}
-                                          {:projection-start-year 2017
-                                           :number-of-simulations 1})]
-       (is (= 198372 (first (:shape historic-population))))
-       (is (some #{:state} (:column-names historic-population)))
-       (is (some #{:id} (:column-names historic-population)))
-       (is (some #{:sim-num} (:column-names historic-population)))
-       (is (some #{:year} (:column-names historic-population)))
-       (is (some #{:age} (:column-names historic-population)))
-       (is-valid-result-ds? historic-population 1 198372)))))
+    (let [{:keys [historic-population]}
+          (get-historic-population-1-0-0 {:historic-0-25-population
+                                          (reduce-input :historic-0-25-population :age 6)
+                                          :historic-send-population
+                                          (reduce-input :historic-send-population :age 6)}
+                                         {:projection-start-year 2017
+                                          :number-of-simulations 1})]
+      (is (= 52243 (first (:shape historic-population))))
+      (is (some #{:state} (:column-names historic-population)))
+      (is (some #{:id} (:column-names historic-population)))
+      (is (some #{:sim-num} (:column-names historic-population)))
+      (is (some #{:year} (:column-names historic-population)))
+      (is (some #{:age} (:column-names historic-population)))
+      (is-valid-result-ds? historic-population 1 52243))))
 
 (deftest population-change-1-0-0-test
   (testing "The extra population has send states, ids and simulation numbers associated to it"
     (let [{:keys [extra-population]}
           (population-change-1-0-0 {:historic-0-25-population
-                                    (get-individual-input :historic-0-25-population)
+                                    (reduce-input :historic-0-25-population :age 6)
                                     :population-projection
-                                    (get-individual-input :population-projection)}
+                                    (reduce-input :population-projection :age 6)}
                                    {:projection-start-year 2017
                                     :projection-end-year 2019
                                     :number-of-simulations 1})]
-      (is (= 30747 (first (:shape extra-population))))
+      (is (= 24048 (first (:shape extra-population))))
       (is (some #{:state} (:column-names extra-population)))
       (is (some #{:id} (:column-names extra-population)))
       (is (some #{:sim-num} (:column-names extra-population)))
       (is (some #{:year} (:column-names extra-population)))
       (is (some #{:age} (:column-names extra-population)))
-      (is-valid-result-ds? extra-population 1 30747)))
+      (is-valid-result-ds? extra-population 1 24048)))
   (testing "The extra population from test data has the correct individuals for 2017-2019 projection"
     (let [{:keys [extra-population]}
           (population-change-1-0-0 {:historic-0-25-population historic-data
@@ -395,16 +399,16 @@
   (testing "The new population is created correctly"
     (let [{:keys [historic-population]}
           (get-historic-population-1-0-0 {:historic-0-25-population
-                                          (get-individual-input :historic-0-25-population)
+                                          (reduce-input :historic-0-25-population :age 6)
                                           :historic-send-population
-                                          (get-individual-input :historic-send-population)}
+                                          (reduce-input :historic-send-population :age 6)}
                                          {:projection-start-year 2017
                                           :number-of-simulations 1})
           {:keys [extra-population]}
           (population-change-1-0-0 {:historic-0-25-population
-                                    (get-individual-input :historic-0-25-population)
+                                    (reduce-input :historic-0-25-population :age 6)
                                     :population-projection
-                                    (get-individual-input :population-projection)}
+                                    (reduce-input :population-projection :age 6)}
                                    {:projection-start-year 2017
                                     :projection-end-year 2019
                                     :number-of-simulations 1})
@@ -415,7 +419,7 @@
           starting-population (:current-population (select-starting-population-1-0-0
                                                     {:total-population total-population
                                                      :current-year-in-loop 2016}))
-          transition-matrix (get-individual-input :transition-matrix)
+          transition-matrix (reduce-input :transition-matrix :age 6)
           {:keys [current-population]} (apply-state-changes-1-0-0
                                         {:current-population starting-population
                                          :transition-matrix transition-matrix
@@ -426,16 +430,16 @@
             all the individuals age 0 non-send to transition to asd-mainstream at age 1."
     (let [{:keys [historic-population]}
           (get-historic-population-1-0-0 {:historic-0-25-population
-                                          (get-individual-input :historic-0-25-population)
+                                          (reduce-input :historic-0-25-population :age 6)
                                           :historic-send-population
-                                          (get-individual-input :historic-send-population)}
+                                          (reduce-input :historic-send-population :age 6)}
                                          {:projection-start-year 2017
                                           :number-of-simulations 1})
           {:keys [extra-population]}
           (population-change-1-0-0 {:historic-0-25-population
-                                    (get-individual-input :historic-0-25-population)
+                                    (reduce-input :historic-0-25-population :age 6)
                                     :population-projection
-                                    (get-individual-input :population-projection)}
+                                    (reduce-input :population-projection :age 6)}
                                    {:projection-start-year 2017
                                     :projection-end-year 2019
                                     :number-of-simulations 1})
@@ -446,7 +450,7 @@
           starting-population (:current-population (select-starting-population-1-0-0
                                                     {:total-population total-population
                                                      :current-year-in-loop 2016}))
-          transition-matrix (modify-trans-matrix (get-individual-input :transition-matrix))
+          transition-matrix (modify-trans-matrix (reduce-input :transition-matrix :age 6))
           {:keys [current-population]} (apply-state-changes-1-0-0
                                         {:current-population starting-population
                                          :transition-matrix transition-matrix
@@ -454,3 +458,53 @@
                                          :current-year-in-loop 2016})]
       (is (every? #(= :ASD-Mainstream (:state %))
                   (ds/row-maps (wds/select-from-ds current-population {:age {:eq 1}})))))))
+
+(deftest append-to-total-population-1-0-0-test
+  (testing "The newly adjusted individuals are added to the total population"
+    (let [current-year-in-loop 2016
+          {:keys [historic-population]}
+          (get-historic-population-1-0-0 {:historic-0-25-population
+                                          (reduce-input :historic-0-25-population :age 6)
+                                          :historic-send-population
+                                          (reduce-input :historic-send-population :age 6)}
+                                         {:projection-start-year 2017
+                                          :number-of-simulations 1})
+          {:keys [extra-population]}
+          (population-change-1-0-0 {:historic-0-25-population
+                                    (reduce-input :historic-0-25-population :age 6)
+                                    :population-projection
+                                    (reduce-input :population-projection :age 6)}
+                                   {:projection-start-year 2017
+                                    :projection-end-year 2019
+                                    :number-of-simulations 1})
+          {:keys [total-population]}
+          (add-extra-population-1-0-0 {:historic-population historic-population
+                                       :extra-population extra-population}
+                                      {:projection-start-year 2017})
+          starting-population (:current-population (select-starting-population-1-0-0
+                                                    {:total-population total-population
+                                                     :current-year-in-loop
+                                                     current-year-in-loop}))
+          transition-matrix (reduce-input :transition-matrix :age 6)
+          {:keys [current-population]} (apply-state-changes-1-0-0
+                                        {:current-population starting-population
+                                         :transition-matrix transition-matrix
+                                         :total-population total-population
+                                         :current-year-in-loop current-year-in-loop})
+          [new-total-population new-current-year-in-loop]
+          ((juxt :total-population
+                 :current-year-in-loop) (append-to-total-population-1-0-0
+                                         {:total-population total-population
+                                          :current-population current-population
+                                          :current-year-in-loop current-year-in-loop}))]
+      (is (= (inc current-year-in-loop) new-current-year-in-loop))
+      (is (= (first (:shape new-total-population))
+             (+ (first (:shape current-population))
+                (first (:shape total-population)))))
+      ;; assumes that prior to appending, all individuals from
+      ;; new-current-year-in-loop would be :Non-SEND.
+      ;; Post-append, this will no longer be true
+      (is (not (every? #(= :Non-SEND %)
+                       (-> new-total-population
+                           (wds/select-from-ds {:year {:eq new-current-year-in-loop}})
+                           (ds/column :state))))))))
