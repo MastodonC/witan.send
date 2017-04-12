@@ -392,10 +392,12 @@
 (defn apply-costs
   "Multiplies the cost profile by the number of individuals to get the total cost"
   [{:keys [send-projection cost-profile]}]
-  (let [costs-with-states (add-state-to-send-population cost-profile)]
-      {:send-costs (-> send-projection
-                       ;; lookup in costs-with-states using states
-                       )}))
+  (let [safe-mul (fn [m c] (if c (* m c) 0.0))
+        costs-with-states (add-state-to-send-population cost-profile)]
+    {:send-costs (-> send-projection
+                     (wds/left-join costs-with-states [:state])
+                     (wds/add-derived-column :cost [:mean :cost-per-pupil] safe-mul)
+                     (ds/remove-columns [:cost-per-pupil :state]))}))
 
 (defworkflowoutput post-loop-steps-1-0-0
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile

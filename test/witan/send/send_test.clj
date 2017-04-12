@@ -596,4 +596,6 @@
                                           :current-population current-population
                                           :current-year-in-loop current-year-in-loop}))
           popn-projections (:send-projection (group-send-projection new-total-population))
-          send-costs (get-individual-input :cost-profile)])))
+          send-costs (get-individual-input :cost-profile)
+          applied-send-costs (apply-costs {:send-projection popn-projections :cost-profile send-costs})]
+      (println applied-send-costs))))
