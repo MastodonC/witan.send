@@ -552,7 +552,7 @@
       (is (some #{:placement} (:column-names transformed-popn)))
       (is (some #{:low-ci} (:column-names transformed-popn)))
       (is (some #{:high-ci} (:column-names transformed-popn)))
-      (is (some #{:mean} (:column-names transformed-popn)))
+      (is (some #{:average-population} (:column-names transformed-popn)))
       (is (some #{:year} (:column-names transformed-popn)))
       (is (some #{:age} (:column-names transformed-popn))))
     (testing "Average and confidence interval are calculated over the number of simulations")))

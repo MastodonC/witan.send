@@ -373,8 +373,9 @@
        (= c k) mx
        :else (+ ndk (* d (- (nth svs k) ndk)))))))
 
-(defn confidence-interval-and-mean
-  "Takes in a dataset of send projections and outputs average and confidence interval boundaries."
+(defn add-avg-ci-to-projections
+  "Takes in send projections grouped by year/age/state and outputs a dataset with year,
+   age, need, placement, average number of children and confidence interval boundaries."
   [grouped-projection]
   (->> grouped-projection
        (pmap (fn [[k v]] (let [state (:state k)
@@ -388,7 +389,7 @@
                                         (keyword (first (split-keyword state))))
                                placement (if (= state :Non-SEND) state
                                              (keyword (second (split-keyword state))))]
-                           (assoc k :mean mean :low-ci low-ci :high-ci high-ci
+                           (assoc k :average-population mean :low-ci low-ci :high-ci high-ci
                                   :need need :placement placement))))
        ds/dataset))
 
@@ -399,7 +400,7 @@
   [total-population]
   {:send-projection (->  total-population
                          (wds/group-ds [:year :age :state])
-                         confidence-interval-and-mean)})
+                         add-avg-ci-to-projections)})
 
 (defn apply-costs
   "Multiplies the cost profile by the number of individuals to get the total cost"
