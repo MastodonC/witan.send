@@ -613,4 +613,4 @@
                (is (= 0.0 cost)))
              :else
              (do
-               (is (> cost 0.0) (pr-str row))))))))))
+               (is (> cost 0.0))))))))))
