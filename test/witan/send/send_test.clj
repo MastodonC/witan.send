@@ -597,5 +597,20 @@
                                           :current-year-in-loop current-year-in-loop}))
           popn-projections (:send-projection (group-send-projection new-total-population))
           send-costs (get-individual-input :cost-profile)
-          applied-send-costs (apply-costs {:send-projection popn-projections :cost-profile send-costs})]
-      (println applied-send-costs))))
+          send-costs (:send-costs (apply-costs {:send-projection popn-projections :cost-profile send-costs}))]
+      (doall
+       (for [{:keys [need placement low-ci high-ci average-population cost] :as row} (ds/row-maps send-costs)]
+         (do
+           (is (<= low-ci average-population high-ci))
+           (cond
+             (= :Non-SEND need)
+             (do
+               (is (= :Non-SEND placement))
+               (is (= 0.0 cost)))
+
+             (= :UO need)
+             (do
+               (is (= 0.0 cost)))
+             :else
+             (do
+               (is (> cost 0.0) (pr-str row))))))))))

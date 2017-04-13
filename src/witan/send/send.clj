@@ -396,7 +396,7 @@
         costs-with-states (add-state-to-send-population cost-profile)]
     {:send-costs (-> send-projection
                      (wds/left-join costs-with-states [:state])
-                     (wds/add-derived-column :cost [:mean :cost-per-pupil] safe-mul)
+                     (wds/add-derived-column :cost [:average-population :cost-per-pupil] safe-mul)
                      (ds/remove-columns [:cost-per-pupil :state]))}))
 
 (defworkflowoutput post-loop-steps-1-0-0
