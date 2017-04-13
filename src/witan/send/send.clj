@@ -381,7 +381,7 @@
                                sims-counts (frequencies (ds/column v :sim-num))
                                mean (/ (apply + (vals sims-counts)) (count sims-counts))
                                sorted-counts (sort (vals sims-counts))
-                               low-ci (quantile* 0.25 sorted-counts)
+                               low-ci (quantile* 0.025 sorted-counts)
                                high-ci (quantile* 0.975 sorted-counts)
                                split-keyword (fn [kw] (clojure.string/split (name kw) #"-"))
                                need (if (= state :Non-SEND) state
