@@ -14,13 +14,15 @@ The main steps of the model (represented on the flowchart below) are:
 * the loop itself (one round of the loop per year of projection), and
 * the last step of associating the cost to the projections once the loop is finished.
 
-[Placeholder for the new flowchart]
+![Overview of the SEND model](images/SEND-model-MVP.png)
 
 ## Model steps
 
 ### Two steps of data preparation
 
 Those two steps are:
+
+![Two data prep steps](images/two-data-prep-steps.png)
 
 * “**Get historic population**”:
 The historic population for 0 to 25 years old and the historic SEND population inputs are transformed and associated to generate one historic dataset of 0 to 25 years old of both SEND and non-SEND with one year per individual and per simulation.
@@ -33,6 +35,8 @@ This dataset has one row per individual and per simulation and contains differen
 
 ### Inside the loop
 
+![Steps inside the loop](images/steps-inside-the-loop.png)
+
 * The **starting population is selected** from the “Total Population” by year (starting with the last year of historical data and incremented by one at each round of the loop)
 
 * The **next year population is determined** from the **probabilities of the transition matrix** selected using a random number and the population numbers of the starting population.
@@ -43,6 +47,8 @@ This dataset has one row per individual and per simulation and contains differen
 
 
 ### After the loop
+
+![Steps inside the loop](images/steps-inside-the-loop.png)
 
 * **Group individuals (by age, need and placement type)** and calculate averages and confidence intervals over simulations.
 
