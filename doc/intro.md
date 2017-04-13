@@ -48,7 +48,7 @@ This dataset has one row per individual and per simulation and contains differen
 
 ### After the loop
 
-![Steps inside the loop](images/steps-inside-the-loop.png)
+![Steps after the loop](images/steps-after-the-loop.png)
 
 * **Group individuals (by age, need and placement type)** and calculate averages and confidence intervals over simulations.
 
