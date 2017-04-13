@@ -345,23 +345,10 @@
   (> current-year-in-loop projection-end-year))
 
 ;;Post-loop functions
-(defn quantile ;; from criterium
-               ;; https://crossclj.info/ns/criterium/0.4.4/criterium.stats.html#_quantile
-  "Calculate the quantile of a sorted data set
-   References: http://en.wikipedia.org/wiki/Quantile"
-  [quantile data]
-  (let [n (dec (count data))
-        interp (fn [x]
-                 (let [f (Math/floor x)
-                       i (long f)
-                       p (- x f)]
-                   (+ (* p (nth data (inc i))) (* (- 1.0 p) (nth data i)))))]
-    (interp (* quantile n))))
-
-(defn quantile* ;; from https://gist.github.com/scottdw/2960070
+(defn quantile ;; Re-used from https://gist.github.com/scottdw/2960070
   ([p vs]
    (let [svs (sort vs)]
-     (quantile* p (count vs) svs (first svs) (last svs))))
+     (quantile p (count vs) svs (first svs) (last svs))))
   ([p c svs mn mx]
    (let [pic (* p (inc c))
          k (int pic)
@@ -382,8 +369,8 @@
                                sims-counts (frequencies (ds/column v :sim-num))
                                mean (/ (apply + (vals sims-counts)) (count sims-counts))
                                sorted-counts (sort (vals sims-counts))
-                               low-ci (quantile* 0.025 sorted-counts)
-                               high-ci (quantile* 0.975 sorted-counts)
+                               low-ci (quantile 0.025 sorted-counts)
+                               high-ci (quantile 0.975 sorted-counts)
                                split-keyword (fn [kw] (clojure.string/split (name kw) #"-"))
                                need (if (= state :Non-SEND) state
                                         (keyword (first (split-keyword state))))
