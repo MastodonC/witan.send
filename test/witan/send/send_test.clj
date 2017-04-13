@@ -149,8 +149,8 @@
   (testing "The states are added and need, placement are removed"
     (let [historic-send-population (reduce-input :historic-send-population :age 6)
           send-with-states (add-state-to-send-population historic-send-population)]
-      (is (= (:column-names send-with-states)
-             [:year :age :state :count]))
+      (is (= (set (:column-names send-with-states))
+             #{:year :age :state :population}))
       (is (every? keyword? (distinct (wds/subset-ds send-with-states :cols :state)))))))
 
 (deftest add-non-send-to-send-population-test
@@ -556,3 +556,61 @@
       (is (some #{:year} (:column-names transformed-popn)))
       (is (some #{:age} (:column-names transformed-popn))))
     (testing "Average and confidence interval are calculated over the number of simulations")))
+
+(deftest apply-costs-test
+  (testing "cost profile is used to calculate send costs projections"
+    (let [current-year-in-loop 2016
+          {:keys [historic-population]}
+          (get-historic-population-1-0-0 {:historic-0-25-population
+                                          (reduce-input :historic-0-25-population :age 3)
+                                          :historic-send-population
+                                          (reduce-input :historic-send-population :age 3)}
+                                         {:projection-start-year 2017
+                                          :number-of-simulations 2})
+          {:keys [extra-population]}
+          (population-change-1-0-0 {:historic-0-25-population
+                                    (reduce-input :historic-0-25-population :age 3)
+                                    :population-projection
+                                    (reduce-input :population-projection :age 3)}
+                                   {:projection-start-year 2017
+                                    :projection-end-year 2019
+                                    :number-of-simulations 2})
+          {:keys [total-population]}
+          (add-extra-population-1-0-0 {:historic-population historic-population
+                                       :extra-population extra-population}
+                                      {:projection-start-year 2017})
+          starting-population (:current-population (select-starting-population-1-0-0
+                                                    {:total-population total-population
+                                                     :current-year-in-loop
+                                                     current-year-in-loop}))
+          transition-matrix (reduce-input :transition-matrix :age 3)
+          {:keys [current-population]} (apply-state-changes-1-0-0
+                                        {:current-population starting-population
+                                         :transition-matrix transition-matrix
+                                         :total-population total-population
+                                         :current-year-in-loop current-year-in-loop})
+          [new-total-population new-current-year-in-loop]
+          ((juxt :total-population
+                 :current-year-in-loop) (append-to-total-population-1-0-0
+                                         {:total-population total-population
+                                          :current-population current-population
+                                          :current-year-in-loop current-year-in-loop}))
+          popn-projections (:send-projection (group-send-projection new-total-population))
+          send-costs (get-individual-input :cost-profile)
+          send-costs (:send-costs (apply-costs {:send-projection popn-projections :cost-profile send-costs}))]
+      (doall
+       (for [{:keys [need placement low-ci high-ci average-population cost] :as row} (ds/row-maps send-costs)]
+         (do
+           (is (<= low-ci average-population high-ci))
+           (cond
+             (= :Non-SEND need)
+             (do
+               (is (= :Non-SEND placement))
+               (is (= 0.0 cost)))
+
+             (= :UO need)
+             (do
+               (is (= 0.0 cost)))
+             :else
+             (do
+               (is (> cost 0.0))))))))))

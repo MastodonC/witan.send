@@ -43,6 +43,8 @@
    :witan/schema sc/DataForMatrix})
 
 ;;Pre-loop functions
+
+
 (defn add-state-to-send-population
   "Adds a 'state' column to a dataset with a need and placement column.
    Returns the dataset with the need and placement column removed."
@@ -50,8 +52,7 @@
   (-> historic-send-population
       (wds/add-derived-column :state [:need :placement]
                               (fn [n p] (keyword (str n "-" p))))
-      (ds/select-columns [:year :age :state :population])
-      (ds/rename-columns {:population :count})))
+      (ds/remove-columns [:need :placement])))
 
 (defn add-non-send-to-send-population
   "Given the SEND population by SYA & state, and the 0-25 population by SYA,
@@ -59,15 +60,15 @@
    them to the SEND population to make one dataset with the full 0-25 population
    grouped by age and state."
   [send-population-with-states historic-0-25-population]
-  (let [send-totals (wds/rollup send-population-with-states :sum :count [:age])
+  (let [renamed-send-popn (ds/rename-columns send-population-with-states {:population :count})
+        send-totals (wds/rollup renamed-send-popn :sum :count [:age])
         num-rows (first (:shape historic-0-25-population))]
     (-> historic-0-25-population
         (wds/left-join send-totals [:age])
-        (wds/add-derived-column :count [:population :count]
-                                -)
+        (wds/add-derived-column :count [:population :count] -)
         (ds/add-column :state (repeat num-rows :Non-SEND))
         (ds/select-columns [:year :age :state :count])
-        (ds/join-rows send-population-with-states))))
+        (ds/join-rows renamed-send-popn))))
 
 (defn grps-to-indiv
   "Creates a data structure with one row per individual and per simulation."
@@ -146,11 +147,10 @@
    :witan/output-schema {:historic-population sc/SENDSchemaIndividual}}
   [{:keys [historic-0-25-population historic-send-population]}
    {:keys [projection-start-year number-of-simulations]}]
-  {:historic-population (let [send-with-states (add-state-to-send-population
-                                                historic-send-population)
-                              population-with-states
-                              (add-non-send-to-send-population send-with-states
-                                                               historic-0-25-population)]
+  {:historic-population (let [send-with-states (add-state-to-send-population historic-send-population)
+                              population-with-states (add-non-send-to-send-population
+                                                      send-with-states
+                                                      historic-0-25-population)]
                           (data-transformation population-with-states
                                                :count
                                                number-of-simulations))})
@@ -392,7 +392,12 @@
 (defn apply-costs
   "Multiplies the cost profile by the number of individuals to get the total cost"
   [{:keys [send-projection cost-profile]}]
-  {:send-costs {}})
+  (let [safe-mul (fn [m c] (if c (* m c) 0.0))
+        costs-with-states (add-state-to-send-population cost-profile)]
+    {:send-costs (-> send-projection
+                     (wds/left-join costs-with-states [:state])
+                     (wds/add-derived-column :cost [:average-population :cost-per-pupil] safe-mul)
+                     (ds/remove-columns [:cost-per-pupil :state]))}))
 
 (defworkflowoutput post-loop-steps-1-0-0
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
