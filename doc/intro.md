@@ -14,7 +14,7 @@ The main steps of the model (represented on the flowchart below) are:
 * the loop itself (one round of the loop per year of projection), and
 * the last step of associating the cost to the projections once the loop is finished.
 
-![Overview of the SEND model](images/SEND-model-MVP.png)
+![Overview of the SEND model](images/send-model-mvp.png)
 
 ## Model steps
 
