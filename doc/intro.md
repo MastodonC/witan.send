@@ -10,7 +10,7 @@ A stochastic Markov chain approach is used to assign a state to each individual 
 
 The main steps of the model (represented on the flowchart below) are:
 
-* two first steps to prepare the data going into the loop,
+* the first steps to prepare the data going into the loop,
 * the loop itself (one round of the loop per year of projection), and
 * the last step of associating the cost to the projections once the loop is finished.
 
@@ -18,9 +18,9 @@ The main steps of the model (represented on the flowchart below) are:
 
 ## Model steps
 
-### Two steps of data preparation
+### Data preparation steps
 
-Those two steps are:
+#### Steps to prepare the two datasets
 
 ![Two data prep steps](images/two-data-prep-steps.png)
 
@@ -33,13 +33,25 @@ The historic population for 0 to 25 years old and population projections for thi
 The outputs for both those steps are then joined to create the “Total Population”.
 This dataset has one row per individual and per simulation and contains different SEND people and non-SEND people. It contains SEND historical data plus non-SEND data for the years of the projection.
 
+#### Step to prepare the transition matrix
+
+![Preparation of the transition matrix](images/prep-transition-matrix.png)
+
+The main specificity when using a Markov chain approach is to define a structure that holds the probability for an individual from a particular group to transition to another group.
+This structure is called a transition matrix.
+The stochasticity is reflected by the use of a random number to select the transition state.
+
+To try an alternative scenario the user enters an age and multiplier that will adjust the SEND joiners/leavers in the default transition matrix for a particular age group.
+The adjusted transition matrix is then used within the loop.
+
+
 ### Inside the loop
 
 ![Steps inside the loop](images/steps-inside-the-loop.png)
 
 * The **starting population is selected** from the “Total Population” by year (starting with the last year of historical data and incremented by one at each round of the loop)
 
-* The **next year population is determined** from the **probabilities of the transition matrix** selected using a random number and the population numbers of the starting population.
+* The **next year population is determined** from the **probabilities of the transition matrix** and the population numbers of the starting population.
 
 * This new population is then **appended to the “Total population”**.
 
