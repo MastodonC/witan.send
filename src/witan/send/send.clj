@@ -147,13 +147,14 @@
    :witan/output-schema {:historic-population sc/SENDSchemaIndividual}}
   [{:keys [historic-0-25-population historic-send-population]}
    {:keys [projection-start-year number-of-simulations]}]
-  {:historic-population (let [send-with-states (add-state-to-send-population historic-send-population)
-                              population-with-states (add-non-send-to-send-population
-                                                      send-with-states
-                                                      historic-0-25-population)]
-                          (data-transformation population-with-states
-                                               :count
-                                               number-of-simulations))})
+  (time {:historic-population (let [send-with-states (add-state-to-send-population
+                                                      historic-send-population)
+                                    population-with-states (add-non-send-to-send-population
+                                                            send-with-states
+                                                            historic-0-25-population)]
+                                (data-transformation population-with-states
+                                                     :count
+                                                     number-of-simulations))}))
 
 (defn lag
   "Dataset must be kept chronologically ordered in order to work correctly.
@@ -222,17 +223,17 @@
    :witan/output-schema {:extra-population sc/SENDSchemaIndividual}}
   [{:keys [historic-0-25-population population-projection]}
    {:keys [projection-start-year projection-end-year number-of-simulations]}]
-  {:extra-population
-   (let [hist-popn (wds/filter-dataset historic-0-25-population [:year]
-                                       (fn [y] (= y (dec projection-start-year))))
-         popn-proj (wds/filter-dataset population-projection [:year]
-                                       (fn [y] (and (>= y projection-start-year)
-                                                    (<= y projection-end-year))))
-         id-start-num (inc (apply + (ds/column historic-0-25-population :population)))
-         popn-diff (calc-population-difference hist-popn popn-proj
-                                               projection-start-year
-                                               projection-end-year)]
-     (transform-extra-population-data popn-diff number-of-simulations id-start-num))})
+  (time {:extra-population
+         (let [hist-popn (wds/filter-dataset historic-0-25-population [:year]
+                                             (fn [y] (= y (dec projection-start-year))))
+               popn-proj (wds/filter-dataset population-projection [:year]
+                                             (fn [y] (and (>= y projection-start-year)
+                                                          (<= y projection-end-year))))
+               id-start-num (inc (apply + (ds/column historic-0-25-population :population)))
+               popn-diff (calc-population-difference hist-popn popn-proj
+                                                     projection-start-year
+                                                     projection-end-year)]
+           (transform-extra-population-data popn-diff number-of-simulations id-start-num))}))
 
 (defworkflowfn add-extra-population-1-0-0
   "Combines the historic population with the extra population added in later years due to
@@ -245,8 +246,8 @@
    :witan/output-schema {:total-population sc/SENDSchemaIndividual
                          :current-year-in-loop sc/YearSchema}}
   [{:keys [historic-population extra-population]} {:keys [projection-start-year]}]
-  {:total-population (ds/join-rows historic-population extra-population)
-   :current-year-in-loop projection-start-year})
+  (time {:total-population (ds/join-rows historic-population extra-population)
+         :current-year-in-loop projection-start-year}))
 
 ;;Functions in loop
 (defworkflowfn select-starting-population-1-0-0
@@ -262,9 +263,9 @@
                          :total-population sc/SENDSchemaIndividual
                          :current-year-in-loop sc/YearSchema}}
   [{:keys [total-population current-year-in-loop]} _]
-  {:current-population (wds/select-from-ds total-population {:year {:eq current-year-in-loop}})
-   :total-population total-population
-   :current-year-in-loop current-year-in-loop})
+  (time {:current-population (wds/select-from-ds total-population {:year {:eq current-year-in-loop}})
+         :total-population total-population
+         :current-year-in-loop current-year-in-loop}))
 
 (defworkflowfn adjust-joiners-transition-1-0-0
   "Selects the desired transition matrix"
@@ -274,23 +275,23 @@
    :witan/param-schema {:age sc/AgeSchema :multiplier double}
    :witan/output-schema {:transition-matrix sc/DataForMatrix}}
   [{:keys [transition-matrix]} {:keys [age multiplier]}]
-  (let [matrix-rows (ds/row-maps transition-matrix)
-        from-non-send-and-age (fn [m] (and (= (:from-state m) :Non-SEND) (= (:age m) age)))
-        bucket-fn (fn [row] (cond
-                              (not (from-non-send-and-age row)) :non-selected-rows
-                              (and (from-non-send-and-age row)
-                                   (= (:to-state row) :Non-SEND)) :selected-rows-non-send
-                              :else :selected-rows))
-        {:keys [selected-rows selected-rows-non-send non-selected-rows]}
-        (group-by bucket-fn matrix-rows)
-        adjust-send-matrix (mapv (fn [m]
-                                   (update m :probability #(* % multiplier))) selected-rows)
-        total-send (transduce (map :probability) + adjust-send-matrix)
-        adjust-non-send-matrix (mapv (fn [m]
-                                       (assoc m :probability (- 1 total-send)))
-                                     selected-rows-non-send)
-        adjusted-matrix (concat adjust-send-matrix adjust-non-send-matrix non-selected-rows)]
-    {:transition-matrix (ds/dataset adjusted-matrix)}))
+  (time (let [matrix-rows (ds/row-maps transition-matrix)
+              from-non-send-and-age (fn [m] (and (= (:from-state m) :Non-SEND) (= (:age m) age)))
+              bucket-fn (fn [row] (cond
+                                    (not (from-non-send-and-age row)) :non-selected-rows
+                                    (and (from-non-send-and-age row)
+                                         (= (:to-state row) :Non-SEND)) :selected-rows-non-send
+                                    :else :selected-rows))
+              {:keys [selected-rows selected-rows-non-send non-selected-rows]}
+              (group-by bucket-fn matrix-rows)
+              adjust-send-matrix (mapv (fn [m]
+                                         (update m :probability #(* % multiplier))) selected-rows)
+              total-send (transduce (map :probability) + adjust-send-matrix)
+              adjust-non-send-matrix (mapv (fn [m]
+                                             (assoc m :probability (- 1 total-send)))
+                                           selected-rows-non-send)
+              adjusted-matrix (concat adjust-send-matrix adjust-non-send-matrix non-selected-rows)]
+          {:transition-matrix (ds/dataset adjusted-matrix)})))
 
 (defworkflowfn apply-state-changes-1-0-0
   "Using the transition matrix, calculates the new state for each individual in the population.
@@ -305,20 +306,22 @@
                          :total-population sc/SENDSchemaIndividual
                          :current-year-in-loop sc/YearSchema}}
   [{:keys [current-population transition-matrix total-population current-year-in-loop]} _]
-  (let [adjusted-matrix (u/full-trans-mat sc/States [0 26] transition-matrix)
-        new-states (wds/add-derived-column
-                    current-population
-                    :state [:age :state]
-                    (fn [a s] (first (into [] (take 1 (mc/generate [s] (get adjusted-matrix a)))))))
-        new-population (-> new-states
-                           (wds/add-derived-column :year [:year] inc)
-                           (wds/add-derived-column :age [:age] (fn [x]
-                                                                 (if (< x 26)
-                                                                   (inc x)
-                                                                   x))))]
-    {:current-population new-population
-     :total-population total-population
-     :current-year-in-loop current-year-in-loop}))
+  (time (let [adjusted-matrix (u/full-trans-mat sc/States [0 26] transition-matrix)
+              new-states (wds/add-derived-column
+                          current-population
+                          :state [:age :state]
+                          (fn [a s] (first (into []
+                                                 (take 1 (mc/generate [s]
+                                                                      (get adjusted-matrix a)))))))
+              new-population (-> new-states
+                                 (wds/add-derived-column :year [:year] inc)
+                                 (wds/add-derived-column :age [:age] (fn [x]
+                                                                       (if (< x 26)
+                                                                         (inc x)
+                                                                         x))))]
+          {:current-population new-population
+           :total-population total-population
+           :current-year-in-loop current-year-in-loop})))
 
 (defworkflowfn append-to-total-population-1-0-0
   "Adds the newly calculated states of the individuals for
@@ -331,8 +334,8 @@
    :witan/output-schema {:total-population sc/SENDSchemaIndividual
                          :current-year-in-loop sc/YearSchema}}
   [{:keys [total-population current-population current-year-in-loop]} _]
-  {:total-population (ds/join-rows total-population current-population)
-   :current-year-in-loop (inc current-year-in-loop)})
+  (time {:total-population (ds/join-rows total-population current-population)
+         :current-year-in-loop (inc current-year-in-loop)}))
 
 (defworkflowpred finish-looping?-1-0-0
   "Predicate that returns true until the current year in the loop
@@ -391,7 +394,7 @@
 
 (defn apply-costs
   "Multiplies the cost profile by the number of individuals to get the total cost"
-  [{:keys [send-projection cost-profile]}]
+  [{:keys [send-projection]} cost-profile]
   (let [safe-mul (fn [m c] (if c (* m c) 0.0))
         costs-with-states (add-state-to-send-population cost-profile)]
     {:send-costs (-> send-projection
@@ -406,7 +409,7 @@
    :witan/version "1.0.0"
    :witan/input-schema {:total-population sc/SENDSchemaIndividual
                         :cost-profile sc/CostProfile}}
-  [{:keys [total-population]} _]
-  (let [send-projection (group-send-projection total-population)
-        send-costs (apply-costs send-projection)]
-    (merge send-projection send-costs)))
+  [{:keys [total-population cost-profile]} _]
+  (time (let [send-projection (group-send-projection total-population)
+              send-costs (apply-costs send-projection cost-profile)]
+          (merge send-projection send-costs))))

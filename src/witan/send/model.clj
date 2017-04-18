@@ -64,14 +64,14 @@
     :witan/type :function
     :witan/fn :send/get-historic-population
     :witan/params {:projection-start-year 2017
-                   :number-of-simulations 10}}
+                   :number-of-simulations 2}}
    {:witan/name :population-change
     :witan/version "1.0.0"
     :witan/type :function
     :witan/fn :send/population-change
     :witan/params {:projection-start-year 2017
                    :projection-end-year 2019
-                   :number-of-simulations 10}}
+                   :number-of-simulations 2}}
    {:witan/name :add-extra-population
     :witan/version "1.0.0"
     :witan/type :function
