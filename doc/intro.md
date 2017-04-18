@@ -41,8 +41,10 @@ The main specificity when using a Markov chain approach is to define a structure
 This structure is called a transition matrix.
 The stochasticity is reflected by the use of a random number to select the transition state.
 
-To try an alternative scenario the user enters an age and multiplier that will adjust the SEND joiners/leavers in the default transition matrix for a particular age group.
+To try an alternative scenario the user enters an age (see 'age' user parameter on the diagram) and a percentage (see 'multiplier' user parameter on the diagram) to multiply the SEND joiners by for that particular age group. The default transition matrix is then adjusted to create a new transition matrix.
 The adjusted transition matrix is then used within the loop.
+
+*Note*: At the moment only the probabilities for SEND joiners can be adjusted automatically.
 
 
 ### Inside the loop
