@@ -44,7 +44,9 @@ The stochasticity is reflected by the use of a random number to select the trans
 To try an alternative scenario the user enters an age (see 'age' user parameter on the diagram) and a percentage (see 'multiplier' user parameter on the diagram) to multiply the SEND joiners by for that particular age group. The default transition matrix is then adjusted to create a new transition matrix.
 The adjusted transition matrix is then used within the loop.
 
-*Note*: At the moment only the probabilities for SEND joiners can be adjusted automatically.
+*Note 1*: At the moment only the probabilities for SEND joiners can be adjusted automatically.
+
+*Note 2*: Currently the 'multiplier' expects a number between 0 and 1 to be used to multiply the default probability. For example `1.0` is 100% of the default value, and `0.2` is 20% of the default value (so an 80% reduction).
 
 
 ### Inside the loop
