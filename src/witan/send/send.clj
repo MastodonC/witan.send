@@ -147,7 +147,8 @@
    :witan/output-schema {:historic-population sc/SENDSchemaIndividual}}
   [{:keys [historic-0-25-population historic-send-population]}
    {:keys [projection-start-year number-of-simulations]}]
-  {:historic-population (let [send-with-states (add-state-to-send-population historic-send-population)
+  {:historic-population (let [send-with-states (add-state-to-send-population
+                                                historic-send-population)
                               population-with-states (add-non-send-to-send-population
                                                       send-with-states
                                                       historic-0-25-population)]
@@ -309,7 +310,9 @@
         new-states (wds/add-derived-column
                     current-population
                     :state [:age :state]
-                    (fn [a s] (first (into [] (take 1 (mc/generate [s] (get adjusted-matrix a)))))))
+                    (fn [a s] (first (into []
+                                           (take 1 (mc/generate [s]
+                                                                (get adjusted-matrix a)))))))
         new-population (-> new-states
                            (wds/add-derived-column :year [:year] inc)
                            (wds/add-derived-column :age [:age] (fn [x]
@@ -327,12 +330,15 @@
    :witan/version "1.0.0"
    :witan/input-schema {:total-population sc/SENDSchemaIndividual
                         :current-population sc/SENDSchemaIndividual
-                        :current-year-in-loop sc/YearSchema}
+                        :current-year-in-loop sc/YearSchema
+                        :cost-profile sc/CostProfile}
    :witan/output-schema {:total-population sc/SENDSchemaIndividual
-                         :current-year-in-loop sc/YearSchema}}
-  [{:keys [total-population current-population current-year-in-loop]} _]
+                         :current-year-in-loop sc/YearSchema
+                         :cost-profile sc/CostProfile}}
+  [{:keys [total-population current-population current-year-in-loop cost-profile]} _]
   {:total-population (ds/join-rows total-population current-population)
-   :current-year-in-loop (inc current-year-in-loop)})
+   :current-year-in-loop (inc current-year-in-loop)
+   :cost-profile cost-profile})
 
 (defworkflowpred finish-looping?-1-0-0
   "Predicate that returns true until the current year in the loop
@@ -391,7 +397,7 @@
 
 (defn apply-costs
   "Multiplies the cost profile by the number of individuals to get the total cost"
-  [{:keys [send-projection cost-profile]}]
+  [{:keys [send-projection]} cost-profile]
   (let [safe-mul (fn [m c] (if c (* m c) 0.0))
         costs-with-states (add-state-to-send-population cost-profile)]
     {:send-costs (-> send-projection
@@ -406,7 +412,7 @@
    :witan/version "1.0.0"
    :witan/input-schema {:total-population sc/SENDSchemaIndividual
                         :cost-profile sc/CostProfile}}
-  [{:keys [total-population]} _]
+  [{:keys [total-population cost-profile]} _]
   (let [send-projection (group-send-projection total-population)
-        send-costs (apply-costs send-projection)]
+        send-costs (apply-costs send-projection cost-profile)]
     (merge send-projection send-costs)))
