@@ -496,7 +496,8 @@
                  :current-year-in-loop) (append-to-total-population-1-0-0
                                          {:total-population total-population
                                           :current-population current-population
-                                          :current-year-in-loop current-year-in-loop}))]
+                                          :current-year-in-loop current-year-in-loop
+                                          :cost-profile (get-individual-input :cost-profile)}))]
       (is (= (inc current-year-in-loop) new-current-year-in-loop))
       (is (= (first (:shape new-total-population))
              (+ (first (:shape current-population))
@@ -545,7 +546,8 @@
                :current-year-in-loop) (append-to-total-population-1-0-0
                                        {:total-population total-population
                                         :current-population current-population
-                                        :current-year-in-loop current-year-in-loop}))
+                                        :current-year-in-loop current-year-in-loop
+                                        :cost-profile (get-individual-input :cost-profile)}))
         transformed-popn (:send-projection (group-send-projection new-total-population))]
     (testing "The projections are grouped by age, need and placement"
       (is (some #{:need} (:column-names transformed-popn)))
@@ -589,14 +591,15 @@
                                          :transition-matrix transition-matrix
                                          :total-population total-population
                                          :current-year-in-loop current-year-in-loop})
+          send-costs (get-individual-input :cost-profile)
           [new-total-population new-current-year-in-loop]
           ((juxt :total-population
                  :current-year-in-loop) (append-to-total-population-1-0-0
                                          {:total-population total-population
                                           :current-population current-population
-                                          :current-year-in-loop current-year-in-loop}))
+                                          :current-year-in-loop current-year-in-loop
+                                          :cost-profile send-costs}))
           popn-projections (group-send-projection new-total-population)
-          send-costs (get-individual-input :cost-profile)
           send-costs (:send-costs (apply-costs popn-projections send-costs))]
       (doall
        (for [{:keys [need placement low-ci high-ci average-population cost] :as row}
