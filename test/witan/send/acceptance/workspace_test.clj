@@ -19,14 +19,14 @@
   [input]
   (assoc-in input [:witan/params :fn] (partial tu/read-inputs test-inputs input)))
 
-;; (deftest send-workspace-test
-;;   (testing "The default model is run on the workspace and returns the outputs expected"
-;;     (let [fixed-catalog (mapv #(if (= (:witan/type %) :input) (add-input-params %) %)
-;;                               (:catalog m/send-model))
-;;           workspace     {:workflow  (:workflow m/send-model)
-;;                          :catalog   fixed-catalog
-;;                          :contracts (p/available-fns (m/model-library))}
-;;           workspace'    (s/with-fn-validation (wex/build! workspace))
-;;           result        (apply merge (wex/run!! workspace' {}))]
-;;       (is result)
-;;       (is (= #{:send-projection :send-costs} (set (keys result)))))))
+(deftest send-workspace-test
+  (testing "The default model is run on the workspace and returns the outputs expected"
+    (let [fixed-catalog (mapv #(if (= (:witan/type %) :input) (add-input-params %) %)
+                              (:catalog m/send-model))
+          workspace     {:workflow  (:workflow m/send-model)
+                         :catalog   fixed-catalog
+                         :contracts (p/available-fns (m/model-library))}
+          workspace'    (s/with-fn-validation (wex/build! workspace))
+          result        (apply merge (wex/run!! workspace' {}))]
+      (is result)
+      (is (= #{:send-projection :send-costs} (set (keys result)))))))

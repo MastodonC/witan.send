@@ -330,12 +330,15 @@
    :witan/version "1.0.0"
    :witan/input-schema {:total-population sc/SENDSchemaIndividual
                         :current-population sc/SENDSchemaIndividual
-                        :current-year-in-loop sc/YearSchema}
+                        :current-year-in-loop sc/YearSchema
+                        :cost-profile sc/CostProfile}
    :witan/output-schema {:total-population sc/SENDSchemaIndividual
-                         :current-year-in-loop sc/YearSchema}}
-  [{:keys [total-population current-population current-year-in-loop]} _]
+                         :current-year-in-loop sc/YearSchema
+                         :cost-profile sc/CostProfile}}
+  [{:keys [total-population current-population current-year-in-loop cost-profile]} _]
   (time {:total-population (ds/join-rows total-population current-population)
-         :current-year-in-loop (inc current-year-in-loop)}))
+         :current-year-in-loop (inc current-year-in-loop)
+         :cost-profile cost-profile}))
 
 (defworkflowpred finish-looping?-1-0-0
   "Predicate that returns true until the current year in the loop
