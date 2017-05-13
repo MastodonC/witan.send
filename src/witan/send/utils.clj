@@ -1,6 +1,7 @@
 (ns witan.send.utils
   (:require [clojure.core.matrix.dataset :as ds]
-            [witan.workspace-api.utils :as utils]))
+            [witan.workspace-api.utils :as utils]
+            [incanter.stats :as s]))
 
 (defn year? [n] (and (>= n 1900) (<= n 2100)))
 
@@ -47,3 +48,13 @@
   (reduce (fn [acc age]
             (assoc acc age (get-matrix-prob-for-age age fields dataset)))
           {} (range min-age (inc max-age))))
+
+(defn sample-transitions
+  "Takes a total count and map of categories to probabilities and returns
+  the count in each category at the next step."
+  [n transitions]
+  (let [transitions (vec transitions)]
+    (-> n
+        (s/sample-multinomial :categories (map first transitions)
+                              :probs (map second transitions))
+        (frequencies))))
