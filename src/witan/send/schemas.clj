@@ -114,3 +114,16 @@
                            [:need s/Str]
                            [:placement s/Str]
                            [:cost double]]))
+
+(def PopulationByAgeState
+  {AgeSchema {SendStatesSchema (s/constrained s/Int (complement neg?))}})
+
+(def SENDSchema
+  {[(s/one AgeSchema :age)
+    (s/one SendStatesSchema :state)]
+   (s/constrained s/Int (complement neg?))})
+
+(def SENDFloatSchema
+  {[(s/one AgeSchema :age)
+    (s/one SendStatesSchema :state)]
+   (s/constrained double (complement neg?))})

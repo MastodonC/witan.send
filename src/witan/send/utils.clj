@@ -40,7 +40,7 @@
   [ds]
   (->> (ds/row-maps ds)
        (reduce (fn [coll {:keys [age from-state to-state probability]}]
-                 (assoc-in coll [age from-state to-state] probability))
+                 (assoc-in coll [age from-state to-state] (max 0.0 probability))) ;; TODO
                empty-transition-probabilities)))
 
 (defn full-trans-mat
