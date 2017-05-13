@@ -10,8 +10,9 @@
                  [prismatic/schema "1.1.3"]
                  [schema-contrib "0.1.3"]
                  [instaparse "1.4.3"]
-                 [rm-hull/markov-chains "0.1.0"]]
-  :main ^:skip-aot witan.send
+                 [rm-hull/markov-chains "0.1.0"]
+                 [incanter "1.5.7"]]
+  :main ^:skip-aot witan.send.send
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[witan.workspace-executor "0.2.6"
                                    :exclusions [witan.workspace-api]]
