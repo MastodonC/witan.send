@@ -1,11 +1,8 @@
 (ns witan.send.utils
   (:require [clojure.core.matrix.dataset :as ds]
             [witan.workspace-api.utils :as utils]
+            [witan.send.schemas :as sc]
             [incanter.stats :as s]))
-
-(defn year? [n] (and (>= n 1900) (<= n 2100)))
-
-(defn SENDage? [n] (and (>= n 0) (<= n 26)))
 
 (defn order-ds
   [dataset col-key]
@@ -26,34 +23,43 @@
   (keep identity
         (map-indexed pred coll)))
 
-(defn get-matrix-prob-for-age
-  [age fields dataset]
-  (let [age-rows (->> (ds/column dataset :age)
-                      (filter-indexed #(when (= %2 age) %1))
-                      (ds/select-rows dataset)
-                      (ds/row-maps))]
-    (reduce (fn [acc field]
-              (let [field-rows (filter #(= (:from-state %) field) age-rows)]
-                (assoc acc [field]
-                       (reduce (fn [acc row]
-                                 (assoc acc (:to-state row) (:probability row)))
-                               {} field-rows)))) {} fields)))
+(def empty-transition-probabilities
+  "Creates a full transition matrix where all transition probabilities are 0.0."
+  (->> (for [age sc/Ages
+             from-state sc/States
+             to-state sc/States]
+         [age from-state to-state])
+       (reduce (fn [coll [age from-state to-state]]
+                 (assoc-in coll [age from-state to-state] 0.0))
+               {})))
+
+(defn transition-probabilities
+  "Takes a transition matrix dataset and returns a map of maps in the format
+  expected when applying transitions.
+  NOTE: Any state transition not supplied in the dataset will assumed to have zero probability"
+  [ds]
+  (->> (ds/row-maps ds)
+       (reduce (fn [coll {:keys [age from-state to-state probability]}]
+                 (assoc-in coll [age from-state to-state] probability))
+               empty-transition-probabilities)))
 
 (defn full-trans-mat
   "This returns a transition matrix in the format needed to apply the state changes.
-   Note: it only works if the dataset passed in contains all the states and age groups.
-   Future improvement: the function should always return a full matrix, the default
-   being individuals staying in their original state."
-  [fields [min-age max-age] dataset]
-  (reduce (fn [acc age]
-            (assoc acc age (get-matrix-prob-for-age age fields dataset)))
-          {} (range min-age (inc max-age))))
+  NOTE: Any state transition not supplied in the dataset will assumed to have zero probability"
+  [_ _  dataset]
+  (transition-probabilities dataset))
+
+(defn sample-transition
+  [transition-probabilities]
+  (let [transitions (vec transition-probabilities)]
+    (first (s/sample-multinomial 1 :categories (map first transitions)
+                                 :probs (map second transitions)))))
 
 (defn sample-transitions
   "Takes a total count and map of categories to probabilities and returns
   the count in each category at the next step."
-  [n transitions]
-  (let [transitions (vec transitions)]
+  [n transition-probabilities]
+  (let [transitions (vec transition-probabilities)]
     (-> n
         (s/sample-multinomial :categories (map first transitions)
                               :probs (map second transitions))

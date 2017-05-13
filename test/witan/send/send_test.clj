@@ -3,6 +3,7 @@
             [witan.send.send :refer :all]
             [witan.send.schemas :as sc]
             [witan.send.test-utils :as tu]
+            [witan.send.utils :as u]
             [clojure.core.matrix.dataset :as ds]
             [witan.datasets :as wds]))
 
@@ -326,6 +327,21 @@
              (+ (first (:shape individuals-data-with-sims))
                 (first (:shape extra-individuals))))))))
 
+(def empty-transition-matrix
+  (->> (for [age sc/Ages
+             from-state sc/States
+             to-state sc/States]
+         [age from-state to-state])
+       (reduce (fn [coll [age from-state to-state]]
+                 (assoc-in coll [age from-state to-state] 0.0))
+               {})))
+
+(defn transition-probabilities [ds]
+  (->> (ds/row-maps ds)
+       (reduce (fn [coll {:keys [age from-state to-state probability]}]
+                 (assoc-in coll [age from-state to-state] probability))
+               empty-transition-matrix)))
+
 (def old-matrix (ds/dataset [{:age 10 :from-state :Non-SEND
                               :to-state :ASD-Mainstream :probability 0.3}
                              {:age 10 :from-state :Non-SEND
@@ -357,14 +373,9 @@
     (let [{:keys [transition-matrix]} (adjust-joiners-transition-1-0-0
                                        {:transition-matrix old-matrix}
                                        {:age 11 :multiplier 0.1})]
-      (is (= (set (wds/subset-ds new-matrix :cols :age))
-             (set (wds/subset-ds transition-matrix :cols :age))))
-      (is (= (set (wds/subset-ds new-matrix :cols :from-state))
-             (set (wds/subset-ds transition-matrix :cols :from-state))))
-      (is (= (set (wds/subset-ds new-matrix :cols :to-state))
-             (set (wds/subset-ds transition-matrix :cols :to-state))))
-      (is (= (set (wds/subset-ds new-matrix :cols :probability))
-             (set (wds/subset-ds transition-matrix :cols :probability)))))))
+      (is (= (u/transition-probabilities new-matrix) transition-matrix))
+      (is (not= (u/transition-probabilities old-matrix)
+                (u/transition-probabilities new-matrix))))))
 
 (deftest select-starting-population-1-0-0-test
   (testing "select current year from total population"
@@ -419,7 +430,7 @@
           starting-population (:current-population (select-starting-population-1-0-0
                                                     {:total-population total-population
                                                      :current-year-in-loop 2016}))
-          transition-matrix (reduce-input :transition-matrix :age 6)
+          transition-matrix (u/transition-probabilities (reduce-input :transition-matrix :age 6))
           {:keys [current-population]} (apply-state-changes-1-0-0
                                         {:current-population starting-population
                                          :transition-matrix transition-matrix
@@ -450,7 +461,7 @@
           starting-population (:current-population (select-starting-population-1-0-0
                                                     {:total-population total-population
                                                      :current-year-in-loop 2016}))
-          transition-matrix (modify-trans-matrix (reduce-input :transition-matrix :age 6))
+          transition-matrix (u/transition-probabilities (modify-trans-matrix (reduce-input :transition-matrix :age 6)))
           {:keys [current-population]} (apply-state-changes-1-0-0
                                         {:current-population starting-population
                                          :transition-matrix transition-matrix
@@ -485,7 +496,7 @@
                                                     {:total-population total-population
                                                      :current-year-in-loop
                                                      current-year-in-loop}))
-          transition-matrix (reduce-input :transition-matrix :age 6)
+          transition-matrix (u/transition-probabilities (reduce-input :transition-matrix :age 6))
           {:keys [current-population]} (apply-state-changes-1-0-0
                                         {:current-population starting-population
                                          :transition-matrix transition-matrix
@@ -535,7 +546,7 @@
                                                   {:total-population total-population
                                                    :current-year-in-loop
                                                    current-year-in-loop}))
-        transition-matrix (reduce-input :transition-matrix :age 3)
+        transition-matrix (u/transition-probabilities (reduce-input :transition-matrix :age 3))
         {:keys [current-population]} (apply-state-changes-1-0-0
                                       {:current-population starting-population
                                        :transition-matrix transition-matrix
@@ -585,7 +596,7 @@
                                                     {:total-population total-population
                                                      :current-year-in-loop
                                                      current-year-in-loop}))
-          transition-matrix (reduce-input :transition-matrix :age 3)
+          transition-matrix (u/transition-probabilities (reduce-input :transition-matrix :age 3))
           {:keys [current-population]} (apply-state-changes-1-0-0
                                         {:current-population starting-population
                                          :transition-matrix transition-matrix

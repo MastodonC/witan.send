@@ -1,7 +1,10 @@
 (ns witan.send.schemas
   (:require [schema.core :as s]
-            [schema-contrib.core :as sc]
-            [witan.send.utils :as u]))
+            [schema-contrib.core :as sc]))
+
+(defn year? [n] (and (>= n 1900) (<= n 2100)))
+
+(defn SENDage? [n] (and (>= n 0) (<= n 26)))
 
 (defn make-ordered-ds-schema [col-vec]
   {:column-names (mapv #(s/one (s/eq (first %)) (str (first %))) col-vec)
@@ -23,11 +26,11 @@
         (:column-names col-schema)))
 
 (def YearSchema
-  (s/constrained s/Int u/year?))
+  (s/constrained s/Int year?))
 
 (def PopulationSYA
-  (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]
-                           [:age (s/constrained s/Int u/SENDage?)]
+  (make-ordered-ds-schema [[:year (s/constrained s/Int year?)]
+                           [:age (s/constrained s/Int SENDage?)]
                            [:population s/Int]]))
 
 (def States [:Non-SEND
@@ -54,8 +57,11 @@
              :UO-Other
              :Too-old])
 
+(def Ages
+  (range 0 (inc 26)))
+
 (def SendStatesSchema
-  [(apply s/enum States)])
+  (apply s/enum States))
 
 (def ProbabilitiesSchema
   (reduce merge
@@ -64,7 +70,7 @@
 (def TransitionMatrixSchema
   {SendStatesSchema ProbabilitiesSchema})
 
-(def AgeSchema (s/constrained s/Int u/SENDage?))
+(def AgeSchema (s/constrained s/Int SENDage?))
 
 (def TransitionMatrix
   {AgeSchema TransitionMatrixSchema})
@@ -76,22 +82,22 @@
                            [:probability double]]))
 
 (def SENDSchemaGrouped
-  (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]
-                           [:age (s/constrained s/Int u/SENDage?)]
+  (make-ordered-ds-schema [[:year (s/constrained s/Int year?)]
+                           [:age (s/constrained s/Int SENDage?)]
                            [:need s/Str]
                            [:placement s/Str]
                            [:population s/Int]]))
 
 (def SENDSchemaIndividual
-  (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]
-                           [:age (s/constrained s/Int u/SENDage?)]
+  (make-ordered-ds-schema [[:year (s/constrained s/Int year?)]
+                           [:age (s/constrained s/Int SENDage?)]
                            [:state s/Keyword]
                            [:sim-num s/Int]
                            [:id s/Int]]))
 
 (def SENDSchemaGroupedWithCI
-  (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]
-                           [:age (s/constrained s/Int u/SENDage?)]
+  (make-ordered-ds-schema [[:year (s/constrained s/Int year?)]
+                           [:age (s/constrained s/Int SENDage?)]
                            [:need s/Str]
                            [:placement s/Str]
                            [:population double]
@@ -104,7 +110,7 @@
                            [:cost-per-pupil double]]))
 
 (def YearlyCost
-  (make-ordered-ds-schema [[:year (s/constrained s/Int u/year?)]
+  (make-ordered-ds-schema [[:year (s/constrained s/Int year?)]
                            [:need s/Str]
                            [:placement s/Str]
                            [:cost double]]))

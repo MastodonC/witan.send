@@ -8,8 +8,7 @@
             [clojure.core.matrix.dataset :as ds]
             [witan.datasets :as wds]
             [witan.datasets.stats :as wst]
-            [witan.send.utils :as u]
-            [markov-chains.core :as mc]))
+            [witan.send.utils :as u]))
 
 ;;Inputs
 (definput historic-0-25-population-1-0-0
@@ -313,7 +312,7 @@
         new-states (wds/add-derived-column
                     current-population
                     :state [:age :state]
-                    (fn [a s] (first (mc/generate [s] (get adjusted-matrix a)))))
+                    (fn [a s] (u/sample-transition (get-in adjusted-matrix [a s]))))
         new-population (-> new-states
                            (wds/add-derived-column :year [:year] inc)
                            (wds/add-derived-column :age [:age] (fn [x]
