@@ -77,6 +77,8 @@
                                 {colname (repeat-data colvalues)})
                               non-freq-col-names non-freq-col-data))))
 
+
+;; TODO
 (defn add-simul-nbs
   "Add a column with simulation numbers to the data structure with individual rows."
   [indiv-data col-freqs num-sims]
@@ -273,15 +275,15 @@
    :witan/version "1.0.0"
    :witan/input-schema {:transition-matrix sc/DataForMatrix}
    :witan/param-schema {:age sc/AgeSchema :multiplier double}
-   :witan/output-schema {:transition-matrix sc/DataForMatrix}}
+   :witan/output-schema {:transition-matrix sc/TransitionMatrix}}
   [{:keys [transition-matrix]} {:keys [age multiplier]}]
   (let [matrix-rows (ds/row-maps transition-matrix)
         from-non-send-and-age (fn [m] (and (= (:from-state m) :Non-SEND) (= (:age m) age)))
         bucket-fn (fn [row] (cond
-                              (not (from-non-send-and-age row)) :non-selected-rows
-                              (and (from-non-send-and-age row)
-                                   (= (:to-state row) :Non-SEND)) :selected-rows-non-send
-                              :else :selected-rows))
+                             (not (from-non-send-and-age row)) :non-selected-rows
+                             (and (from-non-send-and-age row)
+                                  (= (:to-state row) :Non-SEND)) :selected-rows-non-send
+                             :else :selected-rows))
         {:keys [selected-rows selected-rows-non-send non-selected-rows]}
         (group-by bucket-fn matrix-rows)
         adjust-send-matrix (mapv (fn [m]
@@ -290,8 +292,9 @@
         adjust-non-send-matrix (mapv (fn [m]
                                        (assoc m :probability (- 1 total-send)))
                                      selected-rows-non-send)
-        adjusted-matrix (concat adjust-send-matrix adjust-non-send-matrix non-selected-rows)]
-    {:transition-matrix (ds/dataset adjusted-matrix)}))
+        adjusted-matrix (ds/dataset (concat adjust-send-matrix adjust-non-send-matrix non-selected-rows))
+        adjusted-matrix' (u/full-trans-mat sc/States [0 26] adjusted-matrix)]
+    {:transition-matrix adjusted-matrix'}))
 
 (defworkflowfn apply-state-changes-1-0-0
   "Using the transition matrix, calculates the new state for each individual in the population.
@@ -299,20 +302,18 @@
   {:witan/name :send/apply-state-changes
    :witan/version "1.0.0"
    :witan/input-schema {:current-population sc/SENDSchemaIndividual
-                        :transition-matrix sc/DataForMatrix
+                        :transition-matrix sc/TransitionMatrix
                         :total-population sc/SENDSchemaIndividual
                         :current-year-in-loop sc/YearSchema}
    :witan/output-schema {:current-population sc/SENDSchemaIndividual
                          :total-population sc/SENDSchemaIndividual
                          :current-year-in-loop sc/YearSchema}}
   [{:keys [current-population transition-matrix total-population current-year-in-loop]} _]
-  (let [adjusted-matrix (u/full-trans-mat sc/States [0 26] transition-matrix)
+  (let [adjusted-matrix transition-matrix
         new-states (wds/add-derived-column
                     current-population
                     :state [:age :state]
-                    (fn [a s] (first (into []
-                                           (take 1 (mc/generate [s]
-                                                                (get adjusted-matrix a)))))))
+                    (fn [a s] (first (mc/generate [s] (get adjusted-matrix a)))))
         new-population (-> new-states
                            (wds/add-derived-column :year [:year] inc)
                            (wds/add-derived-column :age [:age] (fn [x]
