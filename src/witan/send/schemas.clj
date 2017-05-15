@@ -126,4 +126,4 @@
 (def SENDFloatSchema
   {[(s/one AgeSchema :age)
     (s/one SendStatesSchema :state)]
-   (s/constrained double (complement neg?))})
+   (s/constrained s/Num (complement neg?))})

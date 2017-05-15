@@ -35,6 +35,7 @@
   [[:initial-population :prepare-send-inputs]
    [:initial-send-population :prepare-send-inputs]
    [:transition-matrix :prepare-send-inputs]
+   [:projected-population :prepare-send-inputs]
    [:prepare-send-inputs :run-send-model]
    [:run-send-model :output-send-results]])
 
@@ -54,6 +55,11 @@
     :witan/version "1.0.0"
     :witan/type :input
     :witan/fn :send/transition-matrix
+    :witan/params {:src ""}}
+   {:witan/name :projected-population
+    :witan/version "1.0.0"
+    :witan/type :input
+    :witan/fn :send/projected-population
     :witan/params {:src ""}}
    {:witan/name :prepare-send-inputs
     :witan/version "1.0.0"
@@ -170,6 +176,7 @@
       (map-fn-meta send/initial-population-1-0-0
                    send/initial-send-population-1-0-0
                    send/transition-matrix-1-0-0
+                   send/projected-population-1-0-0
                    send/prepare-send-inputs-1-0-0
                    send/run-send-model-1-0-0
                    send/output-send-results-1-0-0))
