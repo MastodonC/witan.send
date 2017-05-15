@@ -4,6 +4,7 @@
 x Calculate non-send initial cohort
 x Calculate non-send population growth
 x Iteratively apply transition matrix
+<<<<<<< Updated upstream
 x  Update existing model to be deterministic and compare 1-year & 2-year projectsions without multiplier
   Make new model probabilistic
   Determine if population growth only applies to non-SEND
@@ -11,6 +12,10 @@ x  Update existing model to be deterministic and compare 1-year & 2-year project
   Determine whether state transition matrix applies to year before or after transition
   Determine if scenarios should be matched pairs of +ve and -ve changes
   Should we apply smoothing when generating the transition matrix?
+=======
+  Update existing model to be deterministic and compare 1-year & 2-year projectsions without multiplier
+  Determine if population growth only applies to non-SEND
+>>>>>>> Stashed changes
 
   Calulate confidence intervals based on n simulations
   Adjust transition multiplier based on age

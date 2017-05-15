@@ -63,60 +63,24 @@
 (def SendStatesSchema
   (apply s/enum States))
 
-(def ProbabilitiesSchema
-  (reduce merge
-          (map #(hash-map % double) States)))
-
-(def TransitionMatrixSchema
-  {SendStatesSchema ProbabilitiesSchema})
-
 (def AgeSchema (s/constrained s/Int SENDage?))
 
-(def TransitionMatrix
-  {AgeSchema TransitionMatrixSchema})
+(def TransitionMatrixSchema
+  {[(s/one AgeSchema :age)
+    (s/one SendStatesSchema :state)]
+   {SendStatesSchema s/Num}})
 
 (def DataForMatrix
   (make-ordered-ds-schema [[:age AgeSchema]
                            [:from-state (s/constrained s/Keyword (fn [s] (some #(= s %) States)))]
                            [:to-state (s/constrained s/Keyword (fn [s] (some #(= s %) States)))]
                            [:probability double]]))
-
 (def SENDSchemaGrouped
   (make-ordered-ds-schema [[:year (s/constrained s/Int year?)]
                            [:age (s/constrained s/Int SENDage?)]
                            [:need s/Str]
                            [:placement s/Str]
                            [:population s/Int]]))
-
-(def SENDSchemaIndividual
-  (make-ordered-ds-schema [[:year (s/constrained s/Int year?)]
-                           [:age (s/constrained s/Int SENDage?)]
-                           [:state s/Keyword]
-                           [:sim-num s/Int]
-                           [:id s/Int]]))
-
-(def SENDSchemaGroupedWithCI
-  (make-ordered-ds-schema [[:year (s/constrained s/Int year?)]
-                           [:age (s/constrained s/Int SENDage?)]
-                           [:need s/Str]
-                           [:placement s/Str]
-                           [:population double]
-                           [:lower-bound-95-CI double]
-                           [:upper-bound-95-CI double]]))
-
-(def CostProfile
-  (make-ordered-ds-schema [[:need s/Str]
-                           [:placement s/Str]
-                           [:cost-per-pupil double]]))
-
-(def YearlyCost
-  (make-ordered-ds-schema [[:year (s/constrained s/Int year?)]
-                           [:need s/Str]
-                           [:placement s/Str]
-                           [:cost double]]))
-
-(def PopulationByAgeState
-  {AgeSchema {SendStatesSchema (s/constrained s/Int (complement neg?))}})
 
 (def PopulationDeltas
   [{AgeSchema s/Num}])
@@ -125,16 +89,6 @@
   {[(s/one AgeSchema :age)
     (s/one SendStatesSchema :state)]
    (s/constrained s/Int (complement neg?))})
-
-(def SENDFloatSchema
-  {[(s/one AgeSchema :age)
-    (s/one SendStatesSchema :state)]
-   (s/constrained s/Num (complement neg?))})
-
-(def SENDOutputSchema
-  [{[(s/one AgeSchema :age)
-      (s/one SendStatesSchema :state)]
-    (s/constrained s/Num (complement neg?))}])
 
 (def StatisticsSchema
   {:mean s/Num

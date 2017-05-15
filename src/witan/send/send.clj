@@ -71,7 +71,7 @@
 (defn run-model-iteration [transition-probabilities cohorts population-delta]
   (-> (reduce (fn [coll [[age state] population]]
                 (if (< age 26)
-                  (let [next-states (get-in transition-probabilities [age state])
+                  (let [next-states (get transition-probabilities [age state])
                         next-states-sample (u/sample-transitions population next-states)]
                     (reduce (fn [coll [next-state count]]
                               (update coll [(inc age) next-state] (fnil + 0) count))
@@ -130,7 +130,7 @@
                         :projected-population sc/PopulationSYA}
    :witan/param-schema {}
    :witan/output-schema {:population-by-age-state sc/SENDSchema
-                         :transition-probabilities sc/TransitionMatrix
+                         :transition-probabilities sc/TransitionMatrixSchema
                          :population-deltas sc/PopulationDeltas}
    }
   [{:keys [initial-population initial-send-population
@@ -147,7 +147,7 @@
   {:witan/name :send/run-send-model
    :witan/version "1.0.0"
    :witan/input-schema {:population-by-age-state sc/SENDSchema
-                        :transition-probabilities sc/TransitionMatrix
+                        :transition-probabilities sc/TransitionMatrixSchema
                         :population-deltas sc/PopulationDeltas}
    :witan/param-schema {:seed-year sc/YearSchema
                         :projection-year sc/YearSchema}
