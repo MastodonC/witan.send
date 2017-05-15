@@ -11,6 +11,7 @@
                  [schema-contrib "0.1.3"]
                  [instaparse "1.4.3"]
                  [rm-hull/markov-chains "0.1.0"]
+                 [org.clojure/data.avl "0.0.17"]
                  [incanter "1.5.7"]]
   :main ^:skip-aot witan.send.send
   :target-path "target/%s"

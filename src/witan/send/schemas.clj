@@ -118,6 +118,9 @@
 (def PopulationByAgeState
   {AgeSchema {SendStatesSchema (s/constrained s/Int (complement neg?))}})
 
+(def PopulationDeltas
+  [{AgeSchema s/Num}])
+
 (def SENDSchema
   {[(s/one AgeSchema :age)
     (s/one SendStatesSchema :state)]
@@ -127,3 +130,18 @@
   {[(s/one AgeSchema :age)
     (s/one SendStatesSchema :state)]
    (s/constrained s/Num (complement neg?))})
+
+(def SENDOutputSchema
+  [{[(s/one AgeSchema :age)
+      (s/one SendStatesSchema :state)]
+    (s/constrained s/Num (complement neg?))}])
+
+(def StatisticsSchema
+  {:mean s/Num
+   :median s/Num
+   :quantiles [s/Num]})
+
+(def SENDOutputSchema1
+  [{[(s/one AgeSchema :age)
+     (s/one SendStatesSchema :state)]
+    StatisticsSchema}])

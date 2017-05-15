@@ -1,8 +1,14 @@
 (ns witan.send.utils
   (:require [clojure.core.matrix.dataset :as ds]
+            [clojure.data.avl :as avl]
             [witan.workspace-api.utils :as utils]
             [witan.send.schemas :as sc]
             [incanter.stats :as s]))
+
+(defn round [x]
+  (if (integer? x)
+    x
+    (Math/round x)))
 
 (defn order-ds
   [dataset col-key]
@@ -56,11 +62,11 @@
                                  :probs (map second transitions)))))
 
 (defn sample-transitions
-  "Takes a total count and map of categories to probabilities and returns
-  the count in each category at the next step."
+  "Takes a total count and map of categories to probabilities and
+  returns the count in each category at the next step."
   [n transition-probabilities]
-  (let [transitions (vec transition-probabilities)]
-    (-> n
-        (s/sample-multinomial :categories (map first transitions)
-                              :probs (map second transitions))
-        (frequencies))))
+  (let [transitions (vec transition-probabilities)
+        transition-ranges (into (avl/sorted-map) (map vector (reductions + (map second transitions)) (map first transitions)))]
+    (reduce (fn [coll _]
+              (update coll (val (avl/nearest transition-ranges >= (rand))) (fnil inc 0)))
+            {} (range n))))
