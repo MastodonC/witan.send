@@ -90,7 +90,7 @@
          (map (fn [[k vs]]
                 (vector k {:median (stats/median vs)
                            :mean (stats/mean vs)
-                           :quantiles (stats/quantile vs :probs [0.25 0.75])})))
+                           :quantiles (stats/quantile vs :probs [0.025 0.975])})))
          (into {}))))
 
 ;; Workflow functions

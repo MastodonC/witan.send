@@ -39,6 +39,13 @@
                  (assoc-in coll [[age from-state] to-state] 0.0))
                {})))
 
+(defn transition-probability->ranges
+  [transition-probabilities]
+  (let [transitions (vec transition-probabilities)]
+    (->> (map first transitions)
+         (map vector (reductions + (map second transitions)))
+         (into (avl/sorted-map)))))
+
 (defn transition-probabilities
   "Takes a transition matrix dataset and returns a map of maps in the format
   expected when applying transitions.
@@ -47,7 +54,9 @@
   (->> (ds/row-maps ds)
        (reduce (fn [coll {:keys [age from-state to-state probability]}]
                  (assoc-in coll [[age from-state] to-state] (max 0.0 probability)))
-               empty-transition-probabilities)))
+               empty-transition-probabilities)
+       (map (fn [[k v]] (vector k (transition-probability->ranges v))))
+       (into {})))
 
 (defn full-trans-mat
   "This returns a transition matrix in the format needed to apply the state changes.
@@ -64,9 +73,7 @@
 (defn sample-transitions
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
-  [n transition-probabilities]
-  (let [transitions (vec transition-probabilities)
-        transition-ranges (into (avl/sorted-map) (map vector (reductions + (map second transitions)) (map first transitions)))]
-    (reduce (fn [coll _]
-              (update coll (val (avl/nearest transition-ranges >= (rand))) (fnil inc 0)))
-            {} (range n))))
+  [n transition-ranges]
+  (reduce (fn [coll _]
+            (update coll (val (avl/nearest transition-ranges >= (rand))) (fnil inc 0)))
+          {} (range n)))
