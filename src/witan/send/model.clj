@@ -5,28 +5,6 @@
                                                map-model-meta]]
             [witan.send.send :as send]))
 
-#_(def send-model-workflow
-  "Defines each step of the model"
-  [;;Inputs
-   [:historic-0-25-population :get-historic-population]
-   [:historic-send-population :get-historic-population]
-   [:historic-0-25-population :population-change]
-   [:population-projection :population-change]
-   [:transition-matrix :adjust-joiners-transition]
-   [:cost-profile :append-to-total-population]
-
-   ;;Pre-loop
-   [:get-historic-population :add-extra-population]
-   [:population-change :add-extra-population]
-   [:add-extra-population :select-starting-population]
-
-   ;;Loop
-   [:select-starting-population :apply-state-changes]
-   [:adjust-joiners-transition :apply-state-changes]
-   [:apply-state-changes :append-to-total-population]
-   [:append-to-total-population [:finish-looping? :post-loop-steps
-                                 :select-starting-population]]])
-
 (def seed-year 2016)
 (def projection-year 2019)
 
@@ -76,89 +54,6 @@
     :witan/version "1.0.0"
     :witan/type :output
     :witan/fn :send/output-send-results}])
-
-#_(def send-model-catalog
-  "Provides metadata for each step in the model"
-  [;;Inputs
-   {:witan/name :historic-0-25-population
-    :witan/version "1.0.0"
-    :witan/type :input
-    :witan/fn :send/historic-0-25-population
-    :witan/params {:src ""}}
-   {:witan/name :historic-send-population
-    :witan/version "1.0.0"
-    :witan/type :input
-    :witan/fn :send/historic-send-population
-    :witan/params {:src ""}}
-   {:witan/name :population-projection
-    :witan/version "1.0.0"
-    :witan/type :input
-    :witan/fn :send/population-projection
-    :witan/params {:src ""}}
-   {:witan/name :cost-profile
-    :witan/version "1.0.0"
-    :witan/type :input
-    :witan/fn :send/cost-profile
-    :witan/params {:src ""}}
-
-   ;;Inputs for scenarios
-   {:witan/name :transition-matrix
-    :witan/version "1.0.0"
-    :witan/type :input
-    :witan/fn :send/transition-matrix
-    :witan/params {:src ""}}
-
-   ;;Workflow functions pre-loop
-   {:witan/name :get-historic-population
-    :witan/version "1.0.0"
-    :witan/type :function
-    :witan/fn :send/get-historic-population
-    :witan/params {:projection-start-year 2017
-                   :number-of-simulations 2}}
-   {:witan/name :population-change
-    :witan/version "1.0.0"
-    :witan/type :function
-    :witan/fn :send/population-change
-    :witan/params {:projection-start-year 2017
-                   :projection-end-year 2019
-                   :number-of-simulations 2}}
-   {:witan/name :add-extra-population
-    :witan/version "1.0.0"
-    :witan/type :function
-    :witan/fn :send/add-extra-population
-    :witan/params {:projection-start-year 2017}}
-
-   ;;Workflow functions in the loop
-   {:witan/name :select-starting-population
-    :witan/version "1.0.0"
-    :witan/type :function
-    :witan/fn :send/select-starting-population}
-   {:witan/name :apply-state-changes
-    :witan/version "1.0.0"
-    :witan/type :function
-    :witan/fn :send/apply-state-changes}
-   {:witan/name :adjust-joiners-transition
-    :witan/version "1.0.0"
-    :witan/type :function
-    :witan/fn :send/adjust-joiners-transition
-    :witan/params {:age 11 :multiplier 0.1}}
-   {:witan/name :append-to-total-population
-    :witan/version "1.0.0"
-    :witan/type :function
-    :witan/fn :send/append-to-total-population}
-
-   ;;Predicate to continue or exit loop
-   {:witan/name :finish-looping?
-    :witan/version "1.0.0"
-    :witan/type :predicate
-    :witan/fn :send/send-loop-pred
-    :witan/params {:projection-end-year 2019}}
-
-   ;;Workflow functions post-loop
-   {:witan/name :post-loop-steps
-    :witan/version "1.0.0"
-    :witan/type :output
-    :witan/fn :send/post-loop-steps}])
 
 (defmodel send-model
   "Defines the model"
