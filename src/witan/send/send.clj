@@ -11,7 +11,6 @@
             [witan.datasets.stats :as wst]
             [witan.send.utils :as u :refer [round]]
             [clojure.java.io :as io]
-            [incanter.core :as i]
             [incanter.stats :as stats]))
 
 (defn state [need placement]

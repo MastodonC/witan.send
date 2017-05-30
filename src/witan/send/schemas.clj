@@ -68,7 +68,7 @@
 (def TransitionMatrixSchema
   {[(s/one AgeSchema :age)
     (s/one SendStatesSchema :state)]
-   {s/Num SendStatesSchema}})
+   {SendStatesSchema s/Num}})
 
 (def DataForMatrix
   (make-ordered-ds-schema [[:age AgeSchema]

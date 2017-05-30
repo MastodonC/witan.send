@@ -3,7 +3,7 @@
             [clojure.data.avl :as avl]
             [witan.workspace-api.utils :as utils]
             [witan.send.schemas :as sc]
-            [incanter.stats :as s]))
+            [kixi.stats.random :refer [categorical sample-summary]]))
 
 (defn round [x]
   (if (integer? x)
@@ -31,20 +31,14 @@
 
 (def empty-transition-probabilities
   "Creates a full transition matrix where all transition probabilities are 0.0."
-  (->> (for [age sc/Ages
-             from-state sc/States
-             to-state sc/States]
-         [age from-state to-state])
-       (reduce (fn [coll [age from-state to-state]]
-                 (assoc-in coll [[age from-state] to-state] 0.0))
-               {})))
-
-(defn transition-probability->ranges
-  [transition-probabilities]
-  (let [transitions (vec transition-probabilities)]
-    (->> (map first transitions)
-         (map vector (reductions + (map second transitions)))
-         (into (avl/sorted-map)))))
+  (let [empty-transitions (->> (interleave sc/States (repeat 0.0))
+                               (apply avl/sorted-map))]
+    (->> (for [age sc/Ages
+               from-state sc/States]
+           [age from-state])
+         (reduce (fn [coll [age from-state]]
+                   (assoc coll [age from-state] empty-transitions))
+                 {}))))
 
 (defn transition-probabilities
   "Takes a transition matrix dataset and returns a map of maps in the format
@@ -53,10 +47,9 @@
   [ds]
   (->> (ds/row-maps ds)
        (reduce (fn [coll {:keys [age from-state to-state probability]}]
-                 (assoc-in coll [[age from-state] to-state] (max 0.0 probability)))
-               empty-transition-probabilities)
-       (map (fn [[k v]] (vector k (transition-probability->ranges v))))
-       (into {})))
+                 (update coll [age from-state] assoc
+                         to-state (max 0.0 probability)))
+               empty-transition-probabilities)))
 
 (defn full-trans-mat
   "This returns a transition matrix in the format needed to apply the state changes.
@@ -64,16 +57,11 @@
   [_ _  dataset]
   (transition-probabilities dataset))
 
-(defn sample-transition
-  [transition-probabilities]
-  (let [transitions (vec transition-probabilities)]
-    (first (s/sample-multinomial 1 :categories (map first transitions)
-                                 :probs (map second transitions)))))
-
 (defn sample-transitions
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
-  [n transition-ranges]
-  (reduce (fn [coll _]
-            (update coll (val (avl/nearest transition-ranges >= (rand))) (fnil inc 0)))
-          {} (range n)))
+  [n state-probabilities]
+  (let [ks (keys state-probabilities)
+        ps (vals state-probabilities)]
+    (->> (categorical ks ps)
+         (sample-summary n))))
