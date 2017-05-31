@@ -11,7 +11,70 @@
             [witan.datasets.stats :as wst]
             [witan.send.utils :as u :refer [round]]
             [clojure.java.io :as io]
-            [incanter.stats :as stats]))
+            [incanter.stats :as stats]
+            [redux.core :as r]
+            [kixi.stats.core :as kixi]
+            [medley.core :as medley])
+  (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
+
+(def int-histogram
+  (fn
+    ([] (IntCountsHistogram. 3))
+    ([hist x]
+     (doto hist
+       (.recordValue x)))
+    ([hist]
+     {:median (.getValueAtPercentile hist 50.0)
+      :low-ci (.getValueAtPercentile hist 2.5)
+      :high-ci (.getValueAtPercentile hist 97.5)})))
+
+(defn double-histogram [highest-to-lowest-value-ratio significant-value-digits]
+  (fn
+    ([] (DoubleHistogram. highest-to-lowest-value-ratio significant-value-digits))
+    ([hist x]
+     (.recordValue hist x)
+     hist)
+    ([hist]
+     {:median (or (.getValueAtPercentile hist 50.0) 0.0)
+      :low-ci (or (.getValueAtPercentile hist 2.5) 0.0)
+      :high-ci (or (.getValueAtPercentile hist 97.5) 0.0)})))
+
+(def summary-rf
+  (r/fuse {:mean (r/post-complete kixi/mean
+                                  (fn [mean]
+                                    (or mean 0.0)))
+           :histogram (double-histogram (long 1e8) 3)}))
+
+(defn model-accumulator
+  [rf]
+  (fn
+    ([]
+     (->> (for [age sc/Ages
+                state sc/States]
+            [[age state] (rf)])
+          (into {})))
+    ([acc x]
+     (merge acc
+            (medley/map-kv
+             (fn [k v]
+               (try
+                 [k (rf (get acc k) v)]
+                 (catch Exception e (println (format "Can't record %s for key %s" (get acc k) k)))))
+             x)))
+    ([acc]
+     (medley/map-kv
+      (fn [k v]
+        [k (rf v)])
+      acc))))
+
+(defn model-summary
+  [n rf]
+  (fn
+    ([] (map #(%1) (repeat n rf)))
+    ([acc xs]
+     (map #(rf %1 %2) acc xs))
+    ([acc]
+     (map #(rf %1) acc))))
 
 (defn state [need placement]
   (keyword (str need "-" placement)))
@@ -67,17 +130,29 @@
             (update cohorts [age :Non-SEND] (fnil + 0) population))
           cohorts deltas))
 
+(defn next-age [age]
+  (cond-> age
+    (<= age 25) inc))
+
+(defn update! [coll k f & args]
+  (assoc! coll k (apply f (get coll k) args)))
+
 (defn run-model-iteration [transition-probabilities cohorts population-delta]
-  (-> (reduce (fn [coll [[age state] population]]
-                (if (< age 26)
-                  (let [next-states (get transition-probabilities [age state])
-                        next-states-sample (u/sample-transitions population next-states)]
-                    (reduce (fn [coll [next-state count]]
-                              (update coll [(inc age) next-state] (fnil + 0) count))
-                            coll next-states-sample))
-                  coll))
-              {} cohorts)
-      (incorporate-population-deltas population-delta)))
+  (let [out (-> (reduce (fn [coll [[age state :as k] population]]
+                          
+                          (if (< age 26)
+                            (let [next-states (get transition-probabilities k)
+                                  next-states-sample (u/sample-transitions population next-states)]
+                              (reduce (fn [coll [next-state count]]
+                                        (cond-> coll
+                                          (pos? count)
+                                          (update! [(next-age age) next-state] (fnil + 0) count)))
+                                      coll next-states-sample))
+                            coll))
+                        (transient {}) cohorts)
+                (persistent!)
+                (incorporate-population-deltas population-delta))]
+    out))
 
 (defn calculate-confidence-intervals
   [simulations]
@@ -153,13 +228,17 @@
    :witan/output-schema {:send-output sc/SENDOutputSchema1}}
   [{:keys [population-by-age-state transition-probabilities population-deltas]}
    {:keys [seed-year projection-year]}]
-  (println "Count population deltas" (count population-deltas))
-  (let [iterations (inc (- projection-year seed-year))
-        ]
-    {:send-output (->> (for [simulation (range 100)]
-                         (reductions (partial run-model-iteration transition-probabilities) population-by-age-state population-deltas))
-                       (apply map vector)
-                       (map calculate-confidence-intervals))}))
+  (let [transition-probabilities (medley/map-vals (fn [probs]
+                                                    (->> (sort-by val > probs)
+                                                         (remove (comp zero? val))
+                                                         (apply map vector)))
+                                                  transition-probabilities)
+        iterations (inc (- projection-year seed-year))]
+    {:send-output (->> (for [simulation (range 1000)]
+                         (let [projection (doall (reductions (partial run-model-iteration transition-probabilities) population-by-age-state population-deltas))]
+                           (println (format "Created projection %d" simulation))
+                           projection))
+                       (transduce identity (model-summary iterations (model-accumulator summary-rf))))}))
 
 (defworkflowoutput output-send-results-1-0-0
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
@@ -171,9 +250,9 @@
   (println (count send-output))
   (with-open [writer (io/writer (io/file "output-b.csv"))]
     (->> (mapcat (fn [output year]
-                   (map (fn [[[age state] {:keys [mean median quantiles]}]]
-                          (hash-map :age age :state state :year year :mean (round mean) :median (round median) :q1 (round (first quantiles)) :q3 (round (last quantiles)))) output)) send-output (range 2016 3000))
-         (map (juxt :age :state :mean :median :q1 :q3 :year))
-         (concat [["age" "state" "population" "year"]])
+                   (map (fn [[[age state] {mean :mean {:keys [median low-ci high-ci]} :histogram}]]
+                          (hash-map :age age :state state :year year :mean (round mean) :median (round median) :low-ci (round low-ci) :high-ci (round high-ci))) output)) send-output (range 2016 3000))
+         (map (juxt :age :state :mean :median :low-ci :high-ci :year))
+         (concat [["age" "state" "mean" "median" "low ci" "high ci" "year"]])
          (csv/write-csv writer)))
   "Done")

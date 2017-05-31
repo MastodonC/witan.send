@@ -92,8 +92,9 @@
 
 (def StatisticsSchema
   {:mean s/Num
-   :median s/Num
-   :quantiles [s/Num]})
+   :histogram {:median s/Num
+               :low-ci s/Num
+               :high-ci s/Num}})
 
 (def SENDOutputSchema1
   [{[(s/one AgeSchema :age)

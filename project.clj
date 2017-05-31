@@ -4,16 +4,17 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
+                 [org.hdrhistogram/HdrHistogram "2.1.9"]
                  [net.mikera/core.matrix "0.55.0"]
+                 [org.clojure/data.avl "0.0.17"]
                  [org.clojure/data.csv "0.1.3"]
                  [witan.workspace-api "0.1.22"]
                  [prismatic/schema "1.1.3"]
                  [schema-contrib "0.1.3"]
+                 [kixi/stats "0.3.7"]
                  [instaparse "1.4.3"]
-                 [org.clojure/data.avl "0.0.17"]
                  [incanter "1.5.7"]
-                 [kixi/stats "0.3.6"]
-                 [org.clojure/test.check "0.9.0"]]
+                 [medley "1.0.0"]]
   :main ^:skip-aot witan.send.send
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[witan.workspace-executor "0.2.6"

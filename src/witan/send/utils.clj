@@ -6,9 +6,7 @@
             [kixi.stats.random :refer [categorical sample-summary]]))
 
 (defn round [x]
-  (if (integer? x)
-    x
-    (Math/round x)))
+  (Math/round (double x)))
 
 (defn order-ds
   [dataset col-key]
@@ -60,8 +58,6 @@
 (defn sample-transitions
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
-  [n state-probabilities]
-  (let [ks (keys state-probabilities)
-        ps (vals state-probabilities)]
-    (->> (categorical ks ps)
-         (sample-summary n))))
+  [n [ks ps]]
+  (->> (categorical ks ps)
+       (sample-summary n)))
