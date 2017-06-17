@@ -106,12 +106,6 @@
                :id [1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10 11 11 12 12 13 13 14 14 15 15
                     16 16 17 17 18 18 19 19 20 20 21 21 22 22 23 23 24 24]}))
 
-(def population-with-states
-  (let [historic-send-population (reduce-input :historic-send-population :age 6)
-        historic-0-25-population (reduce-input :historic-0-25-population :age 6)]
-    (-> historic-send-population
-        add-state-to-send-population
-        (add-non-send-to-send-population historic-0-25-population))))
 
 ;; Helpers for tests validation
 (defmacro is-valid-result?
@@ -146,70 +140,7 @@
                        (>= % ~2016)) (ds/column ~result :year)))))
 
 ;; Tests
-(deftest add-state-to-send-population-test
-  (testing "The states are added and need, placement are removed"
-    (let [historic-send-population (reduce-input :historic-send-population :age 6)
-          send-with-states (add-state-to-send-population historic-send-population)]
-      (is (= (set (:column-names send-with-states))
-             #{:year :age :state :population}))
-      (is (every? keyword? (distinct (wds/subset-ds send-with-states :cols :state)))))))
 
-(deftest add-non-send-to-send-population-test
-  (testing "Creates a population with send and non-send"
-    (let [historic-send-population (reduce-input :historic-send-population :age 6)
-          historic-0-25-population (reduce-input :historic-0-25-population :age 6)
-          send-with-states (add-state-to-send-population historic-send-population)
-          popn-with-states (add-non-send-to-send-population send-with-states
-                                                            historic-0-25-population)]
-      (is (every? keyword? (distinct (wds/subset-ds popn-with-states :cols :state))))
-      (is (some #(= :Non-SEND %) (distinct (wds/subset-ds popn-with-states :cols :state)))))))
-
-(deftest grps-to-indiv-test
-  (testing "Going from group data to individuals data"
-    (let [num-sims 1
-          {:keys [repeat-data other-cols matrix-other-cols col-freqs range-individuals]}
-          (prepare-for-data-transformation
-           population-with-states
-           :count
-           num-sims
-           1)
-          result (grps-to-indiv repeat-data other-cols matrix-other-cols)]
-      (is-valid-result? result num-sims #{:age :state :year} 52243))))
-
-(deftest add-simul-nbs-test
-  (testing "Adding simulation numbers to individuals data"
-    (let [num-sims 1
-          {:keys [repeat-data other-cols matrix-other-cols col-freqs range-individuals]}
-          (prepare-for-data-transformation
-           population-with-states
-           :count
-           num-sims
-           1)
-          indiv-data (grps-to-indiv repeat-data other-cols matrix-other-cols)
-          result (add-simul-nbs indiv-data col-freqs 1)]
-      (is-valid-result? result num-sims #{:age :state :year :sim-num} 52243))))
-
-(deftest add-ids-test
-  (testing "Adding ids to each row, taking into account simulations"
-    (let [num-sims 1
-          {:keys [repeat-data other-cols matrix-other-cols col-freqs range-individuals]}
-          (prepare-for-data-transformation
-           population-with-states
-           :count
-           num-sims
-           1)
-          indiv-data (grps-to-indiv repeat-data other-cols matrix-other-cols)
-          indiv-data-with-sims (add-simul-nbs indiv-data col-freqs 1)
-          result (add-ids indiv-data-with-sims 1 range-individuals)]
-      (is-valid-result? result num-sims #{:age :state :year :sim-num :id} 52243))))
-
-(deftest data-transformation-test
-  (testing "Go from group data to individuals data with ids and simulation number"
-    (let [transformed-data (data-transformation grouped-data :count 2)]
-      (is (= (set (:column-names individuals-data-with-sims))
-             (set (:column-names transformed-data))))
-      (is (= (set (:columns individuals-data-with-sims))
-             (set (:columns transformed-data)))))))
 
 (deftest calc-population-difference-test
   (testing "the population difference is calculated correctly"
