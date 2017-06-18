@@ -163,8 +163,8 @@
                            [:setting Setting]
                            [:population N]]))
 
-(def PopulationDeltas
-  [{AcademicYear s/Num}])
+(def PopulationByAcademicYear
+  [{AcademicYear s/Int}])
 
 (def SENDSchema
   {[(s/one AcademicYear :year)

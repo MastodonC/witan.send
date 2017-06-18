@@ -29,27 +29,6 @@
                 (assoc coll [age sc/non-send] non-send-population)))
             send-cohorts (keys send-population-by-ay))))
 
-(defn look [arg]
-  (doto arg
-    (clojure.pprint/pprint)))
-
-(defn population-deltas
-  "For each projected population year, calculate the population deltas for each age assuming the whole cohort gets one year older."
-  [{:keys [initial-population projected-population]}]
-  (doto (->> (concat initial-population projected-population)
-             (reduce (fn [coll {:keys [calendar-year academic-year population]}]
-                       (assoc-in coll [calendar-year academic-year] population)) (sorted-map))
-             (vals)
-             (partition 2 1)
-             (map (fn [[y1 y2]]
-                    (u/subtract-map y2 (assoc (medley/map-keys inc y1) -5 0)))))
-    #_clojure.pprint/pprint))
-
-(defn incorporate-population-deltas [cohorts deltas]
-  (reduce (fn [cohorts [age population]]
-            (update cohorts [age sc/non-send] u/some+ population))
-          cohorts deltas))
-
 (defn next-age [age]
   (cond-> age
     (<= age 25) inc))
@@ -61,25 +40,50 @@
 (defn update! [coll k f & args]
   (assoc! coll k (apply f (get coll k) args)))
 
-(defn run-model-iteration [transition-probabilities cohorts population-delta]
-  (let [out (-> (reduce (fn [coll [[year state :as k] population]]
-                          (if (< year 21)
-                            (let [alphas (get transition-probabilities k)
-                                  next-states-sample (u/sample-transitions population alphas)]
-                              (when (= state sc/non-send)
-                                #_(println "alphas" alphas)
-                                (println "population" population)
-                                (println "non-send" (get next-states-sample :NON-SEND))
-                                #_(println "states" next-states-sample))
-                              (reduce (fn [coll [next-state count]]
-                                        (cond-> coll
-                                          (pos? count)
-                                          (update! [(next-year year) next-state] u/some+ count)))
-                                      coll next-states-sample))
-                            coll))
-                        (transient {}) cohorts)
-                (persistent!)
-                #_(incorporate-population-deltas population-delta))]
+(defn age-population
+  [projection model-state]
+  (-> (reduce (fn [coll [[year state :as k] population]]
+                (assoc! coll [(next-year year) state] population))
+              (transient {})
+              model-state)
+      (assoc! [-5 sc/non-send] (get projection -5))
+      (persistent!)))
+
+(defn reconcile-to-projection
+  [projection model-state]
+  (let [age-counts (reduce (fn [coll [[year state] population]]
+                             (update coll year u/some+ population))
+                           {} model-state)]
+    (reduce (fn [coll [[year state] population]]
+              (cond-> coll
+                (= state sc/non-send)
+                (update [year state] + (- (get projection year)
+                                          (get age-counts year)))))
+            model-state
+            model-state)))
+
+(defn run-model-iteration [transition-probabilities model-state projected-population]
+  (println "Projected population" projected-population)
+  (let [out (-> (->> model-state
+                     (age-population projected-population)
+                     (reconcile-to-projection projected-population)
+                     (reduce (fn [coll [[year state :as k] population]]
+                               (if (< year 21)
+                                 (let [alphas (get transition-probabilities k)
+                                       next-states-sample (u/sample-transitions population alphas)]
+                                   (when (= state sc/non-send)
+                                     #_(println "alphas" alphas)
+                                     (println "population" population)
+                                     (println "non-send" (get next-states-sample :NON-SEND))
+                                     #_(println "states" next-states-sample))
+                                   (reduce (fn [coll [next-state count]]
+                                             (cond-> coll
+                                               (pos? count)
+                                               (update! [year next-state] u/some+ count)))
+                                           coll next-states-sample))
+                                 coll))
+                             (transient {})))
+                (persistent!))]
     (doto out
       #_clojure.pprint/pprint)))
 
@@ -134,7 +138,7 @@
    :witan/param-schema {}
    :witan/output-schema {:population-by-age-state sc/ModelState
                          :transition-alphas sc/TransitionAlphas
-                         :population-deltas sc/PopulationDeltas}}
+                         :projected-population sc/PopulationByAcademicYear}}
   [{:keys [initial-population initial-send-population
            transition-matrix projected-population]} _]
   (let [y1 (->> (ds/row-maps initial-population)
@@ -142,13 +146,14 @@
         y2 (->> (ds/row-maps projected-population)
                 (filter #(= (:calendar-year %) 2018))
                 (u/total-by-academic-year))
-        population-deltas (population-deltas {:initial-population (ds/row-maps initial-population)
-                                              :projected-population (ds/row-maps projected-population)})
+        population-by-ay (->> (ds/row-maps projected-population)
+                              (partition-by :calendar-year)
+                              (map #(into {} (map (juxt :academic-year :population) %))))
         initial-state (incorporate-non-send-population {:send-population (ds/row-maps initial-send-population)
                                                         :total-population (ds/row-maps initial-population)})]
     {:population-by-age-state initial-state
      :transition-alphas (u/transition-alphas transition-matrix y1 y2)
-     :population-deltas population-deltas}))
+     :projected-population population-by-ay}))
 
 (defworkflowfn run-send-model-1-0-0
   "Outputs the population for the last year of historic data, with one
@@ -157,15 +162,15 @@
    :witan/version "1.0.0"
    :witan/input-schema {:population-by-age-state sc/ModelState
                         :transition-alphas sc/TransitionAlphas
-                        :population-deltas sc/PopulationDeltas}
+                        :projected-population sc/PopulationByAcademicYear}
    :witan/param-schema {:seed-year sc/YearSchema
                         :projection-year sc/YearSchema}
    :witan/output-schema {:send-output sc/Results}}
-  [{:keys [population-by-age-state transition-alphas population-deltas]}
+  [{:keys [population-by-age-state transition-alphas projected-population]}
    {:keys [seed-year projection-year]}]
   (let [iterations (inc (- projection-year seed-year))]
     {:send-output (->> (for [simulation (range 10)]
-                         (let [projection (doall (reductions (partial run-model-iteration transition-alphas) population-by-age-state population-deltas))]
+                         (let [projection (doall (reductions (partial run-model-iteration transition-alphas) population-by-age-state projected-population))]
                            (println (format "Created projection %d" simulation))
                            projection))
                        (transduce identity (u/partition-rf iterations (u/merge-with-rf u/int-summary-rf)))

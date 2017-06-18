@@ -122,16 +122,6 @@
         xs (draw (dirichlet-multinomial n as))]
     (zipmap (keys alphas) xs)))
 
-(defn minus-or-zero [a b]
-  (max (- a b) 0))
-
-(defn subtract-map
-  "Unlike (merge-with - &args), only returns keys from the first map"
-  [a b]
-  (reduce (fn [coll k]
-            (update coll k - (get b k)))
-          a (keys a)))
-
 (def total-by-age
   "Given a sequence of {:age age :population population}
   sums the total population for each age"
