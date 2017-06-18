@@ -43,7 +43,7 @@
              (partition 2 1)
              (map (fn [[y1 y2]]
                     (u/subtract-map y2 (assoc (medley/map-keys inc y1) -5 0)))))
-    clojure.pprint/pprint))
+    #_clojure.pprint/pprint))
 
 (defn incorporate-population-deltas [cohorts deltas]
   (reduce (fn [cohorts [age population]]
@@ -66,6 +66,11 @@
                           (if (< year 21)
                             (let [alphas (get transition-probabilities k)
                                   next-states-sample (u/sample-transitions population alphas)]
+                              (when (= state sc/non-send)
+                                #_(println "alphas" alphas)
+                                (println "population" population)
+                                (println "non-send" (get next-states-sample :NON-SEND))
+                                #_(println "states" next-states-sample))
                               (reduce (fn [coll [next-state count]]
                                         (cond-> coll
                                           (pos? count)
@@ -74,7 +79,7 @@
                             coll))
                         (transient {}) cohorts)
                 (persistent!)
-                (incorporate-population-deltas population-delta))]
+                #_(incorporate-population-deltas population-delta))]
     (doto out
       #_clojure.pprint/pprint)))
 
@@ -132,11 +137,18 @@
                          :population-deltas sc/PopulationDeltas}}
   [{:keys [initial-population initial-send-population
            transition-matrix projected-population]} _]
-  {:population-by-age-state (incorporate-non-send-population {:send-population (ds/row-maps initial-send-population)
-                                                              :total-population (ds/row-maps initial-population)})
-   :transition-alphas (u/transition-alphas transition-matrix)
-   :population-deltas (population-deltas {:initial-population (ds/row-maps initial-population)
-                                          :projected-population (ds/row-maps projected-population)})})
+  (let [y1 (->> (ds/row-maps initial-population)
+                (u/total-by-academic-year))
+        y2 (->> (ds/row-maps projected-population)
+                (filter #(= (:calendar-year %) 2018))
+                (u/total-by-academic-year))
+        population-deltas (population-deltas {:initial-population (ds/row-maps initial-population)
+                                              :projected-population (ds/row-maps projected-population)})
+        initial-state (incorporate-non-send-population {:send-population (ds/row-maps initial-send-population)
+                                                        :total-population (ds/row-maps initial-population)})]
+    {:population-by-age-state initial-state
+     :transition-alphas (u/transition-alphas transition-matrix y1 y2)
+     :population-deltas population-deltas}))
 
 (defworkflowfn run-send-model-1-0-0
   "Outputs the population for the last year of historic data, with one
@@ -152,7 +164,7 @@
   [{:keys [population-by-age-state transition-alphas population-deltas]}
    {:keys [seed-year projection-year]}]
   (let [iterations (inc (- projection-year seed-year))]
-    {:send-output (->> (for [simulation (range 1000)]
+    {:send-output (->> (for [simulation (range 10)]
                          (let [projection (doall (reductions (partial run-model-iteration transition-alphas) population-by-age-state population-deltas))]
                            (println (format "Created projection %d" simulation))
                            projection))
@@ -166,14 +178,11 @@
    :witan/version "1.0.0"
    :witan/input-schema {:send-output sc/Results}}
   [{:keys [send-output]} _]
-  (println (count send-output))
   (with-open [writer (io/writer (io/file "output-b.csv"))]
     (->> (mapcat (fn [output year]
-                   (map (fn [[[academic-year state] {mean :mean {:keys [median low-ci high-ci]} :histogram}]]
-                          (let [median (or median mean)
-                                low-ci (or low-ci mean)
-                                high-ci (or high-ci mean)]
-                           (hash-map :academic-year academic-year :state state :calendar-year year :mean (round mean) :median (round median) :low-ci (round low-ci) :high-ci (round high-ci)))) output)) send-output (range 2016 3000))
+                   (println (first output))
+                   (map (fn [[[academic-year state] {:keys [median low-ci high-ci mean]}]]
+                          (hash-map :academic-year academic-year :state state :calendar-year year :mean (round mean) :median (round median) :low-ci (round low-ci) :high-ci (round high-ci))) output)) send-output (range 2016 3000))
          (map (juxt :academic-year :state :mean :median :low-ci :high-ci :calendar-year))
          (concat [["academic-year" "state" "mean" "median" "low ci" "high ci" "calendar-year"]])
          (csv/write-csv writer)))

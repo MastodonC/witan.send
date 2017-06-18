@@ -8,7 +8,8 @@
             [redux.core :as r]
             [medley.core :as medley]
             [schema.core :as s]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [witan.send.utils :as u])
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
 
 (defn round [x]
@@ -60,17 +61,35 @@
    (and (= setting :MU) (<= -1 year 14))))
 
 (defn valid-transition? [academic-year state-1 state-2]
-  (let [[need-1 setting-1] (need-setting state-1)
-        [need-2 setting-2] (need-setting state-1)]
-    (and (valid-year-setting? academic-year setting-1)
-         (valid-year-setting? (inc academic-year) setting-2))))
+  (or (= state-1 sc/non-send)
+      (= state-2 sc/non-send)
+      (let [[need-1 setting-1] (need-setting state-1)
+            [need-2 setting-2] (need-setting state-1)]
+        (and (valid-year-setting? academic-year setting-1)
+             (valid-year-setting? (inc academic-year) setting-2)))))
 
 (defn transition-alphas
   "Creates a full transition matrix where all alphas are 1.0."
-  [ds]
+  [ds y1 y2]
   (let [observations (->> (ds/row-maps ds)
-                          (reduce (fn [coll {:keys [year-1 need-1 setting-1 setting-2]}]
-                                    (update coll [year-1 (state need-1 setting-1) (state need-1 setting-2)] some+ 1))) {})]
+                          (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
+                                    (cond (= setting-1 sc/non-send)
+                                          (update coll [academic-year-1 sc/non-send (state need-2 setting-2)] some+ 1)
+                                          (= setting-2 sc/non-send)
+                                          (update coll [academic-year-1 (state need-1 setting-1) sc/non-send] some+ 1)
+                                          :else
+                                          (update coll [academic-year-1 (state need-1 setting-1) (state need-1 setting-2)] some+ 1))) {}))
+        observations-by-ay (reduce (fn [coll [[academic-year]]]
+                                     (update coll academic-year some+ 1))
+                                   {} observations)
+        non-send (reduce (fn [coll [ay n]]
+                           (update coll ay - n))
+                         y1 observations-by-ay)
+        observations (reduce (fn [coll [ay n]]
+                               (assoc coll [ay sc/non-send sc/non-send] n))
+                             observations
+                             non-send)]
+    (println observations)
     (doto (->> (concat (for [academic-year sc/academic-years
                              from-setting sc/settings
                              to-setting sc/settings
@@ -83,10 +102,12 @@
                        (for [academic-year sc/academic-years
                              from-setting sc/settings
                              need sc/needs]
-                         [academic-year (state need from-setting) sc/non-send]))
+                         [academic-year (state need from-setting) sc/non-send])
+                       (for [academic-year sc/academic-years]
+                         [academic-year sc/non-send sc/non-send]))
                (reduce (fn [coll [academic-year from-state to-state :as k]]
                          (if (valid-transition? academic-year from-state to-state)
-                           (if-let [c (get observations k)]
+                           (if-let [c (get observations [academic-year from-state to-state])]
                              (assoc-in coll [[academic-year from-state] to-state] (inc c))
                              (assoc-in coll [[academic-year from-state] to-state] 1))
                            coll))
@@ -108,7 +129,7 @@
   "Unlike (merge-with - &args), only returns keys from the first map"
   [a b]
   (reduce (fn [coll k]
-            (update coll k minus-or-zero (get b k)))
+            (update coll k - (get b k)))
           a (keys a)))
 
 (def total-by-age
