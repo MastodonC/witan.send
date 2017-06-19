@@ -105,6 +105,9 @@
 (def N
   (s/constrained s/Int (complement neg?)))
 
+(def Rgt1
+  (s/constrained s/Num pos?))
+
 (def PopulationSYA
   (make-ordered-ds-schema [[:calendar-year (s/constrained s/Int year?)]
                            [:academic-year AcademicYear]
@@ -154,7 +157,7 @@
 (def TransitionAlphas
   {[(s/one AcademicYear :academic-year)
     (s/one State :state)]
-   {State N}})
+   {State Rgt1}})
 
 (def SENDPopulation
   (make-ordered-ds-schema [[:calendar-year CalendarYear]
@@ -181,7 +184,13 @@
   {:mean s/Num
    :median s/Num
    :low-ci s/Num
-   :high-ci s/Num})
+   :high-ci s/Num
+   :min s/Num
+   :max s/Num
+   :std-dev s/Num
+   :iqr s/Num
+   :q1 s/Num
+   :q3 s/Num})
 
 (def SENDOutputSchema1
   [{[(s/one AgeSchema :age)
@@ -189,6 +198,8 @@
     StatisticsSchema}])
 
 (def Results
-  [{[(s/one AcademicYear :academic-year)
-     (s/one State :state)]
-    StatisticsSchema}])
+  [{:by-state {[(s/one AcademicYear :academic-year)
+                (s/one State :state)]
+               StatisticsSchema}
+    :total-in-send-by-ay {AcademicYear StatisticsSchema}
+    :total-in-send StatisticsSchema}])

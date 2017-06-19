@@ -13,7 +13,7 @@
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
 
 (defn round [x]
-  (Math/round (double x)))
+  (Double/parseDouble (format "%.02f" (double x))))
 
 (def some+
   "x + y. Returns y if x is nil and x if y is nil."
@@ -60,16 +60,44 @@
    (and (= setting :PRU) (<= 2 year 11))
    (and (= setting :MU) (<= -1 year 14))))
 
+(defn valid-state? [academic-year state]
+  (or (= state sc/non-send)
+      (let [[need setting] (need-setting state)]
+        (valid-year-setting? academic-year setting))))
+
+(def valid-states
+  (->> (concat (for [academic-year sc/academic-years
+                     setting sc/settings
+                     need sc/needs]
+                 [academic-year (state need setting)])
+               (for [academic-year sc/academic-years]
+                 [academic-year sc/non-send]))
+       (filter #(apply valid-state? %))))
+
 (defn valid-transition? [academic-year state-1 state-2]
-  (or (= state-1 sc/non-send)
-      (= state-2 sc/non-send)
-      (let [[need-1 setting-1] (need-setting state-1)
-            [need-2 setting-2] (need-setting state-1)]
-        (and (valid-year-setting? academic-year setting-1)
-             (valid-year-setting? (inc academic-year) setting-2)))))
+  (and (valid-state? academic-year state-1)
+       (valid-state? academic-year state-1)))
+
+(def valid-transitions
+  (->> (concat (for [academic-year sc/academic-years
+                     from-setting sc/settings
+                     to-setting sc/settings
+                     need sc/needs]
+                 [academic-year (state need from-setting) (state need to-setting)])
+               (for [academic-year sc/academic-years
+                     to-setting sc/settings
+                     need sc/needs]
+                 [academic-year sc/non-send (state need to-setting)])
+               (for [academic-year sc/academic-years
+                     from-setting sc/settings
+                     need sc/needs]
+                 [academic-year (state need from-setting) sc/non-send])
+               (for [academic-year sc/academic-years]
+                 [academic-year sc/non-send sc/non-send]))
+       (filter #(apply valid-transition? %))))
 
 (defn transition-alphas
-  "Creates a full transition matrix where all alphas are 1.0."
+  "Creates transition alphas based on prior belief and observations"
   [ds y1 y2]
   (let [observations (->> (ds/row-maps ds)
                           (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
@@ -88,38 +116,36 @@
         observations (reduce (fn [coll [ay n]]
                                (assoc coll [ay sc/non-send sc/non-send] n))
                              observations
-                             non-send)]
-    (println observations)
-    (doto (->> (concat (for [academic-year sc/academic-years
-                             from-setting sc/settings
-                             to-setting sc/settings
-                             need sc/needs]
-                         [academic-year (state need from-setting) (state need to-setting)])
-                       (for [academic-year sc/academic-years
-                             to-setting sc/settings
-                             need sc/needs]
-                         [academic-year sc/non-send (state need to-setting)])
-                       (for [academic-year sc/academic-years
-                             from-setting sc/settings
-                             need sc/needs]
-                         [academic-year (state need from-setting) sc/non-send])
-                       (for [academic-year sc/academic-years]
-                         [academic-year sc/non-send sc/non-send]))
-               (reduce (fn [coll [academic-year from-state to-state :as k]]
-                         (if (valid-transition? academic-year from-state to-state)
-                           (if-let [c (get observations [academic-year from-state to-state])]
-                             (assoc-in coll [[academic-year from-state] to-state] (inc c))
-                             (assoc-in coll [[academic-year from-state] to-state] 1))
-                           coll))
-                       {}))
-      #_clojure.pprint/pprint)))
+                             non-send)
+        status-quo-multiplier (->> (ds/row-maps ds)
+                                   (reduce (fn [[a b] {:keys [setting-1 setting-2]}]
+                                             (cond
+                                               (or (= setting-1 sc/non-send) (= setting-2 sc/non-send))
+                                               [a b]
+                                               (= setting-1 setting-2)
+                                               [(+ a 1) b]
+                                               :else [a (+ b 1)]))
+                                           [1 1])
+                                   (apply /))
+        _ (println "Status Quo multiplier" status-quo-multiplier)
+        valid-transition-counts (reduce (fn [coll [academic-year from-state _]]
+                                          (update coll [academic-year from-state] some+ 1))
+                                        {} valid-transitions)]
+    (doto (reduce (fn [coll [academic-year from-state to-state :as k]]
+                    (if-let [c (get observations [academic-year from-state to-state])]
+                      (assoc-in coll [[academic-year from-state] to-state] (inc (* c (get valid-transition-counts [academic-year from-state]))))
+                      (if (= from-state to-state)
+                        (assoc-in coll [[academic-year from-state] to-state] status-quo-multiplier)
+                        (assoc-in coll [[academic-year from-state] to-state] 1))))
+                  {} valid-transitions)
+      clojure.pprint/pprint)))
 
 (defn sample-transitions
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
-  [n alphas]
+  [seed n alphas]
   (let [as (vals alphas)
-        xs (draw (dirichlet-multinomial n as))]
+        xs (draw (dirichlet-multinomial n as) {:seed seed})]
     (zipmap (keys alphas) xs)))
 
 (def total-by-age
@@ -136,6 +162,22 @@
                     (update coll academic-year some+ population))
            {}))
 
+(defn model-population-by-ay
+  [model]
+  (reduce (fn [coll [[ay state] population]]
+            (cond-> coll
+              (not= state sc/non-send)
+              (update ay some+ population)))
+          {} model))
+
+(defn model-send-population
+  [model]
+  (reduce (fn [n [[ay state] population]]
+            (cond-> n
+              (not= state sc/non-send)
+              (+ population)))
+          0 model))
+
 
 ;;;; Reducing functions for use with transduce
 
@@ -147,6 +189,13 @@
      (doto hist (.recordValue x)))
     ([hist]
      {:median (.getValueAtPercentile hist 50.0)
+      :mean (.getMean hist)
+      :std-dev (.getStdDeviation hist)
+      :iqr (- (.getValueAtPercentile hist 75.0) (.getValueAtPercentile hist 25.0))
+      :min (.getValueAtPercentile hist 0.0)
+      :max (.getValueAtPercentile hist 100.0)
+      :q1 (.getValueAtPercentile hist 25.0)
+      :q3 (.getValueAtPercentile hist 75.0)
       :low-ci (.getValueAtPercentile hist 2.5)
       :high-ci (.getValueAtPercentile hist 97.5)})))
 
@@ -158,11 +207,7 @@
 
 (def int-summary-rf
   "Returns a summary of a sequence of integers"
-  (r/post-complete
-   (r/fuse {:mean mean-or-zero-rf
-            :ci (int-ci-rf 3)})
-   (fn [{:keys [mean ci]}]
-     (assoc ci :mean mean))))
+  (int-ci-rf 3))
 
 (defn merge-with-rf
   "Like (apply merge-with f) but for reducing functions"
@@ -176,6 +221,21 @@
                      (assoc k (rf)))
                    (update k rf v)))
              acc x))
+    ([acc]
+     (medley/map-vals rf acc))))
+
+(defn model-states-rf
+  [rf]
+  (fn
+    ([]
+     (reduce (fn [coll k]
+               (assoc coll k (rf)))
+             {} valid-states))
+    ([acc x]
+     (medley/map-kv
+      (fn [k v]
+        [k (rf v (get x k 0))])
+      acc))
     ([acc]
      (medley/map-vals rf acc))))
 

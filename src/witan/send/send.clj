@@ -12,7 +12,8 @@
             [witan.send.utils :as u :refer [round]]
             [clojure.java.io :as io]
             [incanter.stats :as stats]
-            [medley.core :as medley]))
+            [medley.core :as medley]
+            [redux.core :as r]))
 
 (defn incorporate-non-send-population
   "Include in the cohorts a Non-SEND population.
@@ -20,14 +21,14 @@
   [{:keys [send-population total-population]}]
   (let [population-by-ay (u/total-by-academic-year total-population)
         send-population-by-ay (u/total-by-academic-year send-population)
-        send-cohorts (reduce (fn [coll {:keys [academic-year need setting population]}]
-                               (update coll [academic-year (u/state need setting)] u/some+ population))
-                             {} send-population)]
+        model-state (reduce (fn [coll {:keys [academic-year need setting population]}]
+                              (update coll [academic-year (u/state need setting)] u/some+ population))
+                            {} send-population)]
     (reduce (fn [coll age]
               (let [non-send-population (- (get population-by-ay age)
-                                           (get send-population-by-ay age))]
+                                           (get send-population-by-ay age 0))]
                 (assoc coll [age sc/non-send] non-send-population)))
-            send-cohorts (keys send-population-by-ay))))
+            model-state (keys population-by-ay))))
 
 (defn next-age [age]
   (cond-> age
@@ -62,19 +63,21 @@
             model-state
             model-state)))
 
-(defn run-model-iteration [transition-probabilities model-state projected-population]
-  (println "Projected population" projected-population)
+(defn run-model-iteration [simulation transition-probabilities model-state projected-population]
   (let [out (-> (->> model-state
                      (age-population projected-population)
                      (reconcile-to-projection projected-population)
-                     (reduce (fn [coll [[year state :as k] population]]
+                     (map vector (range)) ;; For random seed
+                     (reduce (fn [coll [i [[year state :as k] population]]]
                                (if (< year 21)
                                  (let [alphas (get transition-probabilities k)
-                                       next-states-sample (u/sample-transitions population alphas)]
-                                   (when (= state sc/non-send)
+                                       next-states-sample (u/sample-transitions (+ simulation i) population alphas)]
+                                   (when (and (= state sc/non-send)
+                                              (= year -5))
                                      #_(println "alphas" alphas)
-                                     (println "population" population)
-                                     (println "non-send" (get next-states-sample :NON-SEND))
+                                     #_(println "population" population)
+                                     #_(println (get transition-probabilities k))
+                                     #_(println next-states-sample)
                                      #_(println "states" next-states-sample))
                                    (reduce (fn [coll [next-state count]]
                                              (cond-> coll
@@ -164,16 +167,19 @@
                         :transition-alphas sc/TransitionAlphas
                         :projected-population sc/PopulationByAcademicYear}
    :witan/param-schema {:seed-year sc/YearSchema
-                        :projection-year sc/YearSchema}
+                        :projection-year sc/YearSchema
+                        :random-seed s/Int}
    :witan/output-schema {:send-output sc/Results}}
   [{:keys [population-by-age-state transition-alphas projected-population]}
    {:keys [seed-year projection-year]}]
   (let [iterations (inc (- projection-year seed-year))]
     {:send-output (->> (for [simulation (range 10)]
-                         (let [projection (doall (reductions (partial run-model-iteration transition-alphas) population-by-age-state projected-population))]
+                         (let [projection (doall (reductions (partial run-model-iteration simulation transition-alphas) population-by-age-state projected-population))]
                            (println (format "Created projection %d" simulation))
                            projection))
-                       (transduce identity (u/partition-rf iterations (u/merge-with-rf u/int-summary-rf)))
+                       (transduce identity (u/partition-rf iterations (r/fuse {:by-state (u/model-states-rf u/int-summary-rf)
+                                                                               :total-in-send-by-ay (r/pre-step (u/merge-with-rf u/int-summary-rf) u/model-population-by-ay)
+                                                                               :total-in-send (r/pre-step u/int-summary-rf u/model-send-population)})))
                        (doall))}))
 
 (defworkflowoutput output-send-results-1-0-0
@@ -184,11 +190,31 @@
    :witan/input-schema {:send-output sc/Results}}
   [{:keys [send-output]} _]
   (with-open [writer (io/writer (io/file "output-b.csv"))]
-    (->> (mapcat (fn [output year]
-                   (println (first output))
-                   (map (fn [[[academic-year state] {:keys [median low-ci high-ci mean]}]]
-                          (hash-map :academic-year academic-year :state state :calendar-year year :mean (round mean) :median (round median) :low-ci (round low-ci) :high-ci (round high-ci))) output)) send-output (range 2016 3000))
-         (map (juxt :academic-year :state :mean :median :low-ci :high-ci :calendar-year))
-         (concat [["academic-year" "state" "mean" "median" "low ci" "high ci" "calendar-year"]])
-         (csv/write-csv writer)))
+    (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+      (->> (mapcat (fn [output year]
+                     (map (fn [[[academic-year state] stats]]
+                            (-> (medley/map-vals round stats)
+                                (assoc :academic-year academic-year :state state :calendar-year year))) (:by-state output))) send-output (range 2016 3000))
+           (map (apply juxt columns))
+           (concat [(map name columns)])
+           (csv/write-csv writer))))
+  (with-open [writer (io/writer (io/file "output-c.csv"))]
+    (let [columns [:calendar-year :academic-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+      (->> (mapcat (fn [output year]
+                     (map (fn [[academic-year stats]]
+                            (-> (medley/map-vals round stats)
+                                (assoc :academic-year academic-year :calendar-year year)))
+                          (:total-in-send-by-ay output))) send-output (range 2016 3000))
+           (map (apply juxt columns))
+           (concat [(map name columns)])
+           (csv/write-csv writer))))
+  (with-open [writer (io/writer (io/file "output-d.csv"))]
+    (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+      (->> (map (fn [stats year]
+                  (-> (medley/map-vals round stats)
+                      (assoc :calendar-year year)))
+                (map :total-in-send send-output) (range 2016 3000))
+           (map (apply juxt columns))
+           (concat [(map name columns)])
+           (csv/write-csv writer))))
   "Done")

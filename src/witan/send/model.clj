@@ -49,7 +49,8 @@
     :witan/type :function
     :witan/fn :send/run-send-model
     :witan/params {:seed-year seed-year
-                   :projection-year projection-year}}
+                   :projection-year projection-year
+                   :random-seed 104}}
    {:witan/name :output-send-results
     :witan/version "1.0.0"
     :witan/type :output
