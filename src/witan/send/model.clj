@@ -5,8 +5,9 @@
                                                map-model-meta]]
             [witan.send.send :as send]))
 
-(def seed-year 2016)
-(def projection-year 2019)
+(def seed-year 2017)
+(def projection-year 2020)
+(def random-seed 50)
 
 (def send-model-workflow
   "Defines each step of the model"
@@ -50,7 +51,7 @@
     :witan/fn :send/run-send-model
     :witan/params {:seed-year seed-year
                    :projection-year projection-year
-                   :random-seed 104}}
+                   :random-seed random-seed}}
    {:witan/name :output-send-results
     :witan/version "1.0.0"
     :witan/type :output

@@ -53,6 +53,7 @@
    (and (= setting :IN) (<= year 0))
    (and (= setting :ISC) (<= 14 year 19))
    (and (= setting :ISS) (<= 0 year 15))
+   (and (= setting :ISSR) (<= 0 year 15))
    (and (= setting :IT) (<= 2 year 15))
    (and (= setting :MMS) (<= year 15))
    (and (= setting :MSS) (<= year 14))
@@ -76,7 +77,7 @@
 
 (defn valid-transition? [academic-year state-1 state-2]
   (and (valid-state? academic-year state-1)
-       (valid-state? academic-year state-1)))
+       (valid-state? (inc academic-year) state-2)))
 
 (def valid-transitions
   (->> (concat (for [academic-year sc/academic-years
@@ -127,48 +128,74 @@
                                                :else [a (+ b 1)]))
                                            [1 1])
                                    (apply /))
-        _ (println "Status Quo multiplier" status-quo-multiplier)
-        valid-transition-counts (reduce (fn [coll [academic-year from-state _]]
-                                          (update coll [academic-year from-state] some+ 1))
-                                        {} valid-transitions)]
+        _ (println "Status Quo multiplier" status-quo-multiplier)]
     (doto (->> (reduce (fn [coll [academic-year from-state to-state :as k]]
-                         (let [c (get observations [academic-year from-state to-state] 0)]
-                           (assoc-in coll [[academic-year from-state] to-state] c)))
+                         (if (and (not= from-state sc/non-send)
+                                  (= to-state sc/non-send))
+                           ;; Ignore leavers - dealt with separately
+                           coll
+                           (let [c (get observations [academic-year from-state to-state] 0)]
+                             (assoc-in coll [[academic-year from-state] to-state] c))))
                        {} valid-transitions)
                (reduce (fn [coll [[academic-year from-state] state-counts]]
                          (if (= from-state sc/non-send)
                            (assoc coll [academic-year from-state] state-counts)
-                           (let [ks (keys state-counts)
-                                 xs (vals state-counts)
-                                 ps (kixi.stats.random/multinomial-probabilities xs)
+                           (let [[ks xs] (apply map vector state-counts)
+                                 ps (multinomial-probabilities xs)
                                  ps (zipmap ks ps)
-                                 ps (update ps from-state * status-quo-multiplier)
-                                 t (apply + (vals ps))
-                                 ps (medley/map-vals #(/ % t) ps)]
+                                 ps (if (contains? ps from-state)
+                                      (let [ps (update ps from-state * status-quo-multiplier)
+                                            t (apply + (vals ps))]
+                                        (medley/map-vals #(/ % t) ps))
+                                      ps)]
                              (assoc coll [academic-year from-state] ps))))
                        {}))
-      clojure.pprint/pprint)))
+      #_clojure.pprint/pprint)))
+
+(defn leaver-probabilities [ds]
+  (->> (ds/row-maps ds)
+       (reduce (fn [coll {:keys [academic-year-1 setting-1 setting-2]}]
+                 (cond
+                   (= setting-1 sc/non-send)
+                   coll
+                   (= setting-2 sc/non-send)
+                   (update-in coll [academic-year-1 :alpha] some+ 1)
+                   :else
+                   (update-in coll [academic-year-1 :beta] some+ 1)))
+               {})
+       (medley/map-vals
+        (fn [{:keys [alpha beta]}]
+          (first (multinomial-probabilities (vector (or alpha 0) (or beta 0))))))))
 
 (defn sample-send-transitions
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
-  [seed n probs]
-  (let [ps (vals probs)
-        xs (draw (multinomial n ps) {:seed seed})]
-    (zipmap (keys probs) xs)))
+  [seed n probs leaver-probability]
+  (let [leavers (draw (binomial {:n n :p leaver-probability}) {:seed seed})]
+    (if (or (empty? probs) (= leavers n))
+      {sc/non-send n}
+      (let [[ks ps] (apply mapv vector probs)
+            xs (draw (multinomial (- n leavers) ps) {:seed (inc seed)})]
+        (-> (zipmap ks xs)
+            (assoc sc/non-send leavers))))))
 
 (defn sample-joiner-transitions
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
   [seed n alphas]
-  (let [n' (apply + (vals alphas))
-        alphas' (dissoc alphas sc/non-send)
-        p (/ (apply + (vals alphas')) n')
-        joiners (draw (binomial {:n n :p p}))
-        ps (multinomial-probabilities (vals alphas'))
-        xs (draw (multinomial joiners ps) {:seed seed})]
-    (-> (zipmap (keys alphas') xs)
-        (assoc sc/non-send (- n joiners)))))
+  (if (or #_(empty? alphas)
+          (and (= (count alphas) 1) (contains? alphas sc/non-send)))
+    {sc/non-send n}
+    (let [n' (apply + (vals alphas))
+          [ks' as'] (apply mapv vector (dissoc alphas sc/non-send))
+          j (apply + as')
+          p (first (multinomial-probabilities [j (- n' j)]))
+          joiners (draw (binomial {:n n :p p}) {:seed seed})
+          ps (multinomial-probabilities as')
+          xs (draw (multinomial joiners ps) {:seed (inc seed)})]
+      (doto (-> (zipmap ks' xs)
+                (assoc sc/non-send (- n joiners)))
+        #_clojure.pprint/pprint))))
 
 (def total-by-age
   "Given a sequence of {:age age :population population}

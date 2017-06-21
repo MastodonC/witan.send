@@ -73,7 +73,7 @@
       (conj non-send)))
 
 (def academic-years
-  (range -5 (inc 25)))
+  (range -5 (inc 22)))
 
 (def Ages
   (range 0 (inc 26)))
@@ -208,3 +208,6 @@
                StatisticsSchema}
     :total-in-send-by-ay {AcademicYear StatisticsSchema}
     :total-in-send StatisticsSchema}])
+
+(def LeaverProbabilities
+  {AcademicYear R})
