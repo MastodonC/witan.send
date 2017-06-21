@@ -70,8 +70,10 @@
                      (map vector (range)) ;; For random seed
                      (reduce (fn [coll [i [[year state :as k] population]]]
                                (if (< year 21)
-                                 (let [alphas (get transition-probabilities k)
-                                       next-states-sample (u/sample-transitions (+ simulation i) population alphas)]
+                                 (let [probs (get transition-probabilities k)
+                                       next-states-sample (if (= state sc/non-send)
+                                                            (u/sample-joiner-transitions (+ simulation i) population probs)
+                                                            (u/sample-send-transitions (+ simulation i) population probs))]
                                    (when (and (= state sc/non-send)
                                               (= year -5))
                                      #_(println "alphas" alphas)

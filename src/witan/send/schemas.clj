@@ -105,6 +105,11 @@
 (def N
   (s/constrained s/Int (complement neg?)))
 
+(def R s/Num)
+
+(def R-pos
+  (s/constrained R pos?))
+
 (def Rgt1
   (s/constrained s/Num pos?))
 
@@ -157,7 +162,7 @@
 (def TransitionAlphas
   {[(s/one AcademicYear :academic-year)
     (s/one State :state)]
-   {State Rgt1}})
+   {State R}})
 
 (def SENDPopulation
   (make-ordered-ds-schema [[:calendar-year CalendarYear]

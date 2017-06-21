@@ -4,7 +4,7 @@
             [witan.workspace-api.utils :as utils]
             [witan.send.schemas :as sc]
             [kixi.stats.core :as kixi]
-            [kixi.stats.random :refer [dirichlet-multinomial draw]]
+            [kixi.stats.random :refer [multinomial-probabilities multinomial binomial draw]]
             [redux.core :as r]
             [medley.core :as medley]
             [schema.core :as s]
@@ -131,22 +131,44 @@
         valid-transition-counts (reduce (fn [coll [academic-year from-state _]]
                                           (update coll [academic-year from-state] some+ 1))
                                         {} valid-transitions)]
-    (doto (reduce (fn [coll [academic-year from-state to-state :as k]]
-                    (if-let [c (get observations [academic-year from-state to-state])]
-                      (assoc-in coll [[academic-year from-state] to-state] (inc (* c (get valid-transition-counts [academic-year from-state]))))
-                      (if (= from-state to-state)
-                        (assoc-in coll [[academic-year from-state] to-state] status-quo-multiplier)
-                        (assoc-in coll [[academic-year from-state] to-state] 1))))
-                  {} valid-transitions)
+    (doto (->> (reduce (fn [coll [academic-year from-state to-state :as k]]
+                         (let [c (get observations [academic-year from-state to-state] 0)]
+                           (assoc-in coll [[academic-year from-state] to-state] c)))
+                       {} valid-transitions)
+               (reduce (fn [coll [[academic-year from-state] state-counts]]
+                         (if (= from-state sc/non-send)
+                           (assoc coll [academic-year from-state] state-counts)
+                           (let [ks (keys state-counts)
+                                 xs (vals state-counts)
+                                 ps (kixi.stats.random/multinomial-probabilities xs)
+                                 ps (zipmap ks ps)
+                                 ps (update ps from-state * status-quo-multiplier)
+                                 t (apply + (vals ps))
+                                 ps (medley/map-vals #(/ % t) ps)]
+                             (assoc coll [academic-year from-state] ps))))
+                       {}))
       clojure.pprint/pprint)))
 
-(defn sample-transitions
+(defn sample-send-transitions
+  "Takes a total count and map of categories to probabilities and
+  returns the count in each category at the next step."
+  [seed n probs]
+  (let [ps (vals probs)
+        xs (draw (multinomial n ps) {:seed seed})]
+    (zipmap (keys probs) xs)))
+
+(defn sample-joiner-transitions
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
   [seed n alphas]
-  (let [as (vals alphas)
-        xs (draw (dirichlet-multinomial n as) {:seed seed})]
-    (zipmap (keys alphas) xs)))
+  (let [n' (apply + (vals alphas))
+        alphas' (dissoc alphas sc/non-send)
+        p (/ (apply + (vals alphas')) n')
+        joiners (draw (binomial {:n n :p p}))
+        ps (multinomial-probabilities (vals alphas'))
+        xs (draw (multinomial joiners ps) {:seed seed})]
+    (-> (zipmap (keys alphas') xs)
+        (assoc sc/non-send (- n joiners)))))
 
 (def total-by-age
   "Given a sequence of {:age age :population population}
