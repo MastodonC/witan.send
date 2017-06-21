@@ -219,6 +219,24 @@
               (update ay some+ population)))
           {} model))
 
+(defn model-population-by-need
+  [model]
+  (reduce (fn [coll [[ay state] population]]
+            (let [[need setting] (need-setting state)]
+              (cond-> coll
+                (not= state sc/non-send)
+                (update need some+ population))))
+          {} model))
+
+(defn model-population-by-setting
+  [model]
+  (reduce (fn [coll [[ay state] population]]
+            (let [[need setting] (need-setting state)]
+              (cond-> coll
+                (not= state sc/non-send)
+                (update setting some+ population))))
+          {} model))
+
 (defn model-send-population
   [model]
   (reduce (fn [n [[ay state] population]]

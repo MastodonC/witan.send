@@ -207,7 +207,9 @@
                 (s/one State :state)]
                StatisticsSchema}
     :total-in-send-by-ay {AcademicYear StatisticsSchema}
-    :total-in-send StatisticsSchema}])
+    :total-in-send StatisticsSchema
+    :total-in-send-by-need {Need StatisticsSchema}
+    :total-in-send-by-setting {Setting StatisticsSchema}}])
 
 (def LeaverProbabilities
   {AcademicYear R})
