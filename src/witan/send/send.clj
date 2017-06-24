@@ -69,7 +69,7 @@
                                                (println "Nil probs: year:" year "state:" state))
                                            next-states-sample (if (= state sc/non-send)
                                                                 (u/sample-joiner-transitions (+ simulation i) population probs)
-                                                                (u/sample-send-transitions (+ simulation i) population probs (get leaver-probabilities (dec year) 0.49)))]
+                                                                (u/sample-send-transitions (+ simulation i) population probs (get leaver-probabilities (dec year))))]
                                        (reduce (fn [coll [next-state count]]
                                                  (cond-> coll
                                                    (pos? count)

@@ -4,7 +4,7 @@
             [witan.workspace-api.utils :as utils]
             [witan.send.schemas :as sc]
             [kixi.stats.core :as kixi]
-            [kixi.stats.random :refer [multinomial-probabilities multinomial binomial draw]]
+            [kixi.stats.random :refer [multinomial-probabilities multinomial binomial beta-binomial draw]]
             [redux.core :as r]
             [medley.core :as medley]
             [schema.core :as s]
@@ -153,25 +153,30 @@
       #_clojure.pprint/pprint)))
 
 (defn leaver-probabilities [ds]
-  (->> (ds/row-maps ds)
-       (reduce (fn [coll {:keys [academic-year-1 setting-1 setting-2]}]
-                 (cond
-                   (= setting-1 sc/non-send)
-                   coll
-                   (= setting-2 sc/non-send)
-                   (update-in coll [academic-year-1 :alpha] some+ 1)
-                   :else
-                   (update-in coll [academic-year-1 :beta] some+ 1)))
-               {})
-       (medley/map-vals
-        (fn [{:keys [alpha beta]}]
-          (first (multinomial-probabilities (vector (or alpha 0) (or beta 0))))))))
+  (let [prior {:alpha 1 :beta 1}]
+    (merge (reduce (fn [coll ay]
+                     (assoc coll ay prior))
+                   {} sc/academic-years)
+           (->> (ds/row-maps ds)
+                (reduce (fn [coll {:keys [academic-year-1 setting-1 setting-2]}]
+                          (cond
+                            (= setting-1 sc/non-send)
+                            coll
+                            (= setting-2 sc/non-send)
+                            (update-in coll [academic-year-1 :alpha] some+ 1)
+                            :else
+                            (update-in coll [academic-year-1 :beta] some+ 1)))
+                        {})
+                (medley/map-vals
+                 (fn [{:keys [alpha beta]}]
+                   {:alpha (+ (or alpha 0) (:alpha prior))
+                    :beta (+ (or beta 0) (:beta prior))}))))))
 
 (defn sample-send-transitions
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
-  [seed n probs leaver-probability]
-  (let [leavers (draw (binomial {:n n :p leaver-probability}) {:seed seed})]
+  [seed n probs beta]
+  (let [leavers (draw (beta-binomial n beta) {:seed seed})]
     (if (or (empty? probs) (= leavers n))
       {sc/non-send n}
       (let [[ks ps] (apply mapv vector probs)

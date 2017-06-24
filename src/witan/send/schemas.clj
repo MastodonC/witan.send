@@ -212,4 +212,4 @@
     :total-in-send-by-setting {Setting StatisticsSchema}}])
 
 (def LeaverProbabilities
-  {AcademicYear R})
+  {AcademicYear {:alpha N :beta N}})
