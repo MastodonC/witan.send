@@ -47,18 +47,18 @@
 (defn valid-year-setting? [year setting]
   (or
    (and (= setting :CC) (<= year 0))
-   (and (= setting :EO) (<= -1 year 13))
-   (and (= setting :FEC) (<= 12 year 22))
-   (and (= setting :IMS) (<= -1 year 14))
+   (and (= setting :EO) (<= -1 year 14))
+   (and (= setting :FEC) (<= 12 year 20))
+   (and (= setting :IMS) (<= -3 year 14))
    (and (= setting :IN) (<= year 0))
-   (and (= setting :ISC) (<= 14 year 19))
-   (and (= setting :ISS) (<= 0 year 15))
-   (and (= setting :ISSR) (<= 0 year 15))
+   (and (= setting :ISC) (<= 15 year 20))
+   (and (= setting :ISS) (<= 0 year 14))
+   (and (= setting :ISSR) (<= 0 year 14))
    (and (= setting :IT) (<= 2 year 15))
-   (and (= setting :MMS) (<= year 15))
-   (and (= setting :MSS) (<= year 14))
-   (and (= setting :OOE) (<= 6 year 19))
-   (and (= setting :PRU) (<= 2 year 11))
+   (and (= setting :MMS) (<= -3 year 14))
+   (and (= setting :MSS) (<= -3 year 14))
+   (and (= setting :OOE) (<= 6 year 20))
+   (and (= setting :PRU) (<= 2 year 14))
    (and (= setting :MU) (<= -1 year 14))))
 
 (defn valid-state? [academic-year state]
