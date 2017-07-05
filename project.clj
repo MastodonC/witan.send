@@ -16,9 +16,12 @@
                  [instaparse "1.4.3"]
                  [incanter "1.5.7"]
                  [medley "1.0.0"]]
-  :main ^:skip-aot witan.send.send
+  :plugins [[lein-gorilla "0.4.0"]]
+  :main witan.send.main
+  :aot [witan.send.main]
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[witan.workspace-executor "0.2.6"
                                    :exclusions [witan.workspace-api]]
                                   [criterium "0.4.4"]
-                                  [clj-time "0.13.0"]]}})
+                                  [clj-time "0.13.0"]]}}
+  :jvm-opts ["-Xmx8g"])

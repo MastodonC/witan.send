@@ -4,7 +4,7 @@
             [witan.workspace-api.utils :as utils]
             [witan.send.schemas :as sc]
             [kixi.stats.core :as kixi]
-            [kixi.stats.random :refer [multinomial-probabilities multinomial binomial beta-binomial draw]]
+            [kixi.stats.random :refer [multinomial-probabilities multinomial binomial beta-binomial dirichlet-multinomial draw]]
             [redux.core :as r]
             [medley.core :as medley]
             [schema.core :as s]
@@ -108,6 +108,7 @@
                                           (update coll [academic-year-1 (state need-1 setting-1) sc/non-send] some+ 1)
                                           :else
                                           (update coll [academic-year-1 (state need-1 setting-1) (state need-1 setting-2)] some+ 1))) {}))
+
         observations-by-ay (reduce (fn [coll [[academic-year]]]
                                      (update coll academic-year some+ 1))
                                    {} observations)
@@ -128,29 +129,68 @@
                                                :else [a (+ b 1)]))
                                            [1 1])
                                    (apply /))
-        _ (println "Status Quo multiplier" status-quo-multiplier)]
-    (doto (->> (reduce (fn [coll [academic-year from-state to-state :as k]]
-                         (if (and (not= from-state sc/non-send)
-                                  (= to-state sc/non-send))
-                           ;; Ignore leavers - dealt with separately
-                           coll
-                           (let [c (get observations [academic-year from-state to-state] 0)]
-                             (assoc-in coll [[academic-year from-state] to-state] c))))
-                       {} valid-transitions)
-               (reduce (fn [coll [[academic-year from-state] state-counts]]
-                         (if (= from-state sc/non-send)
-                           (assoc coll [academic-year from-state] state-counts)
-                           (let [[ks xs] (apply map vector state-counts)
-                                 ps (multinomial-probabilities xs)
-                                 ps (zipmap ks ps)
-                                 ps (if (contains? ps from-state)
-                                      (let [ps (update ps from-state * status-quo-multiplier)
-                                            t (apply + (vals ps))]
-                                        (medley/map-vals #(/ % t) ps))
-                                      ps)]
-                             (assoc coll [academic-year from-state] ps))))
+        _ (println "Status Quo multiplier" status-quo-multiplier)
+        priors {}]
+    (doto (->> (remove (fn [[_ from-state to-state]]
+                         (or (= from-state sc/non-send)
+                             (= to-state sc/non-send)))
+                       valid-transitions)
+               (reduce (fn [coll [academic-year from-state to-state :as k]]
+                         (let [o (get observations [academic-year from-state to-state] 0)
+                               p (get priors [academic-year from-state to-state] 1)]
+                           (assoc-in coll [[academic-year from-state] to-state] (+ p o))))
                        {}))
       #_clojure.pprint/pprint)))
+
+
+(defn joiner-beta-params [ds y1]
+  (let [alphas (->> (ds/row-maps ds)
+                    (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2 academic-year-2]}]
+                              (cond-> coll
+                                (= setting-1 sc/non-send)
+                                (update academic-year-2 some+ 1)))
+                            {}))
+        betas (merge-with - y1 alphas)]
+    (reduce (fn [coll ay]
+              (assoc coll ay {:alpha (inc (get alphas ay 0))
+                              :beta (inc (get betas ay 0))}))
+            {} sc/academic-years)))
+
+(defn joiner-state-alphas [ds]
+  (let [observations (->> (ds/row-maps ds)
+                          (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
+                                    (cond-> coll
+                                      (= setting-1 sc/non-send)
+                                      (update (state need-2 setting-2) some+ 1))) {}))]
+    observations))
+
+(defn leaver-beta-params [ds population]
+  (let [alphas (->> (ds/row-maps ds)
+                    (reduce (fn [coll {:keys [academic-year-2 setting-2]}]
+                              (cond-> coll
+                                (= setting-2 sc/non-send)
+                                (update academic-year-2 some+ 1)))))
+        betas population]
+    (reduce (fn [coll ay]
+              (assoc coll ay {:alpha (+ (get alphas ay 0) 1)
+                              :beta (+ (get betas ay 0) 1)}))
+            {} sc/academic-years)))
+
+(defn balance-joiners [joiners leavers]
+  (let [join (->> (vals joiners)
+                  (map :alpha)
+                  (reduce +))
+        leave (->> (vals leavers)
+                   (map :alpha)
+                   (reduce +))
+        r (/ leave join) ;; Steady state
+        ;; r (* r 1.3) ;; 30% growth
+        ]
+    ;; Adjust join rates to equal leave
+    (reduce (fn [coll [academic-year params]]
+              (update-in coll [academic-year :alpha] * r))
+            joiners
+            joiners)))
 
 (defn leaver-probabilities [ds]
   (let [prior {:alpha 1 :beta 1}]
@@ -175,21 +215,32 @@
 (defn sample-send-transitions
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
-  [seed n probs beta]
-  (let [leavers (draw (beta-binomial n beta) {:seed seed})]
-    (if (or (empty? probs) (= leavers n))
-      {sc/non-send n}
-      (let [[ks ps] (apply mapv vector probs)
-            xs (draw (multinomial (- n leavers) ps) {:seed (inc seed)})]
-        (-> (zipmap ks xs)
-            (assoc sc/non-send leavers))))))
+  [seed n probs]
+  (if (pos? n)
+    (let [[ks as] (apply mapv vector probs)
+          xs (draw (dirichlet-multinomial n as) {:seed (inc seed)})]
+      (zipmap ks xs))
+    {}))
+
+(defn sample-beta-binomial
+  [seed n params]
+  (if (pos? n)
+    (draw (beta-binomial n params) {:seed seed})
+    0))
+
+(defn sample-joiners
+  [seed n alphas]
+  (if (pos? n)
+    (let [[ks as] (apply mapv vector alphas)]
+      (->> (draw (dirichlet-multinomial n as) {:seed seed})
+           (zipmap ks)))
+    {}))
 
 (defn sample-joiner-transitions
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
   [seed n alphas]
-  (if (or #_(empty? alphas)
-          (and (= (count alphas) 1) (contains? alphas sc/non-send)))
+  (if (and (= (count alphas) 1) (contains? alphas sc/non-send))
     {sc/non-send n}
     (let [n' (apply + (vals alphas))
           [ks' as'] (apply mapv vector (dissoc alphas sc/non-send))
@@ -258,18 +309,18 @@
   (fn
     ([] (IntCountsHistogram. number-of-signigicant-digits))
     ([hist x]
-     (doto hist (.recordValue x)))
+     (doto hist (.recordValue (inc x))))
     ([hist]
-     {:median (.getValueAtPercentile hist 50.0)
-      :mean (.getMean hist)
+     {:median (dec (.getValueAtPercentile hist 50.0))
+      :mean (dec (.getMean hist))
       :std-dev (.getStdDeviation hist)
       :iqr (- (.getValueAtPercentile hist 75.0) (.getValueAtPercentile hist 25.0))
-      :min (.getValueAtPercentile hist 0.0)
-      :max (.getValueAtPercentile hist 100.0)
-      :q1 (.getValueAtPercentile hist 25.0)
-      :q3 (.getValueAtPercentile hist 75.0)
-      :low-ci (.getValueAtPercentile hist 2.5)
-      :high-ci (.getValueAtPercentile hist 97.5)})))
+      :min (dec (.getValueAtPercentile hist 0.0))
+      :max (dec (.getValueAtPercentile hist 100.0))
+      :q1 (dec (.getValueAtPercentile hist 25.0))
+      :q3 (dec (.getValueAtPercentile hist 75.0))
+      :low-ci (dec (.getValueAtPercentile hist 2.5))
+      :high-ci (dec (.getValueAtPercentile hist 97.5))})))
 
 (def mean-or-zero-rf
   (r/post-complete
@@ -279,7 +330,7 @@
 
 (def int-summary-rf
   "Returns a summary of a sequence of integers"
-  (int-ci-rf 3))
+  (int-ci-rf 4))
 
 (defn merge-with-rf
   "Like (apply merge-with f) but for reducing functions"
@@ -303,6 +354,21 @@
      (reduce (fn [coll k]
                (assoc coll k (rf)))
              {} valid-states))
+    ([acc x]
+     (medley/map-kv
+      (fn [k v]
+        [k (rf v (get x k 0))])
+      acc))
+    ([acc]
+     (medley/map-vals rf acc))))
+
+(defn with-keys-rf
+  [rf keys]
+  (fn
+    ([]
+     (reduce (fn [coll k]
+               (assoc coll k (rf)))
+             {} keys))
     ([acc x]
      (medley/map-kv
       (fn [k v]

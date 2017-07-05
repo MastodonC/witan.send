@@ -54,32 +54,52 @@
 (defn update! [coll k f & args]
   (assoc! coll k (apply f (get coll k) args)))
 
-(defn run-model-iteration [simulation transition-probabilities leaver-probabilities model-state projected-population]
-  (let [out (-> (->> model-state
-                     (age-population projected-population)
-                     (reconcile-to-projection projected-population)
-                     (map vector (range)) ;; For random seed
-                     (reduce (fn [coll [i [[year state :as k] population]]]
-                               (cond (or (<= year min-academic-year)
-                                         (> year max-academic-year))
-                                     coll
-                                     :else
-                                     (let [probs (get transition-probabilities [(dec year) state])
-                                           _ (when (nil? probs)
-                                               (println "Nil probs: year:" year "state:" state))
-                                           next-states-sample (if (= state sc/non-send)
-                                                                (u/sample-joiner-transitions (+ simulation i) population probs)
-                                                                (u/sample-send-transitions (+ simulation i) population probs (get leaver-probabilities (dec year))))]
-                                       (reduce (fn [coll [next-state count]]
-                                                 (cond-> coll
-                                                   (pos? count)
-                                                   (update! [year next-state] u/some+ count)))
-                                               coll next-states-sample))))
-                             (transient {})))
-                (persistent!))]
+(defn run-model-iteration [simulation transition-probabilities joiner-beta-params joiner-state-alphas leaver-beta-params model-state projected-population]
+  (let [[state leavers] (->> model-state
+                             (age-population projected-population)
+                             (reconcile-to-projection projected-population)
+                             (map vector (range)) ;; For random seed
+                             (reduce (fn [[coll leavers] [i [[year state :as k] population]]]
+                                       (cond (or (<= year min-academic-year)
+                                                 (> year max-academic-year))
+                                             [coll leavers]
+                                             (= state sc/non-send)
+                                             [(update! coll [year state] u/some+ population) leavers]
+                                             :else
+                                             (if-let [probs (get transition-probabilities [(dec year) state])]
+                                               (let [next-states-sample (u/sample-send-transitions (+ simulation 2) population probs)]
+                                                 [(reduce (fn [coll [next-state count]]
+                                                            (cond-> coll
+                                                              (pos? count)
+                                                              (update! [year next-state] u/some+ count)))
+                                                          coll next-states-sample)
+                                                  leavers])
+                                               [coll (+ leavers population)])))
+                                     [(transient {}) 0]))
+        out (-> state
+                (persistent!))
+        _ (prn leavers)
+        ;; Create a set of dirichlet alphas
+        alphas (reduce (fn [coll [k {:keys [alpha beta]}]]
+                         (-> (update coll k u/some+ alpha)))
+                       {} joiner-beta-params)
+        out (->> (doto (u/sample-joiners simulation leavers alphas))
+                 (reduce (fn [coll [year n]]
+                           (->> (u/sample-joiners  n joiner-state-alphas)
+                                (reduce (fn [coll [state m]]
+                                          (update coll [year state] u/some+ m))
+                                        coll)))
+                         out))
+        ]
     (doto out
       #_clojure.pprint/pprint)))
 
+#_(u/sample-beta-binomial (+ simulation i) population (get leaver-beta-params year))
+
+#_(let [joiners (u/sample-beta-binomial (+ simulation i) population (get joiner-beta-params year))]
+                                                                  (if (pos? joiners)
+                                                                    (u/sample-joiners (+ simulation i) joiners joiner-state-alphas)
+                                                                    {}))
 ;; Workflow functions
 
 (definput initial-population-1-0-0
@@ -119,7 +139,10 @@
    :witan/output-schema {:population-by-age-state sc/ModelState
                          :transition-alphas sc/TransitionAlphas
                          :leaver-probabilities sc/LeaverProbabilities
-                         :projected-population sc/PopulationByAcademicYear}}
+                         :projected-population sc/PopulationByAcademicYear
+                         :joiner-beta-params sc/AcademicYearBetaParams
+                         :leaver-beta-params sc/AcademicYearBetaParams
+                         :joiner-state-alphas sc/StateAlphas}}
   [{:keys [initial-population initial-send-population
            transition-matrix projected-population]} _]
   (let [y1 (->> (ds/row-maps initial-population)
@@ -127,15 +150,26 @@
         y2 (->> (ds/row-maps projected-population)
                 (filter #(= (:calendar-year %) 2018))
                 (u/total-by-academic-year))
+        send-population-by-ay (-> (ds/row-maps initial-send-population)
+                                  (u/total-by-academic-year))
         population-by-ay (->> (ds/row-maps projected-population)
                               (partition-by :calendar-year)
-                              (map #(into {} (map (juxt :academic-year :population) %))))
+                              (map u/total-by-academic-year))
+        joiner-beta-params (u/joiner-beta-params transition-matrix
+                                                 y1)
+        leaver-beta-params (u/leaver-beta-params transition-matrix
+                                                 send-population-by-ay)
+        joiner-beta-params (u/balance-joiners joiner-beta-params leaver-beta-params)
+        joiner-state-alphas (u/joiner-state-alphas transition-matrix)
         initial-state (reconcile-to-projection
                        (format-projection (ds/row-maps initial-population))
                        (initialise-model (ds/row-maps initial-send-population)))]
     {:population-by-age-state initial-state
      :transition-alphas (u/transition-alphas transition-matrix y1 y2)
+     :joiner-beta-params joiner-beta-params
+     :leaver-beta-params leaver-beta-params
      :leaver-probabilities (u/leaver-probabilities transition-matrix)
+     :joiner-state-alphas joiner-state-alphas
      :projected-population population-by-ay}))
 
 (defworkflowfn run-send-model-1-0-0
@@ -146,20 +180,23 @@
    :witan/input-schema {:population-by-age-state sc/ModelState
                         :transition-alphas sc/TransitionAlphas
                         :leaver-probabilities sc/LeaverProbabilities
-                        :projected-population sc/PopulationByAcademicYear}
+                        :projected-population sc/PopulationByAcademicYear
+                        :joiner-beta-params sc/AcademicYearBetaParams
+                        :leaver-beta-params sc/AcademicYearBetaParams
+                        :joiner-state-alphas sc/StateAlphas}
    :witan/param-schema {:seed-year sc/YearSchema
                         :projection-year sc/YearSchema
                         :random-seed s/Int}
    :witan/output-schema {:send-output sc/Results}}
-  [{:keys [population-by-age-state transition-alphas leaver-probabilities projected-population]}
+  [{:keys [population-by-age-state transition-alphas leaver-probabilities projected-population joiner-beta-params leaver-beta-params joiner-state-alphas]}
    {:keys [seed-year projection-year]}]
   (let [iterations (inc (- projection-year seed-year))]
-    {:send-output (->> (for [simulation (range 250)]
-                         (let [projection (doall (reductions (partial run-model-iteration simulation transition-alphas leaver-probabilities) population-by-age-state projected-population))]
+    {:send-output (->> (for [simulation (range 100)]
+                         (let [projection (doall (reductions (partial run-model-iteration simulation transition-alphas joiner-beta-params joiner-state-alphas leaver-beta-params) population-by-age-state projected-population))]
                            (println (format "Created projection %d" simulation))
                            projection))
                        (transduce identity (u/partition-rf iterations (r/fuse {:by-state (u/model-states-rf u/int-summary-rf)
-                                                                               :total-in-send-by-ay (r/pre-step (u/merge-with-rf u/int-summary-rf) u/model-population-by-ay)
+                                                                               :total-in-send-by-ay (r/pre-step (u/with-keys-rf u/int-summary-rf sc/academic-years) u/model-population-by-ay)
                                                                                :total-in-send (r/pre-step u/int-summary-rf u/model-send-population)
                                                                                :total-in-send-by-need (r/pre-step (u/merge-with-rf u/int-summary-rf) u/model-population-by-need)
                                                                                :total-in-send-by-setting (r/pre-step (u/merge-with-rf u/int-summary-rf) u/model-population-by-setting)})))
