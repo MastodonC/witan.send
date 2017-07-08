@@ -141,7 +141,7 @@
   (let [total-alphas (->> (ds/row-maps ds)
                           (reduce (fn [coll {:keys [setting-1 setting-2]}]
                                     (cond-> coll
-                                      (not= setting-2 sc/non-send )
+                                      (not= setting-2 sc/non-send)
                                       (update setting-2 some+ 1)))
                                   {}))
         transition-alphas
