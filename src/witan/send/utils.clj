@@ -372,7 +372,6 @@
   (if (pos? n)
     (let [non-movers (draw (beta-binomial n mover-beta))
           movers (- n non-movers)]
-      (prn {:movers movers :non-movers non-movers})
       (-> (sample-dirichlet-multinomial seed movers probs)
           (assoc state non-movers)))
     {}))
