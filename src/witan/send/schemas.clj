@@ -217,5 +217,11 @@
 (def AcademicYearBetaParams
   {AcademicYear {:alpha s/Num :beta s/Num}})
 
+(def BetaParams
+  {:alpha s/Num :beta s/Num})
+
 (def StateAlphas
   {State s/Num})
+
+(def AgeAlphas
+  {AcademicYear s/Num})
