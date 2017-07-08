@@ -59,7 +59,7 @@
              :Too-old])
 
 (def settings
-  [:CC :EO :FEC :IMS :IN :ISC :ISS :ISSR :IT :MMS :MSS :OOE :PRU :MU])
+  [:CC :EO :FEC :IMS :IN :ISC :ISCR :ISS :ISSR :IT :MMS :MSS :OOE :PRU :MU])
 
 (def needs
   [:SLD :ASD :MLD :PD :HI :M :SLCN :PMLD :SEMH :VI :OTH :SPLD :MSI])
@@ -209,7 +209,9 @@
     :total-in-send-by-ay {AcademicYear StatisticsSchema}
     :total-in-send StatisticsSchema
     :total-in-send-by-need {Need StatisticsSchema}
-    :total-in-send-by-setting {Setting StatisticsSchema}}])
+    :total-in-send-by-setting {Setting StatisticsSchema}
+    :total-cost StatisticsSchema
+    :total-in-send-by-ay-group {s/Str StatisticsSchema}}])
 
 (def LeaverProbabilities
   {AcademicYear {:alpha s/Num :beta s/Num}})
@@ -225,3 +227,10 @@
 
 (def AgeAlphas
   {AcademicYear s/Num})
+
+(def SettingCost
+  (make-ordered-ds-schema [[:setting Setting]
+                           [:cost s/Num]]))
+
+(def SettingCostLookup
+  {Setting s/Num})

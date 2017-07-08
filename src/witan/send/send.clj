@@ -65,12 +65,12 @@
                                                           (> year max-academic-year))
                                                       [coll leavers variance]
                                                       :else
-                                                      (if-let [probs (get mover-state-alphas [(dec year) state])]
+                                                      (if-let [probs (get mover-state-alphas [year state])]
                                                         (let [leaver-params (get leaver-beta-params year)
                                                               mover-params (get mover-beta-params year)
                                                               l (u/sample-beta-binomial population leaver-params)
                                                               v (u/beta-binomial-variance population leaver-params)
-                                                              next-states-sample (u/sample-send-transitions  state (- population l) probs mover-params)]
+                                                              next-states-sample (u/sample-send-transitions state (- population l) probs mover-params)]
                                                           [(reduce (fn [coll [next-state count]]
                                                                      (cond-> coll
                                                                        (pos? count)
@@ -89,8 +89,6 @@
         
         in-send-count (->> (vals out)
                            (apply +))
-
-        
 
         target-growth 19.5
         target-joiners (+ leavers target-growth)
@@ -151,6 +149,12 @@
    :witan/key :projected-population
    :witan/schema sc/PopulationSYA})
 
+(definput setting-cost-1-0-0
+  {:witan/name :send/setting-cost
+   :witan/version "1.0.0"
+   :witan/key :setting-cost
+   :witan/schema sc/SettingCost})
+
 (defworkflowfn prepare-send-inputs-1-0-0
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
@@ -159,7 +163,8 @@
    :witan/input-schema {:initial-population sc/PopulationSYA
                         :initial-send-population sc/SENDPopulation
                         :transition-matrix sc/TransitionCounts
-                        :projected-population sc/PopulationSYA}
+                        :projected-population sc/PopulationSYA
+                        :setting-cost sc/SettingCost}
    :witan/param-schema {}
    :witan/output-schema {:population-by-age-state sc/ModelState
                          :projected-population sc/PopulationByAcademicYear
@@ -169,9 +174,10 @@
                          :joiner-state-alphas sc/StateAlphas
                          :joiner-age-alphas sc/AgeAlphas
                          :mover-beta-params sc/AcademicYearBetaParams
-                         :mover-state-alphas sc/TransitionAlphas}}
+                         :mover-state-alphas sc/TransitionAlphas
+                         :setting-cost-lookup sc/SettingCostLookup}}
   [{:keys [initial-population initial-send-population
-           transition-matrix projected-population]} _]
+           transition-matrix projected-population setting-cost]} _]
   (let [y1 (->> (ds/row-maps initial-population)
                 (u/total-by-academic-year))
         send-population-by-ay (-> (ds/row-maps initial-send-population)
@@ -196,7 +202,10 @@
      :joiner-age-alphas joiner-age-alphas
      :projected-population population-by-ay
      :mover-beta-params mover-beta-params
-     :mover-state-alphas (u/mover-state-alphas transition-matrix)}))
+     :mover-state-alphas (u/mover-state-alphas transition-matrix)
+     :setting-cost-lookup (->> (ds/row-maps setting-cost)
+                               (map (juxt :setting :cost))
+                               (into {}))}))
 
 (defworkflowfn run-send-model-1-0-0
   "Outputs the population for the last year of historic data, with one
@@ -211,16 +220,18 @@
                         :joiner-state-alphas sc/StateAlphas
                         :joiner-age-alphas sc/AgeAlphas
                         :mover-beta-params sc/AcademicYearBetaParams
-                        :mover-state-alphas sc/TransitionAlphas}
+                        :mover-state-alphas sc/TransitionAlphas
+                        :setting-cost-lookup sc/SettingCostLookup}
    :witan/param-schema {:seed-year sc/YearSchema
+                        :simulations s/Int
                         :projection-year sc/YearSchema
                         :random-seed s/Int}
    :witan/output-schema {:send-output sc/Results}}
-  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas joiner-age-alphas leaver-beta-params leaver-age-alphas mover-beta-params mover-state-alphas] :as inputs}
-   {:keys [seed-year projection-year random-seed]}]
+  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas joiner-age-alphas leaver-beta-params leaver-age-alphas mover-beta-params mover-state-alphas setting-cost-lookup] :as inputs}
+   {:keys [seed-year projection-year random-seed simulations]}]
   (let [iterations (inc (- projection-year seed-year))]
     (u/set-seed! random-seed)
-    {:send-output (->> (for [simulation (range 10)]
+    {:send-output (->> (for [simulation (range simulations)]
                          (let [projection (doall (reductions (partial run-model-iteration simulation inputs) population-by-age-state projected-population))]
                            (println (format "Created projection %d" simulation))
                            projection))
@@ -228,7 +239,11 @@
                                                                                :total-in-send-by-ay (r/pre-step (u/with-keys-rf u/int-summary-rf sc/academic-years) u/model-population-by-ay)
                                                                                :total-in-send (r/pre-step u/int-summary-rf u/model-send-population)
                                                                                :total-in-send-by-need (r/pre-step (u/merge-with-rf u/int-summary-rf) u/model-population-by-need)
-                                                                               :total-in-send-by-setting (r/pre-step (u/merge-with-rf u/int-summary-rf) u/model-population-by-setting)})))
+                                                                               :total-in-send-by-setting (r/pre-step (u/merge-with-rf u/int-summary-rf) u/model-population-by-setting)
+                                                                               :total-cost (r/pre-step u/int-summary-rf (comp (partial u/total-setting-cost setting-cost-lookup)
+                                                                                                                              u/model-population-by-setting))
+                                                                               :total-in-send-by-ay-group (r/pre-step (u/merge-with-rf u/int-summary-rf)
+                                                                                                              u/model-population-by-ay-group)})))
                        (doall))}))
 
 (defworkflowoutput output-send-results-1-0-0
@@ -283,6 +298,25 @@
                   (-> (medley/map-vals round stats)
                       (assoc :calendar-year year)))
                 (map :total-in-send send-output) (range 2017 3000))
+           (map (apply juxt columns))
+           (concat [(map name columns)])
+           (csv/write-csv writer))))
+  (with-open [writer (io/writer (io/file "total-cost.csv"))]
+    (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+      (->> (map (fn [stats year]
+                  (-> (medley/map-vals round stats)
+                      (assoc :calendar-year year)))
+                (map :total-cost send-output) (range 2017 3000))
+           (map (apply juxt columns))
+           (concat [(map name columns)])
+           (csv/write-csv writer))))
+  (with-open [writer (io/writer (io/file "output-ay-group.csv"))]
+    (let [columns [:calendar-year :ay-group :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+      (->> (mapcat (fn [output year]
+                     (map (fn [[ay-group stats]]
+                            (-> (medley/map-vals round stats)
+                                (assoc :ay-group ay-group :calendar-year year)))
+                          (:total-in-send-by-ay-group output))) send-output (range 2017 3000))
            (map (apply juxt columns))
            (concat [(map name columns)])
            (csv/write-csv writer))))

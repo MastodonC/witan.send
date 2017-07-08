@@ -83,8 +83,8 @@
        (filter #(apply valid-state? %))))
 
 (defn valid-transition? [academic-year state-1 state-2]
-  (and (valid-state? academic-year state-1)
-       (valid-state? (inc academic-year) state-2)))
+  (and (valid-state? (dec academic-year) state-1)
+       (valid-state? academic-year state-2)))
 
 (def valid-transitions
   (->> (concat (for [academic-year sc/academic-years
@@ -136,7 +136,8 @@
        (into #{})))
 
 (defn mover-state-alphas
-  "Creates transition alphas based on prior belief and observations"
+  "Creates transition alphas based on observations.
+  Returns a map indexed by NCY and state, where NCY is the year they're in *once they've moved*."
   [ds]
   (let [total-alphas (->> (ds/row-maps ds)
                           (reduce (fn [coll {:keys [setting-1 setting-2]}]
@@ -164,11 +165,7 @@
                               (not= setting-2 sc/non-send)
                               (not= setting-1 setting-2))
                          (update-in [academic-year-2 setting-2] some+ 1)))
-                     {})
-             #_(medley/map-kv (fn [ay alphas]
-                                (let [transition-alphas (->> (valid-settings ay)
-                                                             (select-keys transition-alphas))]
-                                  [ay (merge-alphas 0.5 alphas transition-alphas)]))))
+                     {}))
 
         actual-transitions
         (->> (ds/row-maps ds)
@@ -201,7 +198,6 @@
                                                        (medley/map-keys #(state need-1 %))))))
                      {}))
         priors {}]
-    #_(clojure.pprint/pprint transition-alphas-2)
     transition-alphas-2))
 
 (defn mover-beta-params [ds]
@@ -437,6 +433,30 @@
                 (update setting some+ population))))
           {} model))
 
+(defn ay-groups [ay]
+  (condp >= ay
+    0 "NCY < 1"
+    6 "NCY 1-6"
+    11 "NCY 7-11"
+    13 "NCY 12-13"
+    "NCY 14+"))
+
+(defn model-population-by-ay-group
+  [model]
+  (reduce (fn [coll [[ay state] population]]
+            (let [ay-group (ay-groups ay)]
+              (cond-> coll
+                (not= state sc/non-send)
+                (update ay-group some+ population))))
+          {} model))
+
+(defn total-setting-cost
+  [setting-lookup population-by-setting]
+  (-> (reduce (fn [cost [setting population]]
+                (+ cost (* population (get setting-lookup setting 0))))
+              0 population-by-setting)
+      round))
+
 (defn model-send-population
   [model]
   (reduce (fn [n [[ay state] population]]
@@ -444,7 +464,6 @@
               (not= state sc/non-send)
               (+ population)))
           0 model))
-
 
 ;;;; Reducing functions for use with transduce
 

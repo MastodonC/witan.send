@@ -8,6 +8,7 @@
 (def seed-year 2017)
 (def projection-year 2025)
 (def random-seed 50)
+(def simulations 1000)
 
 (def send-model-workflow
   "Defines each step of the model"
@@ -15,6 +16,7 @@
    [:initial-send-population :prepare-send-inputs]
    [:transition-matrix :prepare-send-inputs]
    [:projected-population :prepare-send-inputs]
+   [:setting-cost :prepare-send-inputs]
    [:prepare-send-inputs :run-send-model]
    [:run-send-model :output-send-results]])
 
@@ -40,6 +42,11 @@
     :witan/type :input
     :witan/fn :send/projected-population
     :witan/params {:src ""}}
+   {:witan/name :setting-cost
+    :witan/version "1.0.0"
+    :witan/type :input
+    :witan/fn :send/setting-cost
+    :witan/params {:src ""}}
    {:witan/name :prepare-send-inputs
     :witan/version "1.0.0"
     :witan/type :function
@@ -51,7 +58,8 @@
     :witan/fn :send/run-send-model
     :witan/params {:seed-year seed-year
                    :projection-year projection-year
-                   :random-seed random-seed}}
+                   :random-seed random-seed
+                   :simulations simulations}}
    {:witan/name :output-send-results
     :witan/version "1.0.0"
     :witan/type :output
@@ -76,6 +84,7 @@
                    send/projected-population-1-0-0
                    send/prepare-send-inputs-1-0-0
                    send/run-send-model-1-0-0
-                   send/output-send-results-1-0-0))
+                   send/output-send-results-1-0-0
+                   send/setting-cost-1-0-0))
     (available-models [_]
       (map-model-meta send-model))))
