@@ -13,6 +13,12 @@
             [witan.send.utils :as u])
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
 
+(def random-seed (atom 0))
+(defn set-seed! [n]
+  (reset! random-seed n))
+(defn get-seed! []
+  (swap! random-seed inc))
+
 (defn round [x]
   (Double/parseDouble (format "%.02f" (double x))))
 
@@ -129,29 +135,10 @@
   (->> (filter #(valid-year-setting? ay %) sc/settings)
        (into #{})))
 
-(defn transition-alphas
+(defn mover-state-alphas
   "Creates transition alphas based on prior belief and observations"
-  [ds y1 y2]
-  (let [observations (->> (ds/row-maps ds)
-                          (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
-                                    (cond (= setting-1 sc/non-send)
-                                          (update coll [academic-year-1 sc/non-send (state need-2 setting-2)] some+ 1)
-                                          (= setting-2 sc/non-send)
-                                          (update coll [academic-year-1 (state need-1 setting-1) sc/non-send] some+ 1)
-                                          :else
-                                          (update coll [academic-year-1 (state need-1 setting-1) (state need-1 setting-2)] some+ 1))) {}))
-
-        observations-by-ay (reduce (fn [coll [[academic-year]]]
-                                     (update coll academic-year some+ 1))
-                                   {} observations)
-        non-send (reduce (fn [coll [ay n]]
-                           (update coll ay - n))
-                         y1 observations-by-ay)
-        observations (reduce (fn [coll [ay n]]
-                               (assoc coll [ay sc/non-send sc/non-send] n))
-                             observations
-                             non-send)
-        total-alphas (->> (ds/row-maps ds)
+  [ds]
+  (let [total-alphas (->> (ds/row-maps ds)
                           (reduce (fn [coll {:keys [setting-1 setting-2]}]
                                     (cond-> coll
                                       (not= setting-2 sc/non-send )
@@ -358,42 +345,34 @@
                     :beta (+ (or beta 0) (:beta prior))}))))))
 
 (defn sample-dirichlet-multinomial
-  [seed n alphas]
+  [n alphas]
   (let [[ks as] (apply mapv vector alphas)]
     (let [xs (if (pos? n)
-               (draw (dirichlet-multinomial n as) {:seed seed})
+               (draw (dirichlet-multinomial n as) {:seed (get-seed!)})
                (repeat 0))]
       (zipmap ks xs))))
+
+(defn sample-beta-binomial
+  [n params]
+  (if (pos? n)
+    (draw (beta-binomial n params) {:seed (get-seed!)})
+    0))
+
+(defn sample-binomial
+  [n p]
+  (if (pos? n)
+    (draw (binomial {:n n :p p}) {:seed (get-seed!)})
+    0))
 
 (defn sample-send-transitions
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
-  [seed state n probs mover-beta]
+  [state n probs mover-beta]
   (if (pos? n)
-    (let [non-movers (draw (beta-binomial n mover-beta))
+    (let [non-movers (sample-beta-binomial n mover-beta)
           movers (- n non-movers)]
-      (-> (sample-dirichlet-multinomial seed movers probs)
+      (-> (sample-dirichlet-multinomial movers probs)
           (assoc state non-movers)))
-    {}))
-
-(defn sample-beta-binomial
-  [seed n params]
-  (if (pos? n)
-    (draw (beta-binomial n params) {:seed seed})
-    0))
-
-(defn sample-binomial
-  [seed n p]
-  (if (pos? n)
-    (draw (binomial {:n n :p p}) {:seed seed})
-    0))
-
-(defn sample-joiners
-  [seed n alphas]
-  (if (pos? n)
-    (let [[ks as] (apply mapv vector alphas)]
-      (->> (draw (dirichlet-multinomial n as) {:seed seed})
-           (zipmap ks)))
     {}))
 
 (defn probability [p]
