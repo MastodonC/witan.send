@@ -54,7 +54,10 @@
 (defn update! [coll k f & args]
   (assoc! coll k (apply f (get coll k) args)))
 
-(defn run-model-iteration [simulation {:keys [transition-alphas joiner-beta-params joiner-state-alphas joiner-age-alphas leaver-beta-params leaver-age-alphas mover-beta-params]} model-state projected-population]
+(defn run-model-iteration [simulation {:keys [joiner-beta-params joiner-state-alphas joiner-age-alphas
+                                              leaver-beta-params leaver-age-alphas
+                                              mover-beta-params mover-state-alphas]}
+                           model-state projected-population]
   (let [[state leavers variance] (->> model-state
                                       (age-population projected-population)
                                       #_(reconcile-to-projection projected-population)
@@ -64,7 +67,7 @@
                                                           (> year max-academic-year))
                                                       [coll leavers variance]
                                                       :else
-                                                      (if-let [probs (get transition-alphas [(dec year) state])]
+                                                      (if-let [probs (get mover-state-alphas [(dec year) state])]
                                                         (let [leaver-params (get leaver-beta-params year)
                                                               mover-params (get mover-beta-params year)
                                                               l (u/sample-beta-binomial (+ simulation i) population leaver-params)
@@ -188,15 +191,14 @@
                         :projected-population sc/PopulationSYA}
    :witan/param-schema {}
    :witan/output-schema {:population-by-age-state sc/ModelState
-                         :transition-alphas sc/TransitionAlphas
-                         :leaver-probabilities sc/LeaverProbabilities
                          :projected-population sc/PopulationByAcademicYear
                          :joiner-beta-params sc/BetaParams
                          :leaver-beta-params sc/AcademicYearBetaParams
                          :leaver-age-alphas sc/AgeAlphas
                          :joiner-state-alphas sc/StateAlphas
                          :joiner-age-alphas sc/AgeAlphas
-                         :mover-beta-params sc/AcademicYearBetaParams}}
+                         :mover-beta-params sc/AcademicYearBetaParams
+                         :mover-state-alphas sc/TransitionAlphas}}
   [{:keys [initial-population initial-send-population
            transition-matrix projected-population]} _]
   (let [y1 (->> (ds/row-maps initial-population)
@@ -219,15 +221,14 @@
         initial-state (initialise-model (ds/row-maps initial-send-population))
         mover-beta-params (u/mover-beta-params transition-matrix)]
     {:population-by-age-state initial-state
-     :transition-alphas (u/transition-alphas transition-matrix y1 y2)
      :joiner-beta-params joiner-beta-params
      :leaver-beta-params leaver-beta-params
-     :leaver-probabilities (u/leaver-probabilities transition-matrix)
      :leaver-age-alphas leaver-age-alphas
      :joiner-state-alphas joiner-state-alphas
      :joiner-age-alphas joiner-age-alphas
      :projected-population population-by-ay
-     :mover-beta-params mover-beta-params}))
+     :mover-beta-params mover-beta-params
+     :mover-state-alphas (u/transition-alphas transition-matrix y1 y2)}))
 
 (defworkflowfn run-send-model-1-0-0
   "Outputs the population for the last year of historic data, with one
@@ -235,20 +236,19 @@
   {:witan/name :send/run-send-model
    :witan/version "1.0.0"
    :witan/input-schema {:population-by-age-state sc/ModelState
-                        :transition-alphas sc/TransitionAlphas
-                        :leaver-probabilities sc/LeaverProbabilities
                         :projected-population sc/PopulationByAcademicYear
                         :joiner-beta-params sc/BetaParams
                         :leaver-beta-params sc/AcademicYearBetaParams
                         :leaver-age-alphas sc/AgeAlphas
                         :joiner-state-alphas sc/StateAlphas
                         :joiner-age-alphas sc/AgeAlphas
-                        :mover-beta-params sc/AcademicYearBetaParams}
+                        :mover-beta-params sc/AcademicYearBetaParams
+                        :mover-state-alphas sc/TransitionAlphas}
    :witan/param-schema {:seed-year sc/YearSchema
                         :projection-year sc/YearSchema
                         :random-seed s/Int}
    :witan/output-schema {:send-output sc/Results}}
-  [{:keys [population-by-age-state transition-alphas leaver-probabilities projected-population joiner-beta-params leaver-beta-params leaver-age-alphas joiner-state-alphas joiner-age-alphas mover-beta-params] :as inputs}
+  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas joiner-age-alphas leaver-beta-params leaver-age-alphas mover-beta-params mover-state-alphas] :as inputs}
    {:keys [seed-year projection-year]}]
   (let [iterations (inc (- projection-year seed-year))]
     {:send-output (->> (for [simulation (range 10)]
