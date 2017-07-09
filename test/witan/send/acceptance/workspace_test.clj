@@ -12,8 +12,8 @@
   {:initial-population ["data/camden/initial-population.csv" sc/PopulationSYA]
    :initial-send-population ["data/camden/send-population.csv" sc/SENDPopulation]
    :transition-matrix ["data/camden/transitions4.csv" sc/TransitionCounts]
-   :projected-population ["data/camden/projected-population.csv" sc/PopulationSYA]})
-
+   :projected-population ["data/camden/projected-population.csv" sc/PopulationSYA]
+   :setting-cost ["data/camden/setting-costs.csv" sc/SettingCost]})
 
 (defn add-input-params
   [input]

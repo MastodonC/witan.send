@@ -189,15 +189,14 @@
                                        (select-keys settings))
                              actual-transitions (-> (get actual-transitions [ay setting-1])
                                                     (select-keys settings))
-                             observations (->> (vals actual-transitions) (reduce +))]
+                             observations (->> (vals by-ay) (reduce +))]
                          (assoc coll [ay state-1] (->> (multimerge-alphas (inc observations)
-                                                                          1 actual-transitions
-                                                                          1 by-ay
+                                                                          4 actual-transitions
+                                                                          4 by-ay
                                                                           1 transitions
                                                                           1 total-population)
                                                        (medley/map-keys #(state need-1 %))))))
-                     {}))
-        priors {}]
+                     {}))]
     transition-alphas-2))
 
 (defn mover-beta-params [ds]
@@ -245,17 +244,6 @@
               (assoc coll ay (inc (get alphas ay 0))))
             {} sc/academic-years)))
 
-(defn leaver-age-alphas [ds]
-  (let [alphas (->> (ds/row-maps ds)
-                    (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2 academic-year-2]}]
-                              (cond-> coll
-                                (= setting-2 sc/non-send)
-                                (update academic-year-2 some+ 1)))
-                            {}))]
-    (reduce (fn [coll ay]
-              (assoc coll ay (inc (get alphas ay 0))))
-            {} sc/academic-years)))
-
 (defn joiner-state-alphas [ds]
   (let [observations (->> (ds/row-maps ds)
                           (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
@@ -270,11 +258,16 @@
                               (cond-> coll
                                 (= setting-2 sc/non-send)
                                 (update academic-year-2 some+ 1)))))
-        betas population]
-    (reduce (fn [coll ay]
-              (assoc coll ay {:alpha (inc (get alphas ay 0))
-                              :beta (inc (get betas ay 0))}))
-            {} sc/academic-years)))
+        betas population
+        leaver-beta-params (reduce (fn [coll ay]
+                                     (assoc coll ay {:alpha (inc (get alphas ay 0))
+                                                     :beta (inc (get betas ay 0))}))
+                                   {} sc/academic-years)]
+    (-> (medley/map-vals (fn [{:keys [alpha beta]}]
+                           (double (/ alpha (+ alpha beta))))
+                         leaver-beta-params)
+        (clojure.pprint/pprint))
+    leaver-beta-params))
 
 (defn sq [x] (* x x))
 (defn abs [x] (if (< x 0)

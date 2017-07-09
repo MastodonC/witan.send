@@ -55,7 +55,7 @@
   (assoc! coll k (apply f (get coll k) args)))
 
 (defn run-model-iteration [simulation {:keys [joiner-beta-params joiner-state-alphas joiner-age-alphas
-                                              leaver-beta-params leaver-age-alphas
+                                              leaver-beta-params
                                               mover-beta-params mover-state-alphas]}
                            model-state projected-population]
   (let [[state leavers variance] (->> model-state
@@ -63,7 +63,10 @@
                                       (reduce (fn [[coll leavers variance] [[year state :as k] population]]
                                                 (cond (or (<= year min-academic-year)
                                                           (> year max-academic-year))
-                                                      [coll leavers variance]
+                                                      (do #_(let [[need setting] (u/need-setting state)]
+                                                            (when (= setting :FEC)
+                                                              (prn {:year year :expire population})))
+                                                          [coll leavers variance])
                                                       :else
                                                       (if-let [probs (get mover-state-alphas [year state])]
                                                         (let [leaver-params (get leaver-beta-params year)
@@ -71,6 +74,21 @@
                                                               l (u/sample-beta-binomial population leaver-params)
                                                               v (u/beta-binomial-variance population leaver-params)
                                                               next-states-sample (u/sample-send-transitions state (- population l) probs mover-params)]
+                                                          #_(let [[need setting] (u/need-setting state)]
+                                                            (let [[move stay] (reduce (fn [[move stay] [state n]]
+                                                                                        (let [[need setting] (u/need-setting state)]
+                                                                                          (if (= setting :FEC)
+                                                                                            [move (+ stay n)]
+                                                                                            [(+ move n) stay])))
+                                                                                      [0 0]
+                                                                                      next-states-sample)]
+                                                              (if (= setting :FEC)
+                                                                (prn {:year year
+                                                                      :leave l
+                                                                      :stay stay
+                                                                      :outbound move})
+                                                                (prn {:year year
+                                                                      :inbound stay}))))
                                                           [(reduce (fn [coll [next-state count]]
                                                                      (cond-> coll
                                                                        (pos? count)
@@ -170,7 +188,6 @@
                          :projected-population sc/PopulationByAcademicYear
                          :joiner-beta-params sc/BetaParams
                          :leaver-beta-params sc/AcademicYearBetaParams
-                         :leaver-age-alphas sc/AgeAlphas
                          :joiner-state-alphas sc/StateAlphas
                          :joiner-age-alphas sc/AgeAlphas
                          :mover-beta-params sc/AcademicYearBetaParams
@@ -189,7 +206,6 @@
         
         leaver-beta-params (u/leaver-beta-params transition-matrix
                                                  send-population-by-ay)
-        leaver-age-alphas (u/leaver-age-alphas transition-matrix)
         joiner-state-alphas (u/joiner-state-alphas transition-matrix)
         joiner-age-alphas (u/joiner-age-alphas transition-matrix)
         initial-state (initialise-model (ds/row-maps initial-send-population))
@@ -197,7 +213,6 @@
     {:population-by-age-state initial-state
      :joiner-beta-params joiner-beta-params
      :leaver-beta-params leaver-beta-params
-     :leaver-age-alphas leaver-age-alphas
      :joiner-state-alphas joiner-state-alphas
      :joiner-age-alphas joiner-age-alphas
      :projected-population population-by-ay
@@ -216,7 +231,6 @@
                         :projected-population sc/PopulationByAcademicYear
                         :joiner-beta-params sc/BetaParams
                         :leaver-beta-params sc/AcademicYearBetaParams
-                        :leaver-age-alphas sc/AgeAlphas
                         :joiner-state-alphas sc/StateAlphas
                         :joiner-age-alphas sc/AgeAlphas
                         :mover-beta-params sc/AcademicYearBetaParams
@@ -227,7 +241,7 @@
                         :projection-year sc/YearSchema
                         :random-seed s/Int}
    :witan/output-schema {:send-output sc/Results}}
-  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas joiner-age-alphas leaver-beta-params leaver-age-alphas mover-beta-params mover-state-alphas setting-cost-lookup] :as inputs}
+  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas joiner-age-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup] :as inputs}
    {:keys [seed-year projection-year random-seed simulations]}]
   (let [iterations (inc (- projection-year seed-year))]
     (u/set-seed! random-seed)
