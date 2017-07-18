@@ -6,7 +6,10 @@
             [witan.send.model :as m]
             [witan.workspace-api.protocols :as p]
             [witan.workspace-executor.core :as wex]
-            [witan.send.test-utils :as tu]))
+            [witan.send.test-utils :as tu]
+
+            [clojure.core.matrix.dataset :as ds]
+            [cheshire.core :refer [generate-string]]))
 
 (def test-inputs
   {:initial-population ["data/camden/initial-population.csv" sc/PopulationSYA]
@@ -43,3 +46,27 @@
         workspace'    (s/with-fn-validation (wex/build! workspace))
         result        (apply merge (wex/run!! workspace' {}))]
     result))
+
+(defn transitions [dataset]
+  (->> (ds/row-maps dataset)
+       (reduce (fn [coll {:keys [setting-1 setting-2]}]
+                 (update-in coll [setting-1 setting-2] (fnil + 0) 1)) {})))
+
+(defn sankey [transitions]
+  (let [settings (-> (reduce (fn [coll [k1 kvs]]
+                               (into (conj coll k1) (keys kvs)))
+                             #{}
+                             transitions)
+                     (vec))
+        settings-count (count settings)
+        setting-index (into {} (map vector settings (range)))
+        links (mapcat (fn [[k1 kvs]]
+                        (->> (remove (fn [[k2 v]]
+                                       (= k1 k2))
+                                     kvs)
+                             (map (fn [[k2 v]]
+                                    {:source (setting-index k1) :target (+ settings-count (setting-index k2)) :value (float v)}))))
+                      transitions)]
+    (-> {:links links :nodes (map #(hash-map :name (name %)) (concat settings settings))}
+        generate-string
+        println)))

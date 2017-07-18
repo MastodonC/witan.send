@@ -69,8 +69,8 @@
                                                           [coll leavers variance])
                                                       :else
                                                       (if-let [probs (get mover-state-alphas [year state])]
-                                                        (let [leaver-params (get leaver-beta-params year)
-                                                              mover-params (get mover-beta-params year)
+                                                        (let [leaver-params (get leaver-beta-params [year state])
+                                                              mover-params (get mover-beta-params [year state])
                                                               l (u/sample-beta-binomial population leaver-params)
                                                               v (u/beta-binomial-variance population leaver-params)
                                                               next-states-sample (u/sample-send-transitions state (- population l) probs mover-params)]
@@ -187,10 +187,10 @@
    :witan/output-schema {:population-by-age-state sc/ModelState
                          :projected-population sc/PopulationByAcademicYear
                          :joiner-beta-params sc/BetaParams
-                         :leaver-beta-params sc/AcademicYearBetaParams
+                         :leaver-beta-params sc/YearStateBetaParams
                          :joiner-state-alphas sc/StateAlphas
                          :joiner-age-alphas sc/AgeAlphas
-                         :mover-beta-params sc/AcademicYearBetaParams
+                         :mover-beta-params sc/YearStateBetaParams
                          :mover-state-alphas sc/TransitionAlphas
                          :setting-cost-lookup sc/SettingCostLookup}}
   [{:keys [initial-population initial-send-population
@@ -230,10 +230,10 @@
    :witan/input-schema {:population-by-age-state sc/ModelState
                         :projected-population sc/PopulationByAcademicYear
                         :joiner-beta-params sc/BetaParams
-                        :leaver-beta-params sc/AcademicYearBetaParams
+                        :leaver-beta-params sc/YearStateBetaParams
                         :joiner-state-alphas sc/StateAlphas
                         :joiner-age-alphas sc/AgeAlphas
-                        :mover-beta-params sc/AcademicYearBetaParams
+                        :mover-beta-params sc/YearStateBetaParams
                         :mover-state-alphas sc/TransitionAlphas
                         :setting-cost-lookup sc/SettingCostLookup}
    :witan/param-schema {:seed-year sc/YearSchema

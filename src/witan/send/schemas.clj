@@ -222,6 +222,11 @@
 (def BetaParams
   {:alpha s/Num :beta s/Num})
 
+(def YearStateBetaParams
+  {[(s/one AcademicYear :academic-year)
+    (s/one State :state)]
+   {:alpha s/Num :beta s/Num}})
+
 (def StateAlphas
   {State s/Num})
 

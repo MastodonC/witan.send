@@ -68,7 +68,7 @@
    (and (= setting :PRU) (<= 2 year 14))
    (and (= setting :MU) (<= -1 year 14))))
 
-(defn valid-state? [academic-year state]
+(defn valid-state? [academic-year< state]
   (or (= state sc/non-send)
       (let [[need setting] (need-setting state)]
         (valid-year-setting? academic-year setting))))
@@ -200,24 +200,44 @@
     transition-alphas-2))
 
 (defn mover-beta-params [ds]
-  (let [ay-params (->> (ds/row-maps ds)
-                       (reduce (fn [coll {:keys [setting-1 setting-2 academic-year-2]}]
-                                 (if (or (= setting-1 sc/non-send)
-                                         (= setting-2 sc/non-send))
-                                   coll
-                                   (if (= setting-1 setting-2)
-                                     (update-in coll [academic-year-2 :alpha] some+ 1)
-                                     (update-in coll [academic-year-2 :beta] some+ 1))))
-                               {}))
-        prior-params (->> (vals ay-params)
-                          (apply merge-with +))]
-
-    (doto (reduce (fn [coll ay]
-                    (let [params (get ay-params ay {})
-                          weight (->> (vals params) (reduce +) inc)]
-                      (assoc coll ay (multimerge-alphas weight 1 params 1 prior-params))))
-                  {} sc/academic-years)
-      (clojure.pprint/pprint))))
+  (let [prior-overall (->> (ds/row-maps ds)
+                           (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
+                                     (if (or (= setting-1 sc/non-send)
+                                             (= setting-2 sc/non-send))
+                                       coll
+                                       (if (= setting-1 setting-2)
+                                         (update coll :alpha some+ 1)
+                                         (update coll :beta some+ 1))))
+                                   {}))
+        prior-ay (->> (ds/row-maps ds)
+                      (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
+                                (if (or (= setting-1 sc/non-send)
+                                        (= setting-2 sc/non-send))
+                                  coll
+                                  (if (= setting-1 setting-2)
+                                    (update-in coll [academic-year-2 :alpha] some+ 1)
+                                    (update-in coll [academic-year-2 :beta] some+ 1))))
+                              {}))
+        observations (->> (ds/row-maps ds)
+                          (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
+                                    (if (or (= setting-1 sc/non-send)
+                                            (= setting-2 sc/non-send))
+                                      coll
+                                      (if (= setting-1 setting-2)
+                                        (update-in coll [[academic-year-2 setting-1] :alpha] some+ 1)
+                                        (update-in coll [[academic-year-2 setting-1] :beta] some+ 1)))))
+                          {})]
+    (->> valid-states
+         (reduce (fn [coll [ay state]]
+                   (let [[need setting] (need-setting state)
+                         observed (get observations [ay setting])
+                         by-ay (get prior-ay ay)
+                         n (->>  observed vals (apply +) inc inc)]
+                     (assoc coll [(inc ay) state] (multimerge-alphas n
+                                                                     100 observed
+                                                                     1 by-ay
+                                                                     1 prior-overall))))
+                 {}))))
 
 
 (defn joiner-beta-params [ds y1]
@@ -253,21 +273,41 @@
     observations))
 
 (defn leaver-beta-params [ds population]
-  (let [alphas (->> (ds/row-maps ds)
-                    (reduce (fn [coll {:keys [academic-year-2 setting-2]}]
-                              (cond-> coll
-                                (= setting-2 sc/non-send)
-                                (update academic-year-2 some+ 1)))))
-        betas population
-        leaver-beta-params (reduce (fn [coll ay]
-                                     (assoc coll ay {:alpha (inc (get alphas ay 0))
-                                                     :beta (inc (get betas ay 0))}))
-                                   {} sc/academic-years)]
-    (-> (medley/map-vals (fn [{:keys [alpha beta]}]
-                           (double (/ alpha (+ alpha beta))))
-                         leaver-beta-params)
-        (clojure.pprint/pprint))
-    leaver-beta-params))
+  (let [prior-overall (->> (ds/row-maps ds)
+                           (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
+                                     (cond-> coll
+                                       (= setting-2 sc/non-send)
+                                       (update :alpha some+ 1)
+                                       (= setting-1 setting-2)
+                                       (update :beta some+ 1)))
+                                   {}))
+        prior-ay (->> (ds/row-maps ds)
+                      (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
+                                (cond-> coll
+                                  (= setting-2 sc/non-send)
+                                  (update-in [academic-year-2 :alpha] some+ 1)
+                                  (= setting-1 setting-2)
+                                  (update-in [academic-year-2 :beta] some+ 1)))
+                              {}))
+        observations (->> (ds/row-maps ds)
+                          (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
+                                    (cond-> coll
+                                      (= setting-2 sc/non-send)
+                                      (update-in [[academic-year-2 setting-1] :alpha] some+ 1)
+                                      (= setting-1 setting-2)
+                                      (update-in [[academic-year-2 setting-1] :beta] some+ 1))))
+                          {})]
+    (->> valid-states
+         (reduce (fn [coll [ay state]]
+                   (let [[need setting] (need-setting state)
+                         observed (get observations [ay setting])
+                         by-ay (get prior-ay ay)
+                         n (->>  observed vals (apply +) inc inc)]
+                     (assoc coll [(inc ay) state] (multimerge-alphas n
+                                                                     100 observed
+                                                                     1 by-ay
+                                                                     1 prior-overall))))
+                 {}))))
 
 (defn sq [x] (* x x))
 (defn abs [x] (if (< x 0)

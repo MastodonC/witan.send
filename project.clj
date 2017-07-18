@@ -15,7 +15,8 @@
                  [kixi/stats "0.3.10-SNAPSHOT"]
                  [instaparse "1.4.3"]
                  [incanter "1.5.7"]
-                 [medley "1.0.0"]]
+                 [medley "1.0.0"]
+                 [cheshire "5.7.1"]]
   :plugins [[lein-gorilla "0.4.0"]]
   :main witan.send.main
   :aot [witan.send.main]
