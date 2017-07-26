@@ -4,6 +4,7 @@
             [clojure.set :refer [union]]
             [witan.workspace-api.utils :as utils]
             [witan.send.schemas :as sc]
+            [witan.send.params :as p]
             [kixi.stats.core :as kixi]
             [kixi.stats.random :refer [multinomial-probabilities multinomial binomial beta-binomial dirichlet-multinomial draw]]
             [redux.core :as r]
@@ -46,10 +47,15 @@
         (map-indexed pred coll)))
 
 (defn state [need setting]
-  (keyword (str (name need) "-" (name setting))))
+  (if (or (= need sc/non-send)
+          (= setting sc/non-send))
+    sc/non-send
+    (keyword (str (name need) "-" (name setting)))))
 
 (defn need-setting [state]
-  (mapv keyword (str/split (name state) #"-")))
+  (if (= state sc/non-send)
+    [sc/non-send sc/non-send]
+    (mapv keyword (str/split (name state) #"-"))))
 
 (defn valid-year-setting? [year setting]
   (or
@@ -135,110 +141,28 @@
   (->> (filter #(valid-year-setting? ay %) sc/settings)
        (into #{})))
 
+(defn transitions-map
+  [dataset]
+  (->> (ds/row-maps dataset)
+       (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-1]}]
+                 (let [state-1 (state need-1 setting-1)
+                       state-2 (state need-2 setting-2)]
+                   (update coll [academic-year-1 state-1 state-2] u/some+ 1)))
+               {})))
+
 (defn mover-state-alphas
   "Creates transition alphas based on observations.
-  Returns a map indexed by NCY and state, where NCY is the year they're in *once they've moved*."
+  Returns a map indexed by NCY and state, where NCY is the year they're in *before they've moved*."
   [ds]
-  (let [total-alphas (->> (ds/row-maps ds)
-                          (reduce (fn [coll {:keys [setting-1 setting-2]}]
-                                    (cond-> coll
-                                      (not= setting-2 sc/non-send)
-                                      (update setting-2 some+ 1)))
-                                  {}))
-        transition-alphas
-        (merge-alphas 0.5
-                      (->> (ds/row-maps ds)
-                           (reduce (fn [coll {:keys [setting-1 setting-2]}]
-                                     (cond-> coll
-                                       (and (not= setting-1 sc/non-send)
-                                            (not= setting-2 sc/non-send)
-                                            (not= setting-1 setting-2))
-                                       (update setting-2 some+ 1)))
-                                   {}))
-                      total-alphas)
+  (let [transitions (transitions-map ds)]
+    (p/alpha-params-movers transitions 0.5 0.5)))
 
-        transition-alphas-ay
-        (->> (ds/row-maps ds)
-             (reduce (fn [coll {:keys [setting-1 setting-2 academic-year-2]}]
-                       (cond-> coll
-                         (and (not= setting-1 sc/non-send)
-                              (not= setting-2 sc/non-send)
-                              (not= setting-1 setting-2))
-                         (update-in [academic-year-2 setting-2] some+ 1)))
-                     {}))
-
-        actual-transitions
-        (->> (ds/row-maps ds)
-             (reduce (fn [coll {:keys [setting-1 setting-2 academic-year-2]}]
-                       (cond-> coll
-                         (and (not= setting-1 sc/non-send)
-                              (not= setting-2 sc/non-send)
-                              (not= setting-1 setting-2))
-                         (update-in [[academic-year-2 setting-1] setting-2] some+ 1)))
-                     {}))
-        transition-alphas-2
-        (->> valid-transitions
-             (reduce (fn [coll [ay state-1 state-2]]
-                       (let [[need-1 setting-1] (need-setting state-1)
-                             [need-2 setting-2] (need-setting state-2)
-                             settings (disj (valid-settings ay) setting-1)
-
-                             total-population (select-keys total-alphas settings)
-                             transitions (select-keys transition-alphas settings)
-                             by-ay (-> (get transition-alphas-ay ay)
-                                       (select-keys settings))
-                             actual-transitions (-> (get actual-transitions [ay setting-1])
-                                                    (select-keys settings))
-                             observations (->> (vals by-ay) (reduce +))]
-                         (assoc coll [ay state-1] (->> (multimerge-alphas (inc observations)
-                                                                          50 actual-transitions
-                                                                          10 by-ay
-                                                                          1 transitions
-                                                                          1 total-population)
-                                                       (medley/map-keys #(state need-1 %))))))
-                     {}))]
-    transition-alphas-2))
-
-(defn mover-beta-params [ds]
-  (let [prior-overall (->> (ds/row-maps ds)
-                           (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
-                                     (if (or (= setting-1 sc/non-send)
-                                             (= setting-2 sc/non-send))
-                                       coll
-                                       (if (= setting-1 setting-2)
-                                         (update coll :alpha some+ 1)
-                                         (update coll :beta some+ 1))))
-                                   {}))
-        prior-ay (->> (ds/row-maps ds)
-                      (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
-                                (if (or (= setting-1 sc/non-send)
-                                        (= setting-2 sc/non-send))
-                                  coll
-                                  (if (= setting-1 setting-2)
-                                    (update-in coll [academic-year-2 :alpha] some+ 1)
-                                    (update-in coll [academic-year-2 :beta] some+ 1))))
-                              {}))
-        observations (->> (ds/row-maps ds)
-                          (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
-                                    (if (or (= setting-1 sc/non-send)
-                                            (= setting-2 sc/non-send))
-                                      coll
-                                      (if (= setting-1 setting-2)
-                                        (update-in coll [[academic-year-2 setting-1] :alpha] some+ 1)
-                                        (update-in coll [[academic-year-2 setting-1] :beta] some+ 1)))))
-                          {})]
-    (->> valid-states
-         (reduce (fn [coll [ay state]]
-                   (let [[need setting] (need-setting state)
-                         observed (get observations [ay setting])
-                         by-ay (get prior-ay ay)
-                         n (->>  observed vals (apply +) inc inc)]
-                     (assoc coll [(inc ay) state] (multimerge-alphas n
-                                                                     50 observed
-                                                                     10 by-ay
-                                                                     1 prior-overall))))
-                 {}))))
-
+(defn mover-beta-params
+  "Creates transition betas based on observations.
+  Returns a map indexed by NCY and state, where NCY is the year they're in *before they've moved*."
+  [ds]
+  (let [transitions (transitions-map ds)]
+    (p/beta-params-movers transitions 0.5 0.5)))
 
 (defn joiner-beta-params [ds y1]
   (let [alphas (->> (ds/row-maps ds)

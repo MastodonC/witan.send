@@ -10,7 +10,8 @@
     (mapv keyword (str/split (name state) #"-"))))
 
 (defn state [need setting]
-  (if (= setting non-send)
+  (if (or (= setting non-send)
+          (= need non-send))
     non-send
     (keyword (str (name need) "-" (name setting)))))
 

@@ -20,7 +20,8 @@
                  {}))))
 
 (defn weighted-alphas [n coll]
-  (let [f (/ n (->> coll vals (apply +)))]
+  (let [d (->> coll vals (apply +))
+        f (if (zero? d) 0 (/ n d))]
     (reduce (fn [coll [k v]]
               (assoc coll k (* f v)))
             {}
@@ -139,7 +140,7 @@
               (pred v)
               (assoc k v)))
           (empty coll)
-         coll ))
+          coll))
 
 (defn weighted-alpha-params
   [transitions select w1 w2]

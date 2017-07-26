@@ -59,9 +59,9 @@
                                                                          (update [year state sc/non-send] u/some+ population))
                                                                        leavers variance])
                                                                   :else
-                                                                  (if-let [probs (get mover-state-alphas [year state])]
+                                                                  (if-let [probs (get mover-state-alphas [(dec year) state])]
                                                                     (let [leaver-params (get leaver-beta-params [year state])
-                                                                          mover-params (get mover-beta-params [year state])
+                                                                          mover-params (get mover-beta-params [(dec year) state])
                                                                           l (u/sample-beta-binomial population leaver-params)
                                                                           v (u/beta-binomial-variance population leaver-params)
                                                                           next-states-sample (u/sample-send-transitions state (- population l) probs mover-params)]
@@ -123,8 +123,8 @@
                                          (->> (u/sample-dirichlet-multinomial n joiner-state-alphas)
                                               (reduce (fn [[coll transitions] [state m]]
                                                         [(cond-> coll
-                                                            (pos? m)
-                                                            (update [year state] u/some+ m))
+                                                           (pos? m)
+                                                           (update [year state] u/some+ m))
                                                          (cond-> transitions
                                                            (pos? m)
                                                            (update [year sc/non-send state] u/some+ m))])
@@ -209,7 +209,8 @@
         joiner-state-alphas (u/joiner-state-alphas transition-matrix)
         joiner-age-alphas (u/joiner-age-alphas transition-matrix)
         initial-state (initialise-model (ds/row-maps initial-send-population))
-        mover-beta-params (u/mover-beta-params transition-matrix)]
+        mover-beta-params (u/mover-beta-params transition-matrix)
+        mover-state-alphas (u/mover-state-alphas transition-matrix)]
     {:population-by-age-state initial-state
      :joiner-beta-params joiner-beta-params
      :leaver-beta-params leaver-beta-params
@@ -217,7 +218,7 @@
      :joiner-age-alphas joiner-age-alphas
      :projected-population population-by-ay
      :mover-beta-params mover-beta-params
-     :mover-state-alphas (u/mover-state-alphas transition-matrix)
+     :mover-state-alphas mover-state-alphas
      :setting-cost-lookup (->> (ds/row-maps setting-cost)
                                (map (juxt :setting :cost))
                                (into {}))}))
