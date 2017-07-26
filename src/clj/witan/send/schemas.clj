@@ -239,3 +239,7 @@
 
 (def SettingCostLookup
   {Setting s/Num})
+
+
+(def min-academic-year (apply min academic-years))
+(def max-academic-year (apply max academic-years))

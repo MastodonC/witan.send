@@ -68,7 +68,7 @@
    (and (= setting :PRU) (<= 2 year 14))
    (and (= setting :MU) (<= -1 year 14))))
 
-(defn valid-state? [academic-year< state]
+(defn valid-state? [academic-year state]
   (or (= state sc/non-send)
       (let [[need setting] (need-setting state)]
         (valid-year-setting? academic-year setting))))
@@ -118,18 +118,18 @@
                  {}))))
 
 (defn multimerge-alphas [total & weight-alphas]
-  (let [weight-alphas (partition 2 weight-alphas)
-        [weights alphas] (apply mapv vector weight-alphas)
-        [sum coll] (->> (map (comp set keys) alphas)
-                        (reduce union)
-                        (reduce (fn [[acc coll] k]
-                                  (let [sum (reduce (fn [sum [weight alpha]]
-                                                      (+ sum (* weight (get alpha k 0))))
-                                                    0 weight-alphas)]
-                                    [(+ acc sum) (assoc coll k sum)]))
-                                [0 {}]))
-        f (partial * (/ total sum))]
-    (medley/map-vals f coll)))
+  (let [weight-alpha-sums (->> (partition 2 weight-alphas)
+                               (map (fn [[w as]]
+                                      [w as (->> as vals (apply +))])))
+        m (/ total (apply + (map first (remove (comp zero? last) weight-alpha-sums))))]
+    (->> (remove (fn [[_ _ s]]
+                   (zero? s)) weight-alpha-sums)
+         (reduce (fn [coll [w as s]]
+                   (reduce (fn [coll [x a]]
+                             (update coll x u/some+ (* m w (/ a s))))
+                           coll
+                           as))
+                 {}))))
 
 (defn valid-settings [ay]
   (->> (filter #(valid-year-setting? ay %) sc/settings)
@@ -191,8 +191,8 @@
                                                     (select-keys settings))
                              observations (->> (vals by-ay) (reduce +))]
                          (assoc coll [ay state-1] (->> (multimerge-alphas (inc observations)
-                                                                          4 actual-transitions
-                                                                          4 by-ay
+                                                                          50 actual-transitions
+                                                                          10 by-ay
                                                                           1 transitions
                                                                           1 total-population)
                                                        (medley/map-keys #(state need-1 %))))))
@@ -234,8 +234,8 @@
                          by-ay (get prior-ay ay)
                          n (->>  observed vals (apply +) inc inc)]
                      (assoc coll [(inc ay) state] (multimerge-alphas n
-                                                                     100 observed
-                                                                     1 by-ay
+                                                                     50 observed
+                                                                     10 by-ay
                                                                      1 prior-overall))))
                  {}))))
 
@@ -304,8 +304,8 @@
                          by-ay (get prior-ay ay)
                          n (->>  observed vals (apply +) inc inc)]
                      (assoc coll [(inc ay) state] (multimerge-alphas n
-                                                                     100 observed
-                                                                     1 by-ay
+                                                                     50 observed
+                                                                     5 by-ay
                                                                      1 prior-overall))))
                  {}))))
 

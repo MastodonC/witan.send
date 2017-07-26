@@ -9,26 +9,13 @@
             [clojure.data.csv :as csv]
             [witan.datasets :as wds]
             [witan.datasets.stats :as wst]
+            [witan.send.step :as step]
             [witan.send.utils :as u :refer [round]]
             [clojure.java.io :as io]
             [incanter.stats :as stats]
             [medley.core :as medley]
             [redux.core :as r]))
 
-
-(def min-academic-year (apply min sc/academic-years))
-(def max-academic-year (apply max sc/academic-years))
-
-(defn age-population
-  [projection model-state]
-  (-> (reduce (fn [coll [[year state :as k] population]]
-                (cond-> coll
-                  (< year max-academic-year)
-                  (assoc! [(inc year) state] population)))
-              (transient {})
-              model-state)
-      (assoc! [min-academic-year sc/non-send] (get projection min-academic-year))
-      (persistent!)))
 
 (defn reconcile-to-projection
   [projection model-state]
@@ -57,51 +44,61 @@
 (defn run-model-iteration [simulation {:keys [joiner-beta-params joiner-state-alphas joiner-age-alphas
                                               leaver-beta-params
                                               mover-beta-params mover-state-alphas]}
-                           model-state projected-population]
-  (let [[state leavers variance] (->> model-state
-                                      (age-population projected-population)
-                                      (reduce (fn [[coll leavers variance] [[year state :as k] population]]
-                                                (cond (or (<= year min-academic-year)
-                                                          (> year max-academic-year))
-                                                      (do #_(let [[need setting] (u/need-setting state)]
-                                                            (when (= setting :FEC)
-                                                              (prn {:year year :expire population})))
-                                                          [coll leavers variance])
-                                                      :else
-                                                      (if-let [probs (get mover-state-alphas [year state])]
-                                                        (let [leaver-params (get leaver-beta-params [year state])
-                                                              mover-params (get mover-beta-params [year state])
-                                                              l (u/sample-beta-binomial population leaver-params)
-                                                              v (u/beta-binomial-variance population leaver-params)
-                                                              next-states-sample (u/sample-send-transitions state (- population l) probs mover-params)]
-                                                          #_(let [[need setting] (u/need-setting state)]
-                                                            (let [[move stay] (reduce (fn [[move stay] [state n]]
-                                                                                        (let [[need setting] (u/need-setting state)]
-                                                                                          (if (= setting :FEC)
-                                                                                            [move (+ stay n)]
-                                                                                            [(+ move n) stay])))
-                                                                                      [0 0]
-                                                                                      next-states-sample)]
-                                                              (if (= setting :FEC)
-                                                                (prn {:year year
-                                                                      :leave l
-                                                                      :stay stay
-                                                                      :outbound move})
-                                                                (prn {:year year
-                                                                      :inbound stay}))))
-                                                          [(reduce (fn [coll [next-state count]]
-                                                                     (cond-> coll
-                                                                       (pos? count)
-                                                                       (update! [year next-state] u/some+ count)))
-                                                                   coll next-states-sample)
-                                                           (+ leavers l)
-                                                           (+ variance v)])
-                                                        [coll (+ leavers population) variance])))
-                                              [(transient {}) 0 0]))
+                           {:keys [model transitions]} projected-population]
+  (let [[model transitions leavers variance] (->> model
+                                                  (step/age-population projected-population)
+                                                  (reduce (fn [[model transitions leavers variance] [[year state :as k] population]]
+                                                            (cond (or (<= year sc/min-academic-year)
+                                                                      (> year sc/max-academic-year))
+                                                                  (do #_(let [[need setting] (u/need-setting state)]
+                                                                          (when (= setting :FEC)
+                                                                            (prn {:year year :expire population})))
+                                                                      [model
+                                                                       (cond-> transitions
+                                                                         (pos? population)
+                                                                         (update [year state sc/non-send] u/some+ population))
+                                                                       leavers variance])
+                                                                  :else
+                                                                  (if-let [probs (get mover-state-alphas [year state])]
+                                                                    (let [leaver-params (get leaver-beta-params [year state])
+                                                                          mover-params (get mover-beta-params [year state])
+                                                                          l (u/sample-beta-binomial population leaver-params)
+                                                                          v (u/beta-binomial-variance population leaver-params)
+                                                                          next-states-sample (u/sample-send-transitions state (- population l) probs mover-params)]
+                                                                      #_(let [[need setting] (u/need-setting state)]
+                                                                          (let [[move stay] (reduce (fn [[move stay] [state n]]
+                                                                                                      (let [[need setting] (u/need-setting state)]
+                                                                                                        (if (= setting :FEC)
+                                                                                                          [move (+ stay n)]
+                                                                                                          [(+ move n) stay])))
+                                                                                                    [0 0]
+                                                                                                    next-states-sample)]
+                                                                            (if (= setting :FEC)
+                                                                              (prn {:year year
+                                                                                    :leave l
+                                                                                    :stay stay
+                                                                                    :outbound move})
+                                                                              (prn {:year year
+                                                                                    :inbound stay}))))
+                                                                      [(reduce (fn [coll [next-state n]]
+                                                                                 (cond-> coll
+                                                                                   (pos? n)
+                                                                                   (update! [year next-state] u/some+ n)))
+                                                                               model next-states-sample)
+                                                                       (-> (reduce (fn [coll [next-state n]]
+                                                                                     (cond-> coll
+                                                                                       (pos? n)
+                                                                                       (update [year state next-state] u/some+ n)))
+                                                                                   transitions next-states-sample)
+                                                                           (update [year state sc/non-send] u/some+ l))
+                                                                       (+ leavers l)
+                                                                       (+ variance v)])
+                                                                    [model transitions (+ leavers population) variance])))
+                                                          [(transient {}) transitions 0 0]))
         projected-base (reduce (fn [n ay]
                                  (+ n (get projected-population ay 0)))
                                0 sc/academic-years)
-        out (-> state
+        out (-> model
                 (persistent!))
 
         
@@ -121,18 +118,21 @@
 
         _ (prn {:joiners joiners :leavers leavers})
 
-        out (->> (doto (u/sample-dirichlet-multinomial joiners joiner-age-alphas))
-                 (reduce (fn [coll [year n]]
-                           (->> (u/sample-dirichlet-multinomial n joiner-state-alphas)
-                                (reduce (fn [coll [state m]]
-                                          (cond-> coll
-                                            (pos? m)
-                                            (update [year state] u/some+ m)))
-                                        coll)))
-                         out))
+        [out transitions] (->> (doto (u/sample-dirichlet-multinomial joiners joiner-age-alphas))
+                               (reduce (fn [[coll transitions] [year n]]
+                                         (->> (u/sample-dirichlet-multinomial n joiner-state-alphas)
+                                              (reduce (fn [[coll transitions] [state m]]
+                                                        [(cond-> coll
+                                                            (pos? m)
+                                                            (update [year state] u/some+ m))
+                                                         (cond-> transitions
+                                                           (pos? m)
+                                                           (update [year sc/non-send state] u/some+ m))])
+                                                      [coll transitions])))
+                                       [out transitions]))
 
         ]
-    (doto out
+    (doto {:model out :transitions transitions}
       #_clojure.pprint/pprint)))
 
 #_(u/sample-beta-binomial (+ simulation i) population (get leaver-beta-params year))
@@ -243,12 +243,27 @@
    :witan/output-schema {:send-output sc/Results}}
   [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas joiner-age-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup] :as inputs}
    {:keys [seed-year projection-year random-seed simulations]}]
-  (let [iterations (inc (- projection-year seed-year))]
-    (u/set-seed! random-seed)
-    {:send-output (->> (for [simulation (range simulations)]
-                         (let [projection (doall (reductions (partial run-model-iteration simulation inputs) population-by-age-state projected-population))]
-                           (println (format "Created projection %d" simulation))
-                           projection))
+  (u/set-seed! random-seed)
+  (let [iterations (inc (- projection-year seed-year))
+        projections (for [simulation (range simulations)]
+                      (let [projection (doall (reductions (partial run-model-iteration simulation inputs) {:model population-by-age-state
+                                                                                                           :transitions {}}
+                                                          projected-population))]
+                        (println (format "Created projection %d" simulation))
+                        projection))
+        by-setting (fn [coll]
+                     (reduce (fn [coll [[ay s1 s2] n]]
+                               (let [s1 (if (= s1 sc/non-send)
+                                          sc/non-send
+                                          (second (u/need-setting s1)))
+                                     s2 (if (= s2 sc/non-send)
+                                          sc/non-send
+                                          (second (u/need-setting s2)))]
+                                 (update coll [ay s1 s2] u/some+ n)))
+                             {} coll))
+        transitions (apply merge-with + (mapcat #(map (comp by-setting :transitions) %) projections))]
+    (prn transitions)
+    {:send-output (->> (map :model projections)
                        (transduce identity (u/partition-rf iterations (r/fuse {:by-state (u/model-states-rf u/int-summary-rf)
                                                                                :total-in-send-by-ay (r/pre-step (u/with-keys-rf u/int-summary-rf sc/academic-years) u/model-population-by-ay)
                                                                                :total-in-send (r/pre-step u/int-summary-rf u/model-send-population)
@@ -257,7 +272,7 @@
                                                                                :total-cost (r/pre-step u/int-summary-rf (comp (partial u/total-setting-cost setting-cost-lookup)
                                                                                                                               u/model-population-by-setting))
                                                                                :total-in-send-by-ay-group (r/pre-step (u/merge-with-rf u/int-summary-rf)
-                                                                                                              u/model-population-by-ay-group)})))
+                                                                                                                      u/model-population-by-ay-group)})))
                        (doall))}))
 
 (defworkflowoutput output-send-results-1-0-0
