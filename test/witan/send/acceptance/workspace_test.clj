@@ -12,11 +12,11 @@
             [cheshire.core :refer [generate-string]]))
 
 (def test-inputs
-  {:initial-population ["data/camden/initial-population.csv" sc/PopulationSYA]
-   :initial-send-population ["data/camden/send-population.csv" sc/SENDPopulation]
-   :transition-matrix ["data/camden/transitions4.csv" sc/TransitionCounts]
-   :projected-population ["data/camden/projected-population.csv" sc/PopulationSYA]
-   :setting-cost ["data/camden/setting-costs.csv" sc/SettingCost]})
+  {:initial-population ["data/demo/initial-population.csv" sc/PopulationSYA]
+   :initial-send-population ["data/demo/send-population.csv" sc/SENDPopulation]
+   :transition-matrix ["data/demo/transitions.csv" sc/TransitionCounts]
+   :projected-population ["data/demo/projected-population.csv" sc/PopulationSYA]
+   :setting-cost ["data/demo/setting-costs.csv" sc/SettingCost]})
 
 (defn add-input-params
   [input]
@@ -25,7 +25,7 @@
 
 (witan.workspace-api/set-api-logging! println)
 
-#_(deftest send-workspace-test
+(deftest send-workspace-test
   (testing "The default model is run on the workspace and returns the outputs expected"
     (let [fixed-catalog (mapv #(if (= (:witan/type %) :input) (add-input-params %) %)
                               (:catalog m/send-model))
@@ -34,8 +34,9 @@
                          :contracts (p/available-fns (m/model-library))}
           workspace'    (s/with-fn-validation (wex/build! workspace))
           result        (apply merge (wex/run!! workspace' {}))]
-      (is result)
-      (is (= #{:send-projection :send-costs} (set (keys result)))))))
+      (is (first result))
+      (is (= #{:total-in-send-by-ay :total-in-send-by-ay-group :by-state :total-cost :total-in-send :total-in-send-by-need :total-in-send-by-setting}
+             (-> result first keys set))))))
 
 (defn run! []
   (let [fixed-catalog (mapv #(if (= (:witan/type %) :input) (add-input-params %) %)
