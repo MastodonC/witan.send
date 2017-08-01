@@ -44,7 +44,7 @@
           {} transitions))
 
 (defn update-sankey-fx
-  [{:keys [academic-year transitions leaver-weights mover-alpha-weights mover-beta-weights population joiner-alpha-weights joiner-beta-weights]}]
+  [{:keys [academic-year transitions model-transitions leaver-weights mover-alpha-weights mover-beta-weights population joiner-alpha-weights joiner-beta-weights]}]
   (let [[w1 w2] leaver-weights
         [ma1 ma2] mover-alpha-weights
         [mb1 mb2] mover-beta-weights
@@ -68,7 +68,9 @@
                                                 joiner-alpha-states step/dirichlet-mean)
         ]
     {:update-default-sankey! (sankey #(= % academic-year) (setting-transitions transitions))
-     :update-sankey! (sankey #(= % academic-year) (setting-transitions transitions'))}))
+     ;; :update-sankey! (sankey #(= % academic-year) (setting-transitions transitions'))
+     :update-model-sankey! (sankey #(= % academic-year) model-transitions)
+     }))
 
 (re-frame/reg-event-fx
  :set-academic-year
@@ -108,11 +110,16 @@
      (merge {:db db} (update-sankey-fx db)))))
 
 (re-frame/reg-fx
+ :update-default-sankey!
+ (fn [sankey]
+   (js/displaySankey (clj->js sankey) "a")))
+
+(re-frame/reg-fx
  :update-sankey!
  (fn [sankey]
    (js/displaySankey (clj->js sankey) "b")))
 
 (re-frame/reg-fx
- :update-default-sankey!
+ :update-model-sankey!
  (fn [sankey]
-   (js/displaySankey (clj->js sankey) "a")))
+   (js/displaySankey (clj->js sankey) "c")))

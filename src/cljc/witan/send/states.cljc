@@ -47,8 +47,8 @@
        (filter #(apply valid-state? %))))
 
 (defn valid-transition? [academic-year state-1 state-2]
-  (and (valid-state? (dec academic-year) state-1)
-       (valid-state? academic-year state-2)))
+  (and (valid-state? academic-year state-1)
+       (valid-state? (inc academic-year) state-2)))
 
 (def valid-transitions
   (->> (concat (for [academic-year const/academic-years
@@ -57,6 +57,14 @@
                      need const/needs]
                  [academic-year (state need from-setting) (state need to-setting)]))
        (filter #(apply valid-transition? %))))
+
+(defn valid-settings [ay]
+  (->> (filter #(valid-year-setting? ay %) const/settings)
+       (into #{})))
+
+(defn valid-states-for-ay [ay]
+  (->> (filter (fn [[ay' state]] (= ay ay')) valid-states)
+       (map (fn [[ay' state]] state))))
 
 (defn transitions->initial-state
   [transitions]
