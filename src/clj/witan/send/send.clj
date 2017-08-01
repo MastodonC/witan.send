@@ -350,4 +350,5 @@
            (map (apply juxt columns))
            (concat [(map name columns)])
            (csv/write-csv writer))))
-  "Done")
+  send-output)
+

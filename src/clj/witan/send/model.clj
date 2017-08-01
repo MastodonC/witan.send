@@ -8,7 +8,7 @@
 (def seed-year 2017)
 (def projection-year 2025)
 (def random-seed 50)
-(def simulations 1000)
+(def simulations 10)
 
 (def send-model-workflow
   "Defines each step of the model"
