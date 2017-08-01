@@ -6,7 +6,7 @@
             [witan.send.schemas :as sc]
             [witan.send.params :as p]
             [kixi.stats.core :as kixi]
-            [kixi.stats.random :refer [multinomial-probabilities multinomial binomial beta-binomial dirichlet-multinomial draw]]
+            [kixi.stats.random :refer [multinomial binomial beta-binomial dirichlet-multinomial draw]]
             [redux.core :as r]
             [medley.core :as medley]
             [schema.core :as s]
@@ -336,23 +336,6 @@
   (case (< p 0) 0.0
         (> p 1) 1.0
         :else p))
-
-(defn sample-joiner-transitions
-  "Takes a total count and map of categories to probabilities and
-  returns the count in each category at the next step."
-  [seed n alphas]
-  (if (and (= (count alphas) 1) (contains? alphas sc/non-send))
-    {sc/non-send n}
-    (let [n' (apply + (vals alphas))
-          [ks' as'] (apply mapv vector (dissoc alphas sc/non-send))
-          j (apply + as')
-          p (first (multinomial-probabilities [j (- n' j)]))
-          joiners (draw (binomial {:n n :p p}) {:seed seed})
-          ps (multinomial-probabilities as')
-          xs (draw (multinomial joiners ps) {:seed (inc seed)})]
-      (doto (-> (zipmap ks' xs)
-                (assoc sc/non-send (- n joiners)))
-        #_clojure.pprint/pprint))))
 
 (def total-by-age
   "Given a sequence of {:age age :population population}
