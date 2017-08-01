@@ -14,6 +14,8 @@
             [witan.send.utils :as u])
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
 
+(set! *print-length* 10)
+
 (def random-seed (atom 0))
 (defn set-seed! [n]
   (reset! random-seed n))
@@ -26,25 +28,6 @@
 (def some+
   "x + y. Returns y if x is nil and x if y is nil."
   (fnil + 0))
-
-(defn order-ds
-  [dataset col-key]
-  (utils/property-holds? dataset ds/dataset? "Not a dataset")
-  (cond (keyword? col-key) (->> dataset
-                                ds/row-maps
-                                vec
-                                (sort-by col-key)
-                                ds/dataset)
-        (vector? col-key) (->> dataset
-                               ds/row-maps
-                               vec
-                               (sort-by (apply juxt col-key))
-                               ds/dataset)))
-
-(defn filter-indexed
-  [pred coll]
-  (keep identity
-        (map-indexed pred coll)))
 
 (defn state [need setting]
   (if (or (= need sc/non-send)
@@ -100,29 +83,6 @@
                  [academic-year (state need from-setting) (state need to-setting)]))
        (filter #(apply valid-transition? %))))
 
-(defn merge-beta-params
-  "Merge b2 into b1 using weight"
-  [w1 {a1 :alpha b1 :beta :or {a1 0 b1 0}} {a2 :alpha b2 :beta :or {a1 0 b1 0}}]
-  (let [t1 (+ a1 b1)
-        t2 (+ a2 b2)
-        w2 (/ t1 t2)]
-    {:alpha (+ (* a1 (- 1 w1)) (* a2 w1 w2))
-     :beta (+ (* b1 (- 1 w1)) (* b2 w1 w2))}))
-
-(defn merge-alphas
-  "Merge b2 into b1 using weight"
-  [w1 as1 as2]
-  (let [t1 (->> (vals as1) (reduce +))
-        t2 (->> (vals as2) (reduce +))
-        w2 (/ t1 t2)]
-    (->> (union (-> as1 keys set)
-                (-> as2 keys set))
-         (reduce (fn [coll a]
-                   (let [a1 (get as1 a 0)
-                         a2 (get as2 a 0)]
-                     (assoc coll a (+ (* a1 (- 1 w1)) (* a2 w1 w2)))))
-                 {}))))
-
 (defn multimerge-alphas [total & weight-alphas]
   (let [weight-alpha-sums (->> (partition 2 weight-alphas)
                                (map (fn [[w as]]
@@ -164,70 +124,23 @@
   (let [transitions (transitions-map ds)]
     (p/beta-params-movers transitions 0.5 0.5)))
 
-(defn joiner-beta-params [ds y1]
-  (let [alphas (->> (ds/row-maps ds)
-                    (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2 academic-year-2]}]
-                              (cond-> coll
-                                (= setting-1 sc/non-send)
-                                (update academic-year-2 some+ 1)))
-                            {}))
-        betas (merge-with - y1 alphas)]
-    (reduce (fn [coll ay]
-              (-> (update coll :alpha some+ (get alphas ay 0))
-                  (update :beta some+ (get betas ay 0))))
-            {} sc/academic-years)))
+(defn joiner-beta-params
+  [ds population]
+  (let [transitions (transitions-map ds)]
+    (->> (vals (p/beta-params-joiners transitions population))
+         (apply merge-with +))))
 
 (defn joiner-age-alphas [ds]
-  (let [alphas (->> (ds/row-maps ds)
-                    (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2 academic-year-2]}]
-                              (cond-> coll
-                                (= setting-1 sc/non-send)
-                                (update academic-year-2 some+ 1)))
-                            {}))]
-    (reduce (fn [coll ay]
-              (assoc coll ay (inc (get alphas ay 0))))
-            {} sc/academic-years)))
+  (let [transitions (transitions-map ds)]
+    (p/alpha-params-joiner-ages transitions)))
 
 (defn joiner-state-alphas [ds]
   (let [transitions (transitions-map ds)]
     (p/alpha-params-joiner-states transitions 0.5 0.5)))
 
-(defn leaver-beta-params [ds population]
-  (let [prior-overall (->> (ds/row-maps ds)
-                           (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
-                                     (cond-> coll
-                                       (= setting-2 sc/non-send)
-                                       (update :alpha some+ 1)
-                                       (= setting-1 setting-2)
-                                       (update :beta some+ 1)))
-                                   {}))
-        prior-ay (->> (ds/row-maps ds)
-                      (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
-                                (cond-> coll
-                                  (= setting-2 sc/non-send)
-                                  (update-in [academic-year-2 :alpha] some+ 1)
-                                  (= setting-1 setting-2)
-                                  (update-in [academic-year-2 :beta] some+ 1)))
-                              {}))
-        observations (->> (ds/row-maps ds)
-                          (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
-                                    (cond-> coll
-                                      (= setting-2 sc/non-send)
-                                      (update-in [[academic-year-2 setting-1] :alpha] some+ 1)
-                                      (= setting-1 setting-2)
-                                      (update-in [[academic-year-2 setting-1] :beta] some+ 1))))
-                          {})]
-    (->> valid-states
-         (reduce (fn [coll [ay state]]
-                   (let [[need setting] (need-setting state)
-                         observed (get observations [ay setting])
-                         by-ay (get prior-ay ay)
-                         n (->>  observed vals (apply +) inc inc)]
-                     (assoc coll [(inc ay) state] (multimerge-alphas n
-                                                                     50 observed
-                                                                     5 by-ay
-                                                                     1 prior-overall))))
-                 {}))))
+(defn leaver-beta-params [ds]
+  (let [transitions (transitions-map ds)]
+    (p/beta-params-leavers transitions 0.5 0.5)))
 
 (defn sq [x] (* x x))
 (defn abs [x] (if (< x 0)
@@ -254,6 +167,7 @@
   (/ (* n alpha beta (+ n alpha beta))
      (* (sq (+ alpha beta)) (+ alpha beta 1))))
 
+
 (defn beta-binomial-mean [n {:keys [alpha beta]}]
   (/ (* n alpha) (+ alpha beta)))
 
@@ -272,26 +186,6 @@
               (update-in coll [academic-year :alpha] * r))
             joiners
             joiners)))
-
-(defn leaver-probabilities [ds]
-  (let [prior {:alpha 1 :beta 1}]
-    (merge (reduce (fn [coll ay]
-                     (assoc coll ay prior))
-                   {} sc/academic-years)
-           (->> (ds/row-maps ds)
-                (reduce (fn [coll {:keys [academic-year-1 setting-1 setting-2]}]
-                          (cond
-                            (= setting-1 sc/non-send)
-                            coll
-                            (= setting-2 sc/non-send)
-                            (update-in coll [academic-year-1 :alpha] some+ 1)
-                            :else
-                            (update-in coll [academic-year-1 :beta] some+ 1)))
-                        {})
-                (medley/map-vals
-                 (fn [{:keys [alpha beta]}]
-                   {:alpha (+ (or alpha 0) (:alpha prior))
-                    :beta (+ (or beta 0) (:beta prior))}))))))
 
 (defn sample-dirichlet-multinomial
   [n alphas]

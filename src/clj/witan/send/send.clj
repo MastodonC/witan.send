@@ -63,7 +63,9 @@
                                                                     (let [leaver-params (get leaver-beta-params [year state])
                                                                           mover-params (get mover-beta-params [(dec year) state])
                                                                           l (u/sample-beta-binomial population leaver-params)
-                                                                          v (u/beta-binomial-variance population leaver-params)
+                                                                          v (if leaver-params
+                                                                              (u/beta-binomial-variance population leaver-params)
+                                                                              0.0)
                                                                           next-states-sample (u/sample-send-transitions state (- population l) probs mover-params)]
                                                                       #_(let [[need setting] (u/need-setting state)]
                                                                           (let [[move stay] (reduce (fn [[move stay] [state n]]
@@ -204,8 +206,7 @@
                               (map u/total-by-academic-year))
         joiner-beta-params (u/joiner-beta-params transition-matrix y1)
         
-        leaver-beta-params (u/leaver-beta-params transition-matrix
-                                                 send-population-by-ay)
+        leaver-beta-params (u/leaver-beta-params transition-matrix)
         joiner-state-alphas (u/joiner-state-alphas transition-matrix)
         joiner-age-alphas (u/joiner-age-alphas transition-matrix)
         initial-state (initialise-model (ds/row-maps initial-send-population))
