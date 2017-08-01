@@ -25,7 +25,7 @@
 
 (witan.workspace-api/set-api-logging! println)
 
-(deftest send-workspace-test
+#_(deftest send-workspace-test
   (testing "The default model is run on the workspace and returns the outputs expected"
     (let [fixed-catalog (mapv #(if (= (:witan/type %) :input) (add-input-params %) %)
                               (:catalog m/send-model))
@@ -49,24 +49,25 @@
 
 (defn transitions [dataset]
   (->> (ds/row-maps dataset)
-       (reduce (fn [coll {:keys [setting-1 setting-2]}]
-                 (update-in coll [setting-1 setting-2] (fnil + 0) 1)) {})))
+       (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
+                 (update coll [academic-year-2 setting-1 setting-2] (fnil + 0) 1)) {})))
 
-(defn sankey [transitions]
-  (let [settings (-> (reduce (fn [coll [k1 kvs]]
-                               (into (conj coll k1) (keys kvs)))
+(defn sankey [f transitions]
+  (let [settings (-> (reduce (fn [coll [ay setting-1 setting-2]]
+                               (into coll [setting-1 setting-2]))
                              #{}
-                             transitions)
+                             (keys transitions))
                      (vec))
         settings-count (count settings)
         setting-index (into {} (map vector settings (range)))
-        links (mapcat (fn [[k1 kvs]]
-                        (->> (remove (fn [[k2 v]]
-                                       (= k1 k2))
-                                     kvs)
-                             (map (fn [[k2 v]]
-                                    {:source (setting-index k1) :target (+ settings-count (setting-index k2)) :value (float v)}))))
-                      transitions)]
+        links (->> (filter (fn [[[ay s1 s2] n]]
+                             (f ay)) transitions)
+                   (reduce (fn [coll [[ay s1 s2] n]]
+                             (update coll [s1 s2] (fnil + 0) n))
+                           {})
+                   (map (fn [[[s1 s2] n]]
+                          {:source (setting-index s1) :target (+ settings-count (setting-index s2)) :value (float n)})))]
     (-> {:links links :nodes (map #(hash-map :name (name %)) (concat settings settings))}
-        generate-string
-        println)))
+        ;; generate-string
+        ;; println
+        )))
