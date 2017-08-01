@@ -6,7 +6,7 @@
             [witan.send.schemas :as sc]
             [witan.workspace-api.protocols :as p]))
 
-(deftest validate-models
+#_(deftest validate-models
   (let [library (m/model-library)
         funs    (p/available-fns library)]
     (testing "Are the models valid?"
