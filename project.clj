@@ -15,7 +15,7 @@
                  [witan.workspace-api "0.1.22" :exclusions [org.clojure/clojure]]
                  [prismatic/schema "1.1.3"]
                  [schema-contrib "0.1.3"]
-                 [kixi/stats "0.3.10-SNAPSHOT"]
+                 [kixi/stats "0.3.9"]
                  [instaparse "1.4.3"]
                  [incanter "1.5.7"]
                  [medley "1.0.0"]
