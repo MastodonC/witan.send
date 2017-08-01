@@ -56,7 +56,7 @@
                                                                       [model
                                                                        (cond-> transitions
                                                                          (pos? population)
-                                                                         (update [year state sc/non-send] u/some+ population))
+                                                                         (update [(dec year) state sc/non-send] u/some+ population))
                                                                        leavers variance])
                                                                   :else
                                                                   (if-let [probs (get mover-state-alphas [(dec year) state])]
@@ -88,7 +88,7 @@
                                                                        (-> (reduce (fn [coll [next-state n]]
                                                                                      (cond-> coll
                                                                                        (pos? n)
-                                                                                       (update [year state next-state] u/some+ n)))
+                                                                                       (update [(dec year) state next-state] u/some+ n)))
                                                                                    transitions next-states-sample)
                                                                            (update [year state sc/non-send] u/some+ l))
                                                                        (+ leavers l)
@@ -120,14 +120,14 @@
 
         [out transitions] (->> (doto (u/sample-dirichlet-multinomial joiners joiner-age-alphas))
                                (reduce (fn [[coll transitions] [year n]]
-                                         (->> (u/sample-dirichlet-multinomial n joiner-state-alphas)
+                                         (->> (u/sample-dirichlet-multinomial n (get joiner-state-alphas year))
                                               (reduce (fn [[coll transitions] [state m]]
                                                         [(cond-> coll
                                                            (pos? m)
                                                            (update [year state] u/some+ m))
                                                          (cond-> transitions
                                                            (pos? m)
-                                                           (update [year sc/non-send state] u/some+ m))])
+                                                           (update [(dec year) sc/non-send state] u/some+ m))])
                                                       [coll transitions])))
                                        [out transitions]))
 
@@ -188,7 +188,7 @@
                          :projected-population sc/PopulationByAcademicYear
                          :joiner-beta-params sc/BetaParams
                          :leaver-beta-params sc/YearStateBetaParams
-                         :joiner-state-alphas sc/StateAlphas
+                         :joiner-state-alphas sc/AcademicYearStateAlphas
                          :joiner-age-alphas sc/AgeAlphas
                          :mover-beta-params sc/YearStateBetaParams
                          :mover-state-alphas sc/TransitionAlphas
@@ -232,7 +232,7 @@
                         :projected-population sc/PopulationByAcademicYear
                         :joiner-beta-params sc/BetaParams
                         :leaver-beta-params sc/YearStateBetaParams
-                        :joiner-state-alphas sc/StateAlphas
+                        :joiner-state-alphas sc/AcademicYearStateAlphas
                         :joiner-age-alphas sc/AgeAlphas
                         :mover-beta-params sc/YearStateBetaParams
                         :mover-state-alphas sc/TransitionAlphas
@@ -264,7 +264,7 @@
                              {} coll))
         transitions (apply merge-with + (mapcat #(map (comp by-setting :transitions) %) projections))]
     (prn transitions)
-    {:send-output (->> (map :model projections)
+    {:send-output (->> (map #(map :model %) projections)
                        (transduce identity (u/partition-rf iterations (r/fuse {:by-state (u/model-states-rf u/int-summary-rf)
                                                                                :total-in-send-by-ay (r/pre-step (u/with-keys-rf u/int-summary-rf sc/academic-years) u/model-population-by-ay)
                                                                                :total-in-send (r/pre-step u/int-summary-rf u/model-send-population)

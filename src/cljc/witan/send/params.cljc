@@ -150,11 +150,13 @@
         by-ay-setting (alpha-params transitions (juxt (juxt academic-year state-1-setting) state-2-setting))]
     (reduce (fn [coll [ay state]]
               (let [[need setting] (s/need-setting state)
+                    valid-settings (-> (s/valid-settings (inc ay))
+                                       (disj setting))
                     observed (-> (get by-ay-setting [ay setting])
-                                 (dissoc setting))                    
-                    overall (->> (dissoc overall setting)
+                                 (select-keys valid-settings))                   
+                    overall (->> (select-keys overall valid-settings)
                                  (weighted-alphas w1))
-                    by-ay (->> (dissoc (get by-ay ay) setting)
+                    by-ay (->> (select-keys (get by-ay ay) valid-settings)
                                (weighted-alphas w2))
                     prior (merge-with + overall by-ay)]
                 (assoc coll [ay state] (->> (merge-with + prior observed)
@@ -164,13 +166,22 @@
             s/valid-states)))
 
 (defn weighted-joiner-state-alpha-params
-  [transitions w1]
-  (let [transitions (select-transitions transitions joiner?)
-        overall (->> (alpha-params transitions (juxt state-2))
-                     (weighted-alphas w1))
+  [transitions w1 w2]
+  (let [incumbents (->> (s/transitions->state transitions)
+                        (reduce (fn [coll [[ay state] n]]
+                                  (update-in coll [ay state] some+ n))
+                                {}))
+        transitions (select-transitions transitions joiner?)
+        joiners (alpha-params transitions (juxt state-2))
         by-ay (alpha-params transitions (juxt academic-year state-2))]
     (reduce (fn [coll ay]
-              (assoc coll ay (merge-with + overall (get by-ay ay))))
+              (let [valid-states (s/valid-states-for-ay ay)
+                    incumbents (->> (select-keys (get incumbents ay) valid-states)
+                                    (weighted-alphas w1))
+                    joiners (->> (select-keys joiners valid-states)
+                                 (weighted-alphas w2))]
+                (assoc coll ay (merge-with + incumbents joiners
+                                           (get by-ay ay)))))
             {}
             const/academic-years)))
 
@@ -208,8 +219,8 @@
 (defn alpha-params-joiner-ages [transitions]
   (weighted-joiner-age-alpha-params transitions))
 
-(defn alpha-params-joiner-states [transitions w1]
-  (weighted-joiner-state-alpha-params transitions w1))
+(defn alpha-params-joiner-states [transitions w1 w2]
+  (weighted-joiner-state-alpha-params transitions w1 w2))
 
 (defn beta-params-joiners [transitions population]
   (weighted-joiner-age-beta-params transitions population))

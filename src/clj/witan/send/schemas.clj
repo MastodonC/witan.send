@@ -219,6 +219,12 @@
 (def AcademicYearBetaParams
   {AcademicYear {:alpha s/Num :beta s/Num}})
 
+(def StateAlphas
+  {State s/Num})
+
+(def AcademicYearStateAlphas
+  {AcademicYear StateAlphas})
+
 (def BetaParams
   {:alpha s/Num :beta s/Num})
 
@@ -226,9 +232,6 @@
   {[(s/one AcademicYear :academic-year)
     (s/one State :state)]
    {:alpha s/Num :beta s/Num}})
-
-(def StateAlphas
-  {State s/Num})
 
 (def AgeAlphas
   {AcademicYear s/Num})

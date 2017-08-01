@@ -189,12 +189,8 @@
             {} sc/academic-years)))
 
 (defn joiner-state-alphas [ds]
-  (let [observations (->> (ds/row-maps ds)
-                          (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
-                                    (cond-> coll
-                                      (= setting-1 sc/non-send)
-                                      (update (state need-2 setting-2) some+ 1))) {}))]
-    observations))
+  (let [transitions (transitions-map ds)]
+    (p/alpha-params-joiner-states transitions 0.5 0.5)))
 
 (defn leaver-beta-params [ds population]
   (let [prior-overall (->> (ds/row-maps ds)
@@ -299,11 +295,15 @@
 
 (defn sample-dirichlet-multinomial
   [n alphas]
-  (let [[ks as] (apply mapv vector alphas)]
-    (let [xs (if (pos? n)
-               (draw (dirichlet-multinomial n as) {:seed (get-seed!)})
-               (repeat 0))]
-      (zipmap ks xs))))
+  (try
+    (let [[ks as] (apply mapv vector alphas)]
+      (let [xs (if (pos? n)
+                 (draw (dirichlet-multinomial n as) {:seed (get-seed!)})
+                 (repeat 0))]
+        (zipmap ks xs)))
+    (catch Exception e
+      (do (println n alphas)
+          nil))))
 
 (defn sample-beta-binomial
   [n params]
@@ -321,12 +321,16 @@
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
   [state n probs mover-beta]
-  (if (pos? n)
-    (let [non-movers (sample-beta-binomial n mover-beta)
-          movers (- n non-movers)]
-      (-> (sample-dirichlet-multinomial movers probs)
-          (assoc state non-movers)))
-    {}))
+  (try
+    (if (pos? n)
+      (let [movers (sample-beta-binomial n mover-beta)
+            non-movers (- n movers)]
+        (-> (sample-dirichlet-multinomial movers probs)
+            (assoc state non-movers)))
+      {})
+    (catch Exception e
+      (do (println state n probs mover-beta)
+          nil))))
 
 (defn probability [p]
   (case (< p 0) 0.0
