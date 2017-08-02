@@ -153,15 +153,17 @@
     {:alpha alpha
      :beta (- t alpha)}))
 
-(defn adjust-beta-variance [v n {:keys [alpha beta]}]
-  (let [r (/ beta alpha)
-        alpha (/ (- (* n n r)
-                    (* (sq (inc r)) v))
-                 (* (inc r)
-                    (- (* (sq (inc r)) v)
-                       (* n r))))]
-    {:alpha alpha
-     :beta (* r alpha)}))
+(defn adjust-beta-variance [v n {:keys [alpha beta] :as params}]
+  (if (or (zero? alpha) (zero? beta))
+    params
+    (let [r (/ beta alpha)
+          alpha (/ (- (* n n r)
+                      (* (sq (inc r)) v))
+                   (* (inc r)
+                      (- (* (sq (inc r)) v)
+                         (* n r))))]
+      {:alpha alpha
+       :beta (* r alpha)})))
 
 (defn beta-binomial-variance [n {:keys [alpha beta]}]
   (/ (* n alpha beta (+ n alpha beta))

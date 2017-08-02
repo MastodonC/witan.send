@@ -68,7 +68,4 @@
                            {})
                    (map (fn [[[s1 s2] n]]
                           {:source (setting-index s1) :target (+ settings-count (setting-index s2)) :value (float n)})))]
-    (-> {:links links :nodes (map #(hash-map :name (name %)) (concat settings settings))}
-        ;; generate-string
-        ;; println
-        )))
+    (-> {:links links :nodes (map #(hash-map :name (name %)) (concat settings settings))})))
