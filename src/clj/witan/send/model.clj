@@ -9,6 +9,8 @@
 (def projection-year 2025)
 (def random-seed 50)
 (def simulations 10)
+(def target-growth 19.54)
+(def target-variance 4092)
 
 (def send-model-workflow
   "Defines each step of the model"
@@ -59,7 +61,9 @@
     :witan/params {:seed-year seed-year
                    :projection-year projection-year
                    :random-seed random-seed
-                   :simulations simulations}}
+                   :simulations simulations
+                   :target-growth target-growth
+                   :target-variance target-variance}}
    {:witan/name :output-send-results
     :witan/version "1.0.0"
     :witan/type :output
