@@ -11,6 +11,7 @@
             [witan.datasets.stats :as wst]
             [witan.send.params :as p]
             [witan.send.step :as step]
+            [witan.send.states :as state]
             [witan.send.utils :as u :refer [round]]
             [clojure.java.io :as io]
             [incanter.stats :as stats]
@@ -40,12 +41,14 @@
                                                                   :else
                                                                   (if-let [probs (get mover-state-alphas [(dec year) state])]
                                                                     (let [leaver-params (get leaver-beta-params [year state])
-                                                                          mover-params (get mover-beta-params [(dec year) state])
                                                                           l (u/sample-beta-binomial population leaver-params)
                                                                           v (if leaver-params
                                                                               (u/beta-binomial-variance population leaver-params)
                                                                               0.0)
-                                                                          next-states-sample (u/sample-send-transitions state (- population l) probs mover-params)]
+                                                                          next-states-sample (if (state/can-move? year state)
+                                                                                               (let [mover-params (get mover-beta-params [(dec year) state])]
+                                                                                                 (u/sample-send-transitions state (- population l) probs mover-params))
+                                                                                               {state (- population l)})]
                                                                       [(reduce (fn [coll [next-state n]]
                                                                                  (cond-> coll
                                                                                    (pos? n)
@@ -146,12 +149,12 @@
   (let [initial-population (->> (ds/row-maps initial-population)
                                 (u/total-by-academic-year))
         transitions (u/transitions-map transition-matrix)
-        leaver-beta-params (p/beta-params-leavers transitions 0.5 0.5)
-        joiner-beta-params (p/beta-params-joiners transitions initial-population)
-        joiner-state-alphas (p/alpha-params-joiner-states transitions 0.5 0.5)
+        leaver-beta-params (p/beta-params-leavers transitions 0.5 0.5 0.5)
+        joiner-beta-params (p/beta-params-joiners transitions initial-population 0.5)
+        joiner-state-alphas (p/alpha-params-joiner-states transitions 0.5 0.5 0.5)
         joiner-age-alphas (p/alpha-params-joiner-ages transitions)
-        mover-beta-params (p/beta-params-movers transitions 0.5 0.5)
-        mover-state-alphas (p/alpha-params-movers transitions 0.5 0.5)
+        mover-beta-params (p/beta-params-movers transitions 0.5 0.5 0.5)
+        mover-state-alphas (p/alpha-params-movers transitions 0.5 0.5 0.5)
         initial-state (initialise-model (ds/row-maps initial-send-population))]
     {:population-by-age-state initial-state
      :joiner-beta-params joiner-beta-params

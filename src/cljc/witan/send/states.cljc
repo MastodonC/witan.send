@@ -83,3 +83,16 @@
               (update [ay state-2] (fnil + 0) n)))
           {}
           transitions))
+
+(def valid-year-settings
+  (->> (for [year const/academic-years
+             setting const/settings
+             :when (valid-year-setting? year setting)]
+         [year setting])
+       (reduce (fn [coll [year setting]]
+                 (update coll year (fnil conj #{}) setting))
+               {})))
+
+(defn can-move? [academic-year state]
+  (let [[need setting] (need-setting state)]
+    (pos? (count (disj (get valid-year-settings (inc academic-year)) setting)))))
