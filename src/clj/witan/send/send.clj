@@ -9,6 +9,7 @@
             [clojure.data.csv :as csv]
             [witan.datasets :as wds]
             [witan.datasets.stats :as wst]
+            [witan.send.params :as p]
             [witan.send.step :as step]
             [witan.send.utils :as u :refer [round]]
             [clojure.java.io :as io]
@@ -68,7 +69,6 @@
 
         target-joiners (+ leavers target-growth)
         joiner-variance (- target-variance variance)
-        _ (prn "Joiner beta params" joiner-beta-params)
 
         joiner-beta-params (u/adjust-beta-mean target-joiners projected-base joiner-beta-params)
         joiner-beta-params (u/adjust-beta-variance joiner-variance projected-base joiner-beta-params)
@@ -143,27 +143,24 @@
                          :setting-cost-lookup sc/SettingCostLookup}}
   [{:keys [initial-population initial-send-population
            transition-matrix projected-population setting-cost]} _]
-  (let [population-by-ay (->> (ds/row-maps initial-population)
-                              (u/total-by-academic-year))
-        send-population-by-ay (-> (ds/row-maps initial-send-population)
-                                  (u/total-by-academic-year))
-        joiner-beta-params (u/joiner-beta-params transition-matrix population-by-ay)
-        population-by-ay (->> (ds/row-maps projected-population)
-                              (partition-by :calendar-year)
-                              (map u/total-by-academic-year))
-        
-        leaver-beta-params (u/leaver-beta-params transition-matrix)
-        joiner-state-alphas (u/joiner-state-alphas transition-matrix)
-        joiner-age-alphas (u/joiner-age-alphas transition-matrix)
-        initial-state (initialise-model (ds/row-maps initial-send-population))
-        mover-beta-params (u/mover-beta-params transition-matrix)
-        mover-state-alphas (u/mover-state-alphas transition-matrix)]
+  (let [initial-population (->> (ds/row-maps initial-population)
+                                (u/total-by-academic-year))
+        transitions (u/transitions-map transition-matrix)
+        leaver-beta-params (p/beta-params-leavers transitions 0.5 0.5)
+        joiner-beta-params (p/beta-params-joiners transitions initial-population)
+        joiner-state-alphas (p/alpha-params-joiner-states transitions 0.5 0.5)
+        joiner-age-alphas (p/alpha-params-joiner-ages transitions)
+        mover-beta-params (p/beta-params-movers transitions 0.5 0.5)
+        mover-state-alphas (p/alpha-params-movers transitions 0.5 0.5)
+        initial-state (initialise-model (ds/row-maps initial-send-population))]
     {:population-by-age-state initial-state
      :joiner-beta-params joiner-beta-params
      :leaver-beta-params leaver-beta-params
      :joiner-state-alphas joiner-state-alphas
      :joiner-age-alphas joiner-age-alphas
-     :projected-population population-by-ay
+     :projected-population (->> (ds/row-maps projected-population)
+                                (partition-by :calendar-year)
+                                (map u/total-by-academic-year))
      :mover-beta-params mover-beta-params
      :mover-state-alphas mover-state-alphas
      :setting-cost-lookup (->> (ds/row-maps setting-cost)

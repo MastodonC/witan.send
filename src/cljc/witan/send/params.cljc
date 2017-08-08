@@ -223,5 +223,6 @@
   (weighted-joiner-state-alpha-params transitions w1 w2))
 
 (defn beta-params-joiners [transitions population]
-  (doto (weighted-joiner-age-beta-params transitions population)
-    prn))
+  (->> (weighted-joiner-age-beta-params transitions population)
+       (vals)
+       (apply merge-with +)))

@@ -110,38 +110,6 @@
                    (update coll [academic-year-1 state-1 state-2] u/some+ 1)))
                {})))
 
-(defn mover-state-alphas
-  "Creates transition alphas based on observations.
-  Returns a map indexed by NCY and state, where NCY is the year they're in *before they've moved*."
-  [ds]
-  (let [transitions (transitions-map ds)]
-    (p/alpha-params-movers transitions 0.5 0.5)))
-
-(defn mover-beta-params
-  "Creates transition betas based on observations.
-  Returns a map indexed by NCY and state, where NCY is the year they're in *before they've moved*."
-  [ds]
-  (let [transitions (transitions-map ds)]
-    (p/beta-params-movers transitions 0.5 0.5)))
-
-(defn joiner-beta-params
-  [ds population]
-  (let [transitions (transitions-map ds)]
-    (->> (vals (p/beta-params-joiners transitions population))
-         (apply merge-with +))))
-
-(defn joiner-age-alphas [ds]
-  (let [transitions (transitions-map ds)]
-    (p/alpha-params-joiner-ages transitions)))
-
-(defn joiner-state-alphas [ds]
-  (let [transitions (transitions-map ds)]
-    (p/alpha-params-joiner-states transitions 0.5 0.5)))
-
-(defn leaver-beta-params [ds]
-  (let [transitions (transitions-map ds)]
-    (p/beta-params-leavers transitions 0.5 0.5)))
-
 (defn sq [x] (* x x))
 (defn abs [x] (if (< x 0)
                 (- x)
