@@ -275,33 +275,33 @@
 
 ;;;; Reducing functions for use with transduce
 
-(defn int-ci-rf
-  [number-of-signigicant-digits]
-  (fn
-    ([] (IntCountsHistogram. number-of-signigicant-digits))
-    ([hist x]
-     (doto hist (.recordValue (inc x))))
-    ([hist]
-     {:median (dec (.getValueAtPercentile hist 50.0))
-      :mean (dec (.getMean hist))
-      :std-dev (.getStdDeviation hist)
-      :iqr (- (.getValueAtPercentile hist 75.0) (.getValueAtPercentile hist 25.0))
-      :min (dec (.getValueAtPercentile hist 0.0))
-      :max (dec (.getValueAtPercentile hist 100.0))
-      :q1 (dec (.getValueAtPercentile hist 25.0))
-      :q3 (dec (.getValueAtPercentile hist 75.0))
-      :low-ci (dec (.getValueAtPercentile hist 2.5))
-      :high-ci (dec (.getValueAtPercentile hist 97.5))})))
-
 (def mean-or-zero-rf
   (r/post-complete
    kixi/mean
    (fn [mean]
      (or mean 0.0))))
 
-(def int-summary-rf
-  "Returns a summary of a sequence of integers"
-  (int-ci-rf 3))
+(defn histogram-rf
+  [number-of-significant-digits]
+  (fn
+    ([] (IntCountsHistogram. number-of-significant-digits))
+    ([hist x] (doto hist (.recordValue (inc x))))
+    ([hist] hist)))
+
+(def summary-rf
+  "Reducing function to summarise of a sequence of integers"
+  (completing (histogram-rf 3)
+              (fn [hist]
+                {:median (dec (.getValueAtPercentile hist 50.0))
+                 :mean (dec (.getMean hist))
+                 :std-dev (.getStdDeviation hist)
+                 :iqr (- (.getValueAtPercentile hist 75.0) (.getValueAtPercentile hist 25.0))
+                 :min (dec (.getValueAtPercentile hist 0.0))
+                 :max (dec (.getValueAtPercentile hist 100.0))
+                 :q1 (dec (.getValueAtPercentile hist 25.0))
+                 :q3 (dec (.getValueAtPercentile hist 75.0))
+                 :low-ci (dec (.getValueAtPercentile hist 2.5))
+                 :high-ci (dec (.getValueAtPercentile hist 97.5))})))
 
 (defn merge-with-rf
   "Like (apply merge-with f) but for reducing functions"
