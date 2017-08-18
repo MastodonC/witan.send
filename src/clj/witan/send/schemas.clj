@@ -64,8 +64,7 @@
 (def needs
   [:SLD :ASD :MLD :PD :HI :M :SLCN :PMLD :SEMH :VI :OTH :SPLD :MSI])
 
-(def non-send
-  :NON-SEND)
+(def non-send :NON-SEND)
 
 (def states
   (-> (for [need needs setting settings]
@@ -82,8 +81,6 @@
   (apply s/enum States))
 
 (def AgeSchema (s/constrained s/Int SENDage?))
-
-;; (def YearSchema (s/constrained s/Int SEND-year?))
 
 (def DataForMatrix
   (make-ordered-ds-schema [[:age AgeSchema]
@@ -107,49 +104,10 @@
 
 (def R s/Num)
 
-(def R-pos
-  (s/constrained R pos?))
-
-(def Rgt1
-  (s/constrained s/Num pos?))
-
-(def PopulationSYA
+(def PopulationDataset
   (make-ordered-ds-schema [[:calendar-year (s/constrained s/Int year?)]
                            [:academic-year AcademicYear]
                            [:population s/Int]]))
-
-#_(def TransitionCounts
-  (make-ordered-ds-schema [[:academic-year AcademicYear]
-                           [:need Need]
-                           [:setting Setting]
-                           [:CC N]
-                           [:EO N]
-                           [:FEC N]
-                           [:IMS N]
-                           [:IN N]
-                           [:ISC N]
-                           [:ISS N]
-                           [:ISSR N]
-                           [:IT N]
-                           [:MMS N]
-                           [:MSS N]
-                           [:MU N]
-                           [:NON-SEND N]
-                           [:OOE N]
-                           [:PRU N]]))
-
-(def JoinerCounts
-  (make-ordered-ds-schema [[:calendar-year CalendarYear]
-                           [:academic-year AcademicYear]
-                           [:need Need]
-                           [:setting Setting]
-                           [:population N]]))
-
-(def TransitionMatrix
-  {[(s/one AcademicYear :academic-year)
-    (s/one Need :need)
-    (s/one Setting :setting)]
-   [N]})
 
 (def TransitionCounts
   (make-ordered-ds-schema [[:setting-1 Setting]
@@ -174,12 +132,6 @@
 (def PopulationByAcademicYear
   [{AcademicYear s/Int}])
 
-(def SENDSchema
-  {[(s/one AcademicYear :year)
-    (s/one Need :need)
-    (s/one Setting :setting)]
-   N})
-
 (def ModelState
   {[(s/one AcademicYear :academic-year)
     (s/one State :state)]
@@ -197,11 +149,6 @@
    :q1 s/Num
    :q3 s/Num})
 
-(def SENDOutputSchema1
-  [{[(s/one AgeSchema :age)
-     (s/one SendStatesSchema :state)]
-    StatisticsSchema}])
-
 (def Results
   [{:by-state {[(s/one AcademicYear :academic-year)
                 (s/one State :state)]
@@ -212,12 +159,6 @@
     :total-in-send-by-setting {Setting StatisticsSchema}
     :total-cost StatisticsSchema
     :total-in-send-by-ay-group {s/Str StatisticsSchema}}])
-
-(def LeaverProbabilities
-  {AcademicYear {:alpha s/Num :beta s/Num}})
-
-(def AcademicYearBetaParams
-  {AcademicYear {:alpha s/Num :beta s/Num}})
 
 (def StateAlphas
   {State s/Num})
@@ -231,7 +172,7 @@
 (def YearStateBetaParams
   {[(s/one AcademicYear :academic-year)
     (s/one State :state)]
-   {:alpha s/Num :beta s/Num}})
+   BetaParams})
 
 (def AgeAlphas
   {AcademicYear s/Num})
@@ -242,7 +183,6 @@
 
 (def SettingCostLookup
   {Setting s/Num})
-
 
 (def min-academic-year (apply min academic-years))
 (def max-academic-year (apply max academic-years))
