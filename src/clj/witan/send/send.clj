@@ -98,7 +98,7 @@
   {:witan/name :send/initial-population
    :witan/version "1.0.0"
    :witan/key :initial-population
-   :witan/schema sc/PopulationSYA})
+   :witan/schema sc/PopulationDataset})
 
 (definput initial-send-population-1-0-0
   {:witan/name :send/initial-send-population
@@ -116,7 +116,7 @@
   {:witan/name :send/projected-population
    :witan/version "1.0.0"
    :witan/key :projected-population
-   :witan/schema sc/PopulationSYA})
+   :witan/schema sc/PopulationDataset})
 
 (definput setting-cost-1-0-0
   {:witan/name :send/setting-cost
@@ -129,10 +129,10 @@
    row for each individual/year/simulation. Also includes age & state columns"
   {:witan/name :send/prepare-send-inputs
    :witan/version "1.0.0"
-   :witan/input-schema {:initial-population sc/PopulationSYA
+   :witan/input-schema {:initial-population sc/PopulationDataset
+                        :projected-population sc/PopulationDataset
                         :initial-send-population sc/SENDPopulation
                         :transition-matrix sc/TransitionCounts
-                        :projected-population sc/PopulationSYA
                         :setting-cost sc/SettingCost}
    :witan/param-schema {}
    :witan/output-schema {:population-by-age-state sc/ModelState
