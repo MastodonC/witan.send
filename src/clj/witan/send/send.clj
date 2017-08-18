@@ -224,16 +224,19 @@
   (u/set-seed! random-seed)
   (let [iterations (inc (- projection-year seed-year))
         inputs (assoc inputs :target-growth target-growth :target-variance target-variance)
-        projections (for [simulation (range simulations)]
-                      (let [projection (doall (reductions (partial run-model-iteration simulation inputs) {:model population-by-age-state
-                                                                                                           :transitions {}}
-                                                          projected-population))]
-                        (println (format "Created projection %d" simulation))
-                        projection))]
-    {:send-output (->> (transduce (map #(map :model %))
-                                  (results-rf iterations setting-cost-lookup)
-                                  projections)
-                       (doall))}))
+        projections (->> (range simulations)
+                         (partition-all (int (/ simulations 8)))
+                         (pmap (fn [simulations]
+                                 (println simulations)
+                                 (for [simulation simulations]
+                                   (let [projection (reductions (partial run-model-iteration simulation inputs) {:model population-by-age-state
+                                                                                                                 :transitions {}}
+                                                                projected-population)]
+                                     (println (format "Created projection %d" simulation))
+                                     projection)))))]
+    {:send-output (transduce (map #(map :model %))
+                             (results-rf iterations setting-cost-lookup)
+                             (apply concat projections))}))
 
 (defworkflowoutput output-send-results-1-0-0
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
