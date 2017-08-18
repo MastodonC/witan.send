@@ -170,6 +170,34 @@
                                (map (juxt :setting :cost))
                                (into {}))}))
 
+(defn projection->transitions
+  [projections]
+  (let [by-setting (fn [coll]
+                     (reduce (fn [coll [[ay s1 s2] n]]
+                               (let [s1 (if (= s1 sc/non-send)
+                                          sc/non-send
+                                          (second (u/need-setting s1)))
+                                     s2 (if (= s2 sc/non-send)
+                                          sc/non-send
+                                          (second (u/need-setting s2)))]
+                                 (update coll [ay s1 s2] u/some+ n)))
+                             {} coll))]
+    (doto (apply merge-with + (mapcat #(map (comp by-setting :transitions) %) projections))
+      prn)))
+
+(defn results-rf
+  [iterations setting-cost-lookup]
+  (u/partition-rf iterations
+                  (r/fuse {:by-state (u/model-states-rf u/summary-rf)
+                           :total-in-send-by-ay (r/pre-step (u/with-keys-rf u/summary-rf sc/academic-years) u/model-population-by-ay)
+                           :total-in-send (r/pre-step u/summary-rf u/model-send-population)
+                           :total-in-send-by-need (r/pre-step (u/merge-with-rf u/summary-rf) u/model-population-by-need)
+                           :total-in-send-by-setting (r/pre-step (u/merge-with-rf u/summary-rf) u/model-population-by-setting)
+                           :total-cost (r/pre-step u/summary-rf (comp (partial u/total-setting-cost setting-cost-lookup)
+                                                                      u/model-population-by-setting))
+                           :total-in-send-by-ay-group (r/pre-step (u/merge-with-rf u/summary-rf)
+                                                                  u/model-population-by-ay-group)})))
+
 (defworkflowfn run-send-model-1-0-0
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
@@ -201,29 +229,10 @@
                                                                                                            :transitions {}}
                                                           projected-population))]
                         (println (format "Created projection %d" simulation))
-                        projection))
-        by-setting (fn [coll]
-                     (reduce (fn [coll [[ay s1 s2] n]]
-                               (let [s1 (if (= s1 sc/non-send)
-                                          sc/non-send
-                                          (second (u/need-setting s1)))
-                                     s2 (if (= s2 sc/non-send)
-                                          sc/non-send
-                                          (second (u/need-setting s2)))]
-                                 (update coll [ay s1 s2] u/some+ n)))
-                             {} coll))
-        transitions (apply merge-with + (mapcat #(map (comp by-setting :transitions) %) projections))]
-    (prn transitions)
-    {:send-output (->> (map #(map :model %) projections)
-                       (transduce identity (u/partition-rf iterations (r/fuse {:by-state (u/model-states-rf u/summary-rf)
-                                                                               :total-in-send-by-ay (r/pre-step (u/with-keys-rf u/summary-rf sc/academic-years) u/model-population-by-ay)
-                                                                               :total-in-send (r/pre-step u/summary-rf u/model-send-population)
-                                                                               :total-in-send-by-need (r/pre-step (u/merge-with-rf u/summary-rf) u/model-population-by-need)
-                                                                               :total-in-send-by-setting (r/pre-step (u/merge-with-rf u/summary-rf) u/model-population-by-setting)
-                                                                               :total-cost (r/pre-step u/summary-rf (comp (partial u/total-setting-cost setting-cost-lookup)
-                                                                                                                              u/model-population-by-setting))
-                                                                               :total-in-send-by-ay-group (r/pre-step (u/merge-with-rf u/summary-rf)
-                                                                                                                      u/model-population-by-ay-group)})))
+                        projection))]
+    {:send-output (->> (transduce (map #(map :model %))
+                                  (results-rf iterations setting-cost-lookup)
+                                  projections)
                        (doall))}))
 
 (defworkflowoutput output-send-results-1-0-0
