@@ -8,7 +8,7 @@
 (def seed-year 2017)
 (def projection-year 2025)
 (def random-seed 50)
-(def simulations 10)
+(def simulations 1000)
 (def target-growth 19.54)
 (def target-variance 4092)
 
