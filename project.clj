@@ -21,7 +21,8 @@
                  [medley "1.0.0"]
                  [cheshire "5.7.1"]]
   :plugins [[lein-gorilla "0.4.0"]
-            [lein-cljsbuild "1.1.4"]]
+            [lein-cljsbuild "1.1.4"]
+            [lein-auto "0.1.3"]]
   :main witan.send.main
   :aot [witan.send.main]
   

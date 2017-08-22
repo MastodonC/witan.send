@@ -185,18 +185,35 @@
     (doto (apply merge-with + (mapcat #(map (comp by-setting :transitions) %) projections))
       prn)))
 
-(defn results-rf
-  [iterations setting-cost-lookup]
+(defn values-rf
+  "Associate a reducing function to be used for each value of map indexed by key"
+  [kvs]
+  (->> (for [[k v] kvs]
+         [k (r/pre-step v k)])
+       (into {})
+       (r/fuse)))
+
+(defn reduce-rf [iterations setting-cost-lookup]
   (u/partition-rf iterations
-                  (r/fuse {:by-state (u/model-states-rf u/summary-rf)
-                           :total-in-send-by-ay (r/pre-step (u/with-keys-rf u/summary-rf sc/academic-years) u/model-population-by-ay)
-                           :total-in-send (r/pre-step u/summary-rf u/model-send-population)
-                           :total-in-send-by-need (r/pre-step (u/merge-with-rf u/summary-rf) u/model-population-by-need)
-                           :total-in-send-by-setting (r/pre-step (u/merge-with-rf u/summary-rf) u/model-population-by-setting)
-                           :total-cost (r/pre-step u/summary-rf (comp (partial u/total-setting-cost setting-cost-lookup)
-                                                                      u/model-population-by-setting))
-                           :total-in-send-by-ay-group (r/pre-step (u/merge-with-rf u/summary-rf)
+                  (r/fuse {:by-state (u/model-states-rf (u/histogram-rf 3))
+                           :total-in-send-by-ay (r/pre-step (u/with-keys-rf (u/histogram-rf 3) sc/academic-years) u/model-population-by-ay)
+                           :total-in-send (r/pre-step (u/histogram-rf 3) u/model-send-population)
+                           :total-in-send-by-need (r/pre-step (u/merge-with-rf (u/histogram-rf 3)) u/model-population-by-need)
+                           :total-in-send-by-setting (r/pre-step (u/merge-with-rf (u/histogram-rf 3)) u/model-population-by-setting)
+                           :total-cost (r/pre-step (u/histogram-rf 3) (comp (partial u/total-setting-cost setting-cost-lookup)
+                                                                            u/model-population-by-setting))
+                           :total-in-send-by-ay-group (r/pre-step (u/merge-with-rf (u/histogram-rf 3))
                                                                   u/model-population-by-ay-group)})))
+
+(defn combine-rf [iterations]
+  (u/partition-rf iterations
+                  (values-rf {:by-state (u/merge-with-rf (u/histogram-combiner-rf 3))
+                              :total-in-send-by-ay (u/merge-with-rf (u/histogram-combiner-rf 3))
+                              :total-in-send (u/histogram-combiner-rf 3)
+                              :total-in-send-by-need (u/merge-with-rf (u/histogram-combiner-rf 3))
+                              :total-in-send-by-setting (u/merge-with-rf (u/histogram-combiner-rf 3))
+                              :total-cost (u/histogram-combiner-rf 3)
+                              :total-in-send-by-ay-group (u/merge-with-rf (u/histogram-combiner-rf 3))})))
 
 (defworkflowfn run-send-model-1-0-0
   "Outputs the population for the last year of historic data, with one
@@ -224,19 +241,17 @@
   (u/set-seed! random-seed)
   (let [iterations (inc (- projection-year seed-year))
         inputs (assoc inputs :target-growth target-growth :target-variance target-variance)
-        projections (->> (range simulations)
-                         (partition-all (int (/ simulations 8)))
-                         (pmap (fn [simulations]
-                                 (println simulations)
-                                 (for [simulation simulations]
-                                   (let [projection (reductions (partial run-model-iteration simulation inputs) {:model population-by-age-state
-                                                                                                                 :transitions {}}
-                                                                projected-population)]
-                                     (println (format "Created projection %d" simulation))
-                                     projection)))))]
-    {:send-output (transduce (map #(map :model %))
-                             (results-rf iterations setting-cost-lookup)
-                             (apply concat projections))}))
+        reduced (->> (range simulations)
+                     (partition-all (int (/ simulations 8)))
+                     (pmap (fn [simulations]
+                             (->> (for [simulation simulations]
+                                    (let [projection (reductions (partial run-model-iteration simulation inputs) {:model population-by-age-state
+                                                                                                                  :transitions {}}
+                                                                 projected-population)]
+                                      (println (format "Created projection %d" simulation))
+                                      projection))
+                                  (transduce (map #(map :model %)) (reduce-rf iterations setting-cost-lookup))))))]
+    {:send-output (transduce identity (combine-rf iterations) reduced)}))
 
 (defworkflowoutput output-send-results-1-0-0
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
