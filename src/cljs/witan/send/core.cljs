@@ -19,5 +19,6 @@
 
 (defn ^:export init []
   (re-frame/dispatch-sync [:initialize-db])
+  (re-frame/dispatch [:set-academic-year 10])
   (dev-setup)
   (mount-root))

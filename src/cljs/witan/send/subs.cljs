@@ -27,3 +27,12 @@
  (fn [db]
    (:mover-beta-weights db)))
 
+(re-frame/reg-sub
+ :joiner-alpha-weights
+ (fn [db]
+   (:joiner-alpha-weights db)))
+
+(re-frame/reg-sub
+ :joiner-beta-weights
+ (fn [db]
+   (:joiner-beta-weights db)))

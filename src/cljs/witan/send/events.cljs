@@ -45,18 +45,19 @@
 
 (defn update-sankey-fx
   [{:keys [academic-year transitions model-transitions leaver-weights mover-alpha-weights mover-beta-weights population joiner-alpha-weights joiner-beta-weights]}]
-  (let [[w1 w2] leaver-weights
-        [ma1 ma2] mover-alpha-weights
-        [mb1 mb2] mover-beta-weights
+  (let [[w1 w2 w3] leaver-weights
+        [ma1 ma2 ma3] mover-alpha-weights
+        [mb1 mb2 mb3] mover-beta-weights
         [ja1 ja2] joiner-alpha-weights
         [jb1 jb2] joiner-beta-weights
-        params (p/beta-params-leavers transitions w1 w2)
-        mover-beta (p/beta-params-movers transitions mb1 mb2)
-        mover-alpha (p/alpha-params-movers transitions ma1 ma2)
+        params (p/beta-params-leavers transitions w1 w2 w3)
+
+        mover-beta (p/beta-params-movers transitions mb1 mb2 mb3)
+        mover-alpha (p/alpha-params-movers transitions ma1 ma2 ma3)
         
-        joiner-beta (p/beta-params-joiners transitions population)
+        joiner-beta (p/beta-params-joiners transitions population 1)
         joiner-alpha-ages (p/alpha-params-joiner-ages transitions)
-        joiner-alpha-states (p/alpha-params-joiner-states transitions ja1)
+        joiner-alpha-states (p/alpha-params-joiner-states transitions ja1 ja2 1)
         
         state (s/transitions->initial-state transitions)
         transitions' {}
@@ -65,10 +66,9 @@
 
         [state transitions'] (step/step-joiners state transitions' population joiner-beta step/binomial-mean
                                                 joiner-alpha-ages step/dirichlet-mean
-                                                joiner-alpha-states step/dirichlet-mean)
-        ]
+                                                joiner-alpha-states step/dirichlet-mean)]
     {:update-default-sankey! (sankey #(= % academic-year) (setting-transitions transitions))
-     ;; :update-sankey! (sankey #(= % academic-year) (setting-transitions transitions'))
+     :update-sankey! (sankey #(= % academic-year) (setting-transitions transitions'))
      :update-model-sankey! (sankey #(= % academic-year) model-transitions)
      }))
 
@@ -82,7 +82,6 @@
  :set-leaver-weights
  (fn [{:keys [db]} [_ leaver-weights]]
    (let [db (assoc db :leaver-weights leaver-weights)]
-     (println leaver-weights)
      (merge {:db db} (update-sankey-fx db)))))
 
 (re-frame/reg-event-fx
