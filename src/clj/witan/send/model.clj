@@ -6,11 +6,11 @@
             [witan.send.send :as send]))
 
 (def seed-year 2017)
-(def projection-year 2025)
+(def projection-year 2023)
 (def random-seed 50)
 (def simulations 1000)
-(def target-growth 19.54)
-(def target-variance 4092)
+(def target-growth 127.2)
+(def target-variance 729.96)
 
 (def send-model-workflow
   "Defines each step of the model"

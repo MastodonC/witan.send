@@ -31,7 +31,11 @@
   (let [[model transitions leavers variance] (->> model
                                                   (step/age-population projected-population)
                                                   (reduce (fn [[model transitions leavers variance] [[year state :as k] population]]
-                                                            (cond (or (<= year sc/min-academic-year)
+                                                            (cond
+                                                              (= state sc/non-send)
+                                                              [model transitions leavers variance]
+                                                              
+                                                              (or (<= year sc/min-academic-year)
                                                                       (> year sc/max-academic-year))
                                                                   [model
                                                                    (cond-> transitions
@@ -50,10 +54,10 @@
                                                                                                  (u/sample-send-transitions state (- population l) probs mover-params))
                                                                                                {state (- population l)})]
                                                                       [(reduce (fn [coll [next-state n]]
-                                                                                 (cond-> coll
-                                                                                   (pos? n)
-                                                                                   (update [year next-state] u/some+ n)))
-                                                                               model next-states-sample)
+                                                                                   (cond-> coll
+                                                                                     (pos? n)
+                                                                                     (update [year next-state] u/some+ n)))
+                                                                                 model next-states-sample)
                                                                        (-> (reduce (fn [coll [next-state n]]
                                                                                      (cond-> coll
                                                                                        (pos? n)
@@ -62,7 +66,9 @@
                                                                            (update [year state sc/non-send] u/some+ l))
                                                                        (+ leavers l)
                                                                        (+ variance v)])
-                                                                    [model transitions (+ leavers population) variance])))
+                                                                    (do
+                                                                      #_(prn "No probs for population" [k population])
+                                                                      [model transitions (+ leavers population) variance]))))
                                                           [{} transitions 0 0]))
         projected-base (reduce (fn [n ay]
                                  (+ n (get projected-population ay 0)))
@@ -70,26 +76,29 @@
 
         in-send-count (->> (vals model) (apply +))
 
+        
         target-joiners (+ leavers target-growth)
         joiner-variance (- target-variance variance)
-
-        joiner-beta-params (u/adjust-beta-mean target-joiners projected-base joiner-beta-params)
-        joiner-beta-params (u/adjust-beta-variance joiner-variance projected-base joiner-beta-params)
         
-        joiners (u/sample-beta-binomial projected-base joiner-beta-params)
+        joiners (if (pos? joiner-variance)
+                  (let [joiner-beta-params (u/adjust-beta-mean target-joiners projected-base joiner-beta-params)
+                        joiner-beta-params (u/adjust-beta-variance joiner-variance projected-base joiner-beta-params)]
+                    (u/sample-beta-binomial projected-base joiner-beta-params))
+                  ;; Else, we can't remove variance from the model
+                  (+ 261 target-growth)) ;; Hard-coding average leavers
         
         [model transitions] (->> (doto (u/sample-dirichlet-multinomial joiners joiner-age-alphas))
-                                 (reduce (fn [[coll transitions] [year n]]
-                                           (->> (u/sample-dirichlet-multinomial n (get joiner-state-alphas year))
-                                                (reduce (fn [[coll transitions] [state m]]
-                                                          [(cond-> coll
-                                                             (pos? m)
-                                                             (update [year state] u/some+ m))
-                                                           (cond-> transitions
-                                                             (pos? m)
-                                                             (update [(dec year) sc/non-send state] u/some+ m))])
-                                                        [coll transitions])))
-                                         [model transitions]))]
+                                     (reduce (fn [[coll transitions] [year n]]
+                                               (->> (u/sample-dirichlet-multinomial n (get joiner-state-alphas year))
+                                                    (reduce (fn [[coll transitions] [state m]]
+                                                              [(cond-> coll
+                                                                 (pos? m)
+                                                                 (update [year state] u/some+ m))
+                                                               (cond-> transitions
+                                                                 (pos? m)
+                                                                 (update [(dec year) sc/non-send state] u/some+ m))])
+                                                            [coll transitions])))
+                                             [model transitions]))]
     {:model model :transitions transitions}))
 
 ;; Workflow functions
@@ -193,27 +202,29 @@
        (into {})
        (r/fuse)))
 
+(def number-of-significant-digits 3)
+
 (defn reduce-rf [iterations setting-cost-lookup]
   (u/partition-rf iterations
-                  (r/fuse {:by-state (u/model-states-rf (u/histogram-rf 3))
-                           :total-in-send-by-ay (r/pre-step (u/with-keys-rf (u/histogram-rf 3) sc/academic-years) u/model-population-by-ay)
-                           :total-in-send (r/pre-step (u/histogram-rf 3) u/model-send-population)
-                           :total-in-send-by-need (r/pre-step (u/merge-with-rf (u/histogram-rf 3)) u/model-population-by-need)
-                           :total-in-send-by-setting (r/pre-step (u/merge-with-rf (u/histogram-rf 3)) u/model-population-by-setting)
-                           :total-cost (r/pre-step (u/histogram-rf 3) (comp (partial u/total-setting-cost setting-cost-lookup)
+                  (r/fuse {:by-state (u/model-states-rf (u/histogram-rf number-of-significant-digits))
+                           :total-in-send-by-ay (r/pre-step (u/with-keys-rf (u/histogram-rf number-of-significant-digits) sc/academic-years) u/model-population-by-ay)
+                           :total-in-send (r/pre-step (u/histogram-rf number-of-significant-digits) u/model-send-population)
+                           :total-in-send-by-need (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits)) u/model-population-by-need)
+                           :total-in-send-by-setting (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits)) u/model-population-by-setting)
+                           :total-cost (r/pre-step (u/histogram-rf number-of-significant-digits) (comp (partial u/total-setting-cost setting-cost-lookup)
                                                                             u/model-population-by-setting))
-                           :total-in-send-by-ay-group (r/pre-step (u/merge-with-rf (u/histogram-rf 3))
+                           :total-in-send-by-ay-group (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits))
                                                                   u/model-population-by-ay-group)})))
 
 (defn combine-rf [iterations]
   (u/partition-rf iterations
-                  (values-rf {:by-state (u/merge-with-rf (u/histogram-combiner-rf 3))
-                              :total-in-send-by-ay (u/merge-with-rf (u/histogram-combiner-rf 3))
-                              :total-in-send (u/histogram-combiner-rf 3)
-                              :total-in-send-by-need (u/merge-with-rf (u/histogram-combiner-rf 3))
-                              :total-in-send-by-setting (u/merge-with-rf (u/histogram-combiner-rf 3))
-                              :total-cost (u/histogram-combiner-rf 3)
-                              :total-in-send-by-ay-group (u/merge-with-rf (u/histogram-combiner-rf 3))})))
+                  (values-rf {:by-state (u/merge-with-rf (u/histogram-combiner-rf number-of-significant-digits))
+                              :total-in-send-by-ay (u/merge-with-rf (u/histogram-combiner-rf number-of-significant-digits))
+                              :total-in-send (u/histogram-combiner-rf number-of-significant-digits)
+                              :total-in-send-by-need (u/merge-with-rf (u/histogram-combiner-rf number-of-significant-digits))
+                              :total-in-send-by-setting (u/merge-with-rf (u/histogram-combiner-rf number-of-significant-digits))
+                              :total-cost (u/histogram-combiner-rf number-of-significant-digits)
+                              :total-in-send-by-ay-group (u/merge-with-rf (u/histogram-combiner-rf number-of-significant-digits))})))
 
 (defworkflowfn run-send-model-1-0-0
   "Outputs the population for the last year of historic data, with one
@@ -243,7 +254,7 @@
         inputs (assoc inputs :target-growth target-growth :target-variance target-variance)
         reduced (->> (range simulations)
                      (partition-all (int (/ simulations 8)))
-                     (pmap (fn [simulations]
+                     (map (fn [simulations]
                              (->> (for [simulation simulations]
                                     (let [projection (reductions (partial run-model-iteration simulation inputs) {:model population-by-age-state
                                                                                                                   :transitions {}}

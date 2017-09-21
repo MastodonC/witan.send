@@ -1,14 +1,17 @@
 (ns witan.send.constants)
 
 (def academic-years
-  (range -5 (inc 22)))
+  (range -4 (inc 21)))
 
 (def min-academic-year (apply min academic-years))
 
 (def max-academic-year (apply max academic-years))
 
 (def settings
-  [:CC :EO :FEC :IMS :IN :ISC :ISCR :ISS :ISSR :IT :MMS :MSS :OOE :PRU :MU])
+  [:EO :EYS :FEC :IMS :ISS :ISSR :MAP :MMS :MMSIB :MMSOB :MSS :MSSIB :MSSOB :MSSOP :MSSR :MU :MUOB :NMSS :NMSSR :OOE])
 
 (def needs
-  [:SLD :ASD :MLD :PD :HI :M :SLCN :PMLD :SEMH :VI :OTH :SPLD :MSI])
+  ;; Detailed needs
+  #_[:ASD :CI :CL :HI :MLD :MSI :OTH :PD :PMLD :SEMH :SLCN :SLD :SP :SPLD :VI :UKN]
+  ;; Broad need categories:
+  [:CI :CL :OTH :SEMH :SP :UKN])

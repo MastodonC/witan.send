@@ -42,20 +42,31 @@
 
 (defn valid-year-setting? [year setting]
   (or
-   (and (= setting :CC) (<= year 0))
-   (and (= setting :EO) (<= -1 year 14))
+   #_(and (= setting :CC) (<= year 0))
+   (and (= setting :EO) (<= -4 year 20))
+   (and (= setting :EYS) (<= -4 year 0))
    (and (= setting :FEC) (<= 12 year 20))
-   (and (= setting :IMS) (<= -3 year 14))
-   (and (= setting :IN) (<= year 0))
-   (and (= setting :ISC) (<= 15 year 20))
-   (and (= setting :ISS) (<= 0 year 14))
-   (and (= setting :ISSR) (<= 0 year 14))
-   (and (= setting :IT) (<= 2 year 15))
-   (and (= setting :MMS) (<= -3 year 14))
-   (and (= setting :MSS) (<= -3 year 14))
-   (and (= setting :OOE) (<= 6 year 20))
-   (and (= setting :PRU) (<= 2 year 14))
-   (and (= setting :MU) (<= -1 year 14))))
+   (and (= setting :IMS) (<= -2 year 14))
+   #_(and (= setting :IN) (<= year 0))
+   #_(and (= setting :ISC) (<= 15 year 20))
+   (and (= setting :ISS) (<= -4 year 15))
+   (and (= setting :ISSR) (<= -4 year 15))
+   #_(and (= setting :IT) (<= 2 year 15))
+   (and (= setting :MAP) (<= 7 year 20))
+   (and (= setting :MMS) (<= -2 year 14))
+   (and (= setting :MMSIB) (<= -2 year 14))
+   (and (= setting :MMSOB) (<= -2 year 14))
+   (and (= setting :MSS) (<= -4 year 20))
+   (and (= setting :MSSIB) (<= -2 year 15))
+   (and (= setting :MSSOB) (<= -2 year 15))
+   (and (= setting :MSSOP) (<= -2 year 15))
+   (and (= setting :MSSR) (<= 5 year 15))
+   #_(and (= setting :PRU) (<= 2 year 14))
+   (and (= setting :MU) (<= -2 year 14))
+   (and (= setting :MUOB) (<= -2 year 14))
+   (and (= setting :NMSS) (<= -2 year 15))
+   (and (= setting :NMSSR) (<= -2 year 15))
+   (and (= setting :OOE) (<= -4 year 21))))
 
 (defn valid-state? [academic-year state]
   (or (= state sc/non-send)
@@ -285,7 +296,8 @@
   [number-of-significant-digits]
   (fn
     ([] (IntCountsHistogram. number-of-significant-digits))
-    ([hist x] (doto hist (.recordValue (inc x))))
+    ([hist x]
+     (doto hist (.recordValue (inc x))))
     ([hist] hist)))
 
 (defn histogram-combiner-rf
