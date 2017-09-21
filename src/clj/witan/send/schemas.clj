@@ -34,35 +34,14 @@
 (def CalendarYear
   (s/constrained s/Int #(<= 1900 % 2100)))
 
-(def States [:Non-SEND
-             :ASD-Mainstream
-             :ASD-Special
-             :ASD-Other
-             :BESM-Mainstream
-             :BESM-Special
-             :BESM-Other
-             :LD-Mainstream
-             :LD-Special
-             :LD-Other
-             :PSI-Mainstream
-             :PSI-Special
-             :PSI-Other
-             :SLCN-Mainstream
-             :SLCN-Special
-             :SLCN-Other
-             :SPLD-Mainstream
-             :SPLD-Special
-             :SPLD-Other
-             :UO-Mainstream
-             :UO-Special
-             :UO-Other
-             :Too-old])
-
 (def settings
-  [:CC :EO :FEC :IMS :IN :ISC :ISCR :ISS :ISSR :IT :MMS :MSS :OOE :PRU :MU])
-
+  [:EO :EYS :FEC :IMS :ISS :ISSR :MAP :MMS :MMSIB :MMSOB :MSS :MSSIB :MSSOB :MSSOP :MSSR :MU :MUOB :NMSS :NMSSR :OOE])
+ 
 (def needs
-  [:SLD :ASD :MLD :PD :HI :M :SLCN :PMLD :SEMH :VI :OTH :SPLD :MSI])
+  ;; Detailed needs
+  #_[:ASD :CI :CL :HI :MLD :MSI :OTH :PD :PMLD :SEMH :SLCN :SLD :SP :SPLD :VI :UKN]
+  ;; Broad need categories:
+  [:CI :CL :OTH :SEMH :SP :UKN])
 
 (def non-send :NON-SEND)
 
@@ -77,16 +56,8 @@
 (def Ages
   (range 0 (inc 26)))
 
-(def SendStatesSchema
-  (apply s/enum States))
-
 (def AgeSchema (s/constrained s/Int SENDage?))
 
-(def DataForMatrix
-  (make-ordered-ds-schema [[:age AgeSchema]
-                           [:from-state (s/constrained s/Keyword (fn [s] (some #(= s %) States)))]
-                           [:to-state (s/constrained s/Keyword (fn [s] (some #(= s %) States)))]
-                           [:probability double]]))
 (def AcademicYear
   (s/constrained s/Int #(<= -5 % 25)))
 
