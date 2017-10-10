@@ -164,8 +164,6 @@
                     by-ay (->> (select-keys (get by-ay ay) valid-settings)
                                (weighted-alphas w2))
                     prior (merge-with + prior-alphas overall by-ay)]
-                (when (= [ay state] [3 :CI-MSSIB])
-                  (println "YO YO"))
                 (assoc coll [ay state] (->> (merge-with + prior observed)
                                             (map-keys #(s/state need %))
                                             (filter-vals pos?)))))
