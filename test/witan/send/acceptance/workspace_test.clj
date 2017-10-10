@@ -1,15 +1,13 @@
 (ns witan.send.acceptance.workspace-test
-  (:require [clojure.test :refer :all]
-            [witan.send.send :refer :all]
+  (:require [clojure.core.matrix.dataset :as ds]
+            [clojure.test :refer :all]
             [schema.core :as s]
-            [witan.send.schemas :as sc]
             [witan.send.model :as m]
-            [witan.workspace-api.protocols :as p]
-            [witan.workspace-executor.core :as wex]
+            [witan.send.schemas :as sc]
+            [witan.send.states :as states]
             [witan.send.test-utils :as tu]
-
-            [clojure.core.matrix.dataset :as ds]
-            [cheshire.core :refer [generate-string]]))
+            [witan.workspace-api.protocols :as p]
+            [witan.workspace-executor.core :as wex]))
 
 (def test-inputs
   {:initial-population ["data/demo/initial-population.csv" sc/PopulationDataset]
@@ -46,12 +44,14 @@
                        :contracts (p/available-fns (m/model-library))}
         workspace'    (s/with-fn-validation (wex/build! workspace))
         result        (apply merge (wex/run!! workspace' {}))]
-    result))
+    nil))
 
 (defn transitions [dataset]
   (->> (ds/row-maps dataset)
-       (reduce (fn [coll {:keys [academic-year-2 setting-1 setting-2]}]
-                 (update coll [academic-year-2 setting-1 setting-2] (fnil + 0) 1)) {})))
+       (reduce (fn [coll {:keys [academic-year-1 setting-1 need-1 setting-2 need-2]}]
+                 (update coll [academic-year-1
+                               (states/state need-1 setting-1)
+                               (states/state need-2 setting-2)] (fnil + 0) 1)) {})))
 
 (defn sankey [f transitions]
   (let [settings (-> (reduce (fn [coll [ay setting-1 setting-2]]
