@@ -190,9 +190,9 @@
                                           sc/non-send
                                           (second (u/need-setting s2)))]
                                  (update coll [ay s1 s2] u/some+ n)))
-                             {} coll))]
-    (doto (apply merge-with + (mapcat #(map (comp by-setting :transitions) %) projections))
-      prn)))
+                             {} coll))
+        transitions (apply merge-with + (mapcat #(map (comp by-setting :transitions) %) projections))]
+    (prn "Transitions:" transitions)))
 
 (defn values-rf
   "Associate a reducing function to be used for each value of map indexed by key"
@@ -252,16 +252,18 @@
   (u/set-seed! random-seed)
   (let [iterations (inc (- projection-year seed-year))
         inputs (assoc inputs :target-growth target-growth :target-variance target-variance)
-        reduced (->> (range simulations)
-                     (partition-all (int (/ simulations 8)))
-                     (map (fn [simulations]
-                             (->> (for [simulation simulations]
-                                    (let [projection (reductions (partial run-model-iteration simulation inputs) {:model population-by-age-state
-                                                                                                                  :transitions {}}
-                                                                 projected-population)]
-                                      (println (format "Created projection %d" simulation))
-                                      projection))
-                                  (transduce (map #(map :model %)) (reduce-rf iterations setting-cost-lookup))))))]
+        projections (->> (range simulations)
+                         (partition-all (int (/ simulations 8)))
+                         (map (fn [simulations]
+                                (->> (for [simulation simulations]
+                                       (let [projection (reductions (partial run-model-iteration simulation inputs) {:model population-by-age-state
+                                                                                                                     :transitions {}}
+                                                                    projected-population)]
+                                         (println (format "Created projection %d" simulation))
+                                         projection))))))
+        reduced (for [projection projections]
+                  (transduce (map #(map :model %)) (reduce-rf iterations setting-cost-lookup) projection))]
+    (projection->transitions (apply concat projections))
     {:send-output (transduce identity (combine-rf iterations) reduced)}))
 
 (defworkflowoutput output-send-results-1-0-0
