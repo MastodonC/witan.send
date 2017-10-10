@@ -12,6 +12,7 @@
    db/default-db))
 
 (defn sankey [f transitions]
+  (js/console.log (pr-str transitions))
   (let [transitions (filter (fn [[[ay s1 s2] n]]
                               (and (f ay) (pos? n))) transitions)
 
@@ -32,8 +33,8 @@
                            {})
                    (mapv (fn [[[s1 s2] n]]
                            {:source (from-index s1) :target (to-index s2) :value (float n)})))]
-    (js/console.log (pr-str))
-    {:links links :nodes (mapv #(hash-map :name (name %)) (concat from to))}))
+    (js/console.log (pr-str transitions))
+    {:links links :nodes (mapv #(hash-map :name (some-> % name)) (concat from to))}))
 
 (defn setting-transitions
   [transitions]
@@ -68,7 +69,7 @@
                                                 joiner-alpha-ages step/dirichlet-mean
                                                 joiner-alpha-states step/dirichlet-mean)]
     {:update-default-sankey! (sankey #(= % academic-year) (setting-transitions transitions))
-     :update-sankey! (sankey #(= % academic-year) (setting-transitions transitions'))
+     ;; :update-sankey! (sankey #(= % academic-year) (setting-transitions transitions'))
      :update-model-sankey! (sankey #(= % academic-year) model-transitions)
      }))
 
