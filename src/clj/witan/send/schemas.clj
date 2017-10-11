@@ -81,31 +81,36 @@
                            [:population s/Int]]))
 
 (def TransitionCounts
-  (make-ordered-ds-schema [[:setting-1 Setting]
-                           [:need-1 Need]
+  (make-ordered-ds-schema [[:setting-1 s/Keyword]
+                           [:need-1 s/Keyword]
                            [:academic-year-1 AcademicYear]
-                           [:setting-2 Setting]
-                           [:need-2 Need]
+                           [:setting-2 s/Keyword]
+                           [:need-2 s/Keyword]
                            [:academic-year-2 AcademicYear]]))
 
 (def TransitionAlphas
   {[(s/one AcademicYear :academic-year)
-    (s/one State :state)]
-   {State R}})
+    (s/one s/Keyword :state)]
+   {s/Keyword R}})
 
 (def SENDPopulation
   (make-ordered-ds-schema [[:calendar-year CalendarYear]
                            [:academic-year AcademicYear]
-                           [:need Need]
-                           [:setting Setting]
+                           [:need s/Keyword]
+                           [:setting s/Keyword]
                            [:population N]]))
+
+(def ValidSettingAcademicYears
+  (make-ordered-ds-schema [[:setting s/Keyword]
+                           [:min-academic-year AcademicYear]
+                           [:max-academic-year AcademicYear]]))
 
 (def PopulationByAcademicYear
   [{AcademicYear s/Int}])
 
 (def ModelState
   {[(s/one AcademicYear :academic-year)
-    (s/one State :state)]
+    (s/one s/Keyword :state)]
    N})
 
 (def StatisticsSchema
@@ -122,17 +127,17 @@
 
 (def Results
   [{:by-state {[(s/one AcademicYear :academic-year)
-                (s/one State :state)]
+                (s/one s/Keyword :state)]
                StatisticsSchema}
     :total-in-send-by-ay {AcademicYear StatisticsSchema}
     :total-in-send StatisticsSchema
-    :total-in-send-by-need {Need StatisticsSchema}
-    :total-in-send-by-setting {Setting StatisticsSchema}
+    :total-in-send-by-need {s/Keyword StatisticsSchema}
+    :total-in-send-by-setting {s/Keyword StatisticsSchema}
     :total-cost StatisticsSchema
     :total-in-send-by-ay-group {s/Str StatisticsSchema}}])
 
 (def StateAlphas
-  {State s/Num})
+  {s/Keyword s/Num})
 
 (def AcademicYearStateAlphas
   {AcademicYear StateAlphas})
@@ -142,18 +147,18 @@
 
 (def YearStateBetaParams
   {[(s/one AcademicYear :academic-year)
-    (s/one State :state)]
+    (s/one s/Keyword :state)]
    BetaParams})
 
 (def AgeAlphas
   {AcademicYear s/Num})
 
 (def SettingCost
-  (make-ordered-ds-schema [[:setting Setting]
+  (make-ordered-ds-schema [[:setting s/Keyword]
                            [:cost s/Num]]))
 
 (def SettingCostLookup
-  {Setting s/Num})
+  {s/Keyword s/Num})
 
 (def min-academic-year (apply min academic-years))
 (def max-academic-year (apply max academic-years))

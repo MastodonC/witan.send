@@ -133,6 +133,12 @@
    :witan/key :setting-cost
    :witan/schema sc/SettingCost})
 
+(definput valid-setting-academic-years-1-0-0
+  {:witan/name :send/valid-setting-academic-years
+   :witan/version "1.0.0"
+   :witan/key :valid-setting-academic-years
+   :witan/schema sc/ValidSettingAcademicYears})
+
 (defworkflowfn prepare-send-inputs-1-0-0
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
