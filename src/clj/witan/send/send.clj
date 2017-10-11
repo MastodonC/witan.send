@@ -11,7 +11,7 @@
             [witan.datasets.stats :as wst]
             [witan.send.params :as p]
             [witan.send.step :as step]
-            [witan.send.states :as state]
+            [witan.send.states :as states]
             [witan.send.utils :as u :refer [round]]
             [clojure.java.io :as io]
             [incanter.stats :as stats]
@@ -20,7 +20,7 @@
 
 (defn initialise-model [send-data]
   (reduce (fn [coll {:keys [academic-year need setting population]}]
-            (assoc coll [academic-year (u/state need setting)] population))
+            (assoc coll [academic-year (states/state need setting)] population))
           {} send-data))
 
 (defn run-model-iteration [simulation {:keys [joiner-beta-params joiner-state-alphas joiner-age-alphas
@@ -49,7 +49,7 @@
                                                                           v (if leaver-params
                                                                               (u/beta-binomial-variance population leaver-params)
                                                                               0.0)
-                                                                          next-states-sample (if (state/can-move? year state)
+                                                                          next-states-sample (if (states/can-move? year state)
                                                                                                (let [mover-params (get mover-beta-params [(dec year) state])]
                                                                                                  (u/sample-send-transitions state (- population l) probs mover-params))
                                                                                                {state (- population l)})]
@@ -185,10 +185,10 @@
                      (reduce (fn [coll [[ay s1 s2] n]]
                                (let [s1 (if (= s1 sc/non-send)
                                           sc/non-send
-                                          (second (u/need-setting s1)))
+                                          (second (states/need-setting s1)))
                                      s2 (if (= s2 sc/non-send)
                                           sc/non-send
-                                          (second (u/need-setting s2)))]
+                                          (second (states/need-setting s2)))]
                                  (update coll [ay s1 s2] u/some+ n)))
                              {} coll))
         transitions (apply merge-with + (mapcat #(map (comp by-setting :transitions) %) projections))]

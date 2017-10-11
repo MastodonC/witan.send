@@ -4,6 +4,7 @@
             [clojure.set :refer [union]]
             [witan.workspace-api.utils :as utils]
             [witan.send.schemas :as sc]
+            [witan.send.states :as states]
             [witan.send.params :as p]
             [kixi.stats.core :as kixi]
             [kixi.stats.random :refer [multinomial binomial beta-binomial dirichlet-multinomial draw]]
@@ -29,71 +30,6 @@
   "x + y. Returns y if x is nil and x if y is nil."
   (fnil + 0))
 
-(defn state [need setting]
-  (if (or (= need sc/non-send)
-          (= setting sc/non-send))
-    sc/non-send
-    (keyword (str (name need) "-" (name setting)))))
-
-(defn need-setting [state]
-  (if (= state sc/non-send)
-    [sc/non-send sc/non-send]
-    (mapv keyword (str/split (name state) #"-"))))
-
-(defn valid-year-setting? [year setting]
-  (or
-   #_(and (= setting :CC) (<= year 0))
-   (and (= setting :EO) (<= -4 year 20))
-   (and (= setting :EYS) (<= -4 year 0))
-   (and (= setting :FEC) (<= 12 year 20))
-   (and (= setting :IMS) (<= -2 year 14))
-   #_(and (= setting :IN) (<= year 0))
-   #_(and (= setting :ISC) (<= 15 year 20))
-   (and (= setting :ISS) (<= -4 year 15))
-   (and (= setting :ISSR) (<= -4 year 15))
-   #_(and (= setting :IT) (<= 2 year 15))
-   (and (= setting :MAP) (<= 7 year 20))
-   (and (= setting :MMS) (<= -2 year 14))
-   (and (= setting :MMSIB) (<= -2 year 14))
-   (and (= setting :MMSOB) (<= -2 year 14))
-   (and (= setting :MSS) (<= -4 year 20))
-   (and (= setting :MSSIB) (<= -2 year 15))
-   (and (= setting :MSSOB) (<= -2 year 15))
-   (and (= setting :MSSOP) (<= -2 year 15))
-   (and (= setting :MSSR) (<= 5 year 15))
-   #_(and (= setting :PRU) (<= 2 year 14))
-   (and (= setting :MU) (<= -2 year 14))
-   (and (= setting :MUOB) (<= -2 year 14))
-   (and (= setting :NMSS) (<= -2 year 15))
-   (and (= setting :NMSSR) (<= -2 year 15))
-   (and (= setting :OOE) (<= -4 year 21))))
-
-(defn valid-state? [academic-year state]
-  (or (= state sc/non-send)
-      (let [[need setting] (need-setting state)]
-        (valid-year-setting? academic-year setting))))
-
-(def valid-states
-  (->> (concat (for [academic-year sc/academic-years
-                     setting sc/settings
-                     need sc/needs]
-                 [academic-year (state need setting)])
-               (for [academic-year sc/academic-years]
-                 [academic-year sc/non-send]))
-       (filter #(apply valid-state? %))))
-
-(defn valid-transition? [academic-year state-1 state-2]
-  (and (valid-state? (dec academic-year) state-1)
-       (valid-state? academic-year state-2)))
-
-(def valid-transitions
-  (->> (concat (for [academic-year sc/academic-years
-                     from-setting sc/settings
-                     to-setting sc/settings
-                     need sc/needs]
-                 [academic-year (state need from-setting) (state need to-setting)]))
-       (filter #(apply valid-transition? %))))
-
 (defn multimerge-alphas [total & weight-alphas]
   (let [weight-alpha-sums (->> (partition 2 weight-alphas)
                                (map (fn [[w as]]
@@ -108,16 +44,12 @@
                            as))
                  {}))))
 
-(defn valid-settings [ay]
-  (->> (filter #(valid-year-setting? ay %) sc/settings)
-       (into #{})))
-
 (defn transitions-map
   [dataset]
   (->> (ds/row-maps dataset)
        (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-1]}]
-                 (let [state-1 (state need-1 setting-1)
-                       state-2 (state need-2 setting-2)]
+                 (let [state-1 (states/state need-1 setting-1)
+                       state-2 (states/state need-2 setting-2)]
                    (update coll [academic-year-1 state-1 state-2] u/some+ 1)))
                {})))
 
@@ -237,7 +169,7 @@
 (defn model-population-by-need
   [model]
   (reduce (fn [coll [[ay state] population]]
-            (let [[need setting] (need-setting state)]
+            (let [[need setting] (states/need-setting state)]
               (cond-> coll
                 (not= state sc/non-send)
                 (update need some+ population))))
@@ -246,7 +178,7 @@
 (defn model-population-by-setting
   [model]
   (reduce (fn [coll [[ay state] population]]
-            (let [[need setting] (need-setting state)]
+            (let [[need setting] (states/need-setting state)]
               (cond-> coll
                 (not= state sc/non-send)
                 (update setting some+ population))))
@@ -339,7 +271,7 @@
     ([]
      (reduce (fn [coll k]
                (assoc coll k (rf)))
-             {} valid-states))
+             {} states/valid-states))
     ([acc x]
      (medley/map-kv
       (fn [k v]
