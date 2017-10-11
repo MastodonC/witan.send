@@ -8,7 +8,7 @@
 (def seed-year 2017)
 (def projection-year 2023)
 (def random-seed 50)
-(def simulations 1000)
+(def simulations 10)
 (def target-growth 127.2)
 (def target-variance 729.96)
 
@@ -19,6 +19,7 @@
    [:transition-matrix :prepare-send-inputs]
    [:projected-population :prepare-send-inputs]
    [:setting-cost :prepare-send-inputs]
+   [:valid-setting-academic-years :prepare-send-inputs]
    [:prepare-send-inputs :run-send-model]
    [:run-send-model :output-send-results]])
 
@@ -48,6 +49,11 @@
     :witan/version "1.0.0"
     :witan/type :input
     :witan/fn :send/setting-cost
+    :witan/params {:src ""}}
+   {:witan/name :valid-setting-academic-years
+    :witan/version "1.0.0"
+    :witan/type :input
+    :witan/fn :send/valid-setting-academic-years
     :witan/params {:src ""}}
    {:witan/name :prepare-send-inputs
     :witan/version "1.0.0"
@@ -86,9 +92,10 @@
                    send/initial-send-population-1-0-0
                    send/transition-matrix-1-0-0
                    send/projected-population-1-0-0
+                   send/setting-cost-1-0-0
+                   send/valid-setting-academic-years-1-0-0
                    send/prepare-send-inputs-1-0-0
                    send/run-send-model-1-0-0
-                   send/output-send-results-1-0-0
-                   send/setting-cost-1-0-0))
+                   send/output-send-results-1-0-0))
     (available-models [_]
       (map-model-meta send-model))))
