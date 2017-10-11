@@ -148,7 +148,8 @@
                         :projected-population sc/PopulationDataset
                         :initial-send-population sc/SENDPopulation
                         :transition-matrix sc/TransitionCounts
-                        :setting-cost sc/SettingCost}
+                        :setting-cost sc/SettingCost
+                        :valid-setting-academic-years sc/ValidSettingAcademicYears}
    :witan/param-schema {}
    :witan/output-schema {:population-by-age-state sc/ModelState
                          :projected-population sc/PopulationByAcademicYear
@@ -160,7 +161,8 @@
                          :mover-state-alphas sc/TransitionAlphas
                          :setting-cost-lookup sc/SettingCostLookup}}
   [{:keys [initial-population initial-send-population
-           transition-matrix projected-population setting-cost]} _]
+           transition-matrix projected-population setting-cost
+           valid-setting-academic-years]} _]
   (let [initial-population (->> (ds/row-maps initial-population)
                                 (u/total-by-academic-year))
         transitions (u/transitions-map transition-matrix)
