@@ -16,7 +16,8 @@
             [clojure.java.io :as io]
             [incanter.stats :as stats]
             [medley.core :as medley]
-            [redux.core :as r]))
+            [redux.core :as r]
+            [clojure.string :as str]))
 
 (defn initialise-model [send-data]
   (reduce (fn [coll {:keys [academic-year need setting population]}]
@@ -166,23 +167,31 @@
   (let [initial-population (->> (ds/row-maps initial-population)
                                 (u/total-by-academic-year))
         transitions (u/transitions-map transition-matrix)
-        leaver-beta-params (p/beta-params-leavers transitions 0.5 0.5 0.5)
-        joiner-beta-params (p/beta-params-joiners transitions initial-population 0.5)
-        joiner-state-alphas (p/alpha-params-joiner-states transitions 0.5 0.5 0.5)
-        joiner-age-alphas (p/alpha-params-joiner-ages transitions)
-        mover-beta-params (p/beta-params-movers transitions 0.5 0.5 0.5)
-        mover-state-alphas (p/alpha-params-movers transitions 0.5 0.5 0.5)
-        initial-state (initialise-model (ds/row-maps initial-send-population))]
+        initial-state (initialise-model (ds/row-maps initial-send-population))
+
+        valid-settings (->> (ds/row-maps valid-setting-academic-years)
+                            (map :setting)
+                            (into #{}))
+
+        valid-needs (->> (ds/row-maps valid-setting-academic-years)
+                         (mapcat (comp #(str/split % #",") :needs))
+                         (distinct)
+                         (map keyword))]
+
+    (s/validate (sc/SENDPopulation+ valid-settings) initial-send-population)
+    (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
+    (s/validate (sc/SettingCost+ valid-settings) setting-cost)
+
     {:population-by-age-state initial-state
-     :joiner-beta-params joiner-beta-params
-     :leaver-beta-params leaver-beta-params
-     :joiner-state-alphas joiner-state-alphas
-     :joiner-age-alphas joiner-age-alphas
+     :joiner-beta-params (p/beta-params-joiners transitions initial-population 0.5)
+     :leaver-beta-params (p/beta-params-leavers transitions 0.5 0.5 0.5)
+     :joiner-state-alphas (p/alpha-params-joiner-states transitions 0.5 0.5 0.5)
+     :joiner-age-alphas (p/alpha-params-joiner-ages transitions)
      :projected-population (->> (ds/row-maps projected-population)
                                 (partition-by :calendar-year)
                                 (map u/total-by-academic-year))
-     :mover-beta-params mover-beta-params
-     :mover-state-alphas mover-state-alphas
+     :mover-beta-params (p/beta-params-movers transitions 0.5 0.5 0.5)
+     :mover-state-alphas (p/alpha-params-movers transitions 0.5 0.5 0.5)
      :setting-cost-lookup (->> (ds/row-maps setting-cost)
                                (map (juxt :setting :cost))
                                (into {}))}))
