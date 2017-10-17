@@ -2,13 +2,6 @@
   (:require [schema.core :as s]
             [schema-contrib.core :as sc]))
 
-(defn year? [n] (and (>= n 1900) (<= n 2100)))
-
-(defn SENDage? [n] (and (>= n 0) (<= n 26)))
-
-(defn SEND-year? [y]
-  (<= -3 y 22))
-
 (defn make-ordered-ds-schema [col-vec]
   {:column-names (mapv #(s/one (s/eq (first %)) (str (first %))) col-vec)
    :columns (mapv #(s/one [(second %)] (format "col %s" (name (first %)))) col-vec)
@@ -27,9 +20,6 @@
                       fieldname (:name s)]
                   (s/one datatype fieldname)))
         (:column-names col-schema)))
-
-(def YearSchema
-  (s/constrained s/Int year?))
 
 (def CalendarYear
   (s/constrained s/Int #(<= 1900 % 2100)))
@@ -50,24 +40,32 @@
         (keyword (str (name need) "-" (name setting))))
       (conj non-send)))
 
+(defn State
+  [needs settings]
+  (->> (-> (for [need needs setting settings]
+             (keyword (str (name need) "-" (name setting))))
+           (conj non-send))
+       (apply s/enum)))
+
 (def academic-years
-  (range -5 (inc 22)))
+  (range -5 (inc 25)))
 
-(def Ages
-  (range 0 (inc 26)))
-
-(def AgeSchema (s/constrained s/Int SENDage?))
+(def min-academic-year (apply min academic-years))
+(def max-academic-year (apply max academic-years))
 
 (def AcademicYear
-  (s/constrained s/Int #(<= -5 % 25)))
+  (s/constrained s/Int #(<= min-academic-year % max-academic-year)))
 
-(def Need
+(def YearSchema
+  (s/constrained s/Int #(<= 2000 % 2100)))
+
+(defn Need [needs]
   (apply s/enum (conj needs non-send)))
 
-(def Setting
+(defn Setting [settings]
   (apply s/enum (conj settings non-send)))
 
-(def State
+#_(def State
   (apply s/enum states))
 
 (def N
@@ -76,7 +74,7 @@
 (def R s/Num)
 
 (def PopulationDataset
-  (make-ordered-ds-schema [[:calendar-year (s/constrained s/Int year?)]
+  (make-ordered-ds-schema [[:calendar-year CalendarYear]
                            [:academic-year AcademicYear]
                            [:population s/Int]]))
 
@@ -87,6 +85,14 @@
                            [:setting-2 s/Keyword]
                            [:need-2 s/Keyword]
                            [:academic-year-2 AcademicYear]]))
+
+(defn TransitionsMap+
+  [needs settings]
+  (let [State (State needs settings)]
+    {[(s/one AcademicYear :academic-year)
+      (s/one State :state-1)
+      (s/one State :state-2)]
+     N}))
 
 (def TransitionAlphas
   {[(s/one AcademicYear :academic-year)
@@ -100,10 +106,18 @@
                            [:setting s/Keyword]
                            [:population N]]))
 
+(defn SENDPopulation+ [settings]
+  (make-ordered-ds-schema [[:calendar-year CalendarYear]
+                           [:academic-year AcademicYear]
+                           [:need s/Keyword]
+                           [:setting (Setting settings)]
+                           [:population N]]))
+
 (def ValidSettingAcademicYears
   (make-ordered-ds-schema [[:setting s/Keyword]
                            [:min-academic-year AcademicYear]
-                           [:max-academic-year AcademicYear]]))
+                           [:max-academic-year AcademicYear]
+                           [:needs s/Str]]))
 
 (def PopulationByAcademicYear
   [{AcademicYear s/Int}])
@@ -157,8 +171,10 @@
   (make-ordered-ds-schema [[:setting s/Keyword]
                            [:cost s/Num]]))
 
+(defn SettingCost+
+  [settings]
+  (make-ordered-ds-schema [[:setting (Setting settings)]
+                           [:cost s/Num]]))
+
 (def SettingCostLookup
   {s/Keyword s/Num})
-
-(def min-academic-year (apply min academic-years))
-(def max-academic-year (apply max academic-years))
