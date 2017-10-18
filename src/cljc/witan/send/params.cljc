@@ -110,9 +110,9 @@
           {} transitions))
 
 (defn weighted-beta-params
-  [transitions filter select w1 w2 w3]
+  [valid-states transitions filter select w1 w2 w3]
   (let [transitions (remove-transitions transitions filter)
-        prior (/ w3 (count s/valid-states))
+        prior (/ w3 (count valid-states))
         overall (->> (beta-params-overall transitions select)
                      (weighted-alphas w1))
         academic-year (->> (beta-params-academic-year transitions select)
@@ -127,7 +127,7 @@
                     prior (merge-with + overall by-ay {:alpha prior :beta prior})]
                 (assoc coll [ay state] (merge-with + prior observed))))
             {}
-            s/valid-states)))
+            valid-states)))
 
 (defn map-keys [f coll]
   (reduce (fn [coll [k v]]
@@ -144,14 +144,14 @@
           coll))
 
 (defn weighted-alpha-params
-  [transitions select w1 w2 w3]
+  [valid-states valid-year-settings transitions select w1 w2 w3]
   (let [transitions (select-transitions transitions select)
         overall (alpha-params transitions (juxt state-2-setting))
         by-ay (alpha-params transitions (juxt academic-year state-2-setting))
         by-ay-setting (alpha-params transitions (juxt (juxt academic-year state-1-setting) state-2-setting))]
     (reduce (fn [coll [ay state]]
               (let [[need setting] (s/need-setting state)
-                    valid-settings (-> (s/valid-settings (inc ay))
+                    valid-settings (-> (get valid-year-settings (inc ay))
                                        (disj setting))
                     prior (/ w3 (inc (count valid-settings)))
                     prior-alphas (reduce (fn [coll state]
@@ -168,19 +168,20 @@
                                             (map-keys #(s/state need %))
                                             (filter-vals pos?)))))
             {}
-            s/valid-states)))
+            valid-states)))
 
 (defn weighted-joiner-state-alpha-params
-  [transitions w1 w2 w3]
+  [valid-states transitions w1 w2 w3]
   (let [incumbents (->> (s/transitions->state transitions)
                         (reduce (fn [coll [[ay state] n]]
                                   (update-in coll [ay state] some+ n))
                                 {}))
         transitions (select-transitions transitions joiner?)
         joiners (alpha-params transitions (juxt state-2))
-        by-ay (alpha-params transitions (juxt academic-year state-2))]
+        by-ay (alpha-params transitions (juxt academic-year state-2))
+        academic-years (distinct (map first valid-states))]
     (reduce (fn [coll ay]
-              (let [valid-states (s/valid-states-for-ay ay)
+              (let [valid-states (s/valid-states-for-ay valid-states ay)
                     prior (/ w3 (count valid-states))
                     prior-alphas (reduce (fn [coll state]
                                            (assoc coll state prior))
@@ -194,7 +195,7 @@
                                            joiners
                                            (get by-ay ay)))))
             {}
-            const/academic-years)))
+            academic-years)))
 
 (defn weighted-joiner-age-alpha-params
   [transitions]
@@ -224,20 +225,20 @@
             {:alpha prior :beta prior}
             const/academic-years)))
 
-(defn beta-params-leavers [transitions w1 w2 w3]
-  (weighted-beta-params transitions joiner? leaver? w1 w2 w3))
+(defn beta-params-leavers [valid-states transitions w1 w2 w3]
+  (weighted-beta-params valid-states transitions joiner? leaver? w1 w2 w3))
 
-(defn beta-params-movers [transitions w1 w2 w3]
-  (weighted-beta-params transitions (some-fn joiner? leaver?) mover? w1 w2 w3))
+(defn beta-params-movers [valid-states transitions w1 w2 w3]
+  (weighted-beta-params valid-states transitions (some-fn joiner? leaver?) mover? w1 w2 w3))
 
-(defn alpha-params-movers [transitions w1 w2 w3]
-  (weighted-alpha-params transitions mover? w1 w2 w3))
+(defn alpha-params-movers [valid-states valid-year-settings transitions w1 w2 w3]
+  (weighted-alpha-params valid-states valid-year-settings transitions mover? w1 w2 w3))
 
 (defn alpha-params-joiner-ages [transitions]
   (weighted-joiner-age-alpha-params transitions))
 
-(defn alpha-params-joiner-states [transitions w1 w2 w3]
-  (weighted-joiner-state-alpha-params transitions w1 w2 w3))
+(defn alpha-params-joiner-states [valid-states transitions w1 w2 w3]
+  (weighted-joiner-state-alpha-params valid-states transitions w1 w2 w3))
 
 (defn beta-params-joiners [transitions population w1]
   (weighted-joiner-beta-params transitions population w1))

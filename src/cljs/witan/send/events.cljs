@@ -53,12 +53,14 @@
         [jb1 jb2] joiner-beta-weights
         params (p/beta-params-leavers transitions w1 w2 w3)
 
-        mover-beta (p/beta-params-movers transitions mb1 mb2 mb3)
-        mover-alpha (p/alpha-params-movers transitions ma1 ma2 ma3)
+        valid-states [] ;;TODO
         
-        joiner-beta (p/beta-params-joiners transitions population 1)
+        mover-beta (p/beta-params-movers valid-states transitions mb1 mb2 mb3)
+        mover-alpha (p/alpha-params-movers valid-states transitions ma1 ma2 ma3)
+        
+        joiner-beta (p/beta-params-joiners valid-states transitions population 1)
         joiner-alpha-ages (p/alpha-params-joiner-ages transitions)
-        joiner-alpha-states (p/alpha-params-joiner-states transitions ja1 ja2 1)
+        joiner-alpha-states (p/alpha-params-joiner-states valid-states transitions ja1 ja2 1)
         
         state (s/transitions->initial-state transitions)
         transitions' {}
