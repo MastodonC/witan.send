@@ -15,7 +15,7 @@
             [witan.send.utils :as u])
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
 
-(set! *print-length* 10)
+(set! *print-length* 20000)
 
 (def random-seed (atom 0))
 (defn set-seed! [n]
@@ -266,12 +266,12 @@
      (medley/map-vals rf acc))))
 
 (defn model-states-rf
-  [rf]
+  [valid-states rf]
   (fn
     ([]
      (reduce (fn [coll k]
                (assoc coll k (rf)))
-             {} states/valid-states))
+             {} valid-states))
     ([acc x]
      (medley/map-kv
       (fn [k v]
@@ -299,8 +299,12 @@
   "Executes the rf on partitions of length n, returning n results"
   [n rf]
   (fn
-    ([] (mapv #(%1) (repeat n rf)))
+    ([]
+     (println "Initialising...")
+     (mapv #(%1) (repeat n rf)))
     ([acc xs]
+     (println "Reduce rf...")
      (mapv #(rf %1 %2) acc xs))
     ([acc]
+     (println "Complete rf...")
      (mapv #(rf %1) acc))))

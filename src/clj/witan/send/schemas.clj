@@ -173,7 +173,8 @@
 
 (defn SettingCost+
   [settings]
-  (make-ordered-ds-schema [[:setting (Setting settings)]
+  (prn settings)
+  (make-ordered-ds-schema [[:setting (apply s/enum settings)]
                            [:cost s/Num]]))
 
 (def SettingCostLookup
