@@ -27,50 +27,54 @@
 (defn run-model-iteration [simulation {:keys [joiner-beta-params joiner-state-alphas joiner-age-alphas
                                               leaver-beta-params
                                               mover-beta-params mover-state-alphas
-                                              target-growth target-variance]}
+                                              target-growth target-variance
+                                              valid-year-settings]}
                            {:keys [model transitions]} projected-population]
   (let [[model transitions leavers variance] (->> model
                                                   (step/age-population projected-population)
                                                   (reduce (fn [[model transitions leavers variance] [[year state :as k] population]]
+                                                            #_(println k)
                                                             (cond
                                                               (= state sc/non-send)
                                                               [model transitions leavers variance]
                                                               
                                                               (or (<= year sc/min-academic-year)
-                                                                      (> year sc/max-academic-year))
-                                                                  [model
-                                                                   (cond-> transitions
-                                                                     (pos? population)
-                                                                     (update [(dec year) state sc/non-send] u/some+ population))
-                                                                   leavers variance]
-                                                                  :else
-                                                                  (if-let [probs (get mover-state-alphas [(dec year) state])]
-                                                                    (let [leaver-params (get leaver-beta-params [year state])
-                                                                          l (u/sample-beta-binomial population leaver-params)
-                                                                          v (if leaver-params
-                                                                              (u/beta-binomial-variance population leaver-params)
-                                                                              0.0)
-                                                                          next-states-sample (if (states/can-move? year state)
-                                                                                               (let [mover-params (get mover-beta-params [(dec year) state])]
-                                                                                                 (u/sample-send-transitions state (- population l) probs mover-params))
-                                                                                               {state (- population l)})]
-                                                                      [(reduce (fn [coll [next-state n]]
-                                                                                   (cond-> coll
-                                                                                     (pos? n)
-                                                                                     (update [year next-state] u/some+ n)))
-                                                                                 model next-states-sample)
-                                                                       (-> (reduce (fn [coll [next-state n]]
-                                                                                     (cond-> coll
-                                                                                       (pos? n)
-                                                                                       (update [(dec year) state next-state] u/some+ n)))
-                                                                                   transitions next-states-sample)
-                                                                           (update [year state sc/non-send] u/some+ l))
-                                                                       (+ leavers l)
-                                                                       (+ variance v)])
-                                                                    (do
-                                                                      #_(prn "No probs for population" [k population])
-                                                                      [model transitions (+ leavers population) variance]))))
+                                                                  (> year sc/max-academic-year))
+                                                              [model
+                                                               (cond-> transitions
+                                                                 (pos? population)
+                                                                 (update [(dec year) state sc/non-send] u/some+ population))
+                                                               leavers variance]
+                                                              :else
+                                                              (if-let [probs (get mover-state-alphas [(dec year) state])]
+                                                                (let [leaver-params (get leaver-beta-params [year state])
+                                                                      l (u/sample-beta-binomial population leaver-params)
+                                                                      v (if leaver-params
+                                                                          (u/beta-binomial-variance population leaver-params)
+                                                                          0.0)
+                                                                      next-states-sample (if (states/can-move? valid-year-settings year state)
+                                                                                           (let [mover-params (get mover-beta-params [(dec year) state])]
+                                                                                             (u/sample-send-transitions state (- population l) probs mover-params))
+                                                                                           {state (- population l)})]
+                                                                  #_(println "Sampled next states....")
+                                                                  [(reduce (fn [coll [next-state n]]
+                                                                             (cond-> coll
+                                                                               (pos? n)
+                                                                               (update [year next-state] u/some+ n)))
+                                                                           model next-states-sample)
+                                                                   (-> (reduce (fn [coll [next-state n]]
+                                                                                 (cond-> coll
+                                                                                   (pos? n)
+                                                                                   (update [(dec year) state next-state] u/some+ n)))
+                                                                               transitions next-states-sample)
+                                                                       (update [year state sc/non-send] u/some+ l))
+                                                                   (+ leavers l)
+                                                                   (+ variance v)])
+                                                                (do
+                                                                  #_(prn "No probs for population" [k population])
+                                                                  [model transitions (+ leavers population) variance]))))
                                                           [{} transitions 0 0]))
+         _ (println "Completed transitions....")
         projected-base (reduce (fn [n ay]
                                  (+ n (get projected-population ay 0)))
                                0 sc/academic-years)
@@ -80,26 +84,31 @@
         
         target-joiners (+ leavers target-growth)
         joiner-variance (- target-variance variance)
+
+        _ (println "Calculating joiners " target-joiners joiner-variance)
         
         joiners (if (pos? joiner-variance)
                   (let [joiner-beta-params (u/adjust-beta-mean target-joiners projected-base joiner-beta-params)
                         joiner-beta-params (u/adjust-beta-variance joiner-variance projected-base joiner-beta-params)]
+                    #_(println "Params " joiner-beta-params)
                     (u/sample-beta-binomial projected-base joiner-beta-params))
                   ;; Else, we can't remove variance from the model
                   (+ 261 target-growth)) ;; Hard-coding average leavers
         
+        _ (println "Calculated joiners...")
+        
         [model transitions] (->> (doto (u/sample-dirichlet-multinomial joiners joiner-age-alphas))
-                                     (reduce (fn [[coll transitions] [year n]]
-                                               (->> (u/sample-dirichlet-multinomial n (get joiner-state-alphas year))
-                                                    (reduce (fn [[coll transitions] [state m]]
-                                                              [(cond-> coll
-                                                                 (pos? m)
-                                                                 (update [year state] u/some+ m))
-                                                               (cond-> transitions
-                                                                 (pos? m)
-                                                                 (update [(dec year) sc/non-send state] u/some+ m))])
-                                                            [coll transitions])))
-                                             [model transitions]))]
+                                 (reduce (fn [[coll transitions] [year n]]
+                                           (->> (u/sample-dirichlet-multinomial n (get joiner-state-alphas year))
+                                                (reduce (fn [[coll transitions] [state m]]
+                                                          [(cond-> coll
+                                                             (pos? m)
+                                                             (update [year state] u/some+ m))
+                                                           (cond-> transitions
+                                                             (pos? m)
+                                                             (update [(dec year) sc/non-send state] u/some+ m))])
+                                                        [coll transitions])))
+                                         [model transitions]))]
     {:model model :transitions transitions}))
 
 ;; Workflow functions
@@ -160,7 +169,8 @@
                          :joiner-age-alphas sc/AgeAlphas
                          :mover-beta-params sc/YearStateBetaParams
                          :mover-state-alphas sc/TransitionAlphas
-                         :setting-cost-lookup sc/SettingCostLookup}}
+                         :setting-cost-lookup sc/SettingCostLookup
+                         :valid-setting-academic-years sc/ValidSettingAcademicYears}}
   [{:keys [initial-population initial-send-population
            transition-matrix projected-population setting-cost
            valid-setting-academic-years]} _]
@@ -170,13 +180,18 @@
         initial-state (initialise-model (ds/row-maps initial-send-population))
 
         valid-settings (->> (ds/row-maps valid-setting-academic-years)
-                            (map :setting)
-                            (into #{}))
+                            (states/calculate-valid-settings-from-setting-academic-years))
 
         valid-needs (->> (ds/row-maps valid-setting-academic-years)
-                         (mapcat (comp #(str/split % #",") :needs))
-                         (distinct)
-                         (map keyword))]
+                         (states/calculate-valid-needs-from-setting-academic-years))
+
+        valid-states (->> (ds/row-maps valid-setting-academic-years)
+                          (states/calculate-valid-states-from-setting-academic-years))
+
+        valid-year-settings (->> (ds/row-maps valid-setting-academic-years)
+                                 (states/calculate-valid-year-settings-from-setting-academic-years))]
+
+    #_(prn valid-states)
 
     (s/validate (sc/SENDPopulation+ valid-settings) initial-send-population)
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
@@ -184,17 +199,18 @@
 
     {:population-by-age-state initial-state
      :joiner-beta-params (p/beta-params-joiners transitions initial-population 0.5)
-     :leaver-beta-params (p/beta-params-leavers transitions 0.5 0.5 0.5)
-     :joiner-state-alphas (p/alpha-params-joiner-states transitions 0.5 0.5 0.5)
+     :leaver-beta-params (p/beta-params-leavers valid-states transitions 0.5 0.5 0.5)
+     :joiner-state-alphas (p/alpha-params-joiner-states valid-states transitions 0.5 0.5 0.5)
      :joiner-age-alphas (p/alpha-params-joiner-ages transitions)
      :projected-population (->> (ds/row-maps projected-population)
                                 (partition-by :calendar-year)
                                 (map u/total-by-academic-year))
-     :mover-beta-params (p/beta-params-movers transitions 0.5 0.5 0.5)
-     :mover-state-alphas (p/alpha-params-movers transitions 0.5 0.5 0.5)
+     :mover-beta-params (p/beta-params-movers valid-states transitions 0.5 0.5 0.5)
+     :mover-state-alphas (p/alpha-params-movers valid-states valid-year-settings transitions 0.5 0.5 0.5)
      :setting-cost-lookup (->> (ds/row-maps setting-cost)
                                (map (juxt :setting :cost))
-                               (into {}))}))
+                               (into {}))
+     :valid-setting-academic-years valid-setting-academic-years}))
 
 (defn projection->transitions
   [projections]
@@ -209,7 +225,7 @@
                                  (update coll [ay s1 s2] u/some+ n)))
                              {} coll))
         transitions (apply merge-with + (mapcat #(map (comp by-setting :transitions) %) projections))]
-    (prn "Transitions:" transitions)))
+    #_(prn "Transitions:" transitions)))
 
 (defn values-rf
   "Associate a reducing function to be used for each value of map indexed by key"
@@ -221,9 +237,9 @@
 
 (def number-of-significant-digits 3)
 
-(defn reduce-rf [iterations setting-cost-lookup]
+(defn reduce-rf [iterations valid-states setting-cost-lookup]
   (u/partition-rf iterations
-                  (r/fuse {:by-state (u/model-states-rf (u/histogram-rf number-of-significant-digits))
+                  (r/fuse {:by-state (u/model-states-rf valid-states (u/histogram-rf number-of-significant-digits))
                            :total-in-send-by-ay (r/pre-step (u/with-keys-rf (u/histogram-rf number-of-significant-digits) sc/academic-years) u/model-population-by-ay)
                            :total-in-send (r/pre-step (u/histogram-rf number-of-significant-digits) u/model-send-population)
                            :total-in-send-by-need (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits)) u/model-population-by-need)
@@ -256,7 +272,8 @@
                         :joiner-age-alphas sc/AgeAlphas
                         :mover-beta-params sc/YearStateBetaParams
                         :mover-state-alphas sc/TransitionAlphas
-                        :setting-cost-lookup sc/SettingCostLookup}
+                        :setting-cost-lookup sc/SettingCostLookup
+                        :valid-setting-academic-years sc/ValidSettingAcademicYears}
    :witan/param-schema {:seed-year sc/YearSchema
                         :simulations s/Int
                         :projection-year sc/YearSchema
@@ -264,11 +281,15 @@
                         :target-growth s/Num
                         :target-variance s/Num}
    :witan/output-schema {:send-output sc/Results}}
-  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas joiner-age-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup] :as inputs}
+  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas joiner-age-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years] :as inputs}
    {:keys [seed-year projection-year random-seed simulations target-growth target-variance]}]
   (u/set-seed! random-seed)
   (let [iterations (inc (- projection-year seed-year))
-        inputs (assoc inputs :target-growth target-growth :target-variance target-variance)
+        valid-states (->> (ds/row-maps valid-setting-academic-years)
+                          (states/calculate-valid-states-from-setting-academic-years))
+        inputs (assoc inputs :target-growth target-growth :target-variance target-variance
+                      :valid-year-settings (->> (ds/row-maps valid-setting-academic-years)
+                                                (states/calculate-valid-year-settings-from-setting-academic-years)))
         projections (->> (range simulations)
                          (partition-all (int (/ simulations 8)))
                          (map (fn [simulations]
@@ -277,10 +298,17 @@
                                                                                                                      :transitions {}}
                                                                     projected-population)]
                                          (println (format "Created projection %d" simulation))
-                                         projection))))))
-        reduced (for [projection projections]
-                  (transduce (map #(map :model %)) (reduce-rf iterations setting-cost-lookup) projection))]
+                                         projection))
+                                     (doall))))
+                         (doall))
+        ;; _ (println "Printing....")
+        ;; _ (prn (first (first projections)))
+        reduced (doall
+                 (for [projection projections]
+                   (do (println "Reducing...")
+                       (transduce (map #(map :model %)) (reduce-rf iterations valid-states setting-cost-lookup) projection))))]
     (projection->transitions (apply concat projections))
+    (println "Combining...")
     {:send-output (transduce identity (combine-rf iterations) reduced)}))
 
 (defworkflowoutput output-send-results-1-0-0

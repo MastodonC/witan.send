@@ -15,7 +15,7 @@
     non-send
     (keyword (str (name need) "-" (name setting)))))
 
-(defn valid-year-setting? [year setting]
+#_(defn valid-year-setting? [year setting]
   (or
    #_(and (= setting :CC) (<= year 0))
    (and (= setting :EO) (<= -4 year 20))
@@ -43,12 +43,12 @@
    (and (= setting :NMSSR) (<= -2 year 15))
    (and (= setting :OOE) (<= -4 year 21))))
 
-(defn valid-state? [academic-year state]
+#_(defn valid-state? [academic-year state]
   (or (= state non-send)
       (let [[need setting] (need-setting state)]
         (valid-year-setting? academic-year setting))))
 
-(def valid-states
+#_(def valid-states
   (->> (concat (for [academic-year const/academic-years
                      setting const/settings
                      need const/needs]
@@ -57,11 +57,30 @@
                  [academic-year non-send]))
        (filter #(apply valid-state? %))))
 
-(defn valid-transition? [academic-year state-1 state-2]
+(defn calculate-valid-settings-from-setting-academic-years
+  [valid-setting-academic-years]
+  (->> (map :setting valid-setting-academic-years)
+       (into #{})))
+
+(defn calculate-valid-needs-from-setting-academic-years
+  [valid-setting-academic-years]
+  (->> valid-setting-academic-years
+       (mapcat (comp #(str/split % #",") :needs))
+       (distinct)
+       (map keyword)))
+
+(defn calculate-valid-states-from-setting-academic-years
+  [valid-setting-academic-years]
+  (for [{:keys [setting min-academic-year max-academic-year needs]} valid-setting-academic-years
+        academic-year (range min-academic-year (inc max-academic-year))
+        need (map keyword (str/split needs #","))]
+    [academic-year (state need setting)]))
+
+#_(defn valid-transition? [academic-year state-1 state-2]
   (and (valid-state? academic-year state-1)
        (valid-state? (inc academic-year) state-2)))
 
-(def valid-transitions
+#_(def valid-transitions
   (->> (concat (for [academic-year const/academic-years
                      from-setting const/settings
                      to-setting const/settings
@@ -69,11 +88,11 @@
                  [academic-year (state need from-setting) (state need to-setting)]))
        (filter #(apply valid-transition? %))))
 
-(defn valid-settings [ay]
+#_(defn valid-settings [ay]
   (->> (filter #(valid-year-setting? ay %) const/settings)
        (into #{})))
 
-(defn valid-states-for-ay [ay]
+(defn valid-states-for-ay [valid-states ay]
   (->> (filter (fn [[ay' state]] (= ay ay')) valid-states)
        (map (fn [[ay' state]] state))))
 
@@ -95,7 +114,7 @@
           {}
           transitions))
 
-(def valid-year-settings
+#_(def valid-year-settings
   (->> (for [year const/academic-years
              setting const/settings
              :when (valid-year-setting? year setting)]
@@ -104,6 +123,26 @@
                  (update coll year (fnil conj #{}) setting))
                {})))
 
-(defn can-move? [academic-year state]
+(defn calculate-academic-year-range
+  [setting-academic-years]
+  [(->> (map :min-academic-year setting-academic-years)
+        (apply min))
+   (->> (map :max-academic-year setting-academic-years)
+        (apply max))])
+
+(defn calculate-valid-year-settings-from-setting-academic-years
+  [setting-academic-years]
+  (let [[minimum-academic-year maximum-academic-year]
+        (calculate-academic-year-range setting-academic-years)]
+    (reduce (fn [coll academic-year]
+              (->> (filter (fn [{:keys [min-academic-year max-academic-year]}]
+                             (<= min-academic-year academic-year max-academic-year))
+                           setting-academic-years)
+                   (into #{} (map :setting))
+                   (assoc coll academic-year)))
+            {}
+            (range minimum-academic-year (inc maximum-academic-year)))))
+
+(defn can-move? [valid-year-settings academic-year state]
   (let [[need setting] (need-setting state)]
     (pos? (count (disj (get valid-year-settings (inc academic-year)) setting)))))
