@@ -81,5 +81,7 @@
     (let [transitions {}
           initial-population {}
           params (sut/beta-params-joiners transitions initial-population 0.5)]
-      (is (and (pos? (:alpha params))
-               (pos? (:beta params)))))))
+      (is (every? (fn [ay]
+                    (and (pos? (get-in params [ay :alpha]))
+                         (pos? (get-in params [ay :beta]))))
+                  academic-years)))))

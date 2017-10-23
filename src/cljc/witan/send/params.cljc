@@ -158,7 +158,7 @@
                                            (assoc coll state prior))
                                          {} valid-settings)
                     observed (-> (get by-ay-setting [ay setting])
-                                 (select-keys valid-settings))                   
+                                 (select-keys valid-settings))
                     overall (->> (select-keys overall valid-settings)
                                  (weighted-alphas w1))
                     by-ay (->> (select-keys (get by-ay ay) valid-settings)
@@ -207,7 +207,7 @@
               (assoc coll ay (+ prior (get overall ay 0))))
             {}
             academic-years)))
-            
+
 
 (defn weighted-joiner-beta-params
   [transitions population w1]
@@ -217,12 +217,11 @@
                              {}))
         prior (/ w1 (count const/academic-years))]
     (reduce (fn [coll ay]
-              (let [alpha (get joiners ay 0)
-                    beta (- (get population ay 0) alpha)]
-                (-> coll
-                    (update :alpha + alpha)
-                    (update :beta + beta))))
-            {:alpha prior :beta prior}
+              (let [obs (get joiners ay 0)]
+                (assoc coll ay
+                       {:alpha (+ prior obs)
+                        :beta (+ prior (- (get population ay 0) obs))})))
+            {}
             const/academic-years)))
 
 (defn beta-params-leavers [valid-states transitions w1 w2 w3]
