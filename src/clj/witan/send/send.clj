@@ -37,7 +37,7 @@
                                                             (cond
                                                               (= state sc/non-send)
                                                               [model transitions leavers variance]
-                                                              
+
                                                               (or (<= year sc/min-academic-year)
                                                                   (> year sc/max-academic-year))
                                                               [model
@@ -74,41 +74,7 @@
                                                                   #_(prn "No probs for population" [k population])
                                                                   [model transitions (+ leavers population) variance]))))
                                                           [{} transitions 0 0]))
-         _ (println "Completed transitions....")
-        projected-base (reduce (fn [n ay]
-                                 (+ n (get projected-population ay 0)))
-                               0 sc/academic-years)
-
-        in-send-count (->> (vals model) (apply +))
-
-        
-        target-joiners (+ leavers target-growth)
-        joiner-variance (- target-variance variance)
-
-        _ (println "Calculating joiners " target-joiners joiner-variance)
-        
-        joiners (if (pos? joiner-variance)
-                  (let [joiner-beta-params (u/adjust-beta-mean target-joiners projected-base joiner-beta-params)
-                        joiner-beta-params (u/adjust-beta-variance joiner-variance projected-base joiner-beta-params)]
-                    #_(println "Params " joiner-beta-params)
-                    (u/sample-beta-binomial projected-base joiner-beta-params))
-                  ;; Else, we can't remove variance from the model
-                  (+ 261 target-growth)) ;; Hard-coding average leavers
-        
-        _ (println "Calculated joiners...")
-        
-        [model transitions] (->> (doto (u/sample-dirichlet-multinomial joiners joiner-age-alphas))
-                                 (reduce (fn [[coll transitions] [year n]]
-                                           (->> (u/sample-dirichlet-multinomial n (get joiner-state-alphas year))
-                                                (reduce (fn [[coll transitions] [state m]]
-                                                          [(cond-> coll
-                                                             (pos? m)
-                                                             (update [year state] u/some+ m))
-                                                           (cond-> transitions
-                                                             (pos? m)
-                                                             (update [(dec year) sc/non-send state] u/some+ m))])
-                                                        [coll transitions])))
-                                         [model transitions]))]
+        _ (println "Completed transitions....")]
     {:model model :transitions transitions}))
 
 ;; Workflow functions
@@ -163,7 +129,7 @@
    :witan/param-schema {}
    :witan/output-schema {:population-by-age-state sc/ModelState
                          :projected-population sc/PopulationByAcademicYear
-                         :joiner-beta-params sc/BetaParams
+                         :joiner-beta-params sc/JoinerBetaParams
                          :leaver-beta-params sc/YearStateBetaParams
                          :joiner-state-alphas sc/AcademicYearStateAlphas
                          :joiner-age-alphas sc/AgeAlphas
@@ -196,7 +162,7 @@
     (s/validate (sc/SENDPopulation+ valid-settings) initial-send-population)
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
     (s/validate (sc/SettingCost+ valid-settings) setting-cost)
-
+    (prn (p/alpha-params-joiner-states valid-states transitions 0.5 0.5 0.5))
     {:population-by-age-state initial-state
      :joiner-beta-params (p/beta-params-joiners transitions initial-population 0.5)
      :leaver-beta-params (p/beta-params-leavers valid-states transitions 0.5 0.5 0.5)
@@ -210,7 +176,8 @@
      :setting-cost-lookup (->> (ds/row-maps setting-cost)
                                (map (juxt :setting :cost))
                                (into {}))
-     :valid-setting-academic-years valid-setting-academic-years}))
+     :valid-setting-academic-years valid-setting-academic-years}
+    ))
 
 (defn projection->transitions
   [projections]
@@ -266,7 +233,7 @@
    :witan/version "1.0.0"
    :witan/input-schema {:population-by-age-state sc/ModelState
                         :projected-population sc/PopulationByAcademicYear
-                        :joiner-beta-params sc/BetaParams
+                        :joiner-beta-params sc/JoinerBetaParams
                         :leaver-beta-params sc/YearStateBetaParams
                         :joiner-state-alphas sc/AcademicYearStateAlphas
                         :joiner-age-alphas sc/AgeAlphas
@@ -386,4 +353,3 @@
            (concat [(map name columns)])
            (csv/write-csv writer))))
   send-output)
-
