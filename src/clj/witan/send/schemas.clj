@@ -142,6 +142,9 @@
 (def BetaParams
   {:alpha s/Num :beta s/Num})
 
+(def JoinerBetaParams
+  {AcademicYear BetaParams})
+
 (def YearStateBetaParams
   {[(s/one AcademicYear :academic-year)
     (s/one s/Keyword :state)]
