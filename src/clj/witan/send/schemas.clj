@@ -24,21 +24,7 @@
 (def CalendarYear
   (s/constrained s/Int #(<= 1900 % 2100)))
 
-(def settings
-  [:EO :EYS :FEC :IMS :ISS :ISSR :MAP :MMS :MMSIB :MMSOB :MSS :MSSIB :MSSOB :MSSOP :MSSR :MU :MUOB :NMSS :NMSSR :OOE])
- 
-(def needs
-  ;; Detailed needs
-  #_[:ASD :CI :CL :HI :MLD :MSI :OTH :PD :PMLD :SEMH :SLCN :SLD :SP :SPLD :VI :UKN]
-  ;; Broad need categories:
-  [:CI :CL :OTH :SEMH :SP :UKN])
-
 (def non-send :NON-SEND)
-
-(def states
-  (-> (for [need needs setting settings]
-        (keyword (str (name need) "-" (name setting))))
-      (conj non-send)))
 
 (defn State
   [needs settings]
@@ -64,9 +50,6 @@
 
 (defn Setting [settings]
   (apply s/enum (conj settings non-send)))
-
-#_(def State
-  (apply s/enum states))
 
 (def N
   (s/constrained s/Int (complement neg?)))
