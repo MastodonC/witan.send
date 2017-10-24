@@ -24,7 +24,20 @@
             (assoc coll [academic-year (states/state need setting)] population))
           {} send-data))
 
-(defn apply-joiners-leavers-movers-for-cohort-unsafe
+(defn incorporate-new-states-for-academic-year-state
+  [[model transitions] academic-year state next-states-sample]
+  [(reduce (fn [coll [next-state n]]
+              (cond-> coll
+                (pos? n)
+                (update [academic-year next-state] u/some+ n)))
+           model next-states-sample)
+   (reduce (fn [coll [next-state n]]
+             (cond-> coll
+               (pos? n)
+               (update [academic-year state next-state] u/some+ n)))
+           transitions next-states-sample)])
+
+(defn apply-leavers-movers-for-cohort-unsafe
   "We're calling this function 'unsafe' because it doesn't check whether the state or
   or academic year range is valid."
   [[model transitions leavers variance] [[year state] population]
@@ -42,26 +55,18 @@
           next-states-sample (if (states/can-move? valid-year-settings year state)
                                (let [mover-params (get mover-beta-params [(dec year) state])]
                                  (u/sample-send-transitions state (- population l) probs mover-params))
-                               {state (- population l)})]
+                               {state (- population l)})
+          [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] (dec year) state next-states-sample)]
       #_(println "Sampled next states....")
-      [(reduce (fn [coll [next-state n]]
-                 (cond-> coll
-                   (pos? n)
-                   (update [year next-state] u/some+ n)))
-               model next-states-sample)
-       (-> (reduce (fn [coll [next-state n]]
-                     (cond-> coll
-                       (pos? n)
-                       (update [(dec year) state next-state] u/some+ n)))
-                   transitions next-states-sample)
-           (update [year state sc/non-send] u/some+ l))
+      [model
+       (update transitions [(dec year) state sc/non-send] u/some+ l)
        (+ leavers l)
        (+ variance v)])
     (do
       #_(prn "No probs for population" [k population])
       [model transitions (+ leavers population) variance])))
 
-(defn apply-joiners-leavers-movers-for-cohort
+(defn apply-leavers-movers-for-cohort
   "Take single cohort of users and process them into the model state"
   [[model transitions leavers variance :as model-state] [[year state] population :as cohort]
    {:keys [joiner-beta-params joiner-state-alphas
@@ -81,7 +86,18 @@
        (update [(dec year) state sc/non-send] u/some+ population))
      leavers variance]
     :else
-    (apply-joiners-leavers-movers-for-cohort-unsafe model-state cohort params)))
+    (apply-leavers-movers-for-cohort-unsafe model-state cohort params)))
+
+(defn apply-joiners-for-academic-year
+  [[model transitions] academic-year projected-population {:keys [joiner-beta-params joiner-state-alphas]}]
+  (let [betas (get joiner-beta-params academic-year)
+        alphas (get joiner-state-alphas academic-year)
+        population (get projected-population academic-year)]
+    (if (and alphas betas)
+      (let [joiners (u/sample-beta-binomial population betas)
+            joiner-states (u/sample-dirichlet-multinomial joiners alphas)]
+        (incorporate-new-states-for-academic-year-state [model transitions] academic-year sc/non-send joiner-states))
+      [model transitions])))
 
 (defn run-model-iteration
   "Take the model, transition params, and the projected population and produce the next state of the model"
@@ -91,13 +107,16 @@
                       target-growth target-variance
                       valid-year-settings] :as params}
    {:keys [model transitions]} projected-population]
-  (let [[model transitions _ _] (->> model
-                                     (step/age-population projected-population)
-                                     (reduce (fn [model-state cohort]
-                                               #_(println k)
-                                               (apply-joiners-leavers-movers-for-cohort model-state cohort params))
-                                             [{} transitions 0 0]))
-        _ (println "Completed transitions....")]
+  (let [cohorts (step/age-population projected-population model)
+        [model transitions _ _] (reduce (fn [model-state cohort]
+                                          (apply-leavers-movers-for-cohort model-state cohort params))
+                                        [{} transitions 0 0]
+                                        cohorts)
+        [model transitions] (reduce (fn [model-state academic-year]
+                                        (apply-joiners-for-academic-year model-state academic-year projected-population params))
+                                      [model transitions]
+                                      sc/academic-years)]
+    (println "Completed transitions....")
     {:model model :transitions transitions}))
 
 ;; Workflow functions
