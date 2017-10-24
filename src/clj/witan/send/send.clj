@@ -24,7 +24,7 @@
             (assoc coll [academic-year (states/state need setting)] population))
           {} send-data))
 
-(defn run-model-iteration [simulation {:keys [joiner-beta-params joiner-state-alphas joiner-age-alphas
+(defn run-model-iteration [simulation {:keys [joiner-beta-params joiner-state-alphas
                                               leaver-beta-params
                                               mover-beta-params mover-state-alphas
                                               target-growth target-variance
@@ -132,7 +132,6 @@
                          :joiner-beta-params sc/JoinerBetaParams
                          :leaver-beta-params sc/YearStateBetaParams
                          :joiner-state-alphas sc/AcademicYearStateAlphas
-                         :joiner-age-alphas sc/AgeAlphas
                          :mover-beta-params sc/YearStateBetaParams
                          :mover-state-alphas sc/TransitionAlphas
                          :setting-cost-lookup sc/SettingCostLookup
@@ -167,7 +166,6 @@
      :joiner-beta-params (p/beta-params-joiners transitions initial-population 0.5)
      :leaver-beta-params (p/beta-params-leavers valid-states transitions 0.5 0.5 0.5)
      :joiner-state-alphas (p/alpha-params-joiner-states valid-states transitions 0.5 0.5 0.5)
-     :joiner-age-alphas (p/alpha-params-joiner-ages transitions)
      :projected-population (->> (ds/row-maps projected-population)
                                 (partition-by :calendar-year)
                                 (map u/total-by-academic-year))
@@ -236,7 +234,6 @@
                         :joiner-beta-params sc/JoinerBetaParams
                         :leaver-beta-params sc/YearStateBetaParams
                         :joiner-state-alphas sc/AcademicYearStateAlphas
-                        :joiner-age-alphas sc/AgeAlphas
                         :mover-beta-params sc/YearStateBetaParams
                         :mover-state-alphas sc/TransitionAlphas
                         :setting-cost-lookup sc/SettingCostLookup
@@ -248,7 +245,7 @@
                         :target-growth s/Num
                         :target-variance s/Num}
    :witan/output-schema {:send-output sc/Results}}
-  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas joiner-age-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years] :as inputs}
+  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years] :as inputs}
    {:keys [seed-year projection-year random-seed simulations target-growth target-variance]}]
   (u/set-seed! random-seed)
   (let [iterations (inc (- projection-year seed-year))
