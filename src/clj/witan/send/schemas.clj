@@ -150,9 +150,6 @@
     (s/one s/Keyword :state)]
    BetaParams})
 
-(def AgeAlphas
-  {AcademicYear s/Num})
-
 (def SettingCost
   (make-ordered-ds-schema [[:setting s/Keyword]
                            [:cost s/Num]]))
