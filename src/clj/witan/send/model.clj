@@ -18,6 +18,7 @@
    [:initial-send-population :prepare-send-inputs]
    [:transition-matrix :prepare-send-inputs]
    [:projected-population :prepare-send-inputs]
+   [:population :prepare-send-inputs]
    [:setting-cost :prepare-send-inputs]
    [:valid-setting-academic-years :prepare-send-inputs]
    [:prepare-send-inputs :run-send-model]
@@ -44,6 +45,11 @@
     :witan/version "1.0.0"
     :witan/type :input
     :witan/fn :send/projected-population
+    :witan/params {:src ""}}
+   {:witan/name :population
+    :witan/version "1.0.0"
+    :witan/type :input
+    :witan/fn :send/population
     :witan/params {:src ""}}
    {:witan/name :setting-cost
     :witan/version "1.0.0"
@@ -92,6 +98,7 @@
                    send/initial-send-population-1-0-0
                    send/transition-matrix-1-0-0
                    send/projected-population-1-0-0
+                   send/population-1-0-0
                    send/setting-cost-1-0-0
                    send/valid-setting-academic-years-1-0-0
                    send/prepare-send-inputs-1-0-0
