@@ -1,6 +1,7 @@
 (ns witan.send.params
   (:require [witan.send.states :as s]
-            [witan.send.constants :as const]))
+            [witan.send.constants :as const]
+            [witan.send.utils :as u]))
 
 (def some+ (fnil + 0))
 
@@ -31,6 +32,10 @@
   [[ay state-1 state-2]]
   (and (= state-1 s/non-send)
        (not= state-2 s/non-send)))
+
+(defn transitions-matrix-joiner?
+  [{:keys [need-1]}]
+  (= need-1 s/non-send))
 
 (defn leaver?
   [[ay state-1 state-2]]
@@ -208,21 +213,25 @@
             {}
             academic-years)))
 
-
 (defn weighted-joiner-beta-params
-  [transitions population w1]
-  (let [joiners (->> (select-transitions transitions joiner?)
-                     (reduce (fn [coll [[ay _ _] n]]
-                               (update coll ay (fnil + 0) n))
-                             {}))
-        prior (/ w1 (count const/academic-years))]
-    (reduce (fn [coll ay]
-              (let [obs (get joiners ay 0)]
-                (assoc coll ay
-                       {:alpha (+ prior obs)
-                        :beta (+ prior (- (get population ay 0) obs))})))
-            {}
-            const/academic-years)))
+  [joiners population w1]
+    (let [population-academic-years (-> population vals first keys)
+          joiner-calendar-years (keys joiners)
+          n (count joiner-calendar-years)
+          prior (/ w1 (count population-academic-years))]
+      (reduce
+       (fn [coll ay]
+         (reduce
+          (fn [coll cy]
+            (let [j (get-in joiners [cy ay] 0)
+                  p (get-in population [cy ay])]
+              (-> coll
+                  (update-in [ay :alpha] u/some+ (/ j n))
+                  (update-in [ay :beta] u/some+ (/ (- p j) n)))))
+          (assoc coll ay {:alpha prior :beta prior})
+          joiner-calendar-years))
+       {}
+       population-academic-years)))
 
 (defn beta-params-leavers [valid-states transitions w1 w2 w3]
   (weighted-beta-params valid-states transitions joiner? leaver? w1 w2 w3))
@@ -239,5 +248,22 @@
 (defn alpha-params-joiner-states [valid-states transitions w1 w2 w3]
   (weighted-joiner-state-alpha-params valid-states transitions w1 w2 w3))
 
-(defn beta-params-joiners [transitions population w1]
-  (weighted-joiner-beta-params transitions population w1))
+(defn calculate-joiners-per-calendar-year
+  [transitions-matrix]
+  (->> (filter transitions-matrix-joiner? transitions-matrix)
+       (reduce (fn [coll {:keys [calendar-year academic-year-2]}]
+                 (update-in coll [calendar-year academic-year-2] u/some+ 1))
+               {})))
+
+(defn calculate-population-per-calendar-year
+  [population]
+  (let [ay-population #(hash-map (:academic-year %) (:population %))]
+    (reduce (fn [coll {:keys [calendar-year] :as row}]
+              (update coll calendar-year merge (ay-population row)))
+            {}
+            population)))
+
+(defn beta-params-joiners [transitions-matrix population w1]
+  (let [joiners-per-calendar-year (calculate-joiners-per-calendar-year transitions-matrix)
+        population-per-calendar-year (calculate-population-per-calendar-year population)]
+    (weighted-joiner-beta-params joiners-per-calendar-year population-per-calendar-year w1)))
