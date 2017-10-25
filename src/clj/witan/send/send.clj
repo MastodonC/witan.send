@@ -94,8 +94,11 @@
         alphas (get joiner-state-alphas academic-year)
         population (get projected-population academic-year)]
     (if (and alphas betas)
-      (let [joiners (u/sample-beta-binomial population betas)
+      (let [{:keys [alpha beta]} betas
+            betas {:alpha (/ alpha 5.0) :beta (- (+ alpha beta) (/ alpha 5.0))}
+            joiners (u/sample-beta-binomial population betas)
             joiner-states (u/sample-dirichlet-multinomial joiners alphas)]
+        (prn {:academic-year academic-year :joiners joiners})
         (incorporate-new-states-for-academic-year-state [model transitions] academic-year sc/non-send joiner-states))
       [model transitions])))
 
@@ -113,9 +116,9 @@
                                         [{} transitions 0 0]
                                         cohorts)
         [model transitions] (reduce (fn [model-state academic-year]
-                                        (apply-joiners-for-academic-year model-state academic-year projected-population params))
-                                      [model transitions]
-                                      sc/academic-years)]
+                                      (apply-joiners-for-academic-year model-state academic-year projected-population params))
+                                    [model transitions]
+                                    sc/academic-years)]
     (println "Completed transitions....")
     {:model model :transitions transitions}))
 
@@ -145,6 +148,12 @@
    :witan/key :projected-population
    :witan/schema sc/PopulationDataset})
 
+(definput population-1-0-0
+  {:witan/name :send/population
+   :witan/version "1.0.0"
+   :witan/key :population
+   :witan/schema sc/PopulationDataset})
+
 (definput setting-cost-1-0-0
   {:witan/name :send/setting-cost
    :witan/version "1.0.0"
@@ -164,6 +173,7 @@
    :witan/version "1.0.0"
    :witan/input-schema {:initial-population sc/PopulationDataset
                         :projected-population sc/PopulationDataset
+                        :population sc/PopulationDataset
                         :initial-send-population sc/SENDPopulation
                         :transition-matrix sc/TransitionCounts
                         :setting-cost sc/SettingCost
@@ -179,8 +189,8 @@
                          :setting-cost-lookup sc/SettingCostLookup
                          :valid-setting-academic-years sc/ValidSettingAcademicYears}}
   [{:keys [initial-population initial-send-population
-           transition-matrix projected-population setting-cost
-           valid-setting-academic-years]} _]
+           transition-matrix projected-population population
+           setting-cost valid-setting-academic-years]} _]
   (let [initial-population (->> (ds/row-maps initial-population)
                                 (u/total-by-academic-year))
         transitions (u/transitions-map transition-matrix)

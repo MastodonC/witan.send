@@ -14,6 +14,7 @@
    :initial-send-population ["data/demo/send-population.csv" sc/SENDPopulation]
    :transition-matrix ["data/demo/transitions.csv" sc/TransitionCounts]
    :projected-population ["data/demo/projected-population.csv" sc/PopulationDataset]
+   :population ["data/demo/population.csv" sc/PopulationDataset]
    :setting-cost ["data/demo/setting-costs.csv" sc/SettingCost]
    :valid-setting-academic-years ["data/demo/valid-setting-academic-years.csv" sc/ValidSettingAcademicYears]})
 
