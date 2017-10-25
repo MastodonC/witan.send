@@ -93,13 +93,12 @@
   (let [betas (get joiner-beta-params academic-year)
         alphas (get joiner-state-alphas academic-year)
         population (get projected-population academic-year)]
-    (if (and alphas betas)
-      (let [{:keys [alpha beta]} betas
-            betas {:alpha (/ alpha 5.0) :beta (- (+ alpha beta) (/ alpha 5.0))}
-            joiners (u/sample-beta-binomial population betas)
-            joiner-states (u/sample-dirichlet-multinomial joiners alphas)]
-        (prn {:academic-year academic-year :joiners joiners})
-        (incorporate-new-states-for-academic-year-state [model transitions] academic-year sc/non-send joiner-states))
+    (if (and alphas betas population)
+      (let [joiners (u/sample-beta-binomial population betas)]
+        (if (zero? joiners)
+          [model transitions]
+          (let [joiner-states (u/sample-dirichlet-multinomial joiners alphas)]
+            (incorporate-new-states-for-academic-year-state [model transitions] academic-year sc/non-send joiner-states))))
       [model transitions])))
 
 (defn run-model-iteration
@@ -207,15 +206,12 @@
 
         valid-year-settings (->> (ds/row-maps valid-setting-academic-years)
                                  (states/calculate-valid-year-settings-from-setting-academic-years))]
-
-    #_(prn valid-states)
-
     (s/validate (sc/SENDPopulation+ valid-settings) initial-send-population)
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
     (s/validate (sc/SettingCost+ valid-settings) setting-cost)
-    (prn (p/alpha-params-joiner-states valid-states transitions 0.5 0.5 0.5))
     {:population-by-age-state initial-state
-     :joiner-beta-params (p/beta-params-joiners transitions initial-population 0.5)
+     :joiner-beta-params (p/beta-params-joiners (ds/row-maps transition-matrix)
+                                                (ds/row-maps population) 0.5)
      :leaver-beta-params (p/beta-params-leavers valid-states transitions 0.5 0.5 0.5)
      :joiner-state-alphas (p/alpha-params-joiner-states valid-states transitions 0.5 0.5 0.5)
      :projected-population (->> (ds/row-maps projected-population)
