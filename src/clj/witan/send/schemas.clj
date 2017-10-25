@@ -62,7 +62,9 @@
                            [:population s/Int]]))
 
 (def TransitionCounts
-  (make-ordered-ds-schema [[:setting-1 s/Keyword]
+  (make-ordered-ds-schema [[:calendar-year s/Int]
+                           [:sex s/Str]
+                           [:setting-1 s/Keyword]
                            [:need-1 s/Keyword]
                            [:academic-year-1 AcademicYear]
                            [:setting-2 s/Keyword]
