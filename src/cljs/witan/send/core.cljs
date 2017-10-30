@@ -1,0 +1,24 @@
+(ns witan.send.core
+  (:require [reagent.core :as reagent]
+            [re-frame.core :as re-frame]
+            [witan.send.events]
+            [witan.send.subs]
+            [witan.send.views :as views]
+            [witan.send.config :as config]))
+
+
+(defn dev-setup []
+  (when config/debug?
+    (enable-console-print!)
+    (println "dev mode")))
+
+(defn mount-root []
+  (re-frame/clear-subscription-cache!)
+  (reagent/render [views/main-panel]
+                  (.getElementById js/document "app")))
+
+(defn ^:export init []
+  (re-frame/dispatch-sync [:initialize-db])
+  (re-frame/dispatch [:set-academic-year 10])
+  (dev-setup)
+  (mount-root))
