@@ -5,7 +5,6 @@
             [witan.workspace-api.utils :as utils]
             [witan.send.schemas :as sc]
             [witan.send.states :as states]
-            [witan.send.params :as p]
             [kixi.stats.core :as kixi]
             [kixi.stats.random :refer [multinomial binomial beta-binomial dirichlet-multinomial draw]]
             [redux.core :as r]
