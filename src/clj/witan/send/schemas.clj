@@ -62,7 +62,8 @@
                            [:population s/Int]]))
 
 (def TransitionCounts
-  (make-ordered-ds-schema [[:setting-1 s/Keyword]
+  (make-ordered-ds-schema [[:calendar-year s/Int]
+                           [:setting-1 s/Keyword]
                            [:need-1 s/Keyword]
                            [:academic-year-1 AcademicYear]
                            [:setting-2 s/Keyword]
@@ -142,13 +143,13 @@
 (def BetaParams
   {:alpha s/Num :beta s/Num})
 
+(def JoinerBetaParams
+  {AcademicYear BetaParams})
+
 (def YearStateBetaParams
   {[(s/one AcademicYear :academic-year)
     (s/one s/Keyword :state)]
    BetaParams})
-
-(def AgeAlphas
-  {AcademicYear s/Num})
 
 (def SettingCost
   (make-ordered-ds-schema [[:setting s/Keyword]
