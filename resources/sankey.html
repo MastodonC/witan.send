@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<svg width="960" height="500"></svg>
+<script src="d3.js"></script>
+<script src="d3-sankey.js"></script>
+<script>
+
+var send = {"links":[{"source":0,"target":16,"value":7.0},{"source":0,"target":25,"value":6.0},{"source":0,"target":23,"value":4.0},{"source":0,"target":27,"value":3.0},{"source":0,"target":26,"value":2.0},{"source":0,"target":24,"value":1.0},{"source":0,"target":22,"value":21.0},{"source":1,"target":15,"value":24.0},{"source":1,"target":18,"value":8.0},{"source":1,"target":19,"value":2.0},{"source":1,"target":20,"value":6.0},{"source":1,"target":22,"value":13.0},{"source":1,"target":23,"value":1.0},{"source":1,"target":24,"value":3.0},{"source":1,"target":25,"value":4.0},{"source":1,"target":26,"value":2.0},{"source":1,"target":27,"value":92.0},{"source":1,"target":28,"value":9.0},{"source":1,"target":29,"value":3.0},{"source":2,"target":28,"value":1.0},{"source":2,"target":22,"value":1.0},{"source":3,"target":20,"value":1.0},{"source":3,"target":15,"value":2.0},{"source":3,"target":27,"value":1.0},{"source":4,"target":20,"value":1.0},{"source":4,"target":27,"value":1.0},{"source":5,"target":15,"value":6.0},{"source":5,"target":16,"value":1.0},{"source":5,"target":27,"value":3.0},{"source":5,"target":22,"value":2.0},{"source":6,"target":22,"value":1.0},{"source":6,"target":16,"value":7.0},{"source":7,"target":25,"value":9.0},{"source":7,"target":16,"value":42.0},{"source":8,"target":26,"value":1.0},{"source":8,"target":25,"value":2.0},{"source":8,"target":24,"value":1.0},{"source":8,"target":16,"value":1.0},{"source":8,"target":22,"value":1.0},{"source":9,"target":29,"value":1.0},{"source":9,"target":22,"value":7.0},{"source":9,"target":16,"value":2.0},{"source":9,"target":25,"value":1.0},{"source":9,"target":21,"value":2.0},{"source":10,"target":23,"value":2.0},{"source":10,"target":22,"value":1.0},{"source":11,"target":15,"value":1.0},{"source":11,"target":16,"value":1.0},{"source":11,"target":25,"value":2.0},{"source":12,"target":20,"value":12.0},{"source":12,"target":16,"value":37.0},{"source":12,"target":15,"value":18.0},{"source":12,"target":24,"value":2.0},{"source":12,"target":29,"value":1.0},{"source":12,"target":25,"value":5.0},{"source":12,"target":22,"value":12.0},{"source":13,"target":27,"value":2.0},{"source":13,"target":16,"value":1.0},{"source":14,"target":20,"value":1.0},{"source":14,"target":15,"value":2.0},{"source":14,"target":27,"value":2.0},{"source":14,"target":24,"value":1.0},{"source":14,"target":16,"value":2.0}],"nodes":[{"name":"MSS"},{"name":"NON-SEND"},{"name":"IT"},{"name":"CC"},{"name":"IN"},{"name":"MU"},{"name":"ISC"},{"name":"FEC"},{"name":"ISSR"},{"name":"ISS"},{"name":"OOE"},{"name":"EO"},{"name":"MMS"},{"name":"PRU"},{"name":"IMS"},{"name":"MSS"},{"name":"NON-SEND"},{"name":"IT"},{"name":"CC"},{"name":"IN"},{"name":"MU"},{"name":"ISC"},{"name":"FEC"},{"name":"ISSR"},{"name":"ISS"},{"name":"OOE"},{"name":"EO"},{"name":"MMS"},{"name":"PRU"},{"name":"IMS"}]};
+
+var displaySankey = function(send) {
+
+    var svg = d3.select("svg"),
+        width = +svg.attr("width"),
+        height = +svg.attr("height");
+    
+    var formatNumber = d3.format(",.0f"),
+        format = function(d) { return formatNumber(d) + " TWh"; },
+        color = d3.scaleOrdinal(d3.schemeCategory10);
+    
+    var sankey = d3.sankey()
+        .nodeWidth(15)
+        .nodePadding(10)
+        .extent([[1, 1], [width - 1, height - 6]]);
+    
+    var link = svg.append("g")
+        .attr("class", "links")
+        .attr("fill", "none")
+        .attr("stroke", "#000")
+        .attr("stroke-opacity", 0.2)
+      .selectAll("path");
+    
+    var node = svg.append("g")
+        .attr("class", "nodes")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 10)
+      .selectAll("g");
+    
+    sankey(send);
+    
+    link = link
+        .data(send.links)
+        .enter().append("path")
+          .attr("d", d3.sankeyLinkHorizontal())
+          .attr("stroke-width", function(d) { return Math.max(1, d.width); });
+    
+      link.append("title")
+          .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+    
+      node = node
+        .data(send.nodes)
+        .enter().append("g");
+    
+      node.append("rect")
+          .attr("x", function(d) { return d.x0; })
+          .attr("y", function(d) { return d.y0; })
+          .attr("height", function(d) { return d.y1 - d.y0; })
+          .attr("width", function(d) { return d.x1 - d.x0; })
+          .attr("fill", function(d) { return color(d.name.replace(/ .*/, "")); })
+          .attr("stroke", "#000");
+    
+      node.append("text")
+          .attr("x", function(d) { return d.x0 - 6; })
+          .attr("y", function(d) { return (d.y1 + d.y0) / 2; })
+          .attr("dy", "0.35em")
+          .attr("text-anchor", "end")
+          .text(function(d) { return d.name; })
+        .filter(function(d) { return d.x0 < width / 2; })
+          .attr("x", function(d) { return d.x1 + 6; })
+          .attr("text-anchor", "start");
+    
+      node.append("title")
+          .text(function(d) { return d.name + "\n" + format(d.value); });;
+
+}
+
+</script>

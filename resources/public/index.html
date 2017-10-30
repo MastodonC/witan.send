@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset='utf-8'>
+    <style>
+      table, td {
+      padding: 10
+      }
+    </style>
+    
+    
+  </head>
+  <body>
+    <div id="app"></div>
+    <table>
+      <tr>
+        <td>
+          <h3>Actual</h3>
+          <svg id="a" width="500" height="500"></svg>
+        </td>
+        <!-- <td>
+          <h3>Estimate</h3>
+          <svg id="b" width="500" height="500"></svg>
+        </td> -->
+        <td>
+          <h3>Model Output</h3>
+          <svg id="c" width="500" height="500"></svg>
+        </td>
+      </tr>
+    </table>
+    
+    <script src="js/d3.js"></script>
+    <script src="js/d3-sankey.js"></script>
+    <script>
+      var color = d3.scaleOrdinal(d3.schemeCategory10);
+      
+      var displaySankey = function(send, id) {
+
+    var svg = d3.select("svg#" + id),
+        width = +svg.attr("width"),
+      height = +svg.attr("height");
+
+    svg.selectAll("*").remove();
+    
+    var formatNumber = d3.format(",.0f"),
+        format = function(d) { return formatNumber(d) + " TWh"; }
+    
+    var sankey = d3.sankey()
+        .nodeWidth(15)
+        .nodePadding(10)
+        .extent([[1, 1], [width - 1, height - 6]]);
+    
+    var link = svg.append("g")
+        .attr("class", "links")
+        .attr("fill", "none")
+        .attr("stroke", "#000")
+        .attr("stroke-opacity", 0.2)
+      .selectAll("path");
+    
+    var node = svg.append("g")
+        .attr("class", "nodes")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 10)
+      .selectAll("g");
+    
+    sankey(send);
+    
+    link = link
+        .data(send.links)
+        .enter().append("path")
+          .attr("d", d3.sankeyLinkHorizontal())
+          .attr("stroke-width", function(d) { return Math.max(1, d.width); });
+    
+      link.append("title")
+          .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+    
+      node = node
+        .data(send.nodes)
+        .enter().append("g");
+    
+      node.append("rect")
+          .attr("x", function(d) { return d.x0; })
+          .attr("y", function(d) { return d.y0; })
+          .attr("height", function(d) { return d.y1 - d.y0; })
+          .attr("width", function(d) { return d.x1 - d.x0; })
+          .attr("fill", function(d) { return color(d.name); })
+          .attr("stroke", "#000");
+    
+      node.append("text")
+          .attr("x", function(d) { return d.x0 - 6; })
+          .attr("y", function(d) { return (d.y1 + d.y0) / 2; })
+          .attr("dy", "0.35em")
+          .attr("text-anchor", "end")
+          .text(function(d) { return d.name; })
+        .filter(function(d) { return d.x0 < width / 2; })
+          .attr("x", function(d) { return d.x1 + 6; })
+          .attr("text-anchor", "start");
+    
+      node.append("title")
+          .text(function(d) { return d.name + "\n" + format(d.value); });;
+
+}
+    </script>
+    <script src="js/compiled/app.js"></script>
+    <script>witan.send.core.init();</script>
+  </body>
+</html>
