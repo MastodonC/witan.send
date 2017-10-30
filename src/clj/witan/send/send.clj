@@ -25,17 +25,20 @@
           {} send-data))
 
 (defn incorporate-new-states-for-academic-year-state
+  "Take a model + transitions tuple as its first argument.
+  Returns a model + transitions tuple with `next-states-sample` incorporated."
   [[model transitions] academic-year state next-states-sample]
-  [(reduce (fn [coll [next-state n]]
-              (cond-> coll
-                (pos? n)
-                (update [academic-year next-state] u/some+ n)))
+  (vector
+   (reduce (fn [coll [next-state n]]
+             (cond-> coll
+               (pos? n)
+               (update [academic-year next-state] u/some+ n)))
            model next-states-sample)
    (reduce (fn [coll [next-state n]]
              (cond-> coll
                (pos? n)
                (update [academic-year state next-state] u/some+ n)))
-           transitions next-states-sample)])
+           transitions next-states-sample)))
 
 (defn apply-leavers-movers-for-cohort-unsafe
   "We're calling this function 'unsafe' because it doesn't check whether the state or
@@ -57,17 +60,16 @@
                                  (u/sample-send-transitions state (- population l) probs mover-params))
                                {state (- population l)})
           [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] (dec year) state next-states-sample)]
-      #_(println "Sampled next states....")
       [model
        (update transitions [(dec year) state sc/non-send] u/some+ l)
        (+ leavers l)
        (+ variance v)])
-    (do
-      #_(prn "No probs for population" [k population])
-      [model transitions (+ leavers population) variance])))
+    [model transitions (+ leavers population) variance]))
 
 (defn apply-leavers-movers-for-cohort
-  "Take single cohort of users and process them into the model state"
+  "Take single cohort of users and process them into the model state.
+  Calls 'unsafe' equivalent once we've removed non-send and children outside
+  valid academic year range."
   [[model transitions leavers variance :as model-state] [[year state] population :as cohort]
    {:keys [joiner-beta-params joiner-state-alphas
            leaver-beta-params
@@ -102,7 +104,7 @@
       [model transitions])))
 
 (defn run-model-iteration
-  "Take the model, transition params, and the projected population and produce the next state of the model"
+  "Takes the model & transitions, transition params, and the projected population and produce the next state of the model & transitions"
   [simulation {:keys [joiner-beta-params joiner-state-alphas
                       leaver-beta-params
                       mover-beta-params mover-state-alphas
