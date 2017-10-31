@@ -213,22 +213,21 @@
     (s/validate (sc/SettingCost+ valid-settings) setting-cost)
     {:population-by-age-state initial-state
      :joiner-beta-params (p/beta-params-joiners (ds/row-maps transition-matrix)
-                                                (ds/row-maps population) 0.5)
-     :leaver-beta-params (p/beta-params-leavers valid-states transitions 0.5 0.5 0.5)
-     :joiner-state-alphas (p/alpha-params-joiner-states valid-states transitions 0.5 0.5 0.5)
+                                                (ds/row-maps population))
+     :leaver-beta-params (p/beta-params-leavers valid-states transitions)
+     :joiner-state-alphas (p/alpha-params-joiner-states valid-states transitions)
      :projected-population (->> (ds/row-maps projected-population)
                                 (partition-by :calendar-year)
                                 (map u/total-by-academic-year))
-     :mover-beta-params (p/beta-params-movers valid-states transitions 0.5 0.5 0.5)
-     :mover-state-alphas (p/alpha-params-movers valid-states valid-year-settings transitions 0.5 0.5 0.5)
+     :mover-beta-params (p/beta-params-movers valid-states transitions)
+     :mover-state-alphas (p/alpha-params-movers valid-states valid-year-settings transitions)
      :setting-cost-lookup (->> (ds/row-maps setting-cost)
                                (map (juxt :setting :cost))
                                (into {}))
-     :valid-setting-academic-years valid-setting-academic-years}
-    ))
+     :valid-setting-academic-years valid-setting-academic-years}))
 
 (defn projection->transitions
-  [projections]
+  [file projections]
   (let [by-setting (fn [coll]
                      (reduce (fn [coll [[ay s1 s2] n]]
                                (let [s1 (if (= s1 sc/non-send)
@@ -240,7 +239,7 @@
                                  (update coll [ay s1 s2] u/some+ n)))
                              {} coll))
         transitions (apply merge-with + (mapcat #(map (comp by-setting :transitions) %) projections))]
-    #_(prn "Transitions:" transitions)))
+    (spit file (pr-str transitions))))
 
 (defn values-rf
   "Associate a reducing function to be used for each value of map indexed by key"
@@ -321,7 +320,7 @@
                  (for [projection projections]
                    (do (println "Reducing...")
                        (transduce (map #(map :model %)) (reduce-rf iterations valid-states setting-cost-lookup) projection))))]
-    (projection->transitions (apply concat projections))
+    (projection->transitions "target/transitions.edn" (apply concat projections))
     (println "Combining...")
     {:send-output (transduce identity (combine-rf iterations) reduced)}))
 
