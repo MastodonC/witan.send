@@ -78,23 +78,19 @@
             filtered)))
 
 
+
+
 (defn print-results
-  [results]
-  (let [calendar-year 2013
-        academic-years (keys results)]
+  [results calendar-year]
+  (let [academic-years (keys results)]
     (->> (for [academic-year (sort academic-years)]
-           #_(->> (concat
-                   [academic-year]
-                   (for [col cols]
-                     (do (println (get-in row [col :alpha]))
-                         (try
-                           (double
-                            (/ (get-in row [col :alpha])
-                               (+ (get-in row [col :alpha] 0)
-                                  (get-in row [col :beta] 0))))
-                           (catch Exception e 0)))))
-                  (str/join ","))
-           (str/join "\t" [academic-year
-                           (get-in results [academic-year calendar-year :alpha] 0)
-                           (get-in results [academic-year calendar-year :beta])]))
+           (let [alpha (get-in results [academic-year calendar-year :alpha] 0)
+                 beta (get-in results [academic-year calendar-year :beta])]
+             (str/join "\t" [academic-year
+                             (if (pos? alpha)
+                               (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.025)
+                               0)
+                             (if (pos? alpha)
+                               (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.975)
+                               0)])))
          (str/join "\n"))))
