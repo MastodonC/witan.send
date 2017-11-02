@@ -18,14 +18,18 @@
                  [kixi/stats "0.3.9"]
                  [instaparse "1.4.3"]
                  [incanter "1.5.7"]
-                 [medley "1.0.0"]
-                 [cheshire "5.7.1"]]
+                 [core-matrix-gorilla "0.1.0"]
+                 [kixi/gg4clj "0.1.1-SNAPSHOT" :exclusion [org.clojure/clojure]]
+                 [vector-of-maps-gorilla "0.1.0-SNAPSHOT"]
+                 [incanter-gorilla "0.1.0"][medley "1.0.0"]
+                 [cheshire "5.7.1"]
+                 [org.apache.commons/commons-math3 "3.6.1"]]
   :plugins [[lein-gorilla "0.4.0"]
             [lein-cljsbuild "1.1.4"]
             [lein-auto "0.1.3"]]
   :main witan.send.main
   :aot [witan.send.main]
-  
+
   :source-paths ["src/clj" "src/cljs" "src/cljc"]
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[witan.workspace-executor "0.2.6"
