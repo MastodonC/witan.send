@@ -36,14 +36,14 @@
                     p/calculate-joiners-per-calendar-year)
         population (-> (tu/csv-to-dataset "data/demo/population.csv" sc/PopulationDataset)
                        ds/row-maps
-                       p/calculate-population-per-calendar-year)
-        calendar-year 2013]
+                       p/calculate-population-per-calendar-year)]
     (reduce (fn [coll academic-year]
-              (let [j (get-in joiners [calendar-year academic-year] 0)]
-                (assoc-in coll [academic-year calendar-year]
-                          {:alpha j
-                           :beta (- (get-in population [calendar-year academic-year])
-                                    j)})))
+              (reduce (fn [collection calendar-year]
+                        (let [j (get-in joiners [calendar-year academic-year] 0)]
+                          (assoc-in collection [academic-year calendar-year]
+                                    {:alpha j
+                                     :beta (- (get-in population [calendar-year academic-year])
+                                              j)}))) coll (range 2013 2017)))
             {}
             sc/academic-years)))
 
