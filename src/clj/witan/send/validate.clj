@@ -86,10 +86,8 @@
     (->> (for [academic-year (sort academic-years)]
            (let [alpha (get-in results [academic-year calendar-year :alpha] 0)
                  beta (get-in results [academic-year calendar-year :beta])]
-             [academic-year
-              (if (pos? alpha)
-                (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.025)
-                0)
-              (if (pos? alpha)
-                (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.975)
-                0)])))))
+             (apply vector academic-year
+                    (if (and (pos? alpha) (pos? beta))
+                      [(.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.025)
+                       (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.975)]
+                      [0 0])))))))
