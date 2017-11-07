@@ -79,6 +79,68 @@
 
 
 
+(defn get-transitions []
+  (-> (tu/csv-to-dataset "data/demo/transitions.csv" sc/TransitionCounts) ds/row-maps))
+
+(defn joiner? [{:keys [setting-1]}]
+  (= setting-1 sc/non-send))
+
+(defn leaver? [{:keys [setting-2]}]
+  (= setting-2 sc/non-send))
+
+(defn mover? [{:keys [setting-1 setting-2 :as transition]}]
+  (and (not= setting-1 setting-2)
+       (not= setting-1 :NON-SEND)
+       (not= setting-2 :NON-SEND)))
+
+(defn rollup-alpha-beta-by
+  [f pred transitions]
+  (reduce
+   (fn [coll transition]
+     (if (pred transition)
+       (update-in coll (conj (vec (f transition)) :alpha) u/some+ 1)
+       (update-in coll (conj (vec (f transition)) :beta) u/some+ 1)))
+   {} transitions))
+
+(defn setting-2? [setting]
+  (fn [{:keys [setting-2]}]
+    (= setting-2 setting)))
+
+(defn setting-1? [setting]
+  (fn [{:keys [setting-1]}]
+    (= setting-1 setting)))
+
+(defn beta-quantile [alpha beta p]
+  (.inverseCumulativeProbability (BetaDistribution. alpha beta) p))
+
+
+
+(defn format-academic-year-ci
+  [data]
+  (->> (map #(vector % (get data %)) sc/academic-years)
+       (map (fn [[ay {:keys [alpha beta] :or {alpha 0 beta 0}}]]
+              (if (and (pos? alpha) (pos? beta))
+                [ay (beta-quantile alpha beta 0.025) (beta-quantile alpha beta 0.975)]
+                [ay 0 0])))
+       (apply map vector)
+       (zipmap [:ncy :lower :upper])))
+
+(defn squash-tuple
+  [[k2 vs]]
+  (reduce (fn [coll [k1 v]]
+            (assoc coll (keyword (str (name k1) k2)) v)) {} vs))
+
+(defn squash-all
+  [data]
+  (->> (map squash-tuple data)
+       (apply merge)))
+
+(defn format-for-ribbon
+  [data]
+  (->> (reduce (fn [coll [k vs]]
+                 (assoc coll k (format-academic-year-ci vs)))
+               {} data)
+       (squash-all)))
 
 (defn confidence-interval
   [results calendar-year]
