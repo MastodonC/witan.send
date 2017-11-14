@@ -30,13 +30,36 @@
 (defn calculate-valid-states-from-setting-academic-years
   [valid-setting-academic-years]
   (for [{:keys [setting min-academic-year max-academic-year needs]} valid-setting-academic-years
-        academic-year (range min-academic-year (inc max-academic-year))
-        need (map keyword (str/split needs #","))]
+        need (map keyword (str/split needs #","))
+        academic-year (range min-academic-year (inc max-academic-year))]
     [academic-year (state need setting)]))
 
 (defn valid-states-for-ay [valid-states ay]
   (->> (filter (fn [[ay' state]] (= ay ay')) valid-states)
        (map (fn [[ay' state]] state))))
+
+;; We ought to paramaterise this with need, since that may affect the result
+(defn valid-settings-for-ay [valid-states ay]
+  (->> (filter (fn [[ay' state]] (= ay ay')) valid-states)
+       (map (fn [[ay' state]]
+              (let [[need setting] (need-setting state)]
+                setting)))
+       (into #{})))
+
+(defn calculate-valid-settings-for-need-ay [valid-states]
+  (reduce (fn [coll [ay state]]
+            (let [[need setting] (need-setting state)]
+              (update coll [ay need] (fnil conj #{}) setting)))
+          {} valid-states))
+
+(defn calculate-valid-mover-transitions [valid-states]
+  (let [valid-need-settings (calculate-valid-settings-for-need-ay valid-states)]
+    (mapcat (fn [[ay state']]
+              (let [[need _] (need-setting state')
+                    settings (get valid-need-settings [(inc ay) need])]
+                (for [setting settings]
+                  (vector ay state' (state need setting)))))
+            valid-states)))
 
 (defn transitions->initial-state
   [transitions]
