@@ -80,7 +80,7 @@
 
 
 (defn get-transitions []
-  (-> (tu/csv-to-dataset "data/demo/transitions.csv" sc/TransitionCounts) ds/row-maps))
+  (-> (tu/csv-to-dataset "data/towerhamlets/transitions5.csv" sc/TransitionCounts) ds/row-maps))
 
 (defn joiner? [{:keys [setting-1]}]
   (= setting-1 sc/non-send))

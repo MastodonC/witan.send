@@ -50,16 +50,16 @@
            target-growth target-variance
            valid-year-settings] :as params}]
   (if-let [probs (get mover-state-alphas [(dec year) state])]
-    (let [leaver-params (get leaver-beta-params [year state])
+    (let [leaver-params (get leaver-beta-params [(dec year) state])
           l (u/sample-beta-binomial population leaver-params)
           v (if leaver-params
               (u/beta-binomial-variance population leaver-params)
               0.0)
-          next-states-sample (if (states/can-move? valid-year-settings year state)
+          next-states-sample (if (states/can-move? valid-year-settings (dec year) state)
                                (let [mover-params (get mover-beta-params [(dec year) state])]
                                  (u/sample-send-transitions state (- population l) probs mover-params))
                                {state (- population l)})
-          [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] (dec year) state next-states-sample)]
+          [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year state next-states-sample)]
       [model
        (update transitions [(dec year) state sc/non-send] u/some+ l)
        (+ leavers l)
@@ -92,10 +92,10 @@
 
 (defn apply-joiners-for-academic-year
   [[model transitions] academic-year projected-population {:keys [joiner-beta-params joiner-state-alphas]}]
-  (let [betas (get joiner-beta-params academic-year)
-        alphas (get joiner-state-alphas academic-year)
-        population (get projected-population academic-year)]
-    (if (and alphas betas population)
+  (let [betas (get joiner-beta-params (dec academic-year))
+        alphas (get joiner-state-alphas (dec academic-year))
+        population (get projected-population (dec academic-year))]
+    (if (and alphas betas population (every? pos? (vals betas)))
       (let [joiners (u/sample-beta-binomial population betas)]
         (if (zero? joiners)
           [model transitions]
@@ -194,6 +194,7 @@
            setting-cost valid-setting-academic-years]} _]
   (let [initial-population (->> (ds/row-maps initial-population)
                                 (u/total-by-academic-year))
+        transition-matrix (filter #(= (:calendar-year %) 2016) (ds/row-maps transition-matrix))
         transitions (u/transitions-map transition-matrix)
         initial-state (initialise-model (ds/row-maps initial-send-population))
 
@@ -212,15 +213,16 @@
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
     (s/validate (sc/SettingCost+ valid-settings) setting-cost)
     {:population-by-age-state initial-state
-     :joiner-beta-params (p/beta-params-joiners (ds/row-maps transition-matrix)
+     :joiner-beta-params (p/beta-params-joiners valid-states
+                                                transition-matrix
                                                 (ds/row-maps population))
-     :leaver-beta-params (p/beta-params-leavers valid-states transitions)
+     :leaver-beta-params (p/beta-params-leavers valid-states transition-matrix)
      :joiner-state-alphas (p/alpha-params-joiner-states valid-states transitions)
      :projected-population (->> (ds/row-maps projected-population)
                                 (partition-by :calendar-year)
                                 (map u/total-by-academic-year))
-     :mover-beta-params (p/beta-params-movers valid-states transitions)
-     :mover-state-alphas (p/alpha-params-movers valid-states valid-year-settings transitions)
+     :mover-beta-params (p/beta-params-movers valid-states transition-matrix)
+     :mover-state-alphas (p/alpha-params-movers valid-states #_valid-year-settings transition-matrix)
      :setting-cost-lookup (->> (ds/row-maps setting-cost)
                                (map (juxt :setting :cost))
                                (into {}))
