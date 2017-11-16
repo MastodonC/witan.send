@@ -14,7 +14,7 @@
             [witan.send.utils :as u])
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
 
-(set! *print-length* 20000)
+(set! *print-length* 9999999999)
 
 (def random-seed (atom 0))
 (defn set-seed! [n]
@@ -183,6 +183,15 @@
                 (update setting some+ population))))
           {} model))
 
+(defn model-population-by-need-setting
+  [model]
+  (reduce (fn [coll [[ay state] population]]
+            (let [[need setting] (states/need-setting state)]
+              (cond-> coll
+                (not= state sc/non-send)
+                (update [need setting] some+ population))))
+          {} model))
+
 (defn ay-groups [ay]
   (condp >= ay
     0 "NCY < 1"
@@ -205,6 +214,13 @@
   (-> (reduce (fn [cost [setting population]]
                 (+ cost (* population (get setting-lookup setting 0))))
               0 population-by-setting)
+      round))
+
+(defn total-need-setting-cost
+  [need-setting-lookup population-by-need-setting]
+  (-> (reduce (fn [cost [need-setting population]]
+                (+ cost (* population (get need-setting-lookup need-setting 0))))
+              0 population-by-need-setting)
       round))
 
 (defn model-send-population

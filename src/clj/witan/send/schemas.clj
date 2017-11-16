@@ -155,11 +155,24 @@
   (make-ordered-ds-schema [[:setting s/Keyword]
                            [:cost s/Num]]))
 
+(def NeedSettingCost
+  (make-ordered-ds-schema [[:need s/Keyword]
+                           [:setting s/Keyword]
+                           [:cost s/Num]]))
+
 (defn SettingCost+
   [settings]
   (prn settings)
   (make-ordered-ds-schema [[:setting (apply s/enum settings)]
                            [:cost s/Num]]))
 
+(defn NeedSettingCost+
+  [needs settings]
+  (make-ordered-ds-schema [[:need (apply s/enum needs)]
+                           [:setting (apply s/enum settings)]
+                           [:cost s/Num]]))
+
 (def SettingCostLookup
-  {s/Keyword s/Num})
+  {[(s/one s/Keyword :need)
+    (s/one s/Keyword :setting)]
+   s/Num})
