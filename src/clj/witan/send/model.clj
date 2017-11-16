@@ -6,9 +6,9 @@
             [witan.send.send :as send]))
 
 (def seed-year 2017)
-(def projection-year 2023)
+(def projection-year 2021)
 (def random-seed 50)
-(def simulations 10)
+(def simulations 1000)
 (def target-growth 127.2)
 (def target-variance 729.96)
 

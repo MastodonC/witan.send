@@ -82,6 +82,9 @@
 (defn get-transitions []
   (-> (tu/csv-to-dataset "data/towerhamlets/transitions5.csv" sc/TransitionCounts) ds/row-maps))
 
+(defn get-model-transitions []
+  (read-string (slurp "target/transitions.edn")))
+
 (defn joiner? [{:keys [setting-1]}]
   (= setting-1 sc/non-send))
 
