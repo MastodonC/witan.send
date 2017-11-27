@@ -8,8 +8,6 @@
 (def seed-year 2017)
 (def random-seed 50)
 (def simulations 1000)
-(def target-growth 127.2)
-(def target-variance 729.96)
 
 (def send-model-workflow
   "Defines each step of the model"
@@ -52,16 +50,14 @@
     :witan/version "1.0.0"
     :witan/type :function
     :witan/fn :send/prepare-send-inputs
-    :witan/params {:seed-year seed-year}}
+    :witan/params {:src ""}}
    {:witan/name :run-send-model
     :witan/version "1.0.0"
     :witan/type :function
     :witan/fn :send/run-send-model
     :witan/params {:seed-year seed-year
                    :random-seed random-seed
-                   :simulations simulations
-                   :target-growth target-growth
-                   :target-variance target-variance}}
+                   :simulations simulations}}
    {:witan/name :output-send-results
     :witan/version "1.0.0"
     :witan/type :output
