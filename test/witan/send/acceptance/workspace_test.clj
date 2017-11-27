@@ -15,7 +15,7 @@
    :transition-matrix ["data/demo/transitions.csv" sc/TransitionCounts]
    :projected-population ["data/demo/projected-population.csv" sc/PopulationDataset]
    :population ["data/demo/population.csv" sc/PopulationDataset]
-   :setting-cost ["data/demo/setting-costs.csv" sc/SettingCost]
+   :setting-cost ["data/demo/setting-costs.csv" sc/NeedSettingCost]
    :valid-setting-academic-years ["data/demo/valid-setting-academic-years.csv" sc/ValidSettingAcademicYears]})
 
 (defn add-input-params
