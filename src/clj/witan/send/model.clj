@@ -14,10 +14,8 @@
 
 (def send-model-workflow
   "Defines each step of the model"
-  [[:initial-population :prepare-send-inputs]
-   [:initial-send-population :prepare-send-inputs]
+  [[:initial-send-population :prepare-send-inputs]
    [:transition-matrix :prepare-send-inputs]
-   [:projected-population :prepare-send-inputs]
    [:population :prepare-send-inputs]
    [:setting-cost :prepare-send-inputs]
    [:valid-setting-academic-years :prepare-send-inputs]
@@ -26,12 +24,7 @@
 
 (def send-model-catalog
   "Provides metadata for each step in the model"
-  [{:witan/name :initial-population
-    :witan/version "1.0.0"
-    :witan/type :input
-    :witan/fn :send/initial-population
-    :witan/params {:src ""}}
-   {:witan/name :initial-send-population
+  [{:witan/name :initial-send-population
     :witan/version "1.0.0"
     :witan/type :input
     :witan/fn :send/initial-send-population
@@ -40,11 +33,6 @@
     :witan/version "1.0.0"
     :witan/type :input
     :witan/fn :send/transition-matrix
-    :witan/params {:src ""}}
-   {:witan/name :projected-population
-    :witan/version "1.0.0"
-    :witan/type :input
-    :witan/fn :send/projected-population
     :witan/params {:src ""}}
    {:witan/name :population
     :witan/version "1.0.0"
@@ -65,7 +53,7 @@
     :witan/version "1.0.0"
     :witan/type :function
     :witan/fn :send/prepare-send-inputs
-    :witan/params {}}
+    :witan/params {:seed-year seed-year}}
    {:witan/name :run-send-model
     :witan/version "1.0.0"
     :witan/type :function
@@ -94,10 +82,8 @@
   []
   (reify p/IModelLibrary
     (available-fns [_]
-      (map-fn-meta send/initial-population-1-0-0
-                   send/initial-send-population-1-0-0
+      (map-fn-meta send/initial-send-population-1-0-0
                    send/transition-matrix-1-0-0
-                   send/projected-population-1-0-0
                    send/population-1-0-0
                    send/setting-cost-1-0-0
                    send/valid-setting-academic-years-1-0-0

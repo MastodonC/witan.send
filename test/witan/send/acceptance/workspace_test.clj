@@ -10,10 +10,8 @@
             [witan.workspace-executor.core :as wex]))
 
 (def test-inputs
-  {:initial-population ["data/demo/initial-population.csv" sc/PopulationDataset]
-   :initial-send-population ["data/demo/send-population.csv" sc/SENDPopulation]
+  {:initial-send-population ["data/demo/send-population.csv" sc/SENDPopulation]
    :transition-matrix ["data/demo/transitions.csv" sc/TransitionCounts]
-   :projected-population ["data/demo/projected-population.csv" sc/PopulationDataset]
    :population ["data/demo/population.csv" sc/PopulationDataset]
    :setting-cost ["data/demo/setting-costs.csv" sc/NeedSettingCost]
    :valid-setting-academic-years ["data/demo/valid-setting-academic-years.csv" sc/ValidSettingAcademicYears]})
