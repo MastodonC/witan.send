@@ -43,11 +43,10 @@
 (defn apply-leavers-movers-for-cohort-unsafe
   "We're calling this function 'unsafe' because it doesn't check whether the state or
   or academic year range is valid."
-  [[model transitions leavers variance] [[year state] population]
+  [[model transitions] [[year state] population]
    {:keys [joiner-beta-params joiner-state-alphas
            leaver-beta-params
            mover-beta-params mover-state-alphas
-           target-growth target-variance
            valid-year-settings] :as params}
    calendar-year]
   (if-let [probs (get mover-state-alphas [(dec year) state])]
@@ -62,20 +61,17 @@
                                {state (- population l)})
           [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year state next-states-sample calendar-year)]
       [model
-       (update transitions [calendar-year (dec year) state sc/non-send] u/some+ l)
-       (+ leavers l)
-       (+ variance v)])
-    [model transitions (+ leavers population) variance]))
+       (update transitions [calendar-year (dec year) state sc/non-send] u/some+ l)])
+    [model transitions]))
 
 (defn apply-leavers-movers-for-cohort
   "Take single cohort of users and process them into the model state.
   Calls 'unsafe' equivalent once we've removed non-send and children outside
   valid academic year range."
-  [[model transitions leavers variance :as model-state] [[year state] population :as cohort]
+  [[model transitions :as model-state] [[year state] population :as cohort]
    {:keys [joiner-beta-params joiner-state-alphas
            leaver-beta-params
            mover-beta-params mover-state-alphas
-           target-growth target-variance
            valid-year-settings] :as params}
    calendar-year]
   (cond
@@ -87,8 +83,7 @@
     [model
      (cond-> transitions
        (pos? population)
-       (update [calendar-year (dec year) state sc/non-send] u/some+ population))
-     leavers variance]
+       (update [calendar-year (dec year) state sc/non-send] u/some+ population))]
     :else
     (apply-leavers-movers-for-cohort-unsafe model-state cohort params calendar-year)))
 
@@ -110,14 +105,13 @@
   [simulation {:keys [joiner-beta-params joiner-state-alphas
                       leaver-beta-params
                       mover-beta-params mover-state-alphas
-                      target-growth target-variance
                       valid-year-settings] :as params}
    {:keys [model transitions]} [calendar-year projected-population]]
   (let [cohorts (step/age-population projected-population model)
-        [model transitions _ _] (reduce (fn [model-state cohort]
-                                          (apply-leavers-movers-for-cohort model-state cohort params calendar-year))
-                                        [{} transitions 0 0]
-                                        cohorts)
+        [model transitions] (reduce (fn [model-state cohort]
+                                      (apply-leavers-movers-for-cohort model-state cohort params calendar-year))
+                                    [{} transitions]
+                                    cohorts)
         [model transitions] (reduce (fn [model-state academic-year]
                                       (apply-joiners-for-academic-year model-state academic-year projected-population params calendar-year))
                                     [model transitions]
@@ -195,7 +189,7 @@
                         :transition-matrix sc/TransitionCounts
                         :setting-cost sc/NeedSettingCost
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
-   :witan/param-schema {:seed-year sc/YearSchema}
+   :witan/param-schema {}
    :witan/output-schema {:population-by-age-state sc/ModelState
                          :projected-population sc/PopulationByCalendarAndAcademicYear
                          :joiner-beta-params sc/JoinerBetaParams
@@ -206,7 +200,7 @@
                          :setting-cost-lookup sc/SettingCostLookup
                          :valid-setting-academic-years sc/ValidSettingAcademicYears}}
   [{:keys [initial-send-population transition-matrix population
-           setting-cost valid-setting-academic-years]} {:keys [seed-year]}]
+           setting-cost valid-setting-academic-years]} _]
   (let [transition-matrix (ds/row-maps transition-matrix)
         transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix)
         transitions (u/transitions-map transition-matrix)
@@ -319,12 +313,10 @@
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
    :witan/param-schema {:seed-year sc/YearSchema
                         :simulations s/Int
-                        :random-seed s/Int
-                        :target-growth s/Num
-                        :target-variance s/Num}
+                        :random-seed s/Int}
    :witan/output-schema {:send-output sc/Results}}
   [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years] :as inputs}
-   {:keys [seed-year random-seed simulations target-growth target-variance]}]
+   {:keys [seed-year random-seed simulations]}]
   (u/set-seed! random-seed)
   (let [projected-future-pop-by-year (->> projected-population
                                           (filter (fn [[k _]] (> k seed-year)))
@@ -332,9 +324,8 @@
         iterations (inc (count projected-future-pop-by-year)) ;; include current year
         valid-states (->> (ds/row-maps valid-setting-academic-years)
                           (states/calculate-valid-states-from-setting-academic-years))
-        inputs (assoc inputs :target-growth target-growth :target-variance target-variance
-                      :valid-year-settings (->> (ds/row-maps valid-setting-academic-years)
-                                                (states/calculate-valid-year-settings-from-setting-academic-years)))
+        inputs (assoc inputs :valid-year-settings (->> (ds/row-maps valid-setting-academic-years)
+                                                       (states/calculate-valid-year-settings-from-setting-academic-years)))
         projections (->> (range simulations)
                          (partition-all (int (/ simulations 8)))
                          (map (fn [simulations]
