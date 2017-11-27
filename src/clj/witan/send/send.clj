@@ -112,7 +112,7 @@
                       mover-beta-params mover-state-alphas
                       target-growth target-variance
                       valid-year-settings] :as params}
-   {:keys [model transitions]} [projected-population calendar-year]]
+   {:keys [model transitions]} [calendar-year projected-population]]
   (let [cohorts (step/age-population projected-population model)
         [model transitions _ _] (reduce (fn [model-state cohort]
                                           (apply-leavers-movers-for-cohort model-state cohort params calendar-year))
@@ -197,7 +197,7 @@
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
    :witan/param-schema {:seed-year sc/YearSchema}
    :witan/output-schema {:population-by-age-state sc/ModelState
-                         :projected-population sc/PopulationByAcademicYear
+                         :projected-population sc/PopulationByCalendarAndAcademicYear
                          :joiner-beta-params sc/JoinerBetaParams
                          :leaver-beta-params sc/YearStateBetaParams
                          :joiner-state-alphas sc/AcademicYearStateAlphas
@@ -242,9 +242,9 @@
                                             (p/alpha-params-joiner-states valid-states (u/transitions-map transition-matrix))
                                             (p/alpha-params-joiner-states valid-states (u/transitions-map transition-matrix-filtered)))
      :projected-population (->> (ds/row-maps population)
-                                (filter #(> (:calendar-year %) seed-year))
-                                (partition-by :calendar-year)
-                                (map u/total-by-academic-year))
+                                (group-by :calendar-year)
+                                (map (fn [[k v]] [k (u/total-by-academic-year v)]))
+                                (into {}))
      :mover-beta-params (stitch-ay-state-params splice-ncy
                                                 (p/beta-params-movers valid-states transition-matrix)
                                                 (p/beta-params-movers valid-states transition-matrix-filtered))
@@ -309,7 +309,7 @@
   {:witan/name :send/run-send-model
    :witan/version "1.0.0"
    :witan/input-schema {:population-by-age-state sc/ModelState
-                        :projected-population sc/PopulationByAcademicYear
+                        :projected-population sc/PopulationByCalendarAndAcademicYear
                         :joiner-beta-params sc/JoinerBetaParams
                         :leaver-beta-params sc/YearStateBetaParams
                         :joiner-state-alphas sc/AcademicYearStateAlphas
@@ -319,15 +319,17 @@
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
    :witan/param-schema {:seed-year sc/YearSchema
                         :simulations s/Int
-                        :projection-year sc/YearSchema
                         :random-seed s/Int
                         :target-growth s/Num
                         :target-variance s/Num}
    :witan/output-schema {:send-output sc/Results}}
   [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years] :as inputs}
-   {:keys [seed-year projection-year random-seed simulations target-growth target-variance]}]
+   {:keys [seed-year random-seed simulations target-growth target-variance]}]
   (u/set-seed! random-seed)
-  (let [iterations (inc (- projection-year seed-year))
+  (let [projected-future-pop-by-year (->> projected-population
+                                          (filter (fn [[k _]] (> k seed-year)))
+                                          (sort-by key))
+        iterations (inc (count projected-future-pop-by-year)) ;; include current year
         valid-states (->> (ds/row-maps valid-setting-academic-years)
                           (states/calculate-valid-states-from-setting-academic-years))
         inputs (assoc inputs :target-growth target-growth :target-variance target-variance
@@ -340,7 +342,7 @@
                                        (let [projection (reductions (partial run-model-iteration simulation inputs)
                                                                     {:model population-by-age-state
                                                                      :transitions {}}
-                                                                    (map vector projected-population (range seed-year 3000)))]
+                                                                    projected-future-pop-by-year)]
                                          (println (format "Created projection %d" simulation))
                                          projection))
                                      (doall))))

@@ -6,7 +6,6 @@
             [witan.send.send :as send]))
 
 (def seed-year 2017)
-(def projection-year 2021)
 (def random-seed 50)
 (def simulations 1000)
 (def target-growth 127.2)
@@ -59,7 +58,6 @@
     :witan/type :function
     :witan/fn :send/run-send-model
     :witan/params {:seed-year seed-year
-                   :projection-year projection-year
                    :random-seed random-seed
                    :simulations simulations
                    :target-growth target-growth

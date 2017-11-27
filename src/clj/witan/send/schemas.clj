@@ -103,8 +103,8 @@
                            [:max-academic-year AcademicYear]
                            [:needs s/Str]]))
 
-(def PopulationByAcademicYear
-  [{AcademicYear s/Int}])
+(def PopulationByCalendarAndAcademicYear
+  {CalendarYear {AcademicYear N}})
 
 (def ModelState
   {[(s/one AcademicYear :academic-year)
