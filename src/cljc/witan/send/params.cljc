@@ -156,7 +156,7 @@
               (let [[need setting] (s/need-setting state)
                     valid-settings (-> (get valid-year-settings (inc ay))
                                        (disj setting))
-                    
+
                     prior-alphas (reduce (fn [coll state]
                                            (assoc coll state natural-prior))
                                          {} valid-settings)
@@ -206,7 +206,6 @@
                    (fn [coll cy]
                      (let [j (get-in joiners [cy ay])
                            p (get-in population [cy ay])]
-                       (prn {:joiners j :population p :academic-year ay :calendar-year cy})
                        (if j
                          (-> coll
                              (update-in [ay :alpha] u/some+ (/ j n))
@@ -274,7 +273,6 @@
 (defn beta-params-joiners [valid-states transitions-matrix population]
   (let [joiners-per-calendar-year (calculate-joiners-per-calendar-year transitions-matrix)
         population-per-calendar-year (calculate-population-per-calendar-year population)]
-    (prn population-per-calendar-year)
     (weighted-joiner-beta-params valid-states joiners-per-calendar-year population-per-calendar-year)))
 
 (defn beta-params-movers
@@ -290,7 +288,7 @@
                                    (update-in coll [academic-year-1 (s/state need-1 setting-1) :alpha] u/some+ 1)
                                    (update-in coll [academic-year-1 (s/state need-1 setting-1) :beta] u/some+ 1))))
                              {} transitions)
-        
+
         prior-per-year (reduce (fn [coll [ay state-betas]]
                                  (let [betas (apply merge-with + (vals state-betas))
                                        alpha (+ (get betas :alpha 0) 0.5)
