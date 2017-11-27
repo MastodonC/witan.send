@@ -41,24 +41,17 @@
   (s/calculate-academic-year-range valid-setting-academic-years))
 
 (deftest validate-params
-  (testing "Positive joiner age alpha for every valid academic year"
-    (let [transitions {}
-          params (sut/alpha-params-joiner-ages transitions)]
-      (is (every? (fn [academic-year]
-                    (pos? (get params academic-year))) c/academic-years))))
-
   (testing "Positive joiner state alphas for every valid academic year"
     (let [transitions {}
-          params (sut/alpha-params-joiner-states valid-states transitions 0.5 0.5 0.5)]
-      (is (every? (fn [academic-year]
-                    (let [alphas (get params academic-year)]
-                      (and (pos? (count alphas))
-                           (->> alphas vals (every? pos?)))))
-                  academic-years))))
+          params (sut/alpha-params-joiner-states valid-states transitions)]
+      (is (every? (fn [[academic-year alphas]]
+                    (and (pos? (count alphas))
+                         (->> alphas vals (every? pos?))))
+                  params))))
 
   (testing "Positive mover state alphas for every year with >1 setting"
     (let [transitions {}
-          params (sut/alpha-params-movers valid-states valid-year-settings transitions 0.5 0.5 0.5)]
+          params (sut/alpha-params-movers valid-states transitions)]
       (is (empty? (remove (fn [[academic-year state]]
                             (let [alphas (get params [academic-year state])]
                               (and (pos? (count alphas))
@@ -70,21 +63,19 @@
 
   (testing "Positive leaver beta params for every valid state"
     (let [transitions {}
-          params (sut/beta-params-leavers valid-states transitions 0.5 0.5 0.5)]
-      (is (every? (fn [[academic-year state]]
-                    (let [betas (get params [academic-year state])]
-                      (and (pos? (:alpha betas))
-                           (pos? (:beta betas)))))
-                  valid-states))))
+          params (sut/beta-params-leavers valid-states transitions)]
+      (is (every? (fn [[_ betas]]
+                    (and (pos? (:alpha betas))
+                         (pos? (:beta betas))))
+                  params))))
 
   (testing "Positive mover beta params for every valid state"
     (let [transitions {}
-          params (sut/beta-params-movers valid-states transitions 0.5 0.5 0.5)]
-      (is (every? (fn [[academic-year state]]
-                    (let [betas (get params [academic-year state])]
-                      (and (pos? (:alpha betas))
-                           (pos? (:beta betas)))))
-                  valid-states)))))
+          params (sut/beta-params-movers valid-states transitions)]
+      (is (every? (fn [[_ betas]]
+                    (and (pos? (:alpha betas))
+                         (pos? (:beta betas))))
+                  params)))))
 
 (deftest calculate-population-per-calendar-year-test
   (let [population (ds/row-maps population-dataset)
@@ -117,13 +108,9 @@
         expected-academic-years (->> population-row-maps
                                      (map :academic-year)
                                      (into #{}))
-        result (sut/beta-params-joiners transitions-matrix
-                                        population-row-maps
-                                        0.5)]
-    (testing "calculates alpha and beta for each academic year"
-      (is (= (-> result keys set) expected-academic-years)))
-
+        result (sut/beta-params-joiners valid-states
+                                        transitions-matrix
+                                        population-row-maps)]
     (testing "each val is a valid beta param"
       (is (every? (every-pred :alpha :beta) (vals result)))
       (is (every? (comp (partial every? pos?) vals) (vals result))))))
-
