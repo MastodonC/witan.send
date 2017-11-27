@@ -27,7 +27,9 @@
 
 (deftest send-workspace-test
   (testing "The default model is run on the workspace and returns the outputs expected"
-    (let [fixed-catalog (mapv #(if (= (:witan/type %) :input) (add-input-params %) %)
+    (let [fixed-catalog (mapv #(if (= (:witan/type %) :input)
+                                 (add-input-params %)
+                                 (assoc-in % [:witan/params :simulations] 10))
                               (:catalog m/send-model))
           workspace     {:workflow  (:workflow m/send-model)
                          :catalog   fixed-catalog
@@ -39,7 +41,9 @@
              (-> result first keys set))))))
 
 (defn run! []
-  (let [fixed-catalog (mapv #(if (= (:witan/type %) :input) (add-input-params %) %)
+  (let [fixed-catalog (mapv #(if (= (:witan/type %) :input)
+                               (add-input-params %)
+                               (assoc-in % [:witan/params :simulations] 10))
                             (:catalog m/send-model))
         workspace     {:workflow  (:workflow m/send-model)
                        :catalog   fixed-catalog
