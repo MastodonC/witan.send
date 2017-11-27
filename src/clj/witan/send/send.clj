@@ -93,12 +93,12 @@
     (apply-leavers-movers-for-cohort-unsafe model-state cohort params calendar-year)))
 
 (defn apply-joiners-for-academic-year
-  [[model transitions] academic-year projected-population {:keys [joiner-beta-params joiner-state-alphas]} calendar-year]
+  [[model transitions] academic-year population {:keys [joiner-beta-params joiner-state-alphas]} calendar-year]
   (let [betas (get joiner-beta-params (dec academic-year))
         alphas (get joiner-state-alphas (dec academic-year))
-        population (get projected-population (dec academic-year))]
-    (if (and alphas betas population (every? pos? (vals betas)))
-      (let [joiners (u/sample-beta-binomial population betas)]
+        pop (get population (dec academic-year))]
+    (if (and alphas betas pop (every? pos? (vals betas)))
+      (let [joiners (u/sample-beta-binomial pop betas)]
         (if (zero? joiners)
           [model transitions]
           (let [joiner-states (u/sample-dirichlet-multinomial joiners alphas)]
@@ -127,12 +127,6 @@
 
 ;; Workflow functions
 
-(definput initial-population-1-0-0
-  {:witan/name :send/initial-population
-   :witan/version "1.0.0"
-   :witan/key :initial-population
-   :witan/schema sc/PopulationDataset})
-
 (definput initial-send-population-1-0-0
   {:witan/name :send/initial-send-population
    :witan/version "1.0.0"
@@ -144,12 +138,6 @@
    :witan/version "1.0.0"
    :witan/key :transition-matrix
    :witan/schema sc/TransitionCounts})
-
-(definput projected-population-1-0-0
-  {:witan/name :send/projected-population
-   :witan/version "1.0.0"
-   :witan/key :projected-population
-   :witan/schema sc/PopulationDataset})
 
 (definput population-1-0-0
   {:witan/name :send/population
@@ -202,14 +190,12 @@
    row for each individual/year/simulation. Also includes age & state columns"
   {:witan/name :send/prepare-send-inputs
    :witan/version "1.0.0"
-   :witan/input-schema {:initial-population sc/PopulationDataset
-                        :projected-population sc/PopulationDataset
-                        :population sc/PopulationDataset
+   :witan/input-schema {:population sc/PopulationDataset
                         :initial-send-population sc/SENDPopulation
                         :transition-matrix sc/TransitionCounts
                         :setting-cost sc/NeedSettingCost
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
-   :witan/param-schema {}
+   :witan/param-schema {:seed-year sc/YearSchema}
    :witan/output-schema {:population-by-age-state sc/ModelState
                          :projected-population sc/PopulationByAcademicYear
                          :joiner-beta-params sc/JoinerBetaParams
@@ -219,12 +205,9 @@
                          :mover-state-alphas sc/TransitionAlphas
                          :setting-cost-lookup sc/SettingCostLookup
                          :valid-setting-academic-years sc/ValidSettingAcademicYears}}
-  [{:keys [initial-population initial-send-population
-           transition-matrix projected-population population
-           setting-cost valid-setting-academic-years]} _]
-  (let [initial-population (->> (ds/row-maps initial-population)
-                                (u/total-by-academic-year))
-        transition-matrix (ds/row-maps transition-matrix)
+  [{:keys [initial-send-population transition-matrix population
+           setting-cost valid-setting-academic-years]} {:keys [seed-year]}]
+  (let [transition-matrix (ds/row-maps transition-matrix)
         transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix)
         transitions (u/transitions-map transition-matrix)
         initial-state (initialise-model (ds/row-maps initial-send-population))
@@ -258,7 +241,8 @@
      :joiner-state-alphas (stitch-ay-params splice-ncy
                                             (p/alpha-params-joiner-states valid-states (u/transitions-map transition-matrix))
                                             (p/alpha-params-joiner-states valid-states (u/transitions-map transition-matrix-filtered)))
-     :projected-population (->> (ds/row-maps projected-population)
+     :projected-population (->> (ds/row-maps population)
+                                (filter #(> (:calendar-year %) seed-year))
                                 (partition-by :calendar-year)
                                 (map u/total-by-academic-year))
      :mover-beta-params (stitch-ay-state-params splice-ncy
@@ -356,7 +340,7 @@
                                        (let [projection (reductions (partial run-model-iteration simulation inputs)
                                                                     {:model population-by-age-state
                                                                      :transitions {}}
-                                                                    (map vector projected-population (range 2017 3000)))]
+                                                                    (map vector projected-population (range seed-year 3000)))]
                                          (println (format "Created projection %d" simulation))
                                          projection))
                                      (doall))))
