@@ -46,10 +46,10 @@
 (defn transitions-map
   [dataset]
   (->> dataset
-       (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-1]}]
+       (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-2]}]
                  (let [state-1 (states/state need-1 setting-1)
                        state-2 (states/state need-2 setting-2)]
-                   (update coll [academic-year-1 state-1 state-2] u/some+ 1)))
+                   (update coll [academic-year-2 state-1 state-2] u/some+ 1)))
                {})))
 
 (defn sq [x] (* x x))
