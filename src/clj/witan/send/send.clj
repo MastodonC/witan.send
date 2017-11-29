@@ -110,7 +110,7 @@
   (let [cohorts (step/age-population projected-population model)
         [model transitions] (reduce (fn [model-state cohort]
                                       (apply-leavers-movers-for-cohort model-state cohort params calendar-year))
-                                    [{} transitions]
+                                    [{} {}]
                                     cohorts)
         [model transitions] (reduce (fn [model-state academic-year]
                                       (apply-joiners-for-academic-year model-state academic-year projected-population params calendar-year))
