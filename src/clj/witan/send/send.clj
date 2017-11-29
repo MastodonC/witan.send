@@ -252,17 +252,7 @@
 
 (defn projection->transitions
   [file projections]
-  (let [by-setting (fn [coll]
-                     (reduce (fn [coll [[cy ay s1 s2] n]]
-                               (let [s1 (if (= s1 sc/non-send)
-                                          sc/non-send
-                                          (second (states/need-setting s1)))
-                                     s2 (if (= s2 sc/non-send)
-                                          sc/non-send
-                                          (second (states/need-setting s2)))]
-                                 (update coll [ay s1 s2] u/some+ n)))
-                             {} coll))
-        transitions (apply merge-with + (mapcat #(map :transitions %) projections))]
+  (let [transitions (apply merge-with + (mapcat #(map :transitions %) projections))]
     (spit file (pr-str transitions))))
 
 (defn values-rf
