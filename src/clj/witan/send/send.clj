@@ -37,7 +37,7 @@
    (reduce (fn [coll [next-state n]]
              (cond-> coll
                (pos? n)
-               (update [calendar-year (dec academic-year) state next-state] u/some+ n)))
+               (update [calendar-year academic-year state next-state] u/some+ n)))
            transitions next-states-sample)))
 
 (defn apply-leavers-movers-for-cohort-unsafe
@@ -49,19 +49,16 @@
            mover-beta-params mover-state-alphas
            valid-year-settings] :as params}
    calendar-year]
-  (if-let [probs (get mover-state-alphas [(dec year) state])]
-    (let [leaver-params (get leaver-beta-params [(dec year) state])
+  (if-let [probs (get mover-state-alphas [year state])]
+    (let [leaver-params (get leaver-beta-params [year state])
           l (u/sample-beta-binomial population leaver-params)
-          v (if leaver-params
-              (u/beta-binomial-variance population leaver-params)
-              0.0)
-          next-states-sample (if (states/can-move? valid-year-settings (dec year) state)
-                               (let [mover-params (get mover-beta-params [(dec year) state])]
+          next-states-sample (if (states/can-move? valid-year-settings year state)
+                               (let [mover-params (get mover-beta-params [year state])]
                                  (u/sample-send-transitions state (- population l) probs mover-params))
                                {state (- population l)})
           [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year state next-states-sample calendar-year)]
       [model
-       (update transitions [calendar-year (dec year) state sc/non-send] u/some+ l)])
+       (update transitions [calendar-year year state sc/non-send] u/some+ l)])
     [model transitions]))
 
 (defn apply-leavers-movers-for-cohort
@@ -83,15 +80,15 @@
     [model
      (cond-> transitions
        (pos? population)
-       (update [calendar-year (dec year) state sc/non-send] u/some+ population))]
+       (update [calendar-year year state sc/non-send] u/some+ population))]
     :else
     (apply-leavers-movers-for-cohort-unsafe model-state cohort params calendar-year)))
 
 (defn apply-joiners-for-academic-year
   [[model transitions] academic-year population {:keys [joiner-beta-params joiner-state-alphas]} calendar-year]
-  (let [betas (get joiner-beta-params (dec academic-year))
-        alphas (get joiner-state-alphas (dec academic-year))
-        pop (get population (dec academic-year))]
+  (let [betas (get joiner-beta-params academic-year)
+        alphas (get joiner-state-alphas academic-year)
+        pop (get population academic-year)]
     (if (and alphas betas pop (every? pos? (vals betas)))
       (let [joiners (u/sample-beta-binomial pop betas)]
         (if (zero? joiners)
