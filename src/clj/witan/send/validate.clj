@@ -77,10 +77,8 @@
             {}
             filtered)))
 
-
-
 (defn get-transitions []
-  (-> (tu/csv-to-dataset "data/tower_hamlets/Tower-Hamlets-SEND-inputs-2017-11-21/transitions.csv" sc/TransitionCounts) ds/row-maps))
+  (-> (tu/csv-to-dataset "data/Tower-Hamlets-SEND-inputs-2017-11-21/transitions.csv" sc/TransitionCounts) ds/row-maps))
 
 (defn get-model-transitions []
   (read-string (slurp "target/transitions.edn")))
