@@ -14,8 +14,6 @@
             [witan.send.utils :as u])
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
 
-(set! *print-length* 9999999999)
-
 (def random-seed (atom 0))
 (defn set-seed! [n]
   (reset! random-seed n))
