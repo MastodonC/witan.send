@@ -27,6 +27,12 @@
             [clojure.core.matrix.dataset :as ds])
   (:import [org.HdrHistogram DoubleHistogram]))
 
+(defn get-transitions []
+  (-> (tu/csv-to-dataset "data/Tower-Hamlets-SEND-inputs-2017-11-21/transitions.csv" sc/TransitionCounts) ds/row-maps))
+
+(defn get-model-transitions []
+  (read-string (slurp "target/transitions.edn")))
+
 (defn seq-of-maps->data-frame
   [coll]
   (when-let [x (first coll)]

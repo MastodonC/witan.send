@@ -23,10 +23,8 @@
             (fn [cy]
               (let [j (get-in joiners [cy ay] 0)
                     p (get-in population [cy ay])]
-                #_{:calendar-year cy :joiners j :population p}
                 {:calendar-year cy :academic-year ay :joiners j :population p :alpha j :beta (- p j)}))
-            joiner-calendar-years)
-           #_(associate-params-with-subsequent-year)))
+            joiner-calendar-years)))
      population-academic-years)))
 
 (defn joiner-rate
@@ -76,12 +74,6 @@
                     (update-in [academic-year-1 calendar-year :beta] u/some+ (if mover? 0 1)))))
             {}
             filtered)))
-
-(defn get-transitions []
-  (-> (tu/csv-to-dataset "data/Tower-Hamlets-SEND-inputs-2017-11-21/transitions.csv" sc/TransitionCounts) ds/row-maps))
-
-(defn get-model-transitions []
-  (read-string (slurp "target/transitions.edn")))
 
 (defn joiner? [{:keys [setting-1]}]
   (= setting-1 sc/non-send))
