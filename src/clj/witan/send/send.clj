@@ -414,8 +414,9 @@
                      (map (fn [[ay-group stats]]
                             (-> (medley/map-vals round stats)
                                 (assoc :ay-group ay-group :calendar-year year)))
-                          (:total-in-send-by-ay-group output))) send-output (range 2017 3000))
+                          (:total-in-send-by-ay-group output))) send-output (range 2017 3000)) ;;TODO hard coded years
            (map (apply juxt columns))
            (concat [(map name columns)])
            (csv/write-csv writer))))
+  (ch/sankey-transitions transition-matrix 2014 ch/Camden-setting->group) ;;hard coded year
   send-output)
