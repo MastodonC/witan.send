@@ -14,8 +14,6 @@
             [witan.send.utils :as u])
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
 
-(set! *print-length* 20000)
-
 (def random-seed (atom 0))
 (defn set-seed! [n]
   (reset! random-seed n))
@@ -45,11 +43,11 @@
 
 (defn transitions-map
   [dataset]
-  (->> (ds/row-maps dataset)
-       (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-1]}]
+  (->> dataset
+       (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-2]}]
                  (let [state-1 (states/state need-1 setting-1)
                        state-2 (states/state need-2 setting-2)]
-                   (update coll [academic-year-1 state-1 state-2] u/some+ 1)))
+                   (update coll [academic-year-2 state-1 state-2] u/some+ 1)))
                {})))
 
 (defn sq [x] (* x x))
@@ -183,6 +181,15 @@
                 (update setting some+ population))))
           {} model))
 
+(defn model-population-by-need-setting
+  [model]
+  (reduce (fn [coll [[ay state] population]]
+            (let [[need setting] (states/need-setting state)]
+              (cond-> coll
+                (not= state sc/non-send)
+                (update [need setting] some+ population))))
+          {} model))
+
 (defn ay-groups [ay]
   (condp >= ay
     0 "NCY < 1"
@@ -205,6 +212,13 @@
   (-> (reduce (fn [cost [setting population]]
                 (+ cost (* population (get setting-lookup setting 0))))
               0 population-by-setting)
+      round))
+
+(defn total-need-setting-cost
+  [need-setting-lookup population-by-need-setting]
+  (-> (reduce (fn [cost [need-setting population]]
+                (+ cost (* population (get need-setting-lookup need-setting 0))))
+              0 population-by-need-setting)
       round))
 
 (defn model-send-population
