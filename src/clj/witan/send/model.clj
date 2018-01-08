@@ -5,10 +5,6 @@
                                                map-model-meta]]
             [witan.send.send :as send]))
 
-(def seed-year 2017)
-(def random-seed 50)
-(def simulations 1000)
-
 (def send-model-workflow
   "Defines each step of the model"
   [[:initial-send-population :prepare-send-inputs]
@@ -55,9 +51,9 @@
     :witan/version "1.0.0"
     :witan/type :function
     :witan/fn :send/run-send-model
-    :witan/params {:seed-year seed-year
-                   :random-seed random-seed
-                   :simulations simulations}}
+    :witan/params {:seed-year 2017
+                   :random-seed 50
+                   :simulations 1000}}
    {:witan/name :output-send-results
     :witan/version "1.0.0"
     :witan/type :output
