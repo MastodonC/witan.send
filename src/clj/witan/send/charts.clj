@@ -106,4 +106,4 @@
        (gather-set-data)
        (seq-of-maps->data-frame)
        (sankey {:title (str "Aggregate setting transitions: " calendar-year "/" (apply str (drop 2 (str (inc calendar-year)))))}))
-  (copy-file "Rplots.pdf" "target/transitions_2014.pdf"))
+  (copy-file "Rplots.pdf" (str "target/transitions_" calendar-year ".pdf")))
