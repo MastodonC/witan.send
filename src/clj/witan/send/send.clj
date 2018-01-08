@@ -13,6 +13,7 @@
             [witan.send.step :as step]
             [witan.send.states :as states]
             [witan.send.utils :as u :refer [round]]
+            [witan.send.charts :as ch]
             [clojure.java.io :as io]
             [incanter.stats :as stats]
             [medley.core :as medley]
@@ -195,10 +196,12 @@
                          :mover-beta-params sc/YearStateBetaParams
                          :mover-state-alphas sc/TransitionAlphas
                          :setting-cost-lookup sc/SettingCostLookup
-                         :valid-setting-academic-years sc/ValidSettingAcademicYears}}
+                         :valid-setting-academic-years sc/ValidSettingAcademicYears
+                         :transition-matrix sc/TransitionCounts}}
   [{:keys [initial-send-population transition-matrix population
            setting-cost valid-setting-academic-years]} _]
-  (let [transition-matrix (ds/row-maps transition-matrix)
+  (let [original-transitions transition-matrix
+        transition-matrix (ds/row-maps transition-matrix)
         transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix) ;;hard-coded year remove
         transitions (u/transitions-map transition-matrix)
         initial-state (initialise-model (ds/row-maps initial-send-population))
@@ -245,7 +248,8 @@
      :setting-cost-lookup (->> (ds/row-maps setting-cost)
                                (map (juxt (juxt :need :setting) :cost))
                                (into {}))
-     :valid-setting-academic-years valid-setting-academic-years}))
+     :valid-setting-academic-years valid-setting-academic-years
+     :transition-matrix original-transitions}))
 
 (defn projection->transitions
   [file projections]
@@ -297,12 +301,14 @@
                         :mover-beta-params sc/YearStateBetaParams
                         :mover-state-alphas sc/TransitionAlphas
                         :setting-cost-lookup sc/SettingCostLookup
-                        :valid-setting-academic-years sc/ValidSettingAcademicYears}
+                        :valid-setting-academic-years sc/ValidSettingAcademicYears
+                        :transition-matrix sc/TransitionCounts}
    :witan/param-schema {:seed-year sc/YearSchema
                         :simulations s/Int
                         :random-seed s/Int}
-   :witan/output-schema {:send-output sc/Results}}
-  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years] :as inputs}
+   :witan/output-schema {:send-output sc/Results
+                         :transition-matrix sc/TransitionCounts}}
+  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years transition-matrix] :as inputs}
    {:keys [seed-year random-seed simulations]}]
   (u/set-seed! random-seed)
   (let [projected-future-pop-by-year (->> projected-population
@@ -334,15 +340,17 @@
     (projection->transitions "target/transitions.edn" (apply concat projections))
     ;;    (println mover-beta-params)
     (println "Combining...")
-    {:send-output (transduce identity (combine-rf iterations) reduced)}))
+    {:send-output (transduce identity (combine-rf iterations) reduced)
+     :transition-matrix transition-matrix}))
 
 (defworkflowoutput output-send-results-1-0-0
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
    to get the total cost."
   {:witan/name :send/output-send-results
    :witan/version "1.0.0"
-   :witan/input-schema {:send-output sc/Results}}
-  [{:keys [send-output]} _]
+   :witan/input-schema {:send-output sc/Results
+                        :transition-matrix sc/TransitionCounts}}
+  [{:keys [send-output transition-matrix]} _]
   (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
     (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
       (->> (mapcat (fn [output year]
