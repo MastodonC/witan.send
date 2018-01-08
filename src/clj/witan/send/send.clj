@@ -199,7 +199,7 @@
   [{:keys [initial-send-population transition-matrix population
            setting-cost valid-setting-academic-years]} _]
   (let [transition-matrix (ds/row-maps transition-matrix)
-        transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix)
+        transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix) ;;hard-coded year remove
         transitions (u/transitions-map transition-matrix)
         initial-state (initialise-model (ds/row-maps initial-send-population))
 
@@ -332,6 +332,7 @@
                    (do (println "Reducing...")
                        (transduce (map #(map :model %)) (reduce-rf iterations valid-states setting-cost-lookup) projection))))]
     (projection->transitions "target/transitions.edn" (apply concat projections))
+    ;;    (println mover-beta-params)
     (println "Combining...")
     {:send-output (transduce identity (combine-rf iterations) reduced)}))
 
@@ -347,7 +348,7 @@
       (->> (mapcat (fn [output year]
                      (map (fn [[[academic-year state] stats]]
                             (-> (medley/map-vals round stats)
-                                (assoc :academic-year academic-year :state state :calendar-year year))) (:by-state output))) send-output (range 2017 3000))
+                                (assoc :academic-year academic-year :state state :calendar-year year))) (:by-state output))) send-output (range 2017 3000)) ;;; hard-coded year remove
            (map (apply juxt columns))
            (concat [(map name columns)])
            (csv/write-csv writer))))
