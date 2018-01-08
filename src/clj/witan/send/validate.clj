@@ -50,8 +50,7 @@
   []
   (let [transitions (-> (tu/csv-to-dataset "data/demo/transitions.csv" sc/TransitionCounts)
                         ds/row-maps)
-        filtered (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send)) transitions)
-        ]
+        filtered (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send)) transitions)]
     (reduce (fn [coll {:keys [calendar-year academic-year-1 setting-1 setting-2]}]
               (let [leaver? (= setting-2 sc/non-send)]
                 (-> coll
