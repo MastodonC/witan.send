@@ -25,10 +25,11 @@
 
 (deftest send-workspace-test
   (testing "The default model is run on the workspace and returns the outputs expected"
-    (let [fixed-catalog (mapv #(if (= (:witan/type %) :input)
-                                 (add-input-params %)
-                                 (assoc-in % [:witan/params :simulations] 10))
-                              (:catalog m/send-model))
+    (let [fixed-catalog (->> (:catalog m/send-model)
+                             (mapv #(if (= (:witan/type %) :input)
+                                      (add-input-params %)
+                                      (assoc-in % [:witan/params :simulations] 10)))
+                             (map #(assoc-in % [:witan/params :output-charts] false)))
           workspace     {:workflow  (:workflow m/send-model)
                          :catalog   fixed-catalog
                          :contracts (p/available-fns (m/model-library))}
