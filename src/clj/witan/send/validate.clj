@@ -3,7 +3,6 @@
             [clojure.core.matrix.dataset :as ds]
             [witan.send.params :as p]
             [witan.send.schemas :as sc]
-            [witan.send.acceptance.workspace-test :as w]
             [witan.send.utils :as u]
             [clojure.string :as str]
             [incanter.core :as i])
