@@ -418,5 +418,7 @@
            (map (apply juxt columns))
            (concat [(map name columns)])
            (csv/write-csv writer))))
-  (ch/sankey-transitions (ds/row-maps transition-matrix) 2014 ch/Camden-setting->group) ;;hard coded year
+  (let [transitions-data (ds/row-maps transition-matrix)
+        years (sort (distinct (map :calendar-year transitions-data)))]
+    (run! #(ch/sankey-transitions transitions-data % ch/Camden-setting->group) years))
   send-output)
