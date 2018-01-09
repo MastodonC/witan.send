@@ -7,8 +7,9 @@
             [witan.send.test-utils :as tu]
             [witan.send.schemas :as sc]))
 
-(defn copy-file [source-path dest-path]
-  (io/copy (io/file source-path) (io/file dest-path)))
+(defn move-file [source-path dest-path]
+  (io/copy (io/file source-path) (io/file dest-path))
+  (io/delete-file source-path))
 
 (defn seq-of-maps->data-frame
   [coll]
@@ -106,4 +107,4 @@
        (gather-set-data)
        (seq-of-maps->data-frame)
        (sankey {:title (str "Aggregate setting transitions: " calendar-year "/" (apply str (drop 2 (str (inc calendar-year)))))}))
-  (copy-file "Rplots.pdf" (str "target/transitions_" calendar-year ".pdf")))
+  (move-file "Rplots.pdf" (str "target/historic-transitions_" calendar-year ".pdf")))
