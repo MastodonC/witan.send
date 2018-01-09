@@ -349,8 +349,9 @@
   {:witan/name :send/output-send-results
    :witan/version "1.0.0"
    :witan/input-schema {:send-output sc/Results
-                        :transition-matrix sc/TransitionCounts}}
-  [{:keys [send-output transition-matrix]} _]
+                        :transition-matrix sc/TransitionCounts}
+   :witan/param-schema {:output-charts s/Bool}}
+  [{:keys [send-output transition-matrix]} {:keys [output-charts]}]
   (let [transitions-data (ds/row-maps transition-matrix)
         years (sort (distinct (map :calendar-year transitions-data)))
         initial-projection-year (+ 1 (last years))]
@@ -421,5 +422,6 @@
              (map (apply juxt columns))
              (concat [(map name columns)])
              (csv/write-csv writer))))
-    (run! #(ch/sankey-transitions transitions-data % ch/Camden-setting->group) years)
+    (if (= output-charts true)
+      (run! #(ch/sankey-transitions transitions-data % ch/Camden-setting->group) years))
     send-output))

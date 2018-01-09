@@ -57,7 +57,8 @@
    {:witan/name :output-send-results
     :witan/version "1.0.0"
     :witan/type :output
-    :witan/fn :send/output-send-results}])
+    :witan/fn :send/output-send-results
+    :witan/params {:output-charts true}}])
 
 (defmodel send-model
   "Defines the model"
