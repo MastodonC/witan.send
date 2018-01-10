@@ -31,57 +31,6 @@
 (defn load-transitions [path]
   (-> (tu/csv-to-dataset path sc/TransitionCounts) ds/row-maps))
 
-(def TH-setting->group
-  (hash-map :OOE "Other"
-            :MMSIB "Mainstream"
-            :MU "Other"
-            :MMSOB "Mainstream"
-            :MSSOB "Special"
-            :EO "Other"
-            :EYS "Mainstream"
-            :MMSIB "Mainstream"
-            :MMSOB "Mainstream"
-            :MAP "Other"
-            :MSS "Special"
-            :FEC "Further education"
-            :IMS "Mainstream"
-            :ISS "Special"
-            :ISSR "Special"
-            :MMSIB "Mainstream"
-            :MU "Other"
-            :MMSOB "Mainstream"
-            :MUOB "Other"
-            :MMS "Mainstream"
-            :MSSIB "Special"
-            :MSSOP "Special"
-            :MSSR "Special"
-            :MSSOB "Special"
-            :NMSS "Special"
-            :NMSSR "Special"
-            :MAP "Other"
-            :FEC "Further education"
-            :FEC "Further education"
-            :EO "Other"
-            :NON-SEND "Other"))
-
-(def Camden-setting->group
-  (hash-map :MSS "Special"
-            :IN "Mainstream"
-            :EO "Other"
-            :CC "Other"
-            :MU "Other"
-            :MMS "Mainstream"
-            :IMS "Mainstream"
-            :ISS "Special"
-            :ISSR "Special"
-            :PRU "Other"
-            :OOE "Other"
-            :FEC "Further education"
-            :ISC "Special"
-            :ISCR "Special"
-            :IT "Other"
-            :NON-SEND "Other"))
-
 (defn sankey [{:keys [title] :or {title ""}} df]
   (gg4clj/render
    [[:require "ggforce"]
