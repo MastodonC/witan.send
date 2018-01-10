@@ -29,7 +29,7 @@
                              (mapv #(if (= (:witan/type %) :input)
                                       (add-input-params %)
                                       (assoc-in % [:witan/params :simulations] 10)))
-                             (map #(assoc-in % [:witan/params :output-charts] false)))
+                             (map #(assoc-in % [:witan/params :output] false)))
           workspace     {:workflow  (:workflow m/send-model)
                          :catalog   fixed-catalog
                          :contracts (p/available-fns (m/model-library))}
