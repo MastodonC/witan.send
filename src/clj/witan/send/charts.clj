@@ -80,7 +80,7 @@
             :ISC "Special"
             :ISCR "Special"
             :IT "Other"
-            :NON_SEND "Other"))
+            :NON-SEND "Other"))
 
 (defn sankey [{:keys [title] :or {title ""}} df]
   (gg4clj/render
