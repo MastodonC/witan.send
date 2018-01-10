@@ -307,7 +307,8 @@
                         :simulations s/Int
                         :random-seed s/Int}
    :witan/output-schema {:send-output sc/Results
-                         :transition-matrix sc/TransitionCounts}}
+                         :transition-matrix sc/TransitionCounts
+                         :valid-setting-academic-years sc/ValidSettingAcademicYears}}
   [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years transition-matrix] :as inputs}
    {:keys [seed-year random-seed simulations]}]
   (u/set-seed! random-seed)
@@ -341,7 +342,8 @@
     ;;    (println mover-beta-params)
     (println "Combining...")
     {:send-output (transduce identity (combine-rf iterations) reduced)
-     :transition-matrix transition-matrix}))
+     :transition-matrix transition-matrix
+     :valid-setting-academic-years valid-setting-academic-years}))
 
 (defworkflowoutput output-send-results-1-0-0
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
@@ -349,10 +351,14 @@
   {:witan/name :send/output-send-results
    :witan/version "1.0.0"
    :witan/input-schema {:send-output sc/Results
-                        :transition-matrix sc/TransitionCounts}
+                        :transition-matrix sc/TransitionCounts
+                        :valid-setting-academic-years sc/ValidSettingAcademicYears}
    :witan/param-schema {:output-charts s/Bool}}
-  [{:keys [send-output transition-matrix]} {:keys [output-charts]}]
-  (let [transitions-data (ds/row-maps transition-matrix)
+  [{:keys [send-output transition-matrix valid-setting-academic-years]} {:keys [output-charts]}]
+  (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
+                                   (reduce #(assoc %1 (:setting %2) (:setting->group %2)) {}))
+                              :NON-SEND "Other" )
+        transitions-data (ds/row-maps transition-matrix)
         years (sort (distinct (map :calendar-year transitions-data)))
         initial-projection-year (+ 1 (last years))]
     (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
@@ -418,10 +424,10 @@
                        (map (fn [[ay-group stats]]
                               (-> (medley/map-vals round stats)
                                   (assoc :ay-group ay-group :calendar-year year)))
-                            (:total-in-send-by-ay-group output))) send-output (range initial-projection-year 3000)) ;;TODO hard coded years
+                            (:total-in-send-by-ay-group output))) send-output (range initial-projection-year 3000))
              (map (apply juxt columns))
              (concat [(map name columns)])
              (csv/write-csv writer))))
     (if (= output-charts true)
-      (run! #(ch/sankey-transitions transitions-data % ch/Camden-setting->group) years))
+      (run! #(ch/sankey-transitions transitions-data % valid-settings) years))
     send-output))
