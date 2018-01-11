@@ -350,6 +350,32 @@
      :valid-setting-academic-years valid-setting-academic-years
      :population population}))
 
+(defn joiner-rate [joiners population ages years]
+  (reduce (fn [coll academic-year]
+            (reduce (fn [collection calendar-year]
+                      (let [j (get-in joiners [calendar-year academic-year] 0)]
+                        (assoc-in collection [academic-year calendar-year]
+                                  {:alpha j
+                                   :beta (- (get-in population [calendar-year academic-year]) j)})))
+                    coll years)) {} ages))
+
+(defn leaver-rate [transitions-filtered]
+  (reduce (fn [coll {:keys [calendar-year academic-year-1 setting-1 setting-2]}]
+            (let [leaver? (= setting-2 sc/non-send)]
+              (-> coll
+                  (update-in [academic-year-1 calendar-year :alpha] u/some+ (if leaver? 1 0))
+                  (update-in [academic-year-1 calendar-year :beta] u/some+ (if leaver? 0 1)))))
+          {} transitions-filtered))
+
+
+(defn mover-rate [transitions-filtered]
+  (reduce (fn [coll {:keys [calendar-year academic-year-1 setting-1 setting-2]}]
+            (let [mover? (not= setting-1 setting-2)]
+              (-> coll
+                  (update-in [academic-year-1 calendar-year :alpha] u/some+ (if mover? 1 0))
+                  (update-in [academic-year-1 calendar-year :beta] u/some+ (if mover? 0 1)))))
+          {}
+          transitions-filtered))
 
 (defworkflowoutput output-send-results-1-0-0
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
@@ -358,16 +384,34 @@
    :witan/version "1.0.0"
    :witan/input-schema {:send-output sc/Results
                         :transition-matrix sc/TransitionCounts
-                        :valid-setting-academic-years sc/ValidSettingAcademicYears}
+                        :valid-setting-academic-years sc/ValidSettingAcademicYears
+                        :population sc/PopulationDataset}
    :witan/param-schema {:output s/Bool}}
-  [{:keys [send-output transition-matrix valid-setting-academic-years]} {:keys [output]}]
+  [{:keys [send-output transition-matrix valid-setting-academic-years population]} {:keys [output]}]
   (if (= output true)
     (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
                                      (reduce #(assoc %1 (:setting %2) (:setting->group %2)) {}))
                                 :NON-SEND "Other" )
           transitions-data (ds/row-maps transition-matrix)
           years (sort (distinct (map :calendar-year transitions-data)))
-          initial-projection-year (+ 1 (last years))]
+          initial-projection-year (+ 1 (last years))
+          joiners-count (p/calculate-joiners-per-calendar-year transitions-data)
+          population-count (-> population
+                               ds/row-maps
+                               p/calculate-population-per-calendar-year)
+          ages (-> population-count first val keys sort)
+          joiner-rates (joiner-rate joiners-count population-count ages years)
+          joiner-rates-CI (map #(ch/confidence-interval joiner-rates %) years)
+          filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send)) transitions-data)
+          leaver-rates (leaver-rate filter-leavers)
+          leaver-rates-CI (map #(ch/confidence-interval leaver-rates %) years)
+          filter-movers (remove (fn [{:keys [setting-1 setting-2]}]
+                                  (or (= setting-1 sc/non-send)
+                                      (= setting-2 sc/non-send))) transitions-data)
+          mover-rates (mover-rate filter-movers)
+          mover-rates-CI (map #(ch/confidence-interval mover-rates %) years)
+          _ (prn (ch/ribbon-plot joiner-rates "Mover probability by academic year" years))
+          ]
       (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
         (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
           (->> (mapcat (fn [output year]
