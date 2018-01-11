@@ -28,9 +28,6 @@
                          {:id i :x "NCY 7" :y s2 :value v :setting s2}))
                (range))))
 
-(defn load-transitions [path]
-  (-> (tu/csv-to-dataset path sc/TransitionCounts) ds/row-maps))
-
 (defn sankey [{:keys [title] :or {title ""}} df]
   (gg4clj/render
    [[:require "ggforce"]
