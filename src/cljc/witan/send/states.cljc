@@ -29,7 +29,7 @@
 
 (defn calculate-valid-states-from-setting-academic-years
   [valid-setting-academic-years]
-  (for [{:keys [setting min-academic-year max-academic-year needs]} valid-setting-academic-years
+  (for [{:keys [setting setting->group min-academic-year max-academic-year needs]} valid-setting-academic-years
         need (map keyword (str/split needs #","))
         academic-year (range min-academic-year (inc max-academic-year))]
     [academic-year (state need setting)]))

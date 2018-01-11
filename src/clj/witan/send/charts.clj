@@ -7,8 +7,9 @@
             [witan.send.test-utils :as tu]
             [witan.send.schemas :as sc]))
 
-(defn copy-file [source-path dest-path]
-  (io/copy (io/file source-path) (io/file dest-path)))
+(defn move-file [source-path dest-path]
+  (io/copy (io/file source-path) (io/file dest-path))
+  (io/delete-file source-path))
 
 (defn seq-of-maps->data-frame
   [coll]
@@ -29,57 +30,6 @@
 
 (defn load-transitions [path]
   (-> (tu/csv-to-dataset path sc/TransitionCounts) ds/row-maps))
-
-(def TH-setting->group
-  (hash-map :OOE "Other"
-            :MMSIB "Mainstream"
-            :MU "Other"
-            :MMSOB "Mainstream"
-            :MSSOB "Special"
-            :EO "Other"
-            :EYS "Mainstream"
-            :MMSIB "Mainstream"
-            :MMSOB "Mainstream"
-            :MAP "Other"
-            :MSS "Special"
-            :FEC "Further education"
-            :IMS "Mainstream"
-            :ISS "Special"
-            :ISSR "Special"
-            :MMSIB "Mainstream"
-            :MU "Other"
-            :MMSOB "Mainstream"
-            :MUOB "Other"
-            :MMS "Mainstream"
-            :MSSIB "Special"
-            :MSSOP "Special"
-            :MSSR "Special"
-            :MSSOB "Special"
-            :NMSS "Special"
-            :NMSSR "Special"
-            :MAP "Other"
-            :FEC "Further education"
-            :FEC "Further education"
-            :EO "Other"
-            :NON-SEND "Other"))
-
-(def Camden-setting->group
-  (hash-map :MSS "Special"
-            :IN "Mainstream"
-            :EO "Other"
-            :CC "Other"
-            :MU "Other"
-            :MMS "Mainstream"
-            :IMS "Mainstream"
-            :ISS "Special"
-            :ISSR "Special"
-            :PRU "Other"
-            :OOE "Other"
-            :FEC "Further education"
-            :ISC "Special"
-            :ISCR "Special"
-            :IT "Other"
-            :NON_SEND "Other"))
 
 (defn sankey [{:keys [title] :or {title ""}} df]
   (gg4clj/render
@@ -106,4 +56,4 @@
        (gather-set-data)
        (seq-of-maps->data-frame)
        (sankey {:title (str "Aggregate setting transitions: " calendar-year "/" (apply str (drop 2 (str (inc calendar-year)))))}))
-  (copy-file "Rplots.pdf" "target/transitions_2014.pdf"))
+  (move-file "Rplots.pdf" (str "target/historic-transitions_" calendar-year ".pdf")))
