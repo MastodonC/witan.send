@@ -33,19 +33,17 @@
    [[:require "ggforce"]
     [:<- :foo (gg4clj/data-frame df)]
     [:<- :palette [:c "#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7" "#1b9e77" "#d95f02" "#7570b3" "#e7298a"]]
-    [:<- :palette [:c "#4ab276" "#4ab276" "#4ab276"  "#4ab276"  "#4ab276" ]]
     (gg4clj/r+
      [:ggplot :foo [:aes :x {:id :id :split [:factor :y] :value :value}]]
-     [:scale_fill_manual {:values :palette}]
+     [:ggtitle title]
      [:geom_parallel_sets [:aes {:fill :setting}] {:alpha 0.5 :axis.width 0.1}]
      [:geom_parallel_sets_axes {:axis.width 0.2 :fill "#F6F6F6" :color "#DDDDDD"}]
      [:geom_parallel_sets_labels {:color "#444444" :angle 0 :size 2.5}]
-     [:ggtitle title]
-     [:theme {:axis.title.x [:element_blank]
-              :legend.position "none"}])]))
+     [:theme {:axis.title.x [:element_blank]}])]))
 
 (defn sankey-transitions [data calendar-year settings]
-  (->> (remove v/joiner? data)
+  (->> data
+       (remove v/joiner?)
        (remove v/leaver?)
        (filter #(= (:calendar-year %) calendar-year))
        (filter #(= (:academic-year-1 %) 6))
