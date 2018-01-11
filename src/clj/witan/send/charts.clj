@@ -66,3 +66,36 @@
                        (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.975)]
                       [0 0])))))))
 
+(defn pull-year
+  [data pos]
+  (->> (nth data pos)
+       (map (fn [[a b c]] (if (zero? b) [a :NA :NA] [a b c])))
+       (apply mapv vector)))
+
+(defn ribbon-plot
+  [data title years]
+  (let [
+        year1 (pull-year data 0)
+        year2 (pull-year data 1)
+        year3 (pull-year data 2)
+        year4 (pull-year data 3)
+      	[ay upper1 lower1] year1
+        [_ upper2 lower2] year2
+        [_ upper3 lower3] year3
+        [_ upper4 lower4] year4]
+    (map #(pull-year data %) years)
+    #_(gg4clj/render [[:<- :foo (gg4clj/data-frame
+                                 {:year ay :upper1 upper1 :lower1 lower1 :upper2 upper2 :lower2 lower2 :upper3 upper3 :lower3 lower3 :upper4 upper4 :lower4 lower4})]
+                      (gg4clj/r+
+                       [:ggplot :foo [:aes :year :upper1]]
+                       [:geom_ribbon [:aes {:ymax :upper1 :ymin :lower1}] {:fill "#1b9e77" :alpha 0.2}]
+                       [:geom_ribbon [:aes {:ymax :upper2 :ymin :lower2}] {:fill "#d95f02" :alpha 0.2}]
+                       [:geom_ribbon [:aes {:ymax :upper3 :ymin :lower3}] {:fill "#7570b3" :alpha 0.2}]
+                       [:geom_ribbon [:aes {:ymax :upper4 :ymin :lower4}] {:fill "#e7298a" :alpha 0.2}]
+                       [:ggtitle title]
+                       [:xlab "NCY"]
+                       [:ylab "95% probability interval"]
+                       [:scale_x_continuous {:breaks [:seq -5 15 {:by 2}]}]
+                       [:scale_fill_manual {:name "Years" :values [:c "red" "yellow" "grey" "blue"] :labels [:c "2013" "2014" "2015" "2016"]}]
+                       [:scale_colour_manual "" {:values "blue"}]
+                       [:theme])])))
