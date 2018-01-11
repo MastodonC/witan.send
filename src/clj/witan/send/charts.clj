@@ -5,7 +5,8 @@
             [witan.send.utils :as u]
             [clojure.core.matrix.dataset :as ds]
             [witan.send.test-utils :as tu]
-            [witan.send.schemas :as sc]))
+            [witan.send.schemas :as sc])
+  (:import [org.apache.commons.math3.distribution BetaDistribution]))
 
 (defn move-file [source-path dest-path]
   (io/copy (io/file source-path) (io/file dest-path))
@@ -52,3 +53,16 @@
        (seq-of-maps->data-frame)
        (sankey {:title (str "Aggregate setting transitions: " calendar-year "/" (apply str (drop 2 (str (inc calendar-year)))))}))
   (move-file "Rplots.pdf" (str "target/historic-transitions_" calendar-year ".pdf")))
+
+(defn confidence-interval
+  [results calendar-year]
+  (let [academic-years (keys results)]
+    (->> (for [academic-year (sort academic-years)]
+           (let [alpha (get-in results [academic-year calendar-year :alpha] 0)
+                 beta (get-in results [academic-year calendar-year :beta])]
+             (apply vector academic-year
+                    (if (and (pos? alpha) (pos? beta))
+                      [(.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.025)
+                       (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.975)]
+                      [0 0])))))))
+
