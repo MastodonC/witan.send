@@ -13,6 +13,7 @@
             [witan.send.step :as step]
             [witan.send.states :as states]
             [witan.send.utils :as u :refer [round]]
+            [witan.send.charts :as ch]
             [clojure.java.io :as io]
             [incanter.stats :as stats]
             [medley.core :as medley]
@@ -195,10 +196,12 @@
                          :mover-beta-params sc/YearStateBetaParams
                          :mover-state-alphas sc/TransitionAlphas
                          :setting-cost-lookup sc/SettingCostLookup
-                         :valid-setting-academic-years sc/ValidSettingAcademicYears}}
+                         :valid-setting-academic-years sc/ValidSettingAcademicYears
+                         :transition-matrix sc/TransitionCounts}}
   [{:keys [initial-send-population transition-matrix population
            setting-cost valid-setting-academic-years]} _]
-  (let [transition-matrix (ds/row-maps transition-matrix)
+  (let [original-transitions transition-matrix
+        transition-matrix (ds/row-maps transition-matrix)
         transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix) ;;hard-coded year remove
         transitions (u/transitions-map transition-matrix)
         initial-state (initialise-model (ds/row-maps initial-send-population))
@@ -245,7 +248,8 @@
      :setting-cost-lookup (->> (ds/row-maps setting-cost)
                                (map (juxt (juxt :need :setting) :cost))
                                (into {}))
-     :valid-setting-academic-years valid-setting-academic-years}))
+     :valid-setting-academic-years valid-setting-academic-years
+     :transition-matrix original-transitions}))
 
 (defn projection->transitions
   [file projections]
@@ -297,12 +301,15 @@
                         :mover-beta-params sc/YearStateBetaParams
                         :mover-state-alphas sc/TransitionAlphas
                         :setting-cost-lookup sc/SettingCostLookup
-                        :valid-setting-academic-years sc/ValidSettingAcademicYears}
+                        :valid-setting-academic-years sc/ValidSettingAcademicYears
+                        :transition-matrix sc/TransitionCounts}
    :witan/param-schema {:seed-year sc/YearSchema
                         :simulations s/Int
                         :random-seed s/Int}
-   :witan/output-schema {:send-output sc/Results}}
-  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years] :as inputs}
+   :witan/output-schema {:send-output sc/Results
+                         :transition-matrix sc/TransitionCounts
+                         :valid-setting-academic-years sc/ValidSettingAcademicYears}}
+  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years transition-matrix] :as inputs}
    {:keys [seed-year random-seed simulations]}]
   (u/set-seed! random-seed)
   (let [projected-future-pop-by-year (->> projected-population
@@ -334,80 +341,93 @@
     (projection->transitions "target/transitions.edn" (apply concat projections))
     ;;    (println mover-beta-params)
     (println "Combining...")
-    {:send-output (transduce identity (combine-rf iterations) reduced)}))
+    {:send-output (transduce identity (combine-rf iterations) reduced)
+     :transition-matrix transition-matrix
+     :valid-setting-academic-years valid-setting-academic-years}))
 
 (defworkflowoutput output-send-results-1-0-0
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
    to get the total cost."
   {:witan/name :send/output-send-results
    :witan/version "1.0.0"
-   :witan/input-schema {:send-output sc/Results}}
-  [{:keys [send-output]} _]
-  (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
-    (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
-      (->> (mapcat (fn [output year]
-                     (map (fn [[[academic-year state] stats]]
-                            (-> (medley/map-vals round stats)
-                                (assoc :academic-year academic-year :state state :calendar-year year))) (:by-state output))) send-output (range 2017 3000)) ;;; hard-coded year remove
-           (map (apply juxt columns))
-           (concat [(map name columns)])
-           (csv/write-csv writer))))
-  (with-open [writer (io/writer (io/file "target/output-ay.csv"))]
-    (let [columns [:calendar-year :academic-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
-      (->> (mapcat (fn [output year]
-                     (map (fn [[academic-year stats]]
-                            (-> (medley/map-vals round stats)
-                                (assoc :academic-year academic-year :calendar-year year)))
-                          (:total-in-send-by-ay output))) send-output (range 2017 3000))
-           (map (apply juxt columns))
-           (concat [(map name columns)])
-           (csv/write-csv writer))))
-  (with-open [writer (io/writer (io/file "target/output-need.csv"))]
-    (let [columns [:calendar-year :need :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
-      (->> (mapcat (fn [output year]
-                     (map (fn [[need stats]]
-                            (-> (medley/map-vals round stats)
-                                (assoc :need (name need) :calendar-year year)))
-                          (:total-in-send-by-need output))) send-output (range 2017 3000))
-           (map (apply juxt columns))
-           (concat [(map name columns)])
-           (csv/write-csv writer))))
-  (with-open [writer (io/writer (io/file "target/output-setting.csv"))]
-    (let [columns [:calendar-year :setting :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
-      (->> (mapcat (fn [output year]
-                     (map (fn [[setting stats]]
-                            (-> (medley/map-vals round stats)
-                                (assoc :setting (name setting) :calendar-year year)))
-                          (:total-in-send-by-setting output))) send-output (range 2017 3000))
-           (map (apply juxt columns))
-           (concat [(map name columns)])
-           (csv/write-csv writer))))
-  (with-open [writer (io/writer (io/file "target/output-count.csv"))]
-    (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
-      (->> (map (fn [stats year]
-                  (-> (medley/map-vals round stats)
-                      (assoc :calendar-year year)))
-                (map :total-in-send send-output) (range 2017 3000))
-           (map (apply juxt columns))
-           (concat [(map name columns)])
-           (csv/write-csv writer))))
-  (with-open [writer (io/writer (io/file "target/output-cost.csv"))]
-    (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
-      (->> (map (fn [stats year]
-                  (-> (medley/map-vals round stats)
-                      (assoc :calendar-year year)))
-                (map :total-cost send-output) (range 2017 3000))
-           (map (apply juxt columns))
-           (concat [(map name columns)])
-           (csv/write-csv writer))))
-  (with-open [writer (io/writer (io/file "target/output-ay-group.csv"))]
-    (let [columns [:calendar-year :ay-group :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
-      (->> (mapcat (fn [output year]
-                     (map (fn [[ay-group stats]]
-                            (-> (medley/map-vals round stats)
-                                (assoc :ay-group ay-group :calendar-year year)))
-                          (:total-in-send-by-ay-group output))) send-output (range 2017 3000))
-           (map (apply juxt columns))
-           (concat [(map name columns)])
-           (csv/write-csv writer))))
+   :witan/input-schema {:send-output sc/Results
+                        :transition-matrix sc/TransitionCounts
+                        :valid-setting-academic-years sc/ValidSettingAcademicYears}
+   :witan/param-schema {:output s/Bool}}
+  [{:keys [send-output transition-matrix valid-setting-academic-years]} {:keys [output]}]
+  (if (= output true)
+    (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
+                                     (reduce #(assoc %1 (:setting %2) (:setting->group %2)) {}))
+                                :NON-SEND "Other" )
+          transitions-data (ds/row-maps transition-matrix)
+          years (sort (distinct (map :calendar-year transitions-data)))
+          initial-projection-year (+ 1 (last years))]
+      (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
+        (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (->> (mapcat (fn [output year]
+                         (map (fn [[[academic-year state] stats]]
+                                (-> (medley/map-vals round stats)
+                                    (assoc :academic-year academic-year :state state :calendar-year year))) (:by-state output))) send-output (range initial-projection-year 3000))
+               (map (apply juxt columns))
+               (concat [(map name columns)])
+               (csv/write-csv writer))))
+      (with-open [writer (io/writer (io/file "target/output-ay.csv"))]
+        (let [columns [:calendar-year :academic-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (->> (mapcat (fn [output year]
+                         (map (fn [[academic-year stats]]
+                                (-> (medley/map-vals round stats)
+                                    (assoc :academic-year academic-year :calendar-year year)))
+                              (:total-in-send-by-ay output))) send-output (range initial-projection-year 3000))
+               (map (apply juxt columns))
+               (concat [(map name columns)])
+               (csv/write-csv writer))))
+      (with-open [writer (io/writer (io/file "target/output-need.csv"))]
+        (let [columns [:calendar-year :need :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (->> (mapcat (fn [output year]
+                         (map (fn [[need stats]]
+                                (-> (medley/map-vals round stats)
+                                    (assoc :need (name need) :calendar-year year)))
+                              (:total-in-send-by-need output))) send-output (range initial-projection-year 3000))
+               (map (apply juxt columns))
+               (concat [(map name columns)])
+               (csv/write-csv writer))))
+      (with-open [writer (io/writer (io/file "target/output-setting.csv"))]
+        (let [columns [:calendar-year :setting :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (->> (mapcat (fn [output year]
+                         (map (fn [[setting stats]]
+                                (-> (medley/map-vals round stats)
+                                    (assoc :setting (name setting) :calendar-year year)))
+                              (:total-in-send-by-setting output))) send-output (range initial-projection-year 3000))
+               (map (apply juxt columns))
+               (concat [(map name columns)])
+               (csv/write-csv writer))))
+      (with-open [writer (io/writer (io/file "target/output-count.csv"))]
+        (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (->> (map (fn [stats year]
+                      (-> (medley/map-vals round stats)
+                          (assoc :calendar-year year)))
+                    (map :total-in-send send-output) (range initial-projection-year 3000))
+               (map (apply juxt columns))
+               (concat [(map name columns)])
+               (csv/write-csv writer))))
+      (with-open [writer (io/writer (io/file "target/output-cost.csv"))]
+        (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (->> (map (fn [stats year]
+                      (-> (medley/map-vals round stats)
+                          (assoc :calendar-year year)))
+                    (map :total-cost send-output) (range initial-projection-year 3000))
+               (map (apply juxt columns))
+               (concat [(map name columns)])
+               (csv/write-csv writer))))
+      (with-open [writer (io/writer (io/file "target/output-ay-group.csv"))]
+        (let [columns [:calendar-year :ay-group :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (->> (mapcat (fn [output year]
+                         (map (fn [[ay-group stats]]
+                                (-> (medley/map-vals round stats)
+                                    (assoc :ay-group ay-group :calendar-year year)))
+                              (:total-in-send-by-ay-group output))) send-output (range initial-projection-year 3000))
+               (map (apply juxt columns))
+               (concat [(map name columns)])
+               (csv/write-csv writer))))
+      (run! #(ch/sankey-transitions transitions-data % valid-settings) years)))
   send-output)
