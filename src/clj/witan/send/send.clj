@@ -412,7 +412,7 @@
           population-count (-> population
                                ds/row-maps
                                p/calculate-population-per-calendar-year)
-          ages (-> population-count first val keys sort)
+          ages (-> population-count first val keys)
           joiner-rates (joiner-rate joiners-count population-count ages years)
           joiner-rates-CI (map #(confidence-interval joiner-rates %) years)
           filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send)) transitions-data)
