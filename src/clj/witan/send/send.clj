@@ -18,7 +18,8 @@
             [incanter.stats :as stats]
             [medley.core :as medley]
             [redux.core :as r]
-            [clojure.string :as str]))
+            [clojure.string :as str])
+  (:import [org.apache.commons.math3.distribution BetaDistribution]))
 
 (defn initialise-model [send-data]
   (reduce (fn [coll {:keys [academic-year need setting population]}]
@@ -377,6 +378,18 @@
           {}
           transitions-filtered))
 
+(defn confidence-interval
+  [results calendar-year]
+  (let [academic-years (keys results)]
+    (->> (for [academic-year (sort academic-years)]
+           (let [alpha (get-in results [academic-year calendar-year :alpha] 0)
+                 beta (get-in results [academic-year calendar-year :beta])]
+             (apply vector academic-year
+                    (if (and (pos? alpha) (pos? beta))
+                      [(.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.025)
+                       (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.975)]
+                      [0 0])))))))
+
 (defworkflowoutput output-send-results-1-0-0
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
    to get the total cost."
@@ -401,16 +414,16 @@
                                p/calculate-population-per-calendar-year)
           ages (-> population-count first val keys sort)
           joiner-rates (joiner-rate joiners-count population-count ages years)
-          joiner-rates-CI (map #(ch/confidence-interval joiner-rates %) years)
+          joiner-rates-CI (map #(confidence-interval joiner-rates %) years)
           filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send)) transitions-data)
           leaver-rates (leaver-rate filter-leavers)
-          leaver-rates-CI (map #(ch/confidence-interval leaver-rates %) years)
+          leaver-rates-CI (map #(confidence-interval leaver-rates %) years)
           filter-movers (remove (fn [{:keys [setting-1 setting-2]}]
                                   (or (= setting-1 sc/non-send)
                                       (= setting-2 sc/non-send))) transitions-data)
           mover-rates (mover-rate filter-movers)
-          mover-rates-CI (map #(ch/confidence-interval mover-rates %) years)
-          _ (prn (ch/ribbon-plot joiner-rates "Mover probability by academic year" years))
+          mover-rates-CI (map #(confidence-interval mover-rates %) years)
+          _ (prn (ch/ribbon-plot joiner-rates-CI "Joiner probability by academic year" years)
           ]
       (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
         (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
