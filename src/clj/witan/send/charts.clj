@@ -59,30 +59,44 @@
        (map (fn [[a b c]] (if (zero? b) [a :NA :NA] [a b c])))
        (apply mapv vector)))
 
+(defn create-keys [string year-count]
+  (map (fn [n] (keyword (str string n))) (range year-count)))
+
+(defn create-CI-map [string data pos year-count]
+  (reduce into {}
+          (map (fn [k v]
+                 (assoc {} k v))
+               (create-keys string year-count)
+               (map #(nth (nth data %) pos) (range year-count)))))
+
+(defn random-colour []
+  (apply str "#" (repeatedly 6 #(format "%x" (rand-int 16)))))
+
+(defn ribbon-vec [pos colour]
+  [:geom_ribbon [:aes {:ymax (keyword (str "upper" pos)) :ymin (keyword (str "lower" pos))}] {:fill colour :alpha 0.2}])
+
 (defn ribbon-plot
-  [data title years]
-  (let [
-        year1 (pull-year data 0)
-        year2 (pull-year data 1)
-        year3 (pull-year data 2)
-        year4 (pull-year data 3)
-      	[ay upper1 lower1] year1
-        [_ upper2 lower2] year2
-        [_ upper3 lower3] year3
-        [_ upper4 lower4] year4]
-    (map #(pull-year data %) years)
-    #_(gg4clj/render [[:<- :foo (gg4clj/data-frame
-                                 {:year ay :upper1 upper1 :lower1 lower1 :upper2 upper2 :lower2 lower2 :upper3 upper3 :lower3 lower3 :upper4 upper4 :lower4 lower4})]
-                      (gg4clj/r+
-                       [:ggplot :foo [:aes :year :upper1]]
-                       [:geom_ribbon [:aes {:ymax :upper1 :ymin :lower1}] {:fill "#1b9e77" :alpha 0.2}]
-                       [:geom_ribbon [:aes {:ymax :upper2 :ymin :lower2}] {:fill "#d95f02" :alpha 0.2}]
-                       [:geom_ribbon [:aes {:ymax :upper3 :ymin :lower3}] {:fill "#7570b3" :alpha 0.2}]
-                       [:geom_ribbon [:aes {:ymax :upper4 :ymin :lower4}] {:fill "#e7298a" :alpha 0.2}]
-                       [:ggtitle title]
-                       [:xlab "NCY"]
-                       [:ylab "95% probability interval"]
-                       [:scale_x_continuous {:breaks [:seq -5 15 {:by 2}]}]
-                       [:scale_fill_manual {:name "Years" :values [:c "red" "yellow" "grey" "blue"] :labels [:c "2013" "2014" "2015" "2016"]}]
-                       [:scale_colour_manual "" {:values "blue"}]
-                       [:theme])])))
+  [data title years colours]
+  (let [n-years (count years)
+        filter-data (map #(pull-year data %) (range n-years))
+        ay (first (first filter-data))
+        uppers (create-CI-map "upper" filter-data 1 n-years)
+        lowers (create-CI-map "lower" filter-data 2 n-years)
+        ribbon-all-years (map (fn [n c] (ribbon-vec n c)) (range n-years) colours)]
+    (gg4clj/render [[:<- :foo
+                     (gg4clj/data-frame
+                      (merge lowers uppers {:year ay}))]
+                    (apply gg4clj/r+ (concat [[:ggplot :foo [:aes :year :upper0]]]
+                                             ribbon-all-years
+                                             [[:ggtitle (str title "probability by academic year")]]
+                                             [[:xlab "NCY"]]
+                                             [[:ylab "95% probability interval"]]
+                                             [[:scale_x_continuous {:breaks [:seq -5 15 {:by 2}]}]]
+                                             [[:scale_fill_manual {:name "Years"
+                                                                   :values [:c "red" "yellow" "grey" "blue"]
+                                                                   :labels (vec (concat [:c] (map str years)))}]]
+                                             ;;[[:scale_colour_manual "" {:values "blue"}]]
+                                             [[:theme]]))]))
+  (move-file "Rplots.pdf" (str "target/" title "_probability.pdf")))
+
+;;scale_colour_manual(values=c("red","green","blue"))
