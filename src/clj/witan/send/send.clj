@@ -423,7 +423,7 @@
                                       (= setting-2 sc/non-send))) transitions-data)
           mover-rates (mover-rate filter-movers)
           mover-rates-CI (map #(confidence-interval mover-rates %) years)
-          #_ (prn (ch/ribbon-plot joiner-rates-CI "Joiner probability by academic year" years))]
+          n-colours (vec (repeatedly (count years) ch/random-colour))]
       (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
         (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
           (->> (mapcat (fn [output year]
@@ -491,5 +491,8 @@
                (map (apply juxt columns))
                (concat [(map name columns)])
                (csv/write-csv writer))))
-      (run! #(ch/sankey-transitions transitions-data % valid-settings) years)))
+      (run! #(ch/sankey-transitions transitions-data % valid-settings) years)
+      (ch/ribbon-plot joiner-rates-CI "Joiner" years n-colours)
+      (ch/ribbon-plot leaver-rates-CI "Leaver" years n-colours)
+      (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)))
   send-output)
