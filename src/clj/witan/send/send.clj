@@ -18,7 +18,8 @@
             [incanter.stats :as stats]
             [medley.core :as medley]
             [redux.core :as r]
-            [clojure.string :as str]))
+            [clojure.string :as str])
+  (:import [org.apache.commons.math3.distribution BetaDistribution]))
 
 (defn initialise-model [send-data]
   (reduce (fn [coll {:keys [academic-year need setting population]}]
@@ -197,13 +198,14 @@
                          :mover-state-alphas sc/TransitionAlphas
                          :setting-cost-lookup sc/SettingCostLookup
                          :valid-setting-academic-years sc/ValidSettingAcademicYears
-                         :transition-matrix sc/TransitionCounts}}
+                         :transition-matrix sc/TransitionCounts
+                         :population sc/PopulationDataset}}
   [{:keys [initial-send-population transition-matrix population
            setting-cost valid-setting-academic-years]} _]
   (let [original-transitions transition-matrix
         transition-matrix (ds/row-maps transition-matrix)
         transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix) ;;hard-coded year remove
-        transitions (u/transitions-map transition-matrix)
+        transitions (u/transitions-map transition-matrix) ;; at this stage we would want to change the counts, also very imporantly this object isn't being used below to calculate the distribution params!
         initial-state (initialise-model (ds/row-maps initial-send-population))
 
         valid-settings (->> (ds/row-maps valid-setting-academic-years)
@@ -249,7 +251,8 @@
                                (map (juxt (juxt :need :setting) :cost))
                                (into {}))
      :valid-setting-academic-years valid-setting-academic-years
-     :transition-matrix original-transitions}))
+     :transition-matrix original-transitions
+     :population population}))
 
 (defn projection->transitions
   [file projections]
@@ -293,7 +296,8 @@
    row for each individual/year/simulation. Also includes age & state columns"
   {:witan/name :send/run-send-model
    :witan/version "1.0.0"
-   :witan/input-schema {:population-by-age-state sc/ModelState
+   :witan/input-schema {:population sc/PopulationDataset
+                        :population-by-age-state sc/ModelState
                         :projected-population sc/PopulationByCalendarAndAcademicYear
                         :joiner-beta-params sc/JoinerBetaParams
                         :leaver-beta-params sc/YearStateBetaParams
@@ -308,8 +312,9 @@
                         :random-seed s/Int}
    :witan/output-schema {:send-output sc/Results
                          :transition-matrix sc/TransitionCounts
-                         :valid-setting-academic-years sc/ValidSettingAcademicYears}}
-  [{:keys [population-by-age-state projected-population joiner-beta-params joiner-state-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years transition-matrix] :as inputs}
+                         :valid-setting-academic-years sc/ValidSettingAcademicYears
+                         :population sc/PopulationDataset}}
+  [{:keys [population population-by-age-state projected-population joiner-beta-params joiner-state-alphas leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years transition-matrix] :as inputs}
    {:keys [seed-year random-seed simulations]}]
   (u/set-seed! random-seed)
   (let [projected-future-pop-by-year (->> projected-population
@@ -343,7 +348,47 @@
     (println "Combining...")
     {:send-output (transduce identity (combine-rf iterations) reduced)
      :transition-matrix transition-matrix
-     :valid-setting-academic-years valid-setting-academic-years}))
+     :valid-setting-academic-years valid-setting-academic-years
+     :population population}))
+
+(defn joiner-rate [joiners population ages years]
+  (reduce (fn [coll academic-year]
+            (reduce (fn [collection calendar-year]
+                      (let [j (get-in joiners [calendar-year academic-year] 0)]
+                        (assoc-in collection [academic-year calendar-year]
+                                  {:alpha j
+                                   :beta (- (get-in population [calendar-year academic-year]) j)})))
+                    coll years)) {} ages))
+
+(defn leaver-rate [transitions-filtered]
+  (reduce (fn [coll {:keys [calendar-year academic-year-1 setting-1 setting-2]}]
+            (let [leaver? (= setting-2 sc/non-send)]
+              (-> coll
+                  (update-in [academic-year-1 calendar-year :alpha] u/some+ (if leaver? 1 0))
+                  (update-in [academic-year-1 calendar-year :beta] u/some+ (if leaver? 0 1)))))
+          {} transitions-filtered))
+
+
+(defn mover-rate [transitions-filtered]
+  (reduce (fn [coll {:keys [calendar-year academic-year-1 setting-1 setting-2]}]
+            (let [mover? (not= setting-1 setting-2)]
+              (-> coll
+                  (update-in [academic-year-1 calendar-year :alpha] u/some+ (if mover? 1 0))
+                  (update-in [academic-year-1 calendar-year :beta] u/some+ (if mover? 0 1)))))
+          {}
+          transitions-filtered))
+
+(defn confidence-interval
+  [results calendar-year]
+  (let [academic-years (keys results)]
+    (->> (for [academic-year (sort academic-years)]
+           (let [alpha (get-in results [academic-year calendar-year :alpha] 0)
+                 beta (get-in results [academic-year calendar-year :beta])]
+             (apply vector academic-year
+                    (if (and (pos? alpha) (pos? beta))
+                      [(.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.025)
+                       (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.975)]
+                      [0 0])))))))
 
 (defworkflowoutput output-send-results-1-0-0
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
@@ -352,16 +397,33 @@
    :witan/version "1.0.0"
    :witan/input-schema {:send-output sc/Results
                         :transition-matrix sc/TransitionCounts
-                        :valid-setting-academic-years sc/ValidSettingAcademicYears}
+                        :valid-setting-academic-years sc/ValidSettingAcademicYears
+                        :population sc/PopulationDataset}
    :witan/param-schema {:output s/Bool}}
-  [{:keys [send-output transition-matrix valid-setting-academic-years]} {:keys [output]}]
+  [{:keys [send-output transition-matrix valid-setting-academic-years population]} {:keys [output]}]
   (if (= output true)
     (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
                                      (reduce #(assoc %1 (:setting %2) (:setting->group %2)) {}))
                                 :NON-SEND "Other" )
           transitions-data (ds/row-maps transition-matrix)
           years (sort (distinct (map :calendar-year transitions-data)))
-          initial-projection-year (+ 1 (last years))]
+          initial-projection-year (+ 1 (last years))
+          joiners-count (p/calculate-joiners-per-calendar-year transitions-data)
+          population-count (-> population
+                               ds/row-maps
+                               p/calculate-population-per-calendar-year)
+          ages (-> population-count first val keys)
+          joiner-rates (joiner-rate joiners-count population-count ages years)
+          joiner-rates-CI (map #(confidence-interval joiner-rates %) years)
+          filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send)) transitions-data)
+          leaver-rates (leaver-rate filter-leavers)
+          leaver-rates-CI (map #(confidence-interval leaver-rates %) years)
+          filter-movers (remove (fn [{:keys [setting-1 setting-2]}]
+                                  (or (= setting-1 sc/non-send)
+                                      (= setting-2 sc/non-send))) transitions-data)
+          mover-rates (mover-rate filter-movers)
+          mover-rates-CI (map #(confidence-interval mover-rates %) years)
+          n-colours (vec (repeatedly (count years) ch/random-colour))]
       (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
         (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
           (->> (mapcat (fn [output year]
@@ -429,5 +491,8 @@
                (map (apply juxt columns))
                (concat [(map name columns)])
                (csv/write-csv writer))))
-      (run! #(ch/sankey-transitions transitions-data % valid-settings) years)))
+      (run! #(ch/sankey-transitions transitions-data % valid-settings) years)
+      (ch/ribbon-plot joiner-rates-CI "Joiner" years n-colours)
+      (ch/ribbon-plot leaver-rates-CI "Leaver" years n-colours)
+      (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)))
   send-output)
