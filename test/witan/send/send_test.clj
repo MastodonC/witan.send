@@ -5,15 +5,14 @@
             [witan.send.test-utils :as tu]
             [witan.send.utils :as u]
             [clojure.core.matrix.dataset :as ds]
-            [witan.datasets :as wds]))
+            [witan.datasets :as wds]
+            [witan.send.params :as p]))
 
 ;; Use real population datasets for testing
 (def test-inputs
-  {:initial-population ["data/demo/initial-population.csv" sc/PopulationDataset]
+  {:initial-population ["data/demo/population.csv" sc/PopulationDataset]
    :initial-send-population ["data/demo/send-population.csv" sc/SENDPopulation]
-   :transition-matrix ["data/demo/transitions.csv" sc/TransitionCounts]
-   :projected-population ["data/demo/projected-population.csv" sc/PopulationDataset]
-   :setting-cost ["data/demo/setting-costs.csv" sc/SettingCost]})
+   :transition-matrix ["data/demo/transitions.csv" sc/TransitionCounts]})
 
 (defn get-individual-input [key-name]
   (tu/read-inputs
@@ -141,4 +140,38 @@
 
 ;; Tests
 
-;; TODO
+(deftest joiner-rate-test
+  (let [joiner-count (-> :transition-matrix get-individual-input ds/row-maps p/calculate-joiners-per-calendar-year)
+        population-count (-> :initial-population get-individual-input ds/row-maps p/calculate-population-per-calendar-year)
+        ages (-> population-count first val keys)
+        years [2013 2014 2015 2016]
+        result (joiner-rate joiner-count population-count ages years)]
+    (testing "output is not empty"
+      (is (not= empty? result)))
+    (testing "all ages have rates calculated"
+      (is (= (keys result) ages)))))
+
+(deftest mover-rate-test
+  (let [mover-count (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1 setting-2]}]
+                                                                                       (or (= setting-1 sc/non-send)
+                                                                                           (= setting-2 sc/non-send)))))
+        result (mover-rate mover-count)]
+    (testing "output is not empty"
+      (is (not= empty? result)))))
+
+(deftest leaver-rate-test
+  (let [leaver-count (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send))))
+        result (leaver-rate leaver-count)]
+    (testing "output is not empty"
+      (is (not= empty? result)))))
+
+(deftest confidence-interval-test
+  (let [leaver-rates (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send))) leaver-rate)
+        result (confidence-interval leaver-rates 2014)]
+    (testing "output is not empty"
+      (is (not= empty? result) ))
+    (testing "all intervals are between 0 and 1"
+      (is (every? #(and (<= 0 %) (>= 1 %)) (map #(nth % 1) result)))
+      (is (every? #(and (<= 0 %) (>= 1 %)) (map #(nth % 2) result))))
+    (testing "all vals are numbers"
+      (is (every? #(number? %) (reduce concat result))))))

@@ -33,19 +33,17 @@
    [[:require "ggforce"]
     [:<- :foo (gg4clj/data-frame df)]
     [:<- :palette [:c "#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7" "#1b9e77" "#d95f02" "#7570b3" "#e7298a"]]
-    [:<- :palette [:c "#4ab276" "#4ab276" "#4ab276"  "#4ab276"  "#4ab276" ]]
     (gg4clj/r+
      [:ggplot :foo [:aes :x {:id :id :split [:factor :y] :value :value}]]
-     [:scale_fill_manual {:values :palette}]
+     [:ggtitle title]
      [:geom_parallel_sets [:aes {:fill :setting}] {:alpha 0.5 :axis.width 0.1}]
      [:geom_parallel_sets_axes {:axis.width 0.2 :fill "#F6F6F6" :color "#DDDDDD"}]
      [:geom_parallel_sets_labels {:color "#444444" :angle 0 :size 2.5}]
-     [:ggtitle title]
-     [:theme {:axis.title.x [:element_blank]
-              :legend.position "none"}])]))
+     [:theme {:axis.title.x [:element_blank]}])]))
 
 (defn sankey-transitions [data calendar-year settings]
-  (->> (remove v/joiner? data)
+  (->> data
+       (remove v/joiner?)
        (remove v/leaver?)
        (filter #(= (:calendar-year %) calendar-year))
        (filter #(= (:academic-year-1 %) 6))
@@ -54,3 +52,51 @@
        (seq-of-maps->data-frame)
        (sankey {:title (str "Aggregate setting transitions: " calendar-year "/" (apply str (drop 2 (str (inc calendar-year)))))}))
   (move-file "Rplots.pdf" (str "target/historic-transitions_" calendar-year ".pdf")))
+
+(defn pull-year
+  [data pos]
+  (->> (nth data pos)
+       (map (fn [[a b c]] (if (zero? b) [a :NA :NA] [a b c])))
+       (apply mapv vector)))
+
+(defn create-keys [string year-count]
+  (map (fn [n] (keyword (str string n))) (range year-count)))
+
+(defn create-CI-map [string data pos year-count]
+  (reduce into {}
+          (map (fn [k v]
+                 (assoc {} k v))
+               (create-keys string year-count)
+               (map #(nth (nth data %) pos) (range year-count)))))
+
+(defn random-colour []
+  (apply str "#" (repeatedly 6 #(format "%x" (rand-int 16)))))
+
+(defn ribbon-vec [pos colour]
+  [:geom_ribbon [:aes {:ymax (keyword (str "upper" pos)) :ymin (keyword (str "lower" pos))}] {:fill colour :alpha 0.2}])
+
+(defn ribbon-plot
+  [data title years colours]
+  (let [n-years (count years)
+        filter-data (map #(pull-year data %) (range n-years))
+        ay (first (first filter-data))
+        uppers (create-CI-map "upper" filter-data 1 n-years)
+        lowers (create-CI-map "lower" filter-data 2 n-years)
+        ribbon-all-years (map (fn [n c] (ribbon-vec n c)) (range n-years) colours)]
+    (gg4clj/render [[:<- :foo
+                     (gg4clj/data-frame
+                      (merge lowers uppers {:year ay}))]
+                    (apply gg4clj/r+ (concat [[:ggplot :foo [:aes :year :upper0]]]
+                                             ribbon-all-years
+                                             [[:ggtitle (str title "probability by academic year")]]
+                                             [[:xlab "NCY"]]
+                                             [[:ylab "95% probability interval"]]
+                                             [[:scale_x_continuous {:breaks [:seq -5 15 {:by 2}]}]]
+                                             [[:scale_fill_manual {:name "Years"
+                                                                   :values [:c "red" "yellow" "grey" "blue"]
+                                                                   :labels (vec (concat [:c] (map str years)))}]]
+                                             ;;[[:scale_colour_manual "" {:values "blue"}]]
+                                             [[:theme]]))]))
+  (move-file "Rplots.pdf" (str "target/" title "_probability.pdf")))
+
+;;scale_colour_manual(values=c("red","green","blue"))
