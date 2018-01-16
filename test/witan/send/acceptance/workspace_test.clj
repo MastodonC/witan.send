@@ -9,12 +9,14 @@
             [witan.workspace-api.protocols :as p]
             [witan.workspace-executor.core :as wex]))
 
+(def inputs-path "data/Tower-Hamlets-input-2018-01-15/")
+
 (def test-inputs
-  {:initial-send-population ["data/demo/send-population.csv" sc/SENDPopulation]
-   :transition-matrix ["data/demo/transitions.csv" sc/TransitionCounts]
-   :population ["data/demo/population.csv" sc/PopulationDataset]
-   :setting-cost ["data/demo/need-setting-costs.csv" sc/NeedSettingCost]
-   :valid-setting-academic-years ["data/demo/valid-setting-academic-years.csv" sc/ValidSettingAcademicYears]})
+  {:initial-send-population [(str inputs-path "send-population.csv") sc/SENDPopulation]
+   :transition-matrix [(str inputs-path "transitions.csv") sc/TransitionCounts]
+   :population [(str inputs-path "population.csv") sc/PopulationDataset]
+   :setting-cost [(str inputs-path "need-setting-costs.csv") sc/NeedSettingCost]
+   :valid-setting-academic-years [(str inputs-path "valid-setting-academic-years.csv") sc/ValidSettingAcademicYears]})
 
 (defn add-input-params
   [input]
