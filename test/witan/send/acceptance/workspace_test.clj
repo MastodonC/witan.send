@@ -1,4 +1,5 @@
 (ns witan.send.acceptance.workspace-test
+
   (:require [clojure.core.matrix.dataset :as ds]
             [clojure.test :refer :all]
             [schema.core :as s]
@@ -43,7 +44,7 @@
 (defn run-model []
   (let [fixed-catalog (mapv #(if (= (:witan/type %) :input)
                                (add-input-params %)
-                               (assoc-in % [:witan/params :simulations] 1000))
+                               (assoc-in % [:witan/params :simulations] 10))
                             (:catalog m/send-model))
         workspace     {:workflow  (:workflow m/send-model)
                        :catalog   fixed-catalog
@@ -51,3 +52,4 @@
         workspace'    (s/with-fn-validation (wex/build! workspace))
         result        (apply merge (wex/run!! workspace' {}))]
     nil))
+
