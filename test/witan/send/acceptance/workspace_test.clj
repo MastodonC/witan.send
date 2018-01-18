@@ -10,7 +10,7 @@
             [witan.workspace-api.protocols :as p]
             [witan.workspace-executor.core :as wex]))
 
-(def inputs-path "data/Tower-Hamlets-input-2018-01-15/")
+(def inputs-path "data/demo/")
 
 (def test-inputs
   {:initial-send-population [(str inputs-path "send-population.csv") sc/SENDPopulation]
@@ -52,4 +52,3 @@
         workspace'    (s/with-fn-validation (wex/build! workspace))
         result        (apply merge (wex/run!! workspace' {}))]
     nil))
-
