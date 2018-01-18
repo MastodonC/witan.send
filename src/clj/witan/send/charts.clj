@@ -31,7 +31,7 @@
 (defn r-combine [data]
   (vec (concat [:c] data)))
 
-(def palette ["#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7" "#1b9e77" "#d95f02" "#7570b3" "#e7298a"])
+(def palette ["#1b9e77" "#d95f02" "#7570b3" "#e7298a" "#D55E00" "#CC79A7"])
 
 (defn sankey [{:keys [title] :or {title ""}} df]
   (gg4clj/render
