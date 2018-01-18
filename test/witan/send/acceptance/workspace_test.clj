@@ -10,14 +10,14 @@
             [witan.workspace-api.protocols :as p]
             [witan.workspace-executor.core :as wex]))
 
-(def inputs-path "data/demo/")
+(def inputs-path "demo/")
 
 (def test-inputs
-  {:initial-send-population [(str inputs-path "send-population.csv") sc/SENDPopulation]
-   :transition-matrix [(str inputs-path "transitions.csv") sc/TransitionCounts]
-   :population [(str inputs-path "population.csv") sc/PopulationDataset]
-   :setting-cost [(str inputs-path "need-setting-costs.csv") sc/NeedSettingCost]
-   :valid-setting-academic-years [(str inputs-path "valid-setting-academic-years.csv") sc/ValidSettingAcademicYears]})
+  {:initial-send-population [(str "data/" inputs-path "send-population.csv") sc/SENDPopulation]
+   :transition-matrix [(str "data/" inputs-path "transitions.csv") sc/TransitionCounts]
+   :population [(str "data/" inputs-path "population.csv") sc/PopulationDataset]
+   :setting-cost [(str "data/" inputs-path "need-setting-costs.csv") sc/NeedSettingCost]
+   :valid-setting-academic-years [(str "data/" inputs-path "valid-setting-academic-years.csv") sc/ValidSettingAcademicYears]})
 
 (defn add-input-params
   [input]
