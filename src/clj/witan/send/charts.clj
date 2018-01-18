@@ -73,11 +73,14 @@
   (apply str "#" (repeatedly 6 #(format "%x" (rand-int 16)))))
 
 (defn ribbon-vec [pos colour]
-  [:geom_ribbon [:aes {:ymax (keyword (str "upper" pos)) :ymin (keyword (str "lower" pos))}] {:fill colour :alpha 0.2}])
+  [:geom_ribbon [:aes {:ymax (keyword (str "upper" pos)) :ymin (keyword (str "lower" pos)) :fill colour}] {:alpha 0.2}])
 
 (defn valid-years-vector? [data]
-    (not= (last data) 0))
-  
+  (not= (last data) 0))
+
+(defn r-combine [data]
+  (vec (concat [:c] data)))
+
 (defn ribbon-plot
   [data title years colours]
   (let [n-years (count years)
@@ -89,7 +92,7 @@
         non-zero-data (filter valid-years-vector? (first data))
         min-year (first (first non-zero-data))
         max-year (first (last non-zero-data))]
-    (gg4clj/render  [[:<- :foo
+    (gg4clj/render [[:<- :foo
                      (gg4clj/data-frame
                       (merge lowers uppers {:year ay}))]
                     (apply gg4clj/r+ (concat [[:ggplot :foo [:aes :year :upper0]]]
@@ -97,13 +100,9 @@
                                              [[:ggtitle (str title " probability by academic year")]]
                                              [[:xlab "NCY"]]
                                              [[:ylab "95% probability interval"]]
-                                             [[:scale_x_continuous {:limits [:c min-year max-year]}]]
-                                             #_[[:scale_fill_manual {:name "Years"
-                                                                   :values [:c "red" "yellow" "grey" "blue"]
-                                                                   :labels (vec (concat [:c] (map str years)))}]]
-                                             ;;[[:scale_colour_manual "" {:values "blue"}]]
-                                             [[:theme]]))]))
-  (move-file "Rplots.pdf" (str "target/" title "_probability.pdf"))
-)
-
-;;scale_colour_manual(values=c("red","green","blue"))
+                                             [[:scale_fill_manual {:name "Years"
+                                                                   :labels (r-combine (map str years))
+                                                                   :values (r-combine colours)}]]
+                                             [[:scale_x_continuous {:breaks (r-combine (filter even? (range min-year max-year)))
+                                                                    :limit [:c min-year max-year]}]]))]))
+  (move-file "Rplots.pdf" (str "target/" title "_probability.pdf")))
