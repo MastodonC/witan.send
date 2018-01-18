@@ -28,11 +28,16 @@
                          {:id i :x "NCY 7" :y s2 :value v :setting s2}))
                (range))))
 
+(defn r-combine [data]
+  (vec (concat [:c] data)))
+
+(def palette ["#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7" "#1b9e77" "#d95f02" "#7570b3" "#e7298a"])
+
 (defn sankey [{:keys [title] :or {title ""}} df]
   (gg4clj/render
    [[:require "ggforce"]
     [:<- :foo (gg4clj/data-frame df)]
-    [:<- :palette [:c "#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7" "#1b9e77" "#d95f02" "#7570b3" "#e7298a"]]
+    [:<- :palette (r-combine palette)]
     (gg4clj/r+
      [:ggplot :foo [:aes :x {:id :id :split [:factor :y] :value :value}]]
      [:ggtitle title]
@@ -77,9 +82,6 @@
 
 (defn valid-years-vector? [data]
   (not= (last data) 0))
-
-(defn r-combine [data]
-  (vec (concat [:c] data)))
 
 (defn ribbon-plot
   [data title years colours]
