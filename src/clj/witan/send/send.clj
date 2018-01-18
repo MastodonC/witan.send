@@ -423,9 +423,8 @@
                                       (= setting-2 sc/non-send))) transitions-data)
           mover-rates (mover-rate filter-movers)
           mover-rates-CI (map #(confidence-interval mover-rates %) years)
-          n-colours (vec (repeatedly (count years) ch/random-colour))
-          ;;n-colours (take (count years) ch/palette) ;; alternative colour selection
-          ]
+          ;;n-colours (vec (repeatedly (count years) ch/random-colour)) ;; alternative random colour selection
+          n-colours (take (count years) ch/palette)]
       (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
         (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
           (->> (mapcat (fn [output year]
