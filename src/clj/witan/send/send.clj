@@ -202,9 +202,9 @@
 (defn generate-transition-key [ay state]
   (vector ay :NON-SEND state))
 
-(defn halve-transition-count [key transitions fn]
-  (if (contains? transitions key)
-    (update transitions key #(u/int-ceil fn))
+(defn halve-transition-count [transitions k fn]
+  (if (contains? transitions k)
+    (update transitions k #(u/int-ceil fn))
     transitions))
 
 (defworkflowfn prepare-send-inputs-1-0-0
@@ -240,11 +240,14 @@
                                       states-to-halve)) ages)
         transition-matrix (if (false? scale-transitions)
                             (ds/row-maps transition-matrix)
-                            (->> (reduce (fn [_ k] (halve-transition-count k (u/full-transitions-map (ds/row-maps transition-matrix)) #(/ % 2))) {} ages)
+                            (->> (reduce (fn [_ k] (-> transition-matrix
+                                                       ds/row-maps
+                                                       u/full-transitions-map
+                                                       (halve-transition-count k #(/ % divide-transition-by)))) {} ages)
                                  (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)))))
         transitions (if (false? scale-transitions)
                       (u/transitions-map transition-matrix)
-                      (reduce (fn [_ k] (halve-transition-count k (u/transitions-map transition-matrix) #(/ % 2))) {} ages))
+                      (reduce (fn [_ k] (halve-transition-count (u/transitions-map transition-matrix) k #(/ % divide-transition-by))) {} ages))
         transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix)
 
         initial-state (initialise-model (ds/row-maps initial-send-population))
