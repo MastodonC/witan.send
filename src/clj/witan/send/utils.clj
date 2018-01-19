@@ -321,3 +321,6 @@
     ([acc]
      (println "Complete rf...")
      (mapv #(rf %1) acc))))
+
+(defn int-ceil [n]
+  (int (Math/ceil n)))
