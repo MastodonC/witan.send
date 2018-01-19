@@ -178,6 +178,11 @@
            {} a)
    b))
 
+(defn update-if [data transition]
+  (if (contains? data transition)
+    (update data transition #(/ % 2))
+    data))
+
 (defworkflowfn prepare-send-inputs-1-0-0
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
@@ -277,7 +282,7 @@
                            :total-in-send-by-need (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits)) u/model-population-by-need)
                            :total-in-send-by-setting (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits)) u/model-population-by-setting)
                            :total-cost (r/pre-step (u/histogram-rf number-of-significant-digits) (comp (partial u/total-need-setting-cost setting-cost-lookup)
-                                                                            u/model-population-by-need-setting))
+                                                                                                       u/model-population-by-need-setting))
                            :total-in-send-by-ay-group (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits))
                                                                   u/model-population-by-ay-group)})))
 
