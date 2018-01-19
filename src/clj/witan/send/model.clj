@@ -46,7 +46,7 @@
     :witan/version "1.0.0"
     :witan/type :function
     :witan/fn :send/prepare-send-inputs
-    :witan/params {:src ""}}
+    :witan/params {:scale-transitions false}}
    {:witan/name :run-send-model
     :witan/version "1.0.0"
     :witan/type :function
