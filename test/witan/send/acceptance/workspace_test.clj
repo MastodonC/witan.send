@@ -41,10 +41,10 @@
       (is (= #{:total-in-send-by-ay :total-in-send-by-ay-group :by-state :total-cost :total-in-send :total-in-send-by-need :total-in-send-by-setting}
              (-> result first keys set))))))
 
-(defn run-model []
+(defn run-model [iterations]
   (let [fixed-catalog (mapv #(if (= (:witan/type %) :input)
                                (add-input-params %)
-                               (assoc-in % [:witan/params :simulations] 10))
+                               (assoc-in % [:witan/params :simulations] iterations))
                             (:catalog m/send-model))
         workspace     {:workflow  (:workflow m/send-model)
                        :catalog   fixed-catalog
