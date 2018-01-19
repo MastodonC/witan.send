@@ -233,16 +233,19 @@
            setting-cost valid-setting-academic-years]}
    {:keys [scale-transitions]}]
   (let [original-transitions transition-matrix
-        transition-matrix (ds/row-maps transition-matrix)
-        _ (prn transition-matrix)
-        transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix)
         ages (distinct (map :academic-year (ds/row-maps population)))
         keys-to-change (mapcat (fn [n]
                                  (map (fn [state] (generate-transition-key n state))
                                       states-to-halve)) ages)
+        transition-matrix (if (false? scale-transitions)
+                            (ds/row-maps transition-matrix)
+                            (->> (reduce (fn [_ k] (halve-transition-count k (u/full-transitions-map (ds/row-maps transition-matrix)) #(/ % 2))) {} ages)
+                                 (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)))))
         transitions (if (false? scale-transitions)
                       (u/transitions-map transition-matrix)
                       (reduce (fn [_ k] (halve-transition-count k (u/transitions-map transition-matrix) #(/ % 2))) {} ages))
+        transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix)
+
         initial-state (initialise-model (ds/row-maps initial-send-population))
 
         valid-settings (->> (ds/row-maps valid-setting-academic-years)
