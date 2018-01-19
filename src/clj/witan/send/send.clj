@@ -245,9 +245,7 @@
                                                        u/full-transitions-map
                                                        (halve-transition-count k #(/ % divide-transition-by)))) {} ages)
                                  (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)))))
-        transitions (if (false? scale-transitions)
-                      (u/transitions-map transition-matrix)
-                      (reduce (fn [_ k] (halve-transition-count (u/transitions-map transition-matrix) k #(/ % divide-transition-by))) {} ages))
+        transitions (u/transitions-map transition-matrix)
         transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix)
 
         initial-state (initialise-model (ds/row-maps initial-send-population))
