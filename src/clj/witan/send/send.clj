@@ -211,6 +211,7 @@
         transition-matrix (ds/row-maps transition-matrix)
         transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix)
         transitions (u/transitions-map transition-matrix) ;; at this stage we would want to change the counts
+        _ (def example transitions)
         initial-state (initialise-model (ds/row-maps initial-send-population))
 
         valid-settings (->> (ds/row-maps valid-setting-academic-years)
@@ -394,6 +395,35 @@
                       [(.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.025)
                        (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.975)]
                       [0 0])))))))
+
+(def states-to-halve
+  "List of states to change for TH alternative scenario"
+  [:CI-MSSOB
+:CI-MMSOB
+:CI-MUOB
+:CL-MSSOB
+:CL-MMSOB
+:CL-MUOB
+:OTH-MSSOB
+:OTH-MMSOB
+:OTH-MUOB
+:SEMH-MSSOB
+:SEMH-MMSOB
+:SEMH-MUOB
+:SP-MSSOB
+:SP-MMSOB
+:SP-MUOB
+:UKN-MSSOB
+:UKN-MMSOB
+:UKN-MUOB])
+
+(defn generate-transition-key [ay state]
+  (vector ay :NON-SEND state))
+
+(defn halve-transition-count [key transitions]
+  (if (contains? transitions key)
+    (update transitions key #(u/int-ceil (/ % 2)))
+    transitions))
 
 (defworkflowoutput output-send-results-1-0-0
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
