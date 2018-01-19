@@ -245,6 +245,7 @@
                                                        u/full-transitions-map
                                                        (halve-transition-count k #(/ % divide-transition-by)))) {} ages)
                                  (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)))))
+        ;;; take the same states here, check their count, divide by n, sum total across a need, then apply where?
         transitions (u/transitions-map transition-matrix)
         transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix)
 
