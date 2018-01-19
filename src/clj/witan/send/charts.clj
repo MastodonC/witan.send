@@ -28,11 +28,16 @@
                          {:id i :x "NCY 7" :y s2 :value v :setting s2}))
                (range))))
 
+(defn r-combine [data]
+  (vec (concat [:c] data)))
+
+(def palette ["#1b9e77" "#d95f02" "#7570b3" "#e7298a" "#D55E00" "#CC79A7"])
+
 (defn sankey [{:keys [title] :or {title ""}} df]
   (gg4clj/render
    [[:require "ggforce"]
     [:<- :foo (gg4clj/data-frame df)]
-    [:<- :palette [:c "#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7" "#1b9e77" "#d95f02" "#7570b3" "#e7298a"]]
+    [:<- :palette (r-combine palette)]
     (gg4clj/r+
      [:ggplot :foo [:aes :x {:id :id :split [:factor :y] :value :value}]]
      [:ggtitle title]
@@ -73,7 +78,10 @@
   (apply str "#" (repeatedly 6 #(format "%x" (rand-int 16)))))
 
 (defn ribbon-vec [pos colour]
-  [:geom_ribbon [:aes {:ymax (keyword (str "upper" pos)) :ymin (keyword (str "lower" pos))}] {:fill colour :alpha 0.2}])
+  [:geom_ribbon [:aes {:ymax (keyword (str "upper" pos)) :ymin (keyword (str "lower" pos)) :fill colour}] {:alpha 0.2}])
+
+(defn valid-years-vector? [data]
+  (not= (last data) 0))
 
 (defn ribbon-plot
   [data title years colours]
@@ -82,21 +90,21 @@
         ay (first (first filter-data))
         uppers (create-CI-map "upper" filter-data 1 n-years)
         lowers (create-CI-map "lower" filter-data 2 n-years)
-        ribbon-all-years (map (fn [n c] (ribbon-vec n c)) (range n-years) colours)]
+        ribbon-all-years (map (fn [n c] (ribbon-vec n c)) (range n-years) colours)
+        non-zero-data (filter valid-years-vector? (first data))
+        min-year (first (first non-zero-data))
+        max-year (first (last non-zero-data))]
     (gg4clj/render [[:<- :foo
                      (gg4clj/data-frame
                       (merge lowers uppers {:year ay}))]
                     (apply gg4clj/r+ (concat [[:ggplot :foo [:aes :year :upper0]]]
                                              ribbon-all-years
-                                             [[:ggtitle (str title "probability by academic year")]]
+                                             [[:ggtitle (str title " probability by academic year")]]
                                              [[:xlab "NCY"]]
                                              [[:ylab "95% probability interval"]]
-                                             [[:scale_x_continuous {:breaks [:seq -5 15 {:by 2}]}]]
                                              [[:scale_fill_manual {:name "Years"
-                                                                   :values [:c "red" "yellow" "grey" "blue"]
-                                                                   :labels (vec (concat [:c] (map str years)))}]]
-                                             ;;[[:scale_colour_manual "" {:values "blue"}]]
-                                             [[:theme]]))]))
+                                                                   :labels (r-combine (map str years))
+                                                                   :values (r-combine colours)}]]
+                                             [[:scale_x_continuous {:breaks (r-combine (filter even? (range min-year max-year)))
+                                                                    :limit [:c min-year max-year]}]]))]))
   (move-file "Rplots.pdf" (str "target/" title "_probability.pdf")))
-
-;;scale_colour_manual(values=c("red","green","blue"))
