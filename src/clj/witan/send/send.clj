@@ -217,7 +217,8 @@
                         :transition-matrix sc/TransitionCounts
                         :setting-cost sc/NeedSettingCost
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
-   :witan/param-schema {:scale-transitions s/Bool}
+   :witan/param-schema {:scale-transitions s/Bool
+                        :divide-transition-by s/Num}
    :witan/output-schema {:population-by-age-state sc/ModelState
                          :projected-population sc/PopulationByCalendarAndAcademicYear
                          :joiner-beta-params sc/JoinerBetaParams
@@ -231,7 +232,7 @@
                          :population sc/PopulationDataset}}
   [{:keys [initial-send-population transition-matrix population
            setting-cost valid-setting-academic-years]}
-   {:keys [scale-transitions]}]
+   {:keys [scale-transitions divide-transition-by]}]
   (let [original-transitions transition-matrix
         ages (distinct (map :academic-year (ds/row-maps population)))
         keys-to-change (mapcat (fn [n]
