@@ -41,7 +41,7 @@
                            as))
                  {}))))
 
-(defn transitions-map
+(defn transitions-map ;; to reverse for modified transitions
   [dataset]
   (->> dataset
        (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-2]}]
