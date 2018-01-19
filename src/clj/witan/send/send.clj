@@ -204,8 +204,8 @@
            setting-cost valid-setting-academic-years]} _]
   (let [original-transitions transition-matrix
         transition-matrix (ds/row-maps transition-matrix)
-        transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix) ;;hard-coded year remove
-        transitions (u/transitions-map transition-matrix) ;; at this stage we would want to change the counts, also very imporantly this object isn't being used below to calculate the distribution params!
+        transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix)
+        transitions (u/transitions-map transition-matrix) ;; at this stage we would want to change the counts
         initial-state (initialise-model (ds/row-maps initial-send-population))
 
         valid-settings (->> (ds/row-maps valid-setting-academic-years)
@@ -423,7 +423,8 @@
                                       (= setting-2 sc/non-send))) transitions-data)
           mover-rates (mover-rate filter-movers)
           mover-rates-CI (map #(confidence-interval mover-rates %) years)
-          n-colours (vec (repeatedly (count years) ch/random-colour))]
+          ;;n-colours (vec (repeatedly (count years) ch/random-colour)) ;; alternative random colour selection
+          n-colours (take (count years) ch/palette)]
       (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
         (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
           (->> (mapcat (fn [output year]
