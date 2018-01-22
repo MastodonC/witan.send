@@ -217,8 +217,7 @@
                         :transition-matrix sc/TransitionCounts
                         :setting-cost sc/NeedSettingCost
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
-   :witan/param-schema {:scale-transitions s/Bool
-                        :divide-transition-by s/Num}
+   :witan/param-schema {:multiply-transition-by s/Num}
    :witan/output-schema {:population-by-age-state sc/ModelState
                          :projected-population sc/PopulationByCalendarAndAcademicYear
                          :joiner-beta-params sc/JoinerBetaParams
@@ -232,18 +231,18 @@
                          :population sc/PopulationDataset}}
   [{:keys [initial-send-population transition-matrix population
            setting-cost valid-setting-academic-years]}
-   {:keys [scale-transitions divide-transition-by]}]
+   {:keys [multiply-transition-by]}]
   (let [original-transitions transition-matrix
         ages (distinct (map :academic-year (ds/row-maps population)))
         keys-to-change (mapcat (fn [n]
                                  (map (fn [state] (generate-transition-key n state))
                                       states-to-halve)) ages)
-        transition-matrix (if (false? scale-transitions)
+        transition-matrix (if (= 1 multiply-transition-by)
                             (ds/row-maps transition-matrix)
                             (->> (reduce (fn [_ k] (-> transition-matrix
                                                        ds/row-maps
                                                        u/full-transitions-map
-                                                       (halve-transition-count k #(/ % divide-transition-by)))) {} ages)
+                                                       (halve-transition-count k #(* % multiply-transition-by)))) {} ages)
                                  (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)))))
         ;;; take the same states here, check their count, divide by n, sum total across a need, then apply where?
         transitions (u/transitions-map transition-matrix)
