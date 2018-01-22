@@ -11,7 +11,7 @@
 
 (def inputs-path "demo/")
 
-(def test-inputs
+(defn test-inputs []
   {:initial-send-population [(str "data/" inputs-path "send-population.csv") sc/SENDPopulation]
    :transition-matrix [(str "data/" inputs-path "transitions.csv") sc/TransitionCounts]
    :population [(str "data/" inputs-path "population.csv") sc/PopulationDataset]
@@ -21,7 +21,7 @@
 (defn add-input-params
   [input]
   (assoc-in input [:witan/params :fn] (fn [a b]
-                                        (tu/read-inputs test-inputs input a b))))
+                                        (tu/read-inputs (test-inputs) input a b))))
 
 (witan.workspace-api/set-api-logging! println)
 
