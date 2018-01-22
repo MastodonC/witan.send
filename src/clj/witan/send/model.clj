@@ -46,8 +46,7 @@
     :witan/version "1.0.0"
     :witan/type :function
     :witan/fn :send/prepare-send-inputs
-    :witan/params {:scale-transitions false
-                   :divide-transition-by 1}}
+    :witan/params {:multiply-transition-by 1}}
    {:witan/name :run-send-model
     :witan/version "1.0.0"
     :witan/type :function
