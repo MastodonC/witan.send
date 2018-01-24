@@ -178,6 +178,35 @@
            {} a)
    b))
 
+(def states-to-halve
+  "List of states to change for TH alternative scenario"
+  [:CI-MSSOB
+   :CI-MMSOB
+   :CI-MUOB
+   :CL-MSSOB
+   :CL-MMSOB
+   :CL-MUOB
+   :OTH-MSSOB
+   :OTH-MMSOB
+   :OTH-MUOB
+   :SEMH-MSSOB
+   :SEMH-MMSOB
+   :SEMH-MUOB
+   :SP-MSSOB
+   :SP-MMSOB
+   :SP-MUOB
+   :UKN-MSSOB
+   :UKN-MMSOB
+   :UKN-MUOB])
+
+(defn generate-transition-key [cy ay state]
+  (vector cy ay :NONSEND state))
+
+(defn modify-transition-count [transitions k modifier v]
+  (if (contains? transitions k)
+    (update transitions k #(u/int-ceil (modifier % v)))
+    transitions))
+
 (defworkflowfn prepare-send-inputs-1-0-0
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
@@ -188,7 +217,7 @@
                         :transition-matrix sc/TransitionCounts
                         :setting-cost sc/NeedSettingCost
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
-   :witan/param-schema {}
+   :witan/param-schema {:multiply-transition-by s/Num}
    :witan/output-schema {:population-by-age-state sc/ModelState
                          :projected-population sc/PopulationByCalendarAndAcademicYear
                          :joiner-beta-params sc/JoinerBetaParams
@@ -201,11 +230,25 @@
                          :transition-matrix sc/TransitionCounts
                          :population sc/PopulationDataset}}
   [{:keys [initial-send-population transition-matrix population
-           setting-cost valid-setting-academic-years]} _]
+           setting-cost valid-setting-academic-years]}
+   {:keys [multiply-transition-by]}]
   (let [original-transitions transition-matrix
-        transition-matrix (ds/row-maps transition-matrix)
+        ages (distinct (map :academic-year (ds/row-maps population)))
+        years (distinct (map :calendar-year (ds/row-maps population)))
+        keys-to-change (vec (mapcat (fn [cy] (mapcat (fn [ay]
+                                                       (map (fn [state] (generate-transition-key cy ay state))
+                                                            states-to-halve)) ages)) years))
+        transition-matrix (if (= 1 multiply-transition-by)
+                            (ds/row-maps transition-matrix)
+                            (let [convert (-> transition-matrix
+                                              ds/row-maps
+                                              u/full-transitions-map)
+                                  result (reduce (fn [m k] (modify-transition-count m k * multiply-transition-by)) convert keys-to-change)]
+                              (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)) result)))
+        ;;; take the same states here, check their count, divide by n, sum total across a need, then apply where?
+        transitions (u/transitions-map transition-matrix)
         transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix)
-        transitions (u/transitions-map transition-matrix) ;; at this stage we would want to change the counts
+
         initial-state (initialise-model (ds/row-maps initial-send-population))
 
         valid-settings (->> (ds/row-maps valid-setting-academic-years)
@@ -277,7 +320,7 @@
                            :total-in-send-by-need (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits)) u/model-population-by-need)
                            :total-in-send-by-setting (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits)) u/model-population-by-setting)
                            :total-cost (r/pre-step (u/histogram-rf number-of-significant-digits) (comp (partial u/total-need-setting-cost setting-cost-lookup)
-                                                                            u/model-population-by-need-setting))
+                                                                                                       u/model-population-by-need-setting))
                            :total-in-send-by-ay-group (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits))
                                                                   u/model-population-by-ay-group)})))
 

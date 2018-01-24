@@ -1,5 +1,4 @@
 (ns witan.send.acceptance.workspace-test
-
   (:require [clojure.core.matrix.dataset :as ds]
             [clojure.test :refer :all]
             [schema.core :as s]
@@ -12,7 +11,7 @@
 
 (def inputs-path "demo/")
 
-(def test-inputs
+(defn test-inputs []
   {:initial-send-population [(str "data/" inputs-path "send-population.csv") sc/SENDPopulation]
    :transition-matrix [(str "data/" inputs-path "transitions.csv") sc/TransitionCounts]
    :population [(str "data/" inputs-path "population.csv") sc/PopulationDataset]
@@ -22,7 +21,7 @@
 (defn add-input-params
   [input]
   (assoc-in input [:witan/params :fn] (fn [a b]
-                                        (tu/read-inputs test-inputs input a b))))
+                                        (tu/read-inputs (test-inputs) input a b))))
 
 (witan.workspace-api/set-api-logging! println)
 
@@ -41,11 +40,13 @@
       (is (= #{:total-in-send-by-ay :total-in-send-by-ay-group :by-state :total-cost :total-in-send :total-in-send-by-need :total-in-send-by-setting}
              (-> result first keys set))))))
 
-(defn run-model [iterations]
-  (let [fixed-catalog (mapv #(if (= (:witan/type %) :input)
-                               (add-input-params %)
-                               (assoc-in % [:witan/params :simulations] iterations))
-                            (:catalog m/send-model))
+(defn run-model [iterations output? transition-multiplier]
+  (let [fixed-catalog (->> (:catalog m/send-model)
+                           (mapv #(if (= (:witan/type %) :input)
+                                    (add-input-params %)
+                                    (assoc-in % [:witan/params :simulations] iterations)))
+                           (map #(assoc-in % [:witan/params :output] output?))
+                           (map #(assoc-in % [:witan/params :multiply-transition-by] transition-multiplier)))
         workspace     {:workflow  (:workflow m/send-model)
                        :catalog   fixed-catalog
                        :contracts (p/available-fns (m/model-library))}

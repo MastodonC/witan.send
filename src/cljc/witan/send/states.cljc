@@ -2,7 +2,7 @@
   (:require [clojure.string :as str]
             [witan.send.constants :as const]))
 
-(def non-send :NON-SEND)
+(def non-send :NONSEND)
 
 (defn need-setting [state]
   (if (= state non-send)

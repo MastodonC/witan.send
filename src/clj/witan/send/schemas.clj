@@ -24,7 +24,7 @@
 (def CalendarYear
   (s/constrained s/Int #(<= 1900 % 2100)))
 
-(def non-send :NON-SEND)
+(def non-send :NONSEND)
 
 (defn State
   [needs settings]
