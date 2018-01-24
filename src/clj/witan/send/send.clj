@@ -202,9 +202,9 @@
 (defn generate-transition-key [cy ay state]
   (vector cy ay :NONSEND state))
 
-(defn halve-transition-count [transitions k fn]
+(defn modify-transition-count [transitions k modifier v]
   (if (contains? transitions k)
-    (update transitions k #(u/int-ceil fn))
+    (update transitions k #(u/int-ceil (modifier % v)))
     transitions))
 
 (defworkflowfn prepare-send-inputs-1-0-0
@@ -234,16 +234,17 @@
    {:keys [multiply-transition-by]}]
   (let [original-transitions transition-matrix
         ages (distinct (map :academic-year (ds/row-maps population)))
-        keys-to-change (mapcat (fn [n]
-                                 (map (fn [state] (generate-transition-key n state))
-                                      states-to-halve)) ages)
+        years (distinct (map :calendar-year (ds/row-maps population)))
+        keys-to-change (vec (mapcat (fn [cy] (mapcat (fn [ay]
+                                                       (map (fn [state] (generate-transition-key cy ay state))
+                                                            states-to-halve)) ages)) years))
         transition-matrix (if (= 1 multiply-transition-by)
                             (ds/row-maps transition-matrix)
-                            (->> (reduce (fn [_ k] (-> transition-matrix
-                                                       ds/row-maps
-                                                       u/full-transitions-map
-                                                       (halve-transition-count k #(* % multiply-transition-by)))) {} ages)
-                                 (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)))))
+                            (let [convert (-> transition-matrix
+                                              ds/row-maps
+                                              u/full-transitions-map)
+                                  result (reduce (fn [m k] (modify-transition-count m k * multiply-transition-by)) convert keys-to-change)]
+                              (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)) result)))
         ;;; take the same states here, check their count, divide by n, sum total across a need, then apply where?
         transitions (u/transitions-map transition-matrix)
         transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix)
