@@ -3,13 +3,13 @@ library(ggplot2)
 library(reshape2)
 library(stringr)
 
-### Variables for all Charts ###
+### Variables for all charts ###
 
 df_historical <- read.csv("../../target/historic-data.csv")
 remove_colons <-  function(x) {str_replace(x, ':', '')}
 df_historical <- mutate_all(df_historical, funs(remove_colons))
 df_historical <- df_historical %>%
-  filter(need.1 != "NONSEND")   ## thought this was being done in the model - need to check
+  filter(need.1 != "NONSEND")
 
 n_hist_years <-  df_historical %>%
   summarise(n_distinct(calendar.year))
@@ -58,7 +58,7 @@ ggplot(plot_ay, aes(x=calendar.year, y=value, group=variable)) +
 ggsave("../../target/NCY_Population_Trends.pdf")
 
 
-### Projected Count by Setting Type ###
+### Projected count by setting ###
 
 df_projected_set <- read.csv("../../target/output-setting.csv")
 df_projected_set <- df_projected_set[,c("calendar.year","setting","mean")]
@@ -106,7 +106,7 @@ for(i in 1:4) {
 }
 
 
-### Projected Count by Need Type ###
+### Projected count by need type ###
 
 df_projected_need <- read.csv("../../target/output-need.csv")
 df_projected_need <- df_projected_need[,c("calendar.year","need","mean")]
@@ -136,7 +136,7 @@ ggplot(df_need, aes(x=calendar.year, y=mean, group=Need)) +
 ggsave("../../target/Need_Trends.pdf")
 
 
-### Projected Special Setting Count ###
+### Projected special setting count ###
    
 df_projected_set <- read.csv("../../target/output-setting.csv")
 df_projected_set <- df_projected_set[,c("calendar.year","setting","mean")]
@@ -170,7 +170,7 @@ ggplot(df_set_ss, aes(x = calendar.year, y = mean)) +
 ggsave("../../target/Special_Setting_Counts.pdf")
 
 
-### Projected Aggregate Setting Count ###
+### Projected aggregate setting count ###
 
 df_valid_settings <- read.csv("../../target/valid-settings.csv", header = FALSE)
 df_valid_settings <- mutate_all(df_valid_settings, funs(remove_colons))
@@ -196,3 +196,8 @@ ggplot(df_type, aes(x=calendar.year, y=mean, group=Type)) +
   annotate("text", label = "<-- Historical      Projected -->", x=hist_proj_split, y=y_max, color = "dodgerblue")
 
 ggsave("../../target/Setting_Type_Counts.pdf")
+
+
+### Delete automatically produced Rplots.pdf file ###
+
+if (file.exists("Rplots.pdf")) file.remove("Rplots.pdf")
