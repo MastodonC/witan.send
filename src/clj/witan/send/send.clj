@@ -199,8 +199,8 @@
    :UKN-MMSOB
    :UKN-MUOB])
 
-(defn generate-transition-key [ay state]
-  (vector ay :NON-SEND state))
+(defn generate-transition-key [cy ay state]
+  (vector cy ay :NONSEND state))
 
 (defn halve-transition-count [transitions k fn]
   (if (contains? transitions k)
