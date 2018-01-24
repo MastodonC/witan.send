@@ -175,3 +175,7 @@
       (is (every? #(and (<= 0 %) (>= 1 %)) (map #(nth % 2) result))))
     (testing "all vals are numbers"
       (is (every? #(number? %) (reduce concat result))))))
+
+(deftest modify-transition-count-test
+  (testing ""
+    (is (= 2 (get (modify-transition-count {[2014 1 :NONSEND :SEMH-MMSIB] 1 [2014 1 :NONSEND :CL-MMSIB] 4} [2014 1 :NONSEND :SEMH-MMSIB] * 2) [2014 1 :NONSEND :SEMH-MMSIB])))))
