@@ -54,7 +54,7 @@
   (if-let [probs (get mover-state-alphas [year state])]
     (let [leaver-params (get leaver-beta-params [year state])
           l (u/sample-beta-binomial population leaver-params)
-          next-states-sample (if (states/can-move? valid-year-settings year state)
+          next-states-sample (if (states/can-move? valid-year-settings (dec year) state)
                                (let [mover-params (get mover-beta-params [year state])]
                                  (u/sample-send-transitions state (- population l) probs mover-params))
                                {state (- population l)})
