@@ -24,6 +24,6 @@
 (deftest can-move-test
   (let [[path schema] (:valid-setting-academic-years (test-inputs))
         data (ds/row-maps (tu/csv-to-dataset path schema))
-        valid-states (calculate-valid-states-from-setting-academic-years data)]
+        valid-year-settings (calculate-valid-year-settings-from-setting-academic-years data)]
     (testing ""
-      (is (true? (can-move? valid-states 0 :CL-MSS))))))
+      (is (true? (can-move? valid-year-settings 0 :CL-MSS))))))
