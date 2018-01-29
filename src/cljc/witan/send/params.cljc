@@ -222,12 +222,12 @@
   (let [academic-years (->> (map first valid-states)
                             (distinct)
                             (sort))
-        observations (reduce (fn [coll {:keys [academic-year-2 need-1 setting-1 need-2 setting-2 :as row]}]
+        observations (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2 :as row]}]
                                (if (= setting-1 s/non-send)
                                  coll
                                  (if (= setting-2 s/non-send)
-                                   (update-in coll [academic-year-2 (s/state need-1 setting-1) :alpha] u/some+ 1)
-                                   (update-in coll [academic-year-2 (s/state need-1 setting-1) :beta] u/some+ 1))))
+                                   (update-in coll [academic-year-1 (s/state need-1 setting-1) :alpha] u/some+ 1)
+                                   (update-in coll [academic-year-1 (s/state need-1 setting-1) :beta] u/some+ 1))))
                              {} transitions)
         prior-per-year (reduce (fn [coll [ay state-betas]]
                                  (let [betas (apply merge-with + (vals state-betas))
@@ -276,17 +276,18 @@
     (weighted-joiner-beta-params valid-states joiners-per-calendar-year population-per-calendar-year)))
 
 (defn beta-params-movers
+  "calculates the rate of the likelihood of a state transitioning for an academic year"
   [valid-states transitions]
   (let [academic-years (->> (map first valid-states)
                             (distinct)
                             (sort))
-        observations (reduce (fn [coll {:keys [academic-year-2 need-1 setting-1 need-2 setting-2]}]
+        observations (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
                                (if (or (= setting-1 s/non-send)
                                        (= setting-2 s/non-send))
                                  coll
                                  (if (not= setting-1 setting-2)
-                                   (update-in coll [academic-year-2 (s/state need-1 setting-1) :alpha] u/some+ 1)
-                                   (update-in coll [academic-year-2 (s/state need-1 setting-1) :beta] u/some+ 1))))
+                                   (update-in coll [academic-year-1 (s/state need-1 setting-1) :alpha] u/some+ 1)
+                                   (update-in coll [academic-year-1 (s/state need-1 setting-1) :beta] u/some+ 1))))
                              {} transitions)
 
         prior-per-year (reduce (fn [coll [ay state-betas]]
@@ -307,26 +308,27 @@
             {} valid-states)))
 
 (defn alpha-params-movers
+  "calculates the rate of transitions to a new state at academic year X for state Y"
   [valid-states transitions]
   (let [academic-years (->> (map first valid-states)
                             (distinct)
                             (sort))
-        observations (reduce (fn [coll {:keys [academic-year-2 need-1 setting-1 need-2 setting-2]}]
+        observations (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
                                (if (or (= setting-1 s/non-send)
                                        (= setting-2 s/non-send)
                                        (= setting-1 setting-2))
                                  coll
-                                 (update-in coll [academic-year-2
+                                 (update-in coll [academic-year-1
                                                   (s/state need-1 setting-1)
                                                   (s/state need-2 setting-2)] u/some+ 1)))
                              {} transitions)
 
-        observations-per-ay (reduce (fn [coll {:keys [academic-year-2 need-1 setting-1 need-2 setting-2]}]
+        observations-per-ay (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
                                       (if (or (= setting-1 s/non-send)
                                               (= setting-2 s/non-send)
                                               (= setting-1 setting-2))
                                         coll
-                                        (update-in coll [academic-year-2 setting-2] u/some+ 1)))
+                                        (update-in coll [academic-year-1 setting-2] u/some+ 1)))
                                     {} transitions)
         observations-per-ay (reduce (fn [coll ay]
                                       (if-let [v (or (get coll ay)
