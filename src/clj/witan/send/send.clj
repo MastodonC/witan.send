@@ -53,9 +53,11 @@
    calendar-year]
   (if-let [probs (get mover-state-alphas [year state])]
     (let [leaver-params (get leaver-beta-params [year state])
+  (if-let [probs (get mover-state-alphas [(dec year) state])]
+          leaver-params (get leaver-beta-params [(dec year) state])
           l (u/sample-beta-binomial population leaver-params)
-          next-states-sample (if (states/can-move? valid-year-settings (dec year) state)
-                               (let [mover-params (get mover-beta-params [year state])]
+          next-states-sample (if (states/can-move? valid-year-settings year state)
+                               (let [mover-params (get mover-beta-params [(dec year) state])]
                                  (u/sample-send-transitions state (- population l) probs mover-params))
                                {state (- population l)})
           [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year state next-states-sample calendar-year)]
