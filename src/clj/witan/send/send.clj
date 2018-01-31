@@ -52,9 +52,7 @@
            valid-year-settings] :as params}
    calendar-year]
   (if-let [probs (get mover-state-alphas [year state])]
-    (let [leaver-params (get leaver-beta-params [year state])
-  (if-let [probs (get mover-state-alphas [(dec year) state])]
-          leaver-params (get leaver-beta-params [(dec year) state])
+    (let [leaver-params (get leaver-beta-params [(dec year) state])
           l (u/sample-beta-binomial population leaver-params)
           next-states-sample (if (states/can-move? valid-year-settings year state)
                                (let [mover-params (get mover-beta-params [(dec year) state])]
@@ -62,8 +60,8 @@
                                {state (- population l)})
           [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year state next-states-sample calendar-year)]
       [model
-       (update transitions [calendar-year year state sc/non-send] u/some+ l)])
-    [model transitions]))
+       (update transitions [calendar-year year state sc/non-send] u/some+ l)]
+      [model transitions])))
 
 (defn apply-leavers-movers-for-cohort
   "Take single cohort of users and process them into the model state.
