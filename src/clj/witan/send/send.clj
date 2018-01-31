@@ -300,8 +300,11 @@
      :population population}))
 
 (defn projection->transitions
-  [file projections]
-  (let [transitions (apply merge-with + (mapcat #(map :transitions %) projections))]
+  [projections]
+  (apply merge-with + (mapcat #(map :transitions %) projections)))
+
+(defn output-transitions [file projections]
+  (let [transitions (projection->transitions projections)]
     (spit file (pr-str transitions))))
 
 (defn values-rf
@@ -355,7 +358,8 @@
    :witan/param-schema {:seed-year sc/YearSchema
                         :simulations s/Int
                         :random-seed s/Int}
-   :witan/output-schema {:send-output sc/Results
+   :witan/output-schema {:projection sc/Projection
+                         :send-output sc/Results
                          :transition-matrix sc/TransitionCounts
                          :valid-setting-academic-years sc/ValidSettingAcademicYears
                          :population sc/PopulationDataset}}
@@ -387,11 +391,13 @@
         reduced (doall
                  (for [projection projections]
                    (do (println "Reducing...")
-                       (transduce (map #(map :model %)) (reduce-rf iterations valid-states setting-cost-lookup) projection))))]
-    (projection->transitions "target/transitions.edn" (apply concat projections))
+                       (transduce (map #(map :model %)) (reduce-rf iterations valid-states setting-cost-lookup) projection))))
+        projection (apply concat projections)]
+    (output-transitions "target/transitions.edn" projection)
     ;;    (println mover-beta-params)
     (println "Combining...")
-    {:send-output (transduce identity (combine-rf iterations) reduced)
+    {:projection (projection->transitions projection)
+     :send-output (transduce identity (combine-rf iterations) reduced)
      :transition-matrix transition-matrix
      :valid-setting-academic-years valid-setting-academic-years
      :population population}))

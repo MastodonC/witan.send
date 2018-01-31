@@ -70,6 +70,13 @@
                            [:need-2 s/Keyword]
                            [:academic-year-2 AcademicYear]]))
 
+(def Projection
+  {[(s/one CalendarYear :calendar-year)
+    (s/one AcademicYear :academic-year)
+    (s/one s/Keyword :state-1)
+    (s/one s/Keyword :state-2)]
+   N})
+
 (defn TransitionsMap+
   [needs settings]
   (let [State (State needs settings)]
