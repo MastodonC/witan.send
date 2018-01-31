@@ -51,7 +51,7 @@
            mover-beta-params mover-state-alphas
            valid-year-settings] :as params}
    calendar-year]
-  (if-let [probs (get mover-state-alphas [year state])]
+  (if-let [probs (get mover-state-alphas [(dec year) state])]
     (let [leaver-params (get leaver-beta-params [(dec year) state])
           l (u/sample-beta-binomial population leaver-params)
           next-states-sample (if (states/can-move? valid-year-settings year state)
