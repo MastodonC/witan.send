@@ -60,8 +60,8 @@
                                {state (- population l)})
           [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year state next-states-sample calendar-year)]
       [model
-       (update transitions [calendar-year year state sc/non-send] u/some+ l)]
-      [model transitions])))
+       (update transitions [calendar-year year state sc/non-send] u/some+ l)])
+    [model transitions]))
 
 (defn apply-leavers-movers-for-cohort
   "Take single cohort of users and process them into the model state.
