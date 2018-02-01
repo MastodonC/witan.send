@@ -465,9 +465,9 @@
                                   keys
                                   (map #(vec (drop 1 %)))
                                   distinct)]
-    (if (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
+    (when (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
       (println "Not every historic transition present in projection. Consider checking valid state input"))
-    (if (= output true)
+    (when output
       (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
                                        (reduce #(assoc %1 (:setting %2) (:setting->group %2)) {}))
                                   :NON-SEND "Other" )
