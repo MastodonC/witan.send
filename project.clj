@@ -27,7 +27,8 @@
                  [cheshire "5.7.1"]
                  [org.apache.commons/commons-math3 "3.6.1"]]
   :plugins [[lein-gorilla "0.4.0"]
-            [lein-cljsbuild "1.1.4"]]
+            [lein-cljsbuild "1.1.4"]
+            [cider/cider-nrepl "0.16.0"]]
   :main witan.send.main
   :aot [witan.send.main]
 
