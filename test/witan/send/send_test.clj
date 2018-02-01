@@ -179,3 +179,7 @@
 (deftest modify-transition-count-test
   (testing ""
     (is (= 2 (get (modify-transition-count {[2014 1 :NONSEND :SEMH-MMSIB] 1 [2014 1 :NONSEND :CL-MMSIB] 4} [2014 1 :NONSEND :SEMH-MMSIB] * 2) [2014 1 :NONSEND :SEMH-MMSIB])))))
+
+(deftest transition-present?-test
+  (testing ""
+    (is (transition-present? [11 :CI-MSSOB :CI-ISSR] '([6 :OTH-MSSSH :OTH-MSSSH] [6 :SP-MU :SP-MU] [6 :UKN-MMSIB :UKN-MMSIB] [11 :CI-MSSOB :CI-ISSR] [6 :SP-IMS :SP-IMS] [6 :SEMH-MSSCT :SEMH-NMSS] [8 :CI-OOE :CI-ISS] [8 :CI-MMSOB :CI-MMSOB] [6 :SP-MU :SP-NMSS] [6 :CI-MSSSH :CI-MSSSH] [8 :SEMH-MMSIB :NONSEND] [13 :SP-MSSOB :NONSEND] [4 :CL-MSSSH :NONSEND])))))
