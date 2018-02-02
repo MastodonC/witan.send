@@ -120,6 +120,12 @@
 
 ;; Workflow functions
 
+(definput settings-to-change-1-0-0
+  {:witan/name :send/settings-to-change
+   :witan/version "1.0.0"
+   :witan/key :settings-to-change
+   :witan/schema sc/SettingsToChange})
+
 (definput initial-send-population-1-0-0
   {:witan/name :send/initial-send-population
    :witan/version "1.0.0"
@@ -201,12 +207,13 @@
    row for each individual/year/simulation. Also includes age & state columns"
   {:witan/name :send/prepare-send-inputs
    :witan/version "1.0.0"
-   :witan/input-schema {:population sc/PopulationDataset
+   :witan/input-schema {:settings-to-change sc/SettingsToChange
+                        :population sc/PopulationDataset
                         :initial-send-population sc/SENDPopulation
                         :transition-matrix sc/TransitionCounts
                         :setting-cost sc/NeedSettingCost
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
-   :witan/param-schema {:multiply-transition-by s/Num}
+   :witan/param-schema {:modify-transition-by s/Num}
    :witan/output-schema {:population-by-age-state sc/ModelState
                          :projected-population sc/PopulationByCalendarAndAcademicYear
                          :joiner-beta-params sc/JoinerBetaParams
@@ -218,9 +225,9 @@
                          :valid-setting-academic-years sc/ValidSettingAcademicYears
                          :transition-matrix sc/TransitionCounts
                          :population sc/PopulationDataset}}
-  [{:keys [initial-send-population transition-matrix population
+  [{:keys [settings-to-change initial-send-population transition-matrix population
            setting-cost valid-setting-academic-years]}
-   {:keys [multiply-transition-by]}]
+   {:keys [modify-transition-by]}]
   (let [original-transitions transition-matrix
         ages (distinct (map :academic-year (ds/row-maps population)))
         years (distinct (map :calendar-year (ds/row-maps population)))

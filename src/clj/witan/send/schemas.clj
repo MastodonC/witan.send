@@ -90,6 +90,10 @@
     (s/one s/Keyword :state)]
    {s/Keyword R}})
 
+(def SettingsToChange
+  (make-ordered-ds-schema [[:setting-1 s/Keyword]
+                           [:setting-2 s/Keyword]]))
+
 (def SENDPopulation
   (make-ordered-ds-schema [[:calendar-year CalendarYear]
                            [:academic-year AcademicYear]
