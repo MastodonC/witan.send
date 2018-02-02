@@ -30,7 +30,7 @@
   (testing "The default model is run on the workspace and returns the outputs expected"
     (let [fixed-catalog (->> (:catalog m/send-model)
                              (mapv #(if (= (:witan/type %) :input)
-                                      (add-input-params %)
+                                      (add-input-params (test-inputs) %)
                                       (assoc-in % [:witan/params :simulations] 10)))
                              (map #(assoc-in % [:witan/params :output] false)))
           workspace     {:workflow  (:workflow m/send-model)
