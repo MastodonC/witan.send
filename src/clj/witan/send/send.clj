@@ -391,7 +391,6 @@
                    (do (println "Reducing...")
                        (transduce (map #(map :model %)) (reduce-rf iterations valid-states setting-cost-lookup) projection))))
         projection (apply concat projections)]
-    (output-transitions "target/transitions.edn" projection)
     ;;    (println mover-beta-params)
     (println "Combining...")
     {:projection (projection->transitions projection)
@@ -490,6 +489,7 @@
             mover-rates-CI (map #(confidence-interval mover-rates %) years)
             ;;n-colours (vec (repeatedly (count years) ch/random-colour)) ;; alternative random colour selection
             n-colours (take (count years) ch/palette)]
+        (output-transitions "target/transitions.edn" projection)
         (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
           (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
