@@ -38,29 +38,35 @@
                          :contracts (p/available-fns (m/model-library))}
           workspace'    (s/with-fn-validation (wex/build! workspace))
           result        (apply merge (wex/run!! workspace' {}))]
-      (is (= #{:total-in-send-by-ay :total-in-send-by-ay-group :by-state :total-cost :total-in-send :total-in-send-by-need :total-in-send-by-setting}
+      (is (= #{:total-in-send-by-ay :total-in-send-by-ay-group :by-state :total-cost
+               :total-in-send :total-in-send-by-need :total-in-send-by-setting}
              (-> result first keys set))))))
 
 (defn run-model
   "optionals args are filename for csv with settings to modify"
-  ([iterations output? transition-modifier file]
+  ([iterations output? transition-modifier file modify-transitions-from-year]
    (set! *print-length* nil)
    (let [file-input    (if (nil? file)
                          (test-inputs)
                          (assoc (test-inputs) :settings-to-change [(str "data/" inputs-path file) sc/SettingsToChange]))
-         fixed-catalog (let [prep-catalog (->> (:catalog m/send-model)
-                                               (mapv #(if (= (:witan/type %) :input)
-                                                        (add-input-params file-input %)
-                                                        (assoc-in % [:witan/params :simulations] iterations)))
-                                               (map #(assoc-in % [:witan/params :output] output?)))]
-                         (if (nil? transition-modifier)
-                           prep-catalog
-                           (map #(assoc-in % [:witan/params :modify-transition-by] transition-modifier) prep-catalog)))
+         fixed-catalog (let [prep-catalog1 (->> (:catalog m/send-model)
+                                                (mapv #(if (= (:witan/type %) :input)
+                                                         (add-input-params file-input %)
+                                                         (assoc-in % [:witan/params :simulations] iterations)))
+                                                (map #(assoc-in % [:witan/params :output] output?)))
+                             prep-catalog2 (if (nil? transition-modifier)
+                                             prep-catalog1
+                                             (map #(assoc-in % [:witan/params :modify-transition-by] transition-modifier) prep-catalog1))]
+                         (if (nil? modify-transitions-from-year)
+                           prep-catalog2
+                           (map #(assoc-in % [:witan/params :modify-transitions-from] modify-transitions-from-year) prep-catalog2)))
          workspace     {:workflow  (:workflow m/send-model)
                         :catalog   fixed-catalog
                         :contracts (p/available-fns (m/model-library))}
          workspace'    (s/with-fn-validation (wex/build! workspace))
          result        (apply merge (wex/run!! workspace' {}))]
      (set! *print-length* 200)))
+  ([iterations output? transition-modifier file]
+   (run-model iterations output? transition-modifier file nil))
   ([iterations output?]
    (run-model iterations output? nil nil)))
