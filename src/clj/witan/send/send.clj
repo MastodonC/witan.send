@@ -18,7 +18,8 @@
             [incanter.stats :as stats]
             [medley.core :as medley]
             [redux.core :as r]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [clojure.java.shell :as sh])
   (:import [org.apache.commons.math3.distribution BetaDistribution]))
 
 (defn initialise-model [send-data]
@@ -559,8 +560,22 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
+        (with-open [writer (io/writer (io/file "target/historic-data.csv"))]
+          (let [send-only (filter #(not= (:setting-1 %) :NONSEND) transitions-data)
+                columns [:calendar-year :setting-1 :need-1 :academic-year-1]
+                headers (mapv name columns)
+                rows (mapv #(mapv % columns) transitions-data)]
+          (csv/write-csv writer (into [headers] rows))))
+        (with-open [writer (io/writer (io/file "target/valid-settings.csv"))]
+          (csv/write-csv writer valid-settings))
+        (println "Producing charts...")
         (run! #(ch/sankey-transitions transitions-data % valid-settings) years)
         (ch/ribbon-plot joiner-rates-CI "Joiner" years n-colours)
         (ch/ribbon-plot leaver-rates-CI "Leaver" years n-colours)
-        (ch/ribbon-plot mover-rates-CI "Mover" years n-colours))))
-  send-output)
+        (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
+        (ch/population-line-plot transitions-data (map :total-in-send send-output))
+        (ch/send-cost-plot (map :total-cost send-output) years)
+        (println "Producing external charts...")
+        (sh/sh "Rscript" "--vanilla" "send-charts.R"  :dir "src/R")
+        )))
+  send-output) 
