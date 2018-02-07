@@ -49,11 +49,15 @@
 
   :output? - true/false to output data and charts
 
-  :transition-modifier - value to modify transition rate by (optional, also requires :transitions-file)
+  :transition-modifier - value to modify transition rate of :transitions-file contents by (optional)
 
-  :transitions-file - csv containing list of settings to modify (optional, also requires :transition-modifier)
+  :transitions-file - csv containing list of settings to modify by :transition-modifier (optional)
 
-  :modify-transitions-from - set a year to start modifying transitions from (optional, requires :transition-modifier & :transitions-file"
+  :modify-transitions-from - set a year to start modifying transitions from when :transition-modifier & :transitions-file are set (optional)
+
+  :filter-transitions-from - sets a year to filter historic transitions by for :splice-ncy (optional)
+
+  :splice-ncy - sets a national curriculum year to ignore transitions of prior to :filter-transitions-from year (optional)"
   [{:keys [iterations output? transition-modifier transitions-file modify-transitions-from filter-transitions-from splice-ncy]}]
   (let [file-input    (if (nil? transitions-file)
                         (test-inputs)
