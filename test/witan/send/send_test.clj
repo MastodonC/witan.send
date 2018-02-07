@@ -176,10 +176,26 @@
     (testing "all vals are numbers"
       (is (every? #(number? %) (reduce concat result))))))
 
-(deftest modify-transition-count-test
-  (testing ""
-    (is (= 2 (get (modify-transition-count {[2014 1 :NONSEND :SEMH-MMSIB] 1 [2014 1 :NONSEND :CL-MMSIB] 4} [2014 1 :NONSEND :SEMH-MMSIB] * 2) [2014 1 :NONSEND :SEMH-MMSIB])))))
+(deftest modify-transitions-test
+  (let [transitions {[2014 1 :NONSEND :SEMH-MMSIB] 2, [2014 1 :NONSEND :SP-MMSIB] 3, [2014 1 :SP-MU :SP-MU] 2}
+        state-change1 [[2014 1 :SP-MU :SP-MU] [2014 1 :NONSEND :SEMH-MMSIB]]
+        state-change2 [[2014 1 :NONSEND :SP-MMSIB] [2014 1 :NONSEND :SEMH-MMSIB]]]
+    (testing "modifies transitions"
+      (is (not= transitions (modify-transitions transitions state-change1 * 0.5))))
+    (testing "state [2014 8 :SP-MU :SP-MU] is divided by two"
+      (is (= 1 (get (modify-transitions transitions state-change1 * 0.5) [2014 1 :SP-MU :SP-MU]))))
+    (testing "state [2014 0 :NONSEND :SP-MMSIB] takes the joiners of state [2014 8 :SP-MU :SP-MU]"
+      (is (= 3 (get (modify-transitions transitions state-change1 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB]))))
+    (testing "odd values are rounded and exchanged correctly"
+      (is (= 3 (get (modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB])))
+      (is (= 2 (get (modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SP-MMSIB]))))))
 
 (deftest transition-present?-test
-  (testing ""
+  (testing "transition state is present in coll"
     (is (transition-present? [11 :CI-MSSOB :CI-ISSR] '([6 :OTH-MSSSH :OTH-MSSSH] [6 :SP-MU :SP-MU] [6 :UKN-MMSIB :UKN-MMSIB] [11 :CI-MSSOB :CI-ISSR] [6 :SP-IMS :SP-IMS] [6 :SEMH-MSSCT :SEMH-NMSS] [8 :CI-OOE :CI-ISS] [8 :CI-MMSOB :CI-MMSOB] [6 :SP-MU :SP-NMSS] [6 :CI-MSSSH :CI-MSSSH] [8 :SEMH-MMSIB :NONSEND] [13 :SP-MSSOB :NONSEND] [4 :CL-MSSSH :NONSEND])))))
+
+(deftest update-ifelse-assoc-test
+  (testing "if key present +1 to val"
+    (is (= 2 (:foo (update-ifelse-assoc {:foo 1 :bar 2} :foo + 1)))))
+  (testing "if key not present, insert key with val"
+    (is (= 1 (:foo (update-ifelse-assoc {:baz 1 :bar 2} :foo + 1))))))

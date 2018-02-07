@@ -120,6 +120,12 @@
 
 ;; Workflow functions
 
+(definput settings-to-change-1-0-0
+  {:witan/name :send/settings-to-change
+   :witan/version "1.0.0"
+   :witan/key :settings-to-change
+   :witan/schema sc/SettingsToChange})
+
 (definput initial-send-population-1-0-0
   {:witan/name :send/initial-send-population
    :witan/version "1.0.0"
@@ -178,33 +184,22 @@
            {} a)
    b))
 
-(def states-to-halve
-  "List of states to change for TH alternative scenario"
-  [:CI-MSSOB
-   :CI-MMSOB
-   :CI-MUOB
-   :CL-MSSOB
-   :CL-MMSOB
-   :CL-MUOB
-   :OTH-MSSOB
-   :OTH-MMSOB
-   :OTH-MUOB
-   :SEMH-MSSOB
-   :SEMH-MMSOB
-   :SEMH-MUOB
-   :SP-MSSOB
-   :SP-MMSOB
-   :SP-MUOB
-   :UKN-MSSOB
-   :UKN-MMSOB
-   :UKN-MUOB])
+(defn generate-transition-key [cy ay need setting]
+  (vector cy ay :NONSEND (states/state need setting)))
 
-(defn generate-transition-key [cy ay state]
-  (vector cy ay :NONSEND state))
+(defn update-ifelse-assoc [m k arithmetic-fn v]
+  (if (contains? m k)
+    (update m k #(arithmetic-fn % v))
+    (assoc m k v)))
 
-(defn modify-transition-count [transitions k modifier v]
-  (if (contains? transitions k)
-    (update transitions k #(u/int-ceil (modifier % v)))
+(defn modify-transitions [transitions [first-state second-state] arithmetic-fn v]
+  (if (contains? transitions first-state)
+    (let [pop (get transitions first-state)
+          mod-pop (u/int-ceil (arithmetic-fn pop v))
+          diff (- pop mod-pop)]
+      (-> transitions
+          (assoc first-state mod-pop)
+          (update-ifelse-assoc second-state + diff)))
     transitions))
 
 (defworkflowfn prepare-send-inputs-1-0-0
@@ -212,12 +207,13 @@
    row for each individual/year/simulation. Also includes age & state columns"
   {:witan/name :send/prepare-send-inputs
    :witan/version "1.0.0"
-   :witan/input-schema {:population sc/PopulationDataset
+   :witan/input-schema {:settings-to-change sc/SettingsToChange
+                        :population sc/PopulationDataset
                         :initial-send-population sc/SENDPopulation
                         :transition-matrix sc/TransitionCounts
                         :setting-cost sc/NeedSettingCost
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
-   :witan/param-schema {:multiply-transition-by s/Num}
+   :witan/param-schema {:modify-transition-by s/Num}
    :witan/output-schema {:population-by-age-state sc/ModelState
                          :projected-population sc/PopulationByCalendarAndAcademicYear
                          :joiner-beta-params sc/JoinerBetaParams
@@ -229,23 +225,32 @@
                          :valid-setting-academic-years sc/ValidSettingAcademicYears
                          :transition-matrix sc/TransitionCounts
                          :population sc/PopulationDataset}}
-  [{:keys [initial-send-population transition-matrix population
+  [{:keys [settings-to-change initial-send-population transition-matrix population
            setting-cost valid-setting-academic-years]}
-   {:keys [multiply-transition-by]}]
+   {:keys [modify-transition-by]}]
   (let [original-transitions transition-matrix
         ages (distinct (map :academic-year (ds/row-maps population)))
         years (distinct (map :calendar-year (ds/row-maps population)))
-        keys-to-change (vec (mapcat (fn [cy] (mapcat (fn [ay]
-                                                       (map (fn [state] (generate-transition-key cy ay state))
-                                                            states-to-halve)) ages)) years))
-        transition-matrix (if (= 1 multiply-transition-by)
+        valid-needs (->> (ds/row-maps valid-setting-academic-years)
+                         (states/calculate-valid-needs-from-setting-academic-years))
+        states-to-change (if (= 1 modify-transition-by)
+                           nil
+                           (let [state-pairs (->> settings-to-change
+                                                  ds/row-maps
+                                                  (map #(vector (:setting-1 %) (:setting-2 %))))]
+                             (vec (mapcat (fn [year]
+                                            (mapcat (fn [age]
+                                                      (mapcat (fn [need]
+                                                                (map (fn [setting] (vector (generate-transition-key age year need (first setting))
+                                                                                           (generate-transition-key age year need (second setting))))
+                                                                     state-pairs)) valid-needs)) ages)) years))))
+        transition-matrix (if (= 1 modify-transition-by)
                             (ds/row-maps transition-matrix)
                             (let [convert (-> transition-matrix
                                               ds/row-maps
                                               u/full-transitions-map)
-                                  result (reduce (fn [m k] (modify-transition-count m k * multiply-transition-by)) convert keys-to-change)]
+                                  result (reduce (fn [m k] (modify-transitions m k * modify-transition-by)) convert states-to-change)]
                               (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)) result)))
-        ;;; take the same states here, check their count, divide by n, sum total across a need, then apply where?
         transitions (u/transitions-map transition-matrix)
         transition-matrix-filtered (filter #(= (:calendar-year %) 2016) transition-matrix)
 
@@ -253,9 +258,6 @@
 
         valid-settings (->> (ds/row-maps valid-setting-academic-years)
                             (states/calculate-valid-settings-from-setting-academic-years))
-
-        valid-needs (->> (ds/row-maps valid-setting-academic-years)
-                         (states/calculate-valid-needs-from-setting-academic-years))
 
         valid-states (->> (ds/row-maps valid-setting-academic-years)
                           (states/calculate-valid-states-from-setting-academic-years))
@@ -391,7 +393,6 @@
                    (do (println "Reducing...")
                        (transduce (map #(map :model %)) (reduce-rf iterations valid-states setting-cost-lookup) projection))))
         projection (apply concat projections)]
-    (output-transitions "target/transitions.edn" projection)
     ;;    (println mover-beta-params)
     (println "Combining...")
     {:projection (projection->transitions projection)
@@ -490,6 +491,7 @@
             mover-rates-CI (map #(confidence-interval mover-rates %) years)
             ;;n-colours (vec (repeatedly (count years) ch/random-colour)) ;; alternative random colour selection
             n-colours (take (count years) ch/palette)]
+        (output-transitions "target/transitions.edn" projection)
         (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
           (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
