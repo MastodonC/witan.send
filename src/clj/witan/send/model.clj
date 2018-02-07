@@ -7,7 +7,8 @@
 
 (def send-model-workflow
   "Defines each step of the model"
-  [[:initial-send-population :prepare-send-inputs]
+  [[:settings-to-change :prepare-send-inputs]
+   [:initial-send-population :prepare-send-inputs]
    [:transition-matrix :prepare-send-inputs]
    [:population :prepare-send-inputs]
    [:setting-cost :prepare-send-inputs]
@@ -17,7 +18,12 @@
 
 (def send-model-catalog
   "Provides metadata for each step in the model"
-  [{:witan/name :initial-send-population
+  [{:witan/name :settings-to-change
+    :witan/version "1.0.0"
+    :witan/type :input
+    :witan/fn :send/settings-to-change
+    :witan/params {:src ""}}
+   {:witan/name :initial-send-population
     :witan/version "1.0.0"
     :witan/type :input
     :witan/fn :send/initial-send-population
@@ -46,7 +52,7 @@
     :witan/version "1.0.0"
     :witan/type :function
     :witan/fn :send/prepare-send-inputs
-    :witan/params {:multiply-transition-by 1}}
+    :witan/params {:modify-transition-by 1}}
    {:witan/name :run-send-model
     :witan/version "1.0.0"
     :witan/type :function
@@ -73,7 +79,8 @@
   []
   (reify p/IModelLibrary
     (available-fns [_]
-      (map-fn-meta send/initial-send-population-1-0-0
+      (map-fn-meta send/settings-to-change-1-0-0
+                   send/initial-send-population-1-0-0
                    send/transition-matrix-1-0-0
                    send/population-1-0-0
                    send/setting-cost-1-0-0
