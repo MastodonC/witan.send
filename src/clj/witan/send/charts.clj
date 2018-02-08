@@ -36,10 +36,10 @@
 (defn sankey [{:keys [title] :or {title ""}} df]
   (gg4clj/render
    [[:require "ggforce"]
-    [:<- :foo (gg4clj/data-frame df)]
+    [:<- :data (gg4clj/data-frame df)]
     [:<- :palette (r-combine palette)]
     (gg4clj/r+
-     [:ggplot :foo [:aes :x {:id :id :split [:factor :y] :value :value}]]
+     [:ggplot :data [:aes :x {:id :id :split [:factor :y] :value :value}]]
      [:ggtitle title]
      [:geom_parallel_sets [:aes {:fill :setting}] {:alpha 0.5 :axis.width 0.1}]
      [:geom_parallel_sets_axes {:axis.width 0.2 :fill "#F6F6F6" :color "#DDDDDD"}]
@@ -56,7 +56,7 @@
        (gather-set-data)
        (seq-of-maps->data-frame)
        (sankey {:title (str "Aggregate setting transitions: " calendar-year "/" (apply str (drop 2 (str (inc calendar-year)))))}))
-  (move-file "Rplots.pdf" (str "target/historic-transitions_" calendar-year ".pdf")))
+  (move-file "Rplots.pdf" (str "target/Historic-Transitions_" calendar-year ".pdf")))
 
 (defn pull-year
   [data pos]
@@ -94,10 +94,10 @@
         non-zero-data (filter valid-years-vector? (first data))
         min-year (first (first non-zero-data))
         max-year (first (last non-zero-data))]
-    (gg4clj/render [[:<- :foo
+    (gg4clj/render [[:<- :data
                      (gg4clj/data-frame
                       (merge lowers uppers {:year ay}))]
-                    (apply gg4clj/r+ (concat [[:ggplot :foo [:aes :year :upper0]]]
+                    (apply gg4clj/r+ (concat [[:ggplot :data [:aes :year :upper0]]]
                                              ribbon-all-years
                                              [[:ggtitle (str title " probability by academic year")]]
                                              [[:xlab "NCY"]]
@@ -107,4 +107,66 @@
                                                                    :values (r-combine colours)}]]
                                              [[:scale_x_continuous {:breaks (r-combine (filter even? (range min-year max-year)))
                                                                     :limit [:c min-year max-year]}]]))]))
-  (move-file "Rplots.pdf" (str "target/" title "_probability.pdf")))
+  (move-file "Rplots.pdf" (str "target/" title "_Probability.pdf")))
+
+(defn get-total-historical-send-pop [year transitions-data]
+  (count (map :academic-year-1 (filter #(= (:calendar-year %) year) (filter #(not= (:setting-1 %) :NONSEND) transitions-data)))))
+
+(defn is-send-and-is-year? [row year]
+  (and (not= (:setting-1 row) :NONSEND)
+       (= (:calendar-year row) year)))
+
+(defn population-line-plot
+  [historic-data future-projections-data]
+  (let [historic-years (vec (distinct (map :calendar-year historic-data)))
+        projected-years (vec (#(range % (+ (count future-projections-data) %))
+                              (inc (last historic-years))))
+        historic-pops (map #(get-total-historical-send-pop % historic-data) historic-years)
+        years (into [] (concat historic-years projected-years))
+        means (into [] (concat historic-pops (map int (map :mean future-projections-data))))
+        low-cis (into [] (concat (repeat (count historic-years) :NA) (map :low-ci future-projections-data)))
+        high-cis (into [] (concat (repeat (count historic-years) :NA) (map :high-ci future-projections-data)))
+        gg4clj-data-frame {:year years :mean means :min low-cis :max high-cis}
+        min-year (first historic-years)
+        max-year (last projected-years)
+        highest-val (apply max (map :max future-projections-data))]
+    (gg4clj/render [[:require "ggforce"]
+                    [:<- :df
+                     (gg4clj/data-frame gg4clj-data-frame)]
+                    (gg4clj/r+ [:ggplot {:data :df} [:aes {:x :year :y :mean}]]
+                               [:ggtitle "SEND Population Projection"]
+                               [:geom_line [:aes {:colour "mean" :linetype "mean"}]]
+                               [:geom_point {:colour "darkcyan"}]
+                               [:geom_line {:data :df} [:aes {:x :year :y :max :colour "conf" :linetype "conf"}]]
+                               [:geom_line {:data :df} [:aes {:x :year :y :min :colour "conf" :linetype "conf"}]]
+                               [:scale_y_continuous {:name "Total SEND population" :limits [:c 0 highest-val]}]
+                               [:scale_x_continuous {:name "Year" :breaks [:seq min-year max-year {:by 1}] :limits [:c min-year max-year]}]
+                               [:theme_bw]
+                               [:scale_linetype_manual {:name "" :values [:c {:mean "solid" :conf "dashed"}] :labels [:c {:mean "Mean" :conf "95% Confidence"}]}]
+                               [:scale_colour_manual {:name "" :values [:c {:mean "darkcyan" :conf "grey38"}] :labels [:c {:mean "Mean" :conf "95% Confidence"}]}])]))
+  (move-file "Rplots.pdf" "target/Total_Population.pdf"))
+
+(defn to-millions [n]
+  (/ n 1000000))
+
+(defn send-cost-plot
+  [cost-data years]
+  (let [proj-years (vec (#(range % (+ (count cost-data) %)) (inc (last years))))
+        low-ci (vec  (map to-millions (map :low-ci cost-data)))
+        q1 (vec (map to-millions (map :q1 cost-data)))
+        median  (vec (map to-millions (map :median cost-data)))
+        q3 (vec (map to-millions (map :q3 cost-data)))
+        high-ci (vec (map to-millions (map :high-ci cost-data)))
+        gg2clj-data-frame {:year proj-years :ymin low-ci :lower q1 :middle median :upper q3 :ymax high-ci}
+        highest-val (last high-ci)
+        min-year (first proj-years)
+        max-year (last proj-years)]
+    (gg4clj/render [[:<- :df
+                     (gg4clj/data-frame gg2clj-data-frame)]
+                    (gg4clj/r+ [:ggplot {:data :df} [:aes {:x :year}]]
+                               [:ggtitle "SEND Cost Projection"]
+                               [:geom_boxplot {:stat "identity"} {:fill "snow"} {:colour "darkcyan"} [:aes {:ymin :ymin :lower :lower :middle :middle :upper :upper :ymax :ymax}]]
+                               [:scale_y_continuous {:name "Total Projected SEND Cost  /  £ million" :limits [:c 0 highest-val]}]
+                               [:scale_x_continuous {:name "Year" :breaks [:seq min-year max-year {:by 1}] :limits [:c (- min-year 0.5) (+ max-year 0.5)]}]
+                               [:theme_bw] )]))
+  (move-file "Rplots.pdf" "target/Total_Cost.pdf"))
