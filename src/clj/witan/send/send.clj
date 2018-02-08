@@ -112,12 +112,10 @@
            modified-mover-state-alphas] :as params-2}
    {:keys [model transitions]} [calendar-year projected-population]]
   (let [params (if (= 2000 modify-transitions-from)
-                 params-2
+                 params-1
                  (if (>= calendar-year modify-transitions-from)
-                   params-2
-                   params-1))
-        #_ (prn calendar-year)
-        #_ (prn (second (:joiner-state-alphas params)))
+                   params-1
+                   params-2))
         cohorts (step/age-population projected-population model)
         [model transitions] (reduce (fn [model-state cohort]
                                       (apply-leavers-movers-for-cohort model-state cohort params calendar-year))
@@ -313,6 +311,8 @@
         years (distinct (map :calendar-year (ds/row-maps population)))
         valid-needs (->> (ds/row-maps valid-setting-academic-years)
                          (states/calculate-valid-needs-from-setting-academic-years))
+        _ (when (not= 1 modify-transition-by)
+            (prn (str "Modifying transitions by " modify-transition-by)))
         states-to-change (when (not= 1 modify-transition-by)
                            (build-states-to-change settings-to-change valid-needs ages years))
         transition-matrix (ds/row-maps transition-matrix)
@@ -321,6 +321,9 @@
                                                        u/full-transitions-map)
                                            result (reduce (fn [m k] (modify-transitions m k * modify-transition-by)) convert states-to-change)]
                                        (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)) result)))
+        _ (if (nil? modified-transition-matrix)
+            (prn "Using input transitions matrix")
+            (prn "Using modified transitions matrix"))
         transitions (if (nil? modified-transition-matrix)
                       (u/transitions-map transition-matrix)
                       (u/transitions-map modified-transition-matrix))
@@ -631,7 +634,7 @@
                 columns [:calendar-year :setting-1 :need-1 :academic-year-1]
                 headers (mapv name columns)
                 rows (mapv #(mapv % columns) transitions-data)]
-          (csv/write-csv writer (into [headers] rows))))
+            (csv/write-csv writer (into [headers] rows))))
         (with-open [writer (io/writer (io/file "target/valid-settings.csv"))]
           (csv/write-csv writer valid-settings))
         (println "Producing charts...")
@@ -641,6 +644,5 @@
         (ch/ribbon-plot leaver-rates-CI "Leaver" years n-colours)
         (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
         (ch/population-line-plot transitions-data (map :total-in-send send-output))
-        (ch/send-cost-plot (map :total-cost send-output) years)
-        )))
-  send-output) 
+        (ch/send-cost-plot (map :total-cost send-output) years))))
+  send-output)
