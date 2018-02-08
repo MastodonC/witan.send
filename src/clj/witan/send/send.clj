@@ -112,7 +112,9 @@
            modified-mover-state-alphas] :as scenario-projection}
    {:keys [model transitions]} [calendar-year projected-population]]
   (let [params (if (= 2000 modify-transitions-from)
-                 standard-projection
+                 (if ((complement nil?) scenario-projection)
+                   scenario-projection
+                   standard-projection)
                  (if (>= calendar-year modify-transitions-from)
                    scenario-projection
                    standard-projection))
