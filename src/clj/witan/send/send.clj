@@ -106,16 +106,16 @@
    simulation {:keys [joiner-beta-params joiner-state-alphas
                       leaver-beta-params
                       mover-beta-params mover-state-alphas
-                      valid-year-settings] :as params-1}
+                      valid-year-settings] :as standard-projection}
    {:keys [modified-joiner-beta-params modified-joiner-state-alphas
            modified-leaver-beta-params modified-mover-beta-params
-           modified-mover-state-alphas] :as params-2}
+           modified-mover-state-alphas] :as scenario-projection}
    {:keys [model transitions]} [calendar-year projected-population]]
   (let [params (if (= 2000 modify-transitions-from)
-                 params-1
+                 standard-projection
                  (if (>= calendar-year modify-transitions-from)
-                   params-1
-                   params-2))
+                   scenario-projection
+                   standard-projection))
         cohorts (step/age-population projected-population model)
         [model transitions] (reduce (fn [model-state cohort]
                                       (apply-leavers-movers-for-cohort model-state cohort params calendar-year))
@@ -281,28 +281,28 @@
                         :setting-cost sc/NeedSettingCost
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
    :witan/param-schema {:modify-transition-by s/Num}
-   :witan/output-schema {:params-1 {:population-by-age-state sc/ModelState
-                                    :projected-population sc/PopulationByCalendarAndAcademicYear
-                                    :joiner-beta-params sc/JoinerBetaParams
-                                    :leaver-beta-params sc/YearStateBetaParams
-                                    :joiner-state-alphas sc/AcademicYearStateAlphas
-                                    :mover-beta-params sc/YearStateBetaParams
-                                    :mover-state-alphas sc/TransitionAlphas
-                                    :setting-cost-lookup sc/SettingCostLookup
-                                    :valid-setting-academic-years sc/ValidSettingAcademicYears
-                                    :transition-matrix sc/TransitionCounts
-                                    :population sc/PopulationDataset}
-                         :params-2 {:population-by-age-state sc/ModelState
-                                    :projected-population sc/PopulationByCalendarAndAcademicYear
-                                    :joiner-beta-params sc/JoinerBetaParams
-                                    :leaver-beta-params sc/YearStateBetaParams
-                                    :joiner-state-alphas sc/AcademicYearStateAlphas
-                                    :mover-beta-params sc/YearStateBetaParams
-                                    :mover-state-alphas sc/TransitionAlphas
-                                    :setting-cost-lookup sc/SettingCostLookup
-                                    :valid-setting-academic-years sc/ValidSettingAcademicYears
-                                    :transition-matrix sc/TransitionCounts
-                                    :population sc/PopulationDataset}}}
+   :witan/output-schema {:standard-projection {:population-by-age-state sc/ModelState
+                                               :projected-population sc/PopulationByCalendarAndAcademicYear
+                                               :joiner-beta-params sc/JoinerBetaParams
+                                               :leaver-beta-params sc/YearStateBetaParams
+                                               :joiner-state-alphas sc/AcademicYearStateAlphas
+                                               :mover-beta-params sc/YearStateBetaParams
+                                               :mover-state-alphas sc/TransitionAlphas
+                                               :setting-cost-lookup sc/SettingCostLookup
+                                               :valid-setting-academic-years sc/ValidSettingAcademicYears
+                                               :transition-matrix sc/TransitionCounts
+                                               :population sc/PopulationDataset}
+                         :scenario-projection (s/maybe {:population-by-age-state sc/ModelState
+                                                        :projected-population sc/PopulationByCalendarAndAcademicYear
+                                                        :joiner-beta-params sc/JoinerBetaParams
+                                                        :leaver-beta-params sc/YearStateBetaParams
+                                                        :joiner-state-alphas sc/AcademicYearStateAlphas
+                                                        :mover-beta-params sc/YearStateBetaParams
+                                                        :mover-state-alphas sc/TransitionAlphas
+                                                        :setting-cost-lookup sc/SettingCostLookup
+                                                        :valid-setting-academic-years sc/ValidSettingAcademicYears
+                                                        :transition-matrix sc/TransitionCounts
+                                                        :population sc/PopulationDataset})}}
   [{:keys [settings-to-change initial-send-population transition-matrix population
            setting-cost valid-setting-academic-years]}
    {:keys [modify-transition-by]}]
@@ -345,13 +345,12 @@
     (s/validate (sc/SENDPopulation+ valid-settings) initial-send-population)
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) setting-cost)
-    {:params-1 (prep-inputs initial-state splice-ncy valid-states transition-matrix transition-matrix-filtered
-                            population valid-setting-academic-years original-transitions setting-cost)
-     :params-2 (if ((complement nil?) modified-transition-matrix)
-                 (prep-inputs initial-state splice-ncy valid-states modified-transition-matrix transition-matrix-filtered
-                              population valid-setting-academic-years original-transitions setting-cost)
-                 (prep-inputs initial-state splice-ncy valid-states transition-matrix transition-matrix-filtered
-                              population valid-setting-academic-years original-transitions setting-cost))}))
+    {:standard-projection (prep-inputs initial-state splice-ncy valid-states transition-matrix transition-matrix-filtered
+                                       population valid-setting-academic-years original-transitions setting-cost)
+     :scenario-projection (if ((complement nil?) modified-transition-matrix)
+                            (prep-inputs initial-state splice-ncy valid-states modified-transition-matrix transition-matrix-filtered
+                                         population valid-setting-academic-years original-transitions setting-cost)
+                            nil)}))
 
 (defn projection->transitions
   [projections]
@@ -398,28 +397,28 @@
    row for each individual/year/simulation. Also includes age & state columns"
   {:witan/name :send/run-send-model
    :witan/version "1.0.0"
-   :witan/input-schema {:params-1 {:population sc/PopulationDataset
-                                   :population-by-age-state sc/ModelState
-                                   :projected-population sc/PopulationByCalendarAndAcademicYear
-                                   :joiner-beta-params sc/JoinerBetaParams
-                                   :leaver-beta-params sc/YearStateBetaParams
-                                   :joiner-state-alphas sc/AcademicYearStateAlphas
-                                   :mover-beta-params sc/YearStateBetaParams
-                                   :mover-state-alphas sc/TransitionAlphas
-                                   :setting-cost-lookup sc/SettingCostLookup
-                                   :valid-setting-academic-years sc/ValidSettingAcademicYears
-                                   :transition-matrix sc/TransitionCounts}
-                        :params-2 {:population sc/PopulationDataset
-                                   :population-by-age-state sc/ModelState
-                                   :projected-population sc/PopulationByCalendarAndAcademicYear
-                                   :joiner-beta-params sc/JoinerBetaParams
-                                   :leaver-beta-params sc/YearStateBetaParams
-                                   :joiner-state-alphas sc/AcademicYearStateAlphas
-                                   :mover-beta-params sc/YearStateBetaParams
-                                   :mover-state-alphas sc/TransitionAlphas
-                                   :setting-cost-lookup sc/SettingCostLookup
-                                   :valid-setting-academic-years sc/ValidSettingAcademicYears
-                                   :transition-matrix sc/TransitionCounts}}
+   :witan/input-schema {:standard-projection {:population sc/PopulationDataset
+                                              :population-by-age-state sc/ModelState
+                                              :projected-population sc/PopulationByCalendarAndAcademicYear
+                                              :joiner-beta-params sc/JoinerBetaParams
+                                              :leaver-beta-params sc/YearStateBetaParams
+                                              :joiner-state-alphas sc/AcademicYearStateAlphas
+                                              :mover-beta-params sc/YearStateBetaParams
+                                              :mover-state-alphas sc/TransitionAlphas
+                                              :setting-cost-lookup sc/SettingCostLookup
+                                              :valid-setting-academic-years sc/ValidSettingAcademicYears
+                                              :transition-matrix sc/TransitionCounts}
+                        :scenario-projection (s/maybe {:population sc/PopulationDataset
+                                                       :population-by-age-state sc/ModelState
+                                                       :projected-population sc/PopulationByCalendarAndAcademicYear
+                                                       :joiner-beta-params sc/JoinerBetaParams
+                                                       :leaver-beta-params sc/YearStateBetaParams
+                                                       :joiner-state-alphas sc/AcademicYearStateAlphas
+                                                       :mover-beta-params sc/YearStateBetaParams
+                                                       :mover-state-alphas sc/TransitionAlphas
+                                                       :setting-cost-lookup sc/SettingCostLookup
+                                                       :valid-setting-academic-years sc/ValidSettingAcademicYears
+                                                       :transition-matrix sc/TransitionCounts})}
    :witan/param-schema {:seed-year sc/YearSchema
                         :simulations s/Int
                         :random-seed s/Int
@@ -429,13 +428,13 @@
                          :transition-matrix sc/TransitionCounts
                          :valid-setting-academic-years sc/ValidSettingAcademicYears
                          :population sc/PopulationDataset}}
-  [{:keys [params-1 params-2]}
+  [{:keys [standard-projection scenario-projection]}
    {:keys [seed-year random-seed simulations modify-transitions-from]}]
   (u/set-seed! random-seed)
-  (let [modified-inputs params-2
+  (let [modified-inputs scenario-projection
         {:keys [population population-by-age-state projected-population joiner-beta-params joiner-state-alphas
                 leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years
-                transition-matrix] :as inputs} params-1
+                transition-matrix] :as inputs} standard-projection
         projected-future-pop-by-year (->> projected-population
                                           (filter (fn [[k _]] (> k seed-year)))
                                           (sort-by key))
