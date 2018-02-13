@@ -409,15 +409,15 @@
                                                        (states/calculate-valid-year-settings-from-setting-academic-years)))
         projections (->> (range simulations)
                          (partition-all (int (/ simulations 8)))
-                         (map (fn [simulations]
-                                (->> (for [simulation simulations]
-                                       (let [projection (reductions (partial run-model-iteration modify-transitions-from simulation inputs modified-inputs)
-                                                                    {:model population-by-age-state
-                                                                     :transitions {}}
-                                                                    projected-future-pop-by-year)]
-                                         (println (format "Created projection %d" simulation))
-                                         projection))
-                                     (doall))))
+                         (pmap (fn [simulations]
+                                 (->> (for [simulation simulations]
+                                        (let [projection (reductions (partial run-model-iteration modify-transitions-from simulation inputs modified-inputs)
+                                                                     {:model population-by-age-state
+                                                                      :transitions {}}
+                                                                     projected-future-pop-by-year)]
+                                          (println (format "Created projection %d" simulation))
+                                          projection))
+                                      (doall))))
                          (doall))
         ;; _ (println "Printing....")
         ;; _ (prn (first (first projections)))
