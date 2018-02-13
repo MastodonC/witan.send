@@ -130,9 +130,8 @@
         min-year (first historic-years)
         max-year (last projected-years)
         highest-val (apply max (map :max future-projections-data))]
-    (gg4clj/render [[:require "ggforce"]
-                    [:<- :df
-                     (gg4clj/data-frame gg4clj-data-frame)]
+    (gg4clj/render [[:<- :df
+                    (gg4clj/data-frame gg4clj-data-frame)]
                     (gg4clj/r+ [:ggplot {:data :df} [:aes {:x :year :y :mean}]]
                                [:ggtitle "SEND Population Projection"]
                                [:geom_line [:aes {:colour "mean" :linetype "mean"}]]
