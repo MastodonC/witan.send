@@ -339,8 +339,7 @@
   (apply merge-with + (mapcat #(map :transitions %) projections)))
 
 (defn output-transitions [file projections]
-  (let [transitions (projection->transitions projections)]
-    (spit file (pr-str transitions))))
+  (spit file (pr-str projections)))
 
 (defn values-rf
   "Associate a reducing function to be used for each value of map indexed by key"
