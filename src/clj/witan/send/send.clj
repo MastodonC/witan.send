@@ -395,10 +395,14 @@
   [{:keys [standard-projection scenario-projection]}
    {:keys [seed-year random-seed simulations modify-transitions-from]}]
   (u/set-seed! random-seed)
-  (let [modified-inputs scenario-projection
-        {:keys [population population-by-age-state projected-population joiner-beta-params joiner-state-alphas
-                leaver-beta-params mover-beta-params mover-state-alphas setting-cost-lookup valid-setting-academic-years
+  (let [{:keys [population population-by-age-state projected-population joiner-beta-params
+                joiner-state-alphas leaver-beta-params mover-beta-params mover-state-alphas
+                setting-cost-lookup valid-setting-academic-years
                 transition-matrix] :as inputs} standard-projection
+        modified-inputs (when ((complement nil?) scenario-projection)
+                          (assoc scenario-projection :valid-year-settings
+                                 (->> (ds/row-maps valid-setting-academic-years)
+                                      (states/calculate-valid-year-settings-from-setting-academic-years))))
         projected-future-pop-by-year (->> projected-population
                                           (filter (fn [[k _]] (> k seed-year)))
                                           (sort-by key))
