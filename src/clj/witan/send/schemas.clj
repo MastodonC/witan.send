@@ -135,6 +135,19 @@
    :q1 s/Num
    :q3 s/Num})
 
+(def projection-map
+  {:population PopulationDataset
+   :population-by-age-state ModelState
+   :projected-population PopulationByCalendarAndAcademicYear
+   :joiner-beta-params JoinerBetaParams
+   :leaver-beta-params YearStateBetaParams
+   :joiner-state-alphas AcademicYearStateAlphas
+   :mover-beta-params YearStateBetaParams
+   :mover-state-alphas TransitionAlphas
+   :setting-cost-lookup SettingCostLookup
+   :valid-setting-academic-years ValidSettingAcademicYears
+   :transition-matrix TransitionCounts})
+
 (def Results
   [{:by-state {[(s/one AcademicYear :academic-year)
                 (s/one s/Keyword :state)]
