@@ -229,15 +229,7 @@
                                               (group-by :calendar-year)
                                               (map (fn [[k v]] [k (u/total-by-academic-year v)]))
                                               (into {}))}]
-    (if (nil? transition-matrix-filtered)
-      (merge start-map
-             {:joiner-beta-params (p/beta-params-joiners valid-states
-                                                         transition-matrix
-                                                         (ds/row-maps population))
-              :leaver-beta-params (p/beta-params-leavers valid-states transition-matrix)
-              :joiner-state-alphas (p/alpha-params-joiner-states valid-states (u/transitions-map transition-matrix))
-              :mover-beta-params (p/beta-params-movers valid-states transition-matrix)
-              :mover-state-alphas  (p/alpha-params-movers valid-states transition-matrix)})
+    (if transition-matrix-filtered
       (merge start-map
              {:joiner-beta-params (stitch-ay-params splice-ncy
                                                     (p/beta-params-joiners valid-states
@@ -258,7 +250,15 @@
                                                          (p/beta-params-movers valid-states transition-matrix-filtered))
               :mover-state-alphas (stitch-ay-state-params splice-ncy
                                                           (p/alpha-params-movers valid-states transition-matrix)
-                                                          (p/alpha-params-movers valid-states transition-matrix-filtered))}))))
+                                                          (p/alpha-params-movers valid-states transition-matrix-filtered))})
+      (merge start-map
+             {:joiner-beta-params (p/beta-params-joiners valid-states
+                                                         transition-matrix
+                                                         (ds/row-maps population))
+              :leaver-beta-params (p/beta-params-leavers valid-states transition-matrix)
+              :joiner-state-alphas (p/alpha-params-joiner-states valid-states (u/transitions-map transition-matrix))
+              :mover-beta-params (p/beta-params-movers valid-states transition-matrix)
+              :mover-state-alphas  (p/alpha-params-movers valid-states transition-matrix)}))))
 
 (defn build-states-to-change [settings-to-change valid-needs ages years]
   (if (= :nil (-> settings-to-change
@@ -296,7 +296,7 @@
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
    :witan/param-schema {:modify-transition-by s/Num
                         :splice-ncy sc/AcademicYear
-                        :filter-transitions-from (s/maybe sc/CalendarYearRange)}
+                        :filter-transitions-from (s/maybe [sc/CalendarYear])}
    :witan/output-schema {:standard-projection sc/projection-map
                          :scenario-projection (s/maybe sc/projection-map)}}
   [{:keys [settings-to-change initial-send-population transition-matrix population
@@ -323,11 +323,10 @@
         transitions (if (nil? modified-transition-matrix)
                       (u/transitions-map transition-matrix)
                       (u/transitions-map modified-transition-matrix))
-        transition-matrix-filtered (if (nil? filter-transitions-from)
-                                     nil
-                                     (if (nil? modified-transition-matrix)
-                                       (mapcat (fn [year] (filter #(= (:calendar-year %) year) transition-matrix)) filter-transitions-from)
-                                       (mapcat (fn [year] (filter #(= (:calendar-year %) year) modified-transition-matrix)) filter-transitions-from)))
+        transition-matrix-filtered (when filter-transitions-from
+                                     (if modified-transition-matrix
+                                       (mapcat (fn [year] (filter #(= (:calendar-year %) year) modified-transition-matrix)) filter-transitions-from)
+                                       (mapcat (fn [year] (filter #(= (:calendar-year %) year) transition-matrix)) filter-transitions-from)))
 
         initial-state (initialise-model (ds/row-maps initial-send-population))
 
