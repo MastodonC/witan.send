@@ -324,9 +324,7 @@
                       (u/transitions-map transition-matrix)
                       (u/transitions-map modified-transition-matrix))
         transition-matrix-filtered (when filter-transitions-from
-                                     (if modified-transition-matrix
-                                       (mapcat (fn [year] (filter #(= (:calendar-year %) year) modified-transition-matrix)) filter-transitions-from)
-                                       (mapcat (fn [year] (filter #(= (:calendar-year %) year) transition-matrix)) filter-transitions-from)))
+                                     (mapcat (fn [year] (filter #(= (:calendar-year %) year) (or modified-transition-matrix transition-matrix))) filter-transitions-from))
 
         initial-state (initialise-model (ds/row-maps initial-send-population))
 
@@ -344,11 +342,10 @@
     {:standard-projection (prep-inputs initial-state splice-ncy valid-states transition-matrix transition-matrix-filtered
                                        population valid-setting-academic-years original-transitions setting-cost
                                        filter-transitions-from)
-     :scenario-projection (if ((complement nil?) modified-transition-matrix)
+     :scenario-projection (when modified-transition-matrix
                             (prep-inputs initial-state splice-ncy valid-states modified-transition-matrix
                                          transition-matrix-filtered population valid-setting-academic-years
-                                         original-transitions setting-cost filter-transitions-from)
-                            nil)}))
+                                         original-transitions setting-cost filter-transitions-from))}))
 
 (defn projection->transitions
   [projections]
