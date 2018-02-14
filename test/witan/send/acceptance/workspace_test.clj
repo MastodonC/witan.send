@@ -49,13 +49,16 @@
 
   :output? - true/false to output data and charts
 
-  :transition-modifier - value to modify transition rate by (optional, also requires :transitions-file)
+  :transition-modifier - value to modify transition rate of :transitions-file contents by (optional)
 
-  :transitions-file - csv containing list of settings to modify (optional, also requires :transition-modifier)
+  :transitions-file - csv containing list of settings to modify by :transition-modifier (optional)
 
-  :modify-transitions-from - set a year to start modifying transitions from (optional, requires :transition-modifier & :transitions-file"
-  [{:keys [iterations output? transition-modifier
-           transitions-file modify-transitions-from]}]
+  :modify-transitions-from - set a year to start modifying transitions from when :transition-modifier & :transitions-file are set (optional)
+
+  :filter-transitions-from - sets a year or year range as a vector to filter historic transitions by for :splice-ncy (optional)
+
+  :splice-ncy - sets a national curriculum year to ignore transitions of prior to :filter-transitions-from year (optional)"
+  [{:keys [iterations output? transition-modifier transitions-file modify-transitions-from filter-transitions-from splice-ncy]}]
   (let [file-input    (if (nil? transitions-file)
                         (test-inputs)
                         (assoc (test-inputs) :settings-to-change [(str "data/" inputs-path transitions-file) sc/SettingsToChange]))
@@ -66,10 +69,15 @@
                                                (map #(assoc-in % [:witan/params :output] output?)))
                             prep-catalog2 (if (nil? transition-modifier)
                                             prep-catalog1
-                                            (map #(assoc-in % [:witan/params :modify-transition-by] transition-modifier) prep-catalog1))]
-                        (if (nil? modify-transitions-from)
-                          prep-catalog2
-                          (map #(assoc-in % [:witan/params :modify-transitions-from] modify-transitions-from) prep-catalog2)))
+                                            (map #(assoc-in % [:witan/params :modify-transition-by] transition-modifier) prep-catalog1))
+                            prep-catalog3 (if (nil? modify-transitions-from)
+                                            prep-catalog2
+                                            (map #(assoc-in % [:witan/params :modify-transitions-from] modify-transitions-from) prep-catalog2))]
+                        (if (nil? filter-transitions-from)
+                          prep-catalog3
+                          (->> prep-catalog3
+                               (map #(assoc-in % [:witan/params :filter-transitions-from] filter-transitions-from))
+                               (map #(assoc-in % [:witan/params :splice-ncy] splice-ncy)))))
         workspace     {:workflow  (:workflow m/send-model)
                        :catalog   fixed-catalog
                        :contracts (p/available-fns (m/model-library))}
