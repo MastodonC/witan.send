@@ -296,7 +296,7 @@
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
    :witan/param-schema {:modify-transition-by s/Num
                         :splice-ncy sc/AcademicYear
-                        :filter-transitions-from sc/CalendarYear}
+                        :filter-transitions-from (s/maybe sc/CalendarYear)}
    :witan/output-schema {:standard-projection sc/projection-map
                          :scenario-projection (s/maybe sc/projection-map)}}
   [{:keys [settings-to-change initial-send-population transition-matrix population
@@ -323,11 +323,11 @@
         transitions (if (nil? modified-transition-matrix)
                       (u/transitions-map transition-matrix)
                       (u/transitions-map modified-transition-matrix))
-        transition-matrix-filtered (if (< 2000 filter-transitions-from)
+        transition-matrix-filtered (if (nil? filter-transitions-from)
+                                     nil
                                      (if (nil? modified-transition-matrix)
                                        (filter #(= (:calendar-year %) filter-transitions-from) transition-matrix)
-                                       (filter #(= (:calendar-year %) filter-transitions-from) modified-transition-matrix))
-                                     nil)
+                                       (filter #(= (:calendar-year %) filter-transitions-from) modified-transition-matrix)))
         initial-state (initialise-model (ds/row-maps initial-send-population))
 
         valid-settings (->> (ds/row-maps valid-setting-academic-years)
