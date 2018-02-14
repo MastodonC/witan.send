@@ -342,10 +342,12 @@
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) setting-cost)
     {:standard-projection (prep-inputs initial-state splice-ncy valid-states transition-matrix transition-matrix-filtered
-                                       population valid-setting-academic-years original-transitions setting-cost)
+                                       population valid-setting-academic-years original-transitions setting-cost
+                                       filter-transitions-from)
      :scenario-projection (if ((complement nil?) modified-transition-matrix)
-                            (prep-inputs initial-state splice-ncy valid-states modified-transition-matrix transition-matrix-filtered
-                                         population valid-setting-academic-years original-transitions setting-cost)
+                            (prep-inputs initial-state splice-ncy valid-states modified-transition-matrix
+                                         transition-matrix-filtered population valid-setting-academic-years
+                                         original-transitions setting-cost filter-transitions-from)
                             nil)}))
 
 (defn projection->transitions
