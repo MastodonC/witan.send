@@ -60,7 +60,7 @@
     :witan/params {:seed-year 2017
                    :random-seed 50
                    :simulations 1000
-                   :modify-transitions-from 2000}}
+                   :modify-transitions-from nil}}
    {:witan/name :output-send-results
     :witan/version "1.0.0"
     :witan/type :output

@@ -111,7 +111,7 @@
            modified-leaver-beta-params modified-mover-beta-params
            modified-mover-state-alphas] :as scenario-projection}
    {:keys [model transitions]} [calendar-year projected-population]]
-  (let [params (if (= 2000 modify-transitions-from)
+  (let [params (if (nil? modify-transitions-from)
                  (if ((complement nil?) scenario-projection)
                    scenario-projection
                    standard-projection)
@@ -385,7 +385,7 @@
    :witan/param-schema {:seed-year sc/YearSchema
                         :simulations s/Int
                         :random-seed s/Int
-                        :modify-transitions-from sc/YearSchema}
+                        :modify-transitions-from (s/maybe sc/YearSchema)}
    :witan/output-schema {:projection sc/Projection
                          :send-output sc/Results
                          :transition-matrix sc/TransitionCounts
