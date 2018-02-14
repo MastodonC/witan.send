@@ -227,8 +227,7 @@
                                              (into {}))
                    :projected-population (->> (ds/row-maps population)
                                               (group-by :calendar-year)
-                                              (map (fn [[k v]] [k (u/total-by-academic-year v)]))
-                                              (into {}))}]
+                                              (medley/map-vals #(u/total-by-academic-year %)))}]
     (if transition-matrix-filtered
       (merge start-map
              {:joiner-beta-params (stitch-ay-params splice-ncy
