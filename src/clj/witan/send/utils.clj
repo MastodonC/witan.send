@@ -14,7 +14,8 @@
             [witan.send.utils :as u]
             [clojure.java.io :as io]
             [clj-time.core :as t]
-            [clj-time.format :as f])
+            [clj-time.format :as f]
+            [clojure.java.shell :as sh])
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
 
 (def random-seed (atom 0))
@@ -358,7 +359,8 @@
 
 (defn reset-log []
   (def log (atom []))
-  (swap! log conj (str "Model run on " (f/unparse-local (f/formatter "YYYY-MM-dd") (t/today)) " at " (f/unparse (f/formatter "HH:mm") (t/now)) "\n")))
+  (swap! log conj (str "Model run on " (f/unparse-local (f/formatter "YYYY-MM-dd") (t/today)) " at " (f/unparse (f/formatter "HH:mm") (t/now))))
+  (swap! log conj (str "Using git branch: " (:out (sh/sh "git" "rev-parse" "--symbolic-full-name" "--abbrev-ref" "HEAD")) "\n")))
 
 (defn log-info [message]
   (swap! log conj message))
