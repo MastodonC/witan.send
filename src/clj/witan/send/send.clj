@@ -514,6 +514,7 @@
                                   keys
                                   (map #(vec (drop 1 %)))
                                   distinct)]
+    (u/log-info )
     (when (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
       (println "Not every historic transition present in projection. Consider checking valid state input"))
     (when output
@@ -623,7 +624,5 @@
         (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
         (ch/population-line-plot transitions-data (map :total-in-send send-output))
         (ch/send-cost-plot (map :total-cost send-output) years)
-        (u/log-info "this is a test")
-        (u/log-info "this is another test")
         (u/write-log))))
   send-output)
