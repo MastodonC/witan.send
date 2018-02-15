@@ -359,8 +359,10 @@
 
 (defn reset-log []
   (def log (atom []))
-  (swap! log conj (str "Model run on " (f/unparse-local (f/formatter "YYYY-MM-dd") (t/today)) " at " (f/unparse (f/formatter "HH:mm") (t/now))))
-  (swap! log conj (str "Using git branch: " (:out (sh/sh "git" "rev-parse" "--symbolic-full-name" "--abbrev-ref" "HEAD")) "\n")))
+  (sh/sh "git" "fetch" "--tags")
+  (swap! log conj (str "SEND Model " (:out (sh/sh "git" "describe" "--abbrev=0" "--tags"))))
+  (swap! log conj (str "Run on " (f/unparse-local (f/formatter "YYYY-MM-dd") (t/today)) " at " (f/unparse (f/formatter "HH:mm") (t/now))))
+  (swap! log conj (str "Using branch: " (:out (sh/sh "git" "rev-parse" "--symbolic-full-name" "--abbrev-ref" "HEAD")) "\n")))
 
 (defn log-info [message]
   (swap! log conj message))
