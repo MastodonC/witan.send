@@ -11,7 +11,10 @@
             [medley.core :as medley]
             [schema.core :as s]
             [clojure.string :as str]
-            [witan.send.utils :as u])
+            [witan.send.utils :as u]
+            [clojure.java.io :as io]
+            [clj-time.core :as t]
+            [clj-time.format :as f])
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
 
 (def random-seed (atom 0))
@@ -352,3 +355,16 @@
 
 (defn int-ceil [n]
   (int (Math/ceil n)))
+
+(defn reset-log []
+  (def log (atom []))
+  (swap! log conj (str "Model run on " (f/unparse-local (f/formatter "YYYY-MM-dd") (t/today)) " at " (f/unparse (f/formatter "HH:mm") (t/now)) "\n")))
+
+(defn log-info [message]
+  (swap! log conj message))
+
+(defn write-log []
+  (io/delete-file "target/Log.txt" :quiet)
+  (doseq [line @log]
+    (spit "target/Log.txt" (println-str line) :append true)))
+
