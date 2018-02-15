@@ -318,7 +318,7 @@
                                        (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)) result)))
         _ (if (nil? modified-transition-matrix)
             (u/log-info "Used input transitions matrix\n")
-            (u/log-info "Using modified transitions matrix\n"))
+            (u/log-info "Used modified transitions matrix\n"))
         transitions (if (nil? modified-transition-matrix)
                       (u/transitions-map transition-matrix)
                       (u/transitions-map modified-transition-matrix))
@@ -515,7 +515,7 @@
                                   (map #(vec (drop 1 %)))
                                   distinct)]
     (when (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
-      (u/log-info "Not every historic transition present in projection. Consider checking valid state input.\n"))
+      (u/log-info "Not every historic transition present in projection! Consider checking valid state input.\n"))
     (when output
       (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
                                        (reduce #(assoc %1 (:setting %2) (:setting->group %2)) {}))
