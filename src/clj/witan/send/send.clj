@@ -307,7 +307,7 @@
         valid-needs (->> (ds/row-maps valid-setting-academic-years)
                          (states/calculate-valid-needs-from-setting-academic-years))
         _ (when (not= 1 modify-transition-by)
-            (prn (str "Modifying transitions by " modify-transition-by)))
+            (u/log-info (str "Modified transitions by " modify-transition-by)))
         states-to-change (when (not= 1 modify-transition-by)
                            (build-states-to-change settings-to-change valid-needs ages years))
         transition-matrix (ds/row-maps transition-matrix)
@@ -317,8 +317,8 @@
                                            result (reduce (fn [m k] (modify-transitions m k * modify-transition-by)) convert states-to-change)]
                                        (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)) result)))
         _ (if (nil? modified-transition-matrix)
-            (prn "Using input transitions matrix")
-            (prn "Using modified transitions matrix"))
+            (u/log-info "Used input transitions matrix\n")
+            (u/log-info "Using modified transitions matrix\n"))
         transitions (if (nil? modified-transition-matrix)
                       (u/transitions-map transition-matrix)
                       (u/transitions-map modified-transition-matrix))
@@ -514,9 +514,8 @@
                                   keys
                                   (map #(vec (drop 1 %)))
                                   distinct)]
-    (u/log-info )
     (when (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
-      (println "Not every historic transition present in projection. Consider checking valid state input"))
+      (u/log-info "Not every historic transition present in projection. Consider checking valid state input.\n"))
     (when output
       (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
                                        (reduce #(assoc %1 (:setting %2) (:setting->group %2)) {}))
@@ -540,6 +539,9 @@
             mover-rates-CI (map #(confidence-interval mover-rates %) years)
             ;;n-colours (vec (repeatedly (count years) ch/random-colour)) ;; alternative random colour selection
             n-colours (take (count years) ch/palette)]
+        (u/log-info (str "First year of input data: " (first years)))
+        (u/log-info (str "Final year of input data: " (inc (last years))))
+        (u/log-info (str "Final year of projection: " (+ (last years) (count (map :total-in-send send-output)))))
         (output-transitions "target/transitions.edn" projection)
         (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
           (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
