@@ -19,7 +19,8 @@
             [medley.core :as medley]
             [redux.core :as r]
             [clojure.string :as str]
-            [clojure.java.shell :as sh])
+            [clojure.java.shell :as sh]
+            [witan.send.report :as report])
   (:import [org.apache.commons.math3.distribution BetaDistribution]))
 
 (defn initialise-model [send-data]
@@ -335,6 +336,13 @@
 
         valid-year-settings (->> (ds/row-maps valid-setting-academic-years)
                                  (states/calculate-valid-year-settings-from-setting-academic-years))]
+
+    (when (not= 1 modify-transition-by)
+      (report/info "Modified transitions by " modify-transition-by))
+    (if (nil? modified-transition-matrix)
+      (report/info "Used input transitions matrix\n")
+      (report/info "Used modified transitions matrix\n"))
+
     (s/validate (sc/SENDPopulation+ valid-settings) initial-send-population)
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) setting-cost)
@@ -515,7 +523,7 @@
                                   (map #(vec (drop 1 %)))
                                   distinct)]
     (when (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
-      (println "Not every historic transition present in projection. Consider checking valid state input"))
+      (report/info "Not every historic transition present in projection! Consider checking valid state input.\n"))
     (when output
       (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
                                        (reduce #(assoc %1 (:setting %2) (:setting->group %2)) {}))
@@ -539,6 +547,9 @@
             mover-rates-CI (map #(confidence-interval mover-rates %) years)
             ;;n-colours (vec (repeatedly (count years) ch/random-colour)) ;; alternative random colour selection
             n-colours (take (count years) ch/palette)]
+        (report/info "First year of input data: " (first years))
+        (report/info "Final year of input data: " (inc (last years)))
+        (report/info "Final year of projection: " (+ (last years) (count (map :total-in-send send-output))))
         (output-transitions "target/transitions.edn" projection)
         (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
           (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
@@ -622,5 +633,8 @@
         (ch/ribbon-plot leaver-rates-CI "Leaver" years n-colours)
         (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
         (ch/population-line-plot transitions-data (map :total-in-send send-output))
-        (ch/send-cost-plot (map :total-cost send-output) years))))
+        (ch/send-cost-plot (map :total-cost send-output) years)
+        (io/delete-file "target/historic-data.csv" :quiet)
+        (io/delete-file "target/valid-settings.csv" :quiet)))
+    (report/write-send-report))
   send-output)
