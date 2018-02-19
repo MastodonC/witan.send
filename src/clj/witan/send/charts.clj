@@ -48,7 +48,8 @@
      [:geom_parallel_sets [:aes {:fill :setting}] {:alpha 0.5 :axis.width 0.1}]
      [:geom_parallel_sets_axes {:axis.width 0.2 :fill "#F6F6F6" :color "#DDDDDD"}]
      [:geom_parallel_sets_labels {:color "#444444" :angle 0 :size 2.5}]
-     [:theme {:axis.title.x [:element_blank]}])]))
+     [:theme {:axis.title.x [:element_blank]
+              :axis.text.y [:element_blank]}])]))
 
 (defn sankey-transitions [data calendar-year settings]
   (->> data
