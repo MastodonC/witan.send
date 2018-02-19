@@ -8,7 +8,6 @@
             [witan.send.test-utils :as tu]
             [witan.workspace-api.protocols :as p]
             [witan.workspace-executor.core :as wex]
-            [witan.send.utils :as u]
             [witan.send.report :as report]))
 
 (def inputs-path "demo/")
