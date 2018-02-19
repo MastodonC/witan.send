@@ -629,5 +629,7 @@
         (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
         (ch/population-line-plot transitions-data (map :total-in-send send-output))
         (ch/send-cost-plot (map :total-cost send-output) years)
-        (u/write-log))))
+        (u/write-log)
+        (io/delete-file "target/historic-data.csv" :quiet)
+        (io/delete-file "target/valid-settings.csv" :quiet))))
   send-output)
