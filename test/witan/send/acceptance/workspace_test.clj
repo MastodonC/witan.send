@@ -8,7 +8,8 @@
             [witan.send.test-utils :as tu]
             [witan.workspace-api.protocols :as p]
             [witan.workspace-executor.core :as wex]
-            [witan.send.utils :as u]))
+            [witan.send.utils :as u]
+            [witan.send.report :as report]))
 
 (def inputs-path "demo/")
 
@@ -60,14 +61,15 @@
 
   :splice-ncy - sets a national curriculum year to ignore transitions of prior to :filter-transitions-from year (optional)"
   [{:keys [iterations output? transition-modifier transitions-file modify-transitions-from filter-transitions-from splice-ncy]}]
-  (u/reset-log)
-  (u/log-info (str "Input Data: " (clojure.string/replace inputs-path #"/" " ")))
-  (u/log-info (str "Number of iterations: " iterations))
-  (u/log-info (str "Transitions modifier: " (if (nil? transition-modifier) "None" transition-modifier)))
-  (u/log-info (str "Transitions file: " (if (nil? transitions-file) "None" transitions-file)))
-  (u/log-info (str "Modify transitions from: " (if (nil? modify-transitions-from) "None" modify-transitions-from)))
-  (u/log-info (str "Filter transitions from: " (if (nil? filter-transitions-from) "None" filter-transitions-from)))
-  (u/log-info (str "Splice NCY: " (if (nil? splice-ncy) "None" splice-ncy) "\n"))
+  (report/reset-send-report)
+  (report/info (str "Input Data: " (clojure.string/replace inputs-path #"/" " ")))
+  (report/info (str "Number of iterations: " iterations))
+  (report/info (str "Output charts produced: " output?))
+  (report/info (str "Transitions modifier: " (if (nil? transition-modifier) "None" transition-modifier)))
+  (report/info (str "Transitions file: " (if (nil? transitions-file) "None" transitions-file)))
+  (report/info (str "Modify transitions from: " (if (nil? modify-transitions-from) "None" modify-transitions-from)))
+  (report/info (str "Filter transitions from: " (if (nil? filter-transitions-from) "None" filter-transitions-from)))
+  (report/info (str "Splice NCY: " (if (nil? splice-ncy) "None" splice-ncy) "\n"))
   (let [file-input    (if (nil? transitions-file)
                         (test-inputs)
                         (assoc (test-inputs) :settings-to-change [(str "data/" inputs-path transitions-file) sc/SettingsToChange]))

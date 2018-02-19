@@ -11,11 +11,7 @@
             [medley.core :as medley]
             [schema.core :as s]
             [clojure.string :as str]
-            [witan.send.utils :as u]
-            [clojure.java.io :as io]
-            [clj-time.core :as t]
-            [clj-time.format :as f]
-            [clojure.java.shell :as sh])
+            [witan.send.utils :as u])
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
 
 (def random-seed (atom 0))
@@ -356,21 +352,3 @@
 
 (defn int-ceil [n]
   (int (Math/ceil n)))
-
-(defn reset-log []
-  (def log (atom []))
-  (sh/sh "git" "fetch" "--tags")
-  (swap! log conj (str "SEND Model " (:out (sh/sh "git" "describe" "--abbrev=0" "--tags"))))
-  (swap! log conj (str "Run on " (f/unparse-local (f/formatter "YYYY-MM-dd") (t/today)) " at " (f/unparse (f/formatter "HH:mm") (t/now))))
-  (swap! log conj (str (System/getProperty "os.name") " " (System/getProperty "os.version")))
-  (swap! log conj (str "Clojure " (clojure-version) ", JVM " (System/getProperty "java.vm.version")))
-  (swap! log conj (str "Using branch: " (:out (sh/sh "git" "rev-parse" "--symbolic-full-name" "--abbrev-ref" "HEAD")) "\n")))
-
-(defn log-info [message]
-  (swap! log conj message))
-
-(defn write-log []
-  (io/delete-file "target/Log.txt" :quiet)
-  (doseq [line @log]
-    (spit "target/Log.txt" (println-str line) :append true)))
-
