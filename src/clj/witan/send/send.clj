@@ -306,8 +306,6 @@
         years (distinct (map :calendar-year (ds/row-maps population)))
         valid-needs (->> (ds/row-maps valid-setting-academic-years)
                          (states/calculate-valid-needs-from-setting-academic-years))
-        _ (when (not= 1 modify-transition-by)
-            (try (u/log-info (str "Modified transitions by " modify-transition-by)) (catch Exception e)))
         states-to-change (when (not= 1 modify-transition-by)
                            (build-states-to-change settings-to-change valid-needs ages years))
         transition-matrix (ds/row-maps transition-matrix)
@@ -316,9 +314,6 @@
                                                        u/full-transitions-map)
                                            result (reduce (fn [m k] (modify-transitions m k * modify-transition-by)) convert states-to-change)]
                                        (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)) result)))
-        _ (if (nil? modified-transition-matrix)
-            (try (u/log-info "Used input transitions matrix\n") (catch Exception e))
-            (try (u/log-info "Used modified transitions matrix\n") (catch Exception e)))
         transitions (if (nil? modified-transition-matrix)
                       (u/transitions-map transition-matrix)
                       (u/transitions-map modified-transition-matrix))
@@ -335,6 +330,14 @@
 
         valid-year-settings (->> (ds/row-maps valid-setting-academic-years)
                                  (states/calculate-valid-year-settings-from-setting-academic-years))]
+
+    (when (boolean (resolve 'u/log))
+      (when (not= 1 modify-transition-by)
+        (u/log-info (str "Modified transitions by " modify-transition-by)))
+      (if (nil? modified-transition-matrix)
+        (u/log-info "Used input transitions matrix\n")
+        (u/log-info "Used modified transitions matrix\n")))
+
     (s/validate (sc/SENDPopulation+ valid-settings) initial-send-population)
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) setting-cost)
