@@ -18,14 +18,18 @@
           f (apply juxt ks)]
       (zipmap ks (apply map vector (map f coll))))))
 
-(defn gather-set-data [data]
+(defn gather-set-data [to-or-from? x-from-str x-to-str data]
   (->> (reduce (fn [coll {:keys [setting-1 setting-2]}]
                  (update coll [setting-1 setting-2] u/some+ 1))
                {}
                data)
        (mapcat (fn [i [[s1 s2] v]]
-                 (vector {:id i :x "NCY 6" :y s1 :value v :setting s2}
-                         {:id i :x "NCY 7" :y s2 :value v :setting s2}))
+                 (vector {:id i :x x-from-str :y s1 :value v :setting (if (= to-or-from? "from")
+                                                                        s2
+                                                                        s1)}
+                         {:id i :x x-to-str :y s2 :value v :setting (if (= to-or-from? "from")
+                                                                      s2
+                                                                      s1)}))
                (range))))
 
 (defn r-combine [data]
@@ -53,7 +57,7 @@
        (filter #(= (:calendar-year %) calendar-year))
        (filter #(= (:academic-year-1 %) 6))
        (map #(-> (update % :setting-1 settings) (update :setting-2 settings)))
-       (gather-set-data)
+       (gather-set-data "from" "NCY 6" "NCY 7")
        (seq-of-maps->data-frame)
        (sankey {:title (str "Aggregate setting transitions: " calendar-year "/" (apply str (drop 2 (str (inc calendar-year)))))}))
   (move-file "Rplots.pdf" (str "target/Historic-Transitions_" calendar-year ".pdf")))
