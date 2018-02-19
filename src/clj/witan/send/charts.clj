@@ -63,6 +63,27 @@
        (sankey {:title (str "Aggregate setting transitions: " calendar-year "/" (apply str (drop 2 (str (inc calendar-year)))))}))
   (move-file "Rplots.pdf" (str "target/Historic-Transitions_" calendar-year ".pdf")))
 
+(defn sankey-joiners [data]
+  (->> data
+       (remove v/leaver?)
+       (filter #(= (:setting-1 %) :NONSEND))
+       (map #(-> (update % :setting-1 name) (update :setting-2 name)))
+       (gather-set-data "from" "From" "To")
+       (seq-of-maps->data-frame)
+       (sankey {:title (str "Joiner transitions")}))
+  (move-file "Rplots.pdf" (str "target/Joiner-Transitions.pdf")))
+
+(defn sankey-setting-specific [data setting-to]
+  (->> data
+       (remove v/joiner?)
+       (remove v/leaver?)
+       (filter #(= (:setting-2 %) setting-to))
+       (map #(-> (update % :setting-1 name) (update :setting-2 name)))
+       (gather-set-data "to" "From" "To")
+       (seq-of-maps->data-frame)
+       (sankey {:title (str "Joiner transitions")}))
+  (move-file "Rplots.pdf" (str "target/" (name setting-to) "-mover-transitions.pdf")))
+
 (defn pull-year
   [data pos]
   (->> (nth data pos)
