@@ -144,7 +144,7 @@
 
 (defn population-line-plot
   [historic-data future-projections-data]
-  (let [historic-years (vec (distinct (map :calendar-year historic-data)))
+  (let [historic-years (vec (sort (distinct (map :calendar-year historic-data))))
         projected-years (vec (#(range % (+ (count future-projections-data) %))
                               (inc (last historic-years))))
         historic-pops (map #(get-total-historical-send-pop % historic-data) historic-years)
@@ -157,7 +157,7 @@
         max-year (last projected-years)
         highest-val (apply max (map :max future-projections-data))]
     (gg4clj/render [[:<- :df
-                    (gg4clj/data-frame gg4clj-data-frame)]
+                     (gg4clj/data-frame gg4clj-data-frame)]
                     (gg4clj/r+ [:ggplot {:data :df} [:aes {:x :year :y :mean}]]
                                [:ggtitle "SEND Population Projection"]
                                [:geom_line [:aes {:colour "mean" :linetype "mean"}]]
