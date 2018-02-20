@@ -24,10 +24,10 @@
                {}
                data)
        (mapcat (fn [i [[s1 s2] v]]
-                 (vector {:id i :x x-from-str :y s1 :value v :setting (if (= to-or-from? "from")
+                 (vector {:id i :x x-from-str :y s1 :value v :setting (if (= to-or-from? :from)
                                                                         s2
                                                                         s1)}
-                         {:id i :x x-to-str :y s2 :value v :setting (if (= to-or-from? "from")
+                         {:id i :x x-to-str :y s2 :value v :setting (if (= to-or-from? :from)
                                                                       s2
                                                                       s1)}))
                (range))))
@@ -58,7 +58,7 @@
        (filter #(= (:calendar-year %) calendar-year))
        (filter #(= (:academic-year-1 %) 6))
        (map #(-> (update % :setting-1 settings) (update :setting-2 settings)))
-       (gather-set-data "from" "NCY 6" "NCY 7")
+       (gather-set-data :from "NCY 6" "NCY 7")
        (seq-of-maps->data-frame)
        (sankey {:title (str "Aggregate setting transitions: " calendar-year "/" (apply str (drop 2 (str (inc calendar-year)))))}))
   (move-file "Rplots.pdf" (str "target/Historic-Transitions_" calendar-year ".pdf")))
@@ -68,7 +68,7 @@
        (remove v/leaver?)
        (filter #(= (:setting-1 %) :NONSEND))
        (map #(-> (update % :setting-1 name) (update :setting-2 name)))
-       (gather-set-data "from" "From" "To")
+       (gather-set-data :from "From" "To")
        (seq-of-maps->data-frame)
        (sankey {:title (str "Joiner transitions")}))
   (move-file "Rplots.pdf" (str "target/Joiner-Transitions.pdf")))
@@ -79,7 +79,7 @@
        (remove v/leaver?)
        (filter #(= (:setting-2 %) setting-to))
        (map #(-> (update % :setting-1 name) (update :setting-2 name)))
-       (gather-set-data "to" "From" "To")
+       (gather-set-data :to "From" "To")
        (seq-of-maps->data-frame)
        (sankey {:title (str "Joiner transitions")}))
   (move-file "Rplots.pdf" (str "target/" (name setting-to) "-mover-transitions.pdf")))
