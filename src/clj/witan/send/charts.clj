@@ -167,6 +167,7 @@
                                [:scale_y_continuous {:name "Total SEND population" :limits [:c 0 highest-val]}]
                                [:scale_x_continuous {:name "Year" :breaks [:seq min-year max-year {:by 1}] :limits [:c min-year max-year]}]
                                [:theme_bw]
+                               [:theme {:axis.text.x [:element_text {:size 8}]}]
                                [:scale_linetype_manual {:name "" :values [:c {:mean "solid" :conf "dashed"}] :labels [:c {:mean "Mean" :conf "95% Confidence"}]}]
                                [:scale_colour_manual {:name "" :values [:c {:mean "darkcyan" :conf "grey38"}] :labels [:c {:mean "Mean" :conf "95% Confidence"}]}])]))
   (move-file "Rplots.pdf" "target/Total_Population.pdf"))
