@@ -70,7 +70,7 @@
        (map #(-> (update % :setting-1 name) (update :setting-2 name)))
        (gather-set-data :from "From" "To")
        (seq-of-maps->data-frame)
-       (sankey {:title (str "Joiner transitions")}))
+       (sankey {:title "Joiner transitions"}))
   (move-file "Rplots.pdf" (str "target/Joiner-Transitions.pdf")))
 
 (defn sankey-setting-specific [data setting-to]
