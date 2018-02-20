@@ -644,7 +644,7 @@
         (run! #(ch/sankey-transitions transitions-data % valid-settings) years)
         (ch/sankey-joiners transitions-data)
         (when (not= 1 modify-transition-by)
-          (run! #(ch/sankey-setting-specific transitions-data %) (map :setting-1 (ds/row-maps settings-to-change))))
+          (run! (partial ch/sankey-setting-specific transitions-data) (map :setting-1 (ds/row-maps settings-to-change))))
         (ch/ribbon-plot joiner-rates-CI "Joiner" years n-colours)
         (ch/ribbon-plot leaver-rates-CI "Leaver" years n-colours)
         (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
