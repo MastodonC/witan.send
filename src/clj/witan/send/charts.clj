@@ -183,7 +183,7 @@
         q3 (vec (map to-millions (map :q3 cost-data)))
         high-ci (vec (map to-millions (map :high-ci cost-data)))
         gg2clj-data-frame {:year proj-years :ymin low-ci :lower q1 :middle median :upper q3 :ymax high-ci}
-        highest-val (last high-ci)
+        highest-val (apply max high-ci)
         min-year (first proj-years)
         max-year (last proj-years)]
     (gg4clj/render [[:<- :df
