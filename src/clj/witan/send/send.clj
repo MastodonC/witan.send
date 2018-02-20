@@ -298,7 +298,9 @@
                         :splice-ncy sc/AcademicYear
                         :filter-transitions-from (s/maybe [sc/CalendarYear])}
    :witan/output-schema {:standard-projection sc/projection-map
-                         :scenario-projection (s/maybe sc/projection-map)}}
+                         :scenario-projection (s/maybe sc/projection-map)
+                         :modify-transition-by s/Num
+                         :settings-to-change sc/SettingsToChange}}
   [{:keys [settings-to-change initial-send-population transition-matrix population
            setting-cost valid-setting-academic-years]}
    {:keys [modify-transition-by splice-ncy filter-transitions-from]}]
@@ -352,7 +354,9 @@
      :scenario-projection (when modified-transition-matrix
                             (prep-inputs initial-state splice-ncy valid-states modified-transition-matrix
                                          transition-matrix-filtered population valid-setting-academic-years
-                                         original-transitions setting-cost filter-transitions-from))}))
+                                         original-transitions setting-cost filter-transitions-from))
+     :modify-transition-by modify-transition-by
+     :settings-to-change settings-to-change}))
 
 (defn projection->transitions
   [projections]
@@ -401,7 +405,9 @@
   {:witan/name :send/run-send-model
    :witan/version "1.0.0"
    :witan/input-schema {:standard-projection sc/projection-map
-                        :scenario-projection (s/maybe sc/projection-map)}
+                        :scenario-projection (s/maybe sc/projection-map)
+                        :modify-transition-by s/Num
+                        :settings-to-change sc/SettingsToChange}
    :witan/param-schema {:seed-year sc/YearSchema
                         :simulations s/Int
                         :random-seed s/Int
@@ -410,8 +416,10 @@
                          :send-output sc/Results
                          :transition-matrix sc/TransitionCounts
                          :valid-setting-academic-years sc/ValidSettingAcademicYears
-                         :population sc/PopulationDataset}}
-  [{:keys [standard-projection scenario-projection]}
+                         :population sc/PopulationDataset
+                         :modify-transition-by s/Num
+                         :settings-to-change sc/SettingsToChange}}
+  [{:keys [standard-projection scenario-projection modify-transition-by settings-to-change]}
    {:keys [seed-year random-seed simulations modify-transitions-from]}]
   (u/set-seed! random-seed)
   (let [{:keys [population population-by-age-state projected-population joiner-beta-params
@@ -455,7 +463,9 @@
      :send-output (transduce identity (combine-rf iterations) reduced)
      :transition-matrix transition-matrix
      :valid-setting-academic-years valid-setting-academic-years
-     :population population}))
+     :population population
+     :modify-transition-by modify-transition-by
+     :settings-to-change settings-to-change}))
 
 (defn joiner-rate [joiners population ages years]
   (reduce (fn [coll academic-year]
@@ -508,9 +518,12 @@
                         :send-output sc/Results
                         :transition-matrix sc/TransitionCounts
                         :valid-setting-academic-years sc/ValidSettingAcademicYears
-                        :population sc/PopulationDataset}
+                        :population sc/PopulationDataset
+                        :modify-transition-by s/Num
+                        :settings-to-change sc/SettingsToChange}
    :witan/param-schema {:output s/Bool}}
-  [{:keys [projection send-output transition-matrix valid-setting-academic-years population]} {:keys [output]}]
+  [{:keys [projection send-output transition-matrix valid-setting-academic-years
+           population modify-transition-by settings-to-change]} {:keys [output]}]
   (let [transitions-data (ds/row-maps transition-matrix)
         transform-transitions (->> transitions-data
                                    (map #(vector
@@ -629,6 +642,9 @@
         (println "Producing charts...")
         (sh/sh "Rscript" "--vanilla" "send-charts.R"  :dir "src/R")
         (run! #(ch/sankey-transitions transitions-data % valid-settings) years)
+        (ch/sankey-joiners transitions-data)
+        (when (not= 1 modify-transition-by)
+          (run! (partial ch/sankey-setting-specific transitions-data) (map :setting-1 (ds/row-maps settings-to-change))))
         (ch/ribbon-plot joiner-rates-CI "Joiner" years n-colours)
         (ch/ribbon-plot leaver-rates-CI "Leaver" years n-colours)
         (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
