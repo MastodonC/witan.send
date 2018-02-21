@@ -295,7 +295,7 @@
                         :setting-cost sc/NeedSettingCost
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
    :witan/param-schema {:modify-transition-by s/Num
-                        :splice-ncy sc/AcademicYear
+                        :splice-ncy (s/maybe sc/AcademicYear)
                         :filter-transitions-from (s/maybe [sc/CalendarYear])}
    :witan/output-schema {:standard-projection sc/projection-map
                          :scenario-projection (s/maybe sc/projection-map)
