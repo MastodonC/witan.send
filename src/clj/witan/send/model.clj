@@ -53,7 +53,7 @@
     :witan/type :function
     :witan/fn :send/prepare-send-inputs
     :witan/params {:modify-transition-by 1
-                   :splice-ncy 11
+                   :splice-ncy nil
                    :filter-transitions-from nil}}
    {:witan/name :run-send-model
     :witan/version "1.0.0"
