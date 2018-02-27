@@ -340,10 +340,10 @@
                                  (states/calculate-valid-year-settings-from-setting-academic-years))]
 
     (when (not= 1 modify-transition-by)
-      (report/info "Modified transitions by " modify-transition-by))
+      (report/info "Modified transitions by " (report/bold modify-transition-by)))
     (if (nil? modified-transition-matrix)
-      (report/info "Used input transitions matrix\n")
-      (report/info "Used modified transitions matrix\n"))
+      (report/info "Used " (report/bold "input") " transitions matrix\n")
+      (report/info "Used " (report/bold "modified") " transitions matrix\n"))
 
     (s/validate (sc/SENDPopulation+ valid-settings) initial-send-population)
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
@@ -536,7 +536,7 @@
                                   (map #(vec (drop 1 %)))
                                   distinct)]
     (when (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
-      (report/info "Not every historic transition present in projection! Consider checking valid state input.\n"))
+      (report/info (report/bold "Not every historic transition present in projection!") "Consider checking valid state input.\n"))
     (when output
       (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
                                        (reduce #(assoc %1 (:setting %2) (:setting->group %2)) {}))
@@ -560,9 +560,9 @@
             mover-rates-CI (map #(confidence-interval mover-rates %) years)
             ;;n-colours (vec (repeatedly (count years) ch/random-colour)) ;; alternative random colour selection
             n-colours (take (count years) ch/palette)]
-        (report/info "First year of input data: " (first years))
-        (report/info "Final year of input data: " (inc (last years)))
-        (report/info "Final year of projection: " (+ (last years) (count (map :total-in-send send-output))))
+        (report/info "First year of input data: " (report/bold (first years)))
+        (report/info "Final year of input data: " (report/bold (inc (last years))))
+        (report/info "Final year of projection: " (report/bold (+ (last years) (count (map :total-in-send send-output)))))
         (output-transitions "target/transitions.edn" projection)
         (with-open [writer (io/writer (io/file "target/output-ay-state.csv"))]
           (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]

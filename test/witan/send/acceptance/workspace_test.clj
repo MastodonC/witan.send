@@ -8,9 +8,10 @@
             [witan.send.test-utils :as tu]
             [witan.workspace-api.protocols :as p]
             [witan.workspace-executor.core :as wex]
-            [witan.send.report :as report]))
+            [witan.send.report :as report]
+            [clojure.string :as str]))
 
-(def inputs-path "demo/")
+(def inputs-path "Tower-Hamlets-30-01-18/version-A/")
 
 (defn test-inputs []
   {:settings-to-change ["data/demo/modify-settings.csv" sc/SettingsToChange]
@@ -61,14 +62,14 @@
   :splice-ncy - sets a national curriculum year to ignore transitions of prior to :filter-transitions-from year (optional)"
   [{:keys [iterations output? transition-modifier transitions-file modify-transitions-from filter-transitions-from splice-ncy]}]
   (report/reset-send-report)
-  (report/info "Input Data: " (clojure.string/replace inputs-path #"/" " "))
-  (report/info "Number of iterations: " iterations)
-  (report/info "Output charts produced: " output?)
-  (report/info "Transitions modifier: " (if (nil? transition-modifier) "None" transition-modifier))
-  (report/info "Transitions file: " (if (nil? transitions-file) "None" transitions-file))
-  (report/info "Modify transitions from: " (if (nil? modify-transitions-from) "None" modify-transitions-from))
-  (report/info "Filter transitions from: " (if (nil? filter-transitions-from) "None" filter-transitions-from))
-  (report/info "Splice NCY: " (if (nil? splice-ncy) "None" splice-ncy) "\n")
+  (report/info "Input Data: " (report/bold (str/replace (str/join "" (drop-last inputs-path)) #"/" " ")))
+  (report/info "Number of iterations: " (report/bold iterations))
+  (report/info "Output charts produced: " (report/bold output?))
+  (report/info "Transitions modifier: " (report/bold (if (nil? transition-modifier) "None" transition-modifier)))
+  (report/info "Transitions file: " (report/bold (if (nil? transitions-file) "None" transitions-file)))
+  (report/info "Modify transitions from: " (report/bold (if (nil? modify-transitions-from) "None" modify-transitions-from)))
+  (report/info "Filter transitions from: " (report/bold (if (nil? filter-transitions-from) "None" filter-transitions-from)))
+  (report/info "Splice NCY: " (report/bold (if (nil? splice-ncy) "None" splice-ncy)) "\n")
   (let [file-input    (if (nil? transitions-file)
                         (test-inputs)
                         (assoc (test-inputs) :settings-to-change [(str "data/" inputs-path transitions-file) sc/SettingsToChange]))
