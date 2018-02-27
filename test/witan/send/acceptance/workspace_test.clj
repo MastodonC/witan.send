@@ -11,7 +11,7 @@
             [witan.send.report :as report]
             [clojure.string :as str]))
 
-(def inputs-path "Tower-Hamlets-30-01-18/version-A/")
+(def inputs-path "demo/")
 
 (defn test-inputs []
   {:settings-to-change ["data/demo/modify-settings.csv" sc/SettingsToChange]
