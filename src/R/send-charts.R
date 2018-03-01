@@ -26,7 +26,7 @@ n_hist_years <-  df_historical %>%
 
 ###  Send by academic year ###
 
-df_projected_ay <- read.csv("../../target/output-ay.csv") %>%
+df_projected_ay <- read.csv("../../target/Output_AY.csv") %>%
   select(calendar.year, academic.year, mean)
 
 df_historical_ay <- df_historical %>%
@@ -68,7 +68,7 @@ ggsave("../../target/NCY_Population_Trends.pdf")
 
 ### Projected count by setting ###
 
-df_projected_set <- read.csv("../../target/output-setting.csv") %>%
+df_projected_set <- read.csv("../../target/Output_Setting.csv") %>%
   select(calendar.year, setting, mean) %>%
   rename(Setting = setting)
 
@@ -116,7 +116,7 @@ for(i in 1:4) {
 
 ### Projected count by need type ###
 
-df_projected_need <- read.csv("../../target/output-need.csv") %>%
+df_projected_need <- read.csv("../../target/Output_Need.csv") %>%
   select(calendar.year, need, mean) %>%
   rename(Need = need)
 
@@ -144,7 +144,7 @@ ggsave("../../target/Need_Trends.pdf")
 
 ### Projected special setting count ###
 
-df_projected_set <- read.csv("../../target/output-setting.csv") %>%
+df_projected_set <- read.csv("../../target/Output_Setting.csv") %>%
   select(calendar.year, setting, mean) %>%
   rename(Setting = setting)
 
