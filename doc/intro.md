@@ -2,9 +2,9 @@
 
 ## Background
 
-This model allows English local authorities to compare the costs and demand for SEND (special educational needs and disabilities) services for different future scenarios. The demand is for statements/EHC plans only and does not include SEN support.
+This model allows local authorities to project the costs and demand for SEND (special educational needs and disabilities) in the future. The demand is for statements/EHC plans only and does not include SEN support.
 
-A stochastic Markov chain approach is used to assign a state to each individual eligible for SEND at each time step of the model.
+A stochastic Monte Carlo Markov chain (MCMC) like approach is used to assign a probability to a state for each individual eligible for SEND at each time step of the model (years).
 
 ## Model structure
 
