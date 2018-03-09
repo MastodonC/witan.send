@@ -73,7 +73,7 @@
        (sankey {:title "Joiner transitions"}))
   (move-file "Rplots.pdf" (str "target/Joiner_Transitions.pdf")))
 
-(defn sankey-setting-specific [data setting-to]
+(defn sankey-setting-specific-transitions [data setting-to]
   (->> data
        (remove v/joiner?)
        (remove v/leaver?)
@@ -81,7 +81,19 @@
        (map #(-> (update % :setting-1 name) (update :setting-2 name)))
        (gather-set-data :to "From" "To")
        (seq-of-maps->data-frame)
-       (sankey {:title (str "Joiner transitions")}))
+       (sankey {:title (str "Mover transitions")}))
+  (move-file "Rplots.pdf" (str "target/" (name setting-to) "_Transitions.pdf")))
+
+(defn sankey-setting-specific-movers-to [data setting-to]
+  (->> data
+       (remove v/joiner?)
+       (remove v/leaver?)
+       (filter #(= (:setting-2 %) setting-to))
+       (filter #(not= (:setting-1 %) setting-to))
+       (map #(-> (update % :setting-1 name) (update :setting-2 name)))
+       (gather-set-data :to "From" "To")
+       (seq-of-maps->data-frame)
+       (sankey {:title (str "Mover transitions")}))
   (move-file "Rplots.pdf" (str "target/" (name setting-to) "_Mover_Transitions.pdf")))
 
 (defn pull-year
