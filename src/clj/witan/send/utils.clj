@@ -352,3 +352,17 @@
 
 (defn int-ceil [n]
   (int (Math/ceil n)))
+
+(defn projection-state-to-map [[calendar-year-2 ay-2 state-1 state-2]]
+  (let [[need-1 setting-1] (states/need-setting state-1)
+        [need-2 setting-2] (states/need-setting state-2)]
+    (hash-map :calendar-year calendar-year-2
+              :setting-1 setting-1
+              :need-1 need-1
+              :academic-year-1 (dec ay-2)
+              :setting-2 setting-2
+              :need-2 need-2
+              :academic-year-2 ay-2)))
+
+(defn projection->transitions [[state sum]]
+  (repeat sum (projection-state-to-map state)))
