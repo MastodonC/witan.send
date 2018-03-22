@@ -312,7 +312,7 @@
 
 (defn alpha-params-movers
   "calculates the rate of transitions to a new state at academic year X for state Y"
-  [valid-states transitions]
+  [valid-states valid-transitions transitions]
   (let [academic-years (->> (map first valid-states)
                             (distinct)
                             (sort))
@@ -343,10 +343,15 @@
         valid-settings (s/calculate-valid-settings-for-need-ay valid-states)]
     (reduce (fn [coll [ay state]]
               (let [[need setting] (s/need-setting state)
+                    valid-trans (get valid-transitions setting)
                     obs (get-in observations [ay state])
                     ay-obs (get observations-per-ay ay)
-                    settings (get valid-settings [ay need])
-                    prior (->> (zipmap (vec settings) (repeat (/ 1.0 (count settings))))
+                    settings (->> (get valid-settings [ay need])
+                                  vec
+                                  (into valid-trans)
+                                  u/duplicates
+                                  vec)
+                    prior (->> (zipmap settings (repeat (/ 1.0 (count settings))))
                                (merge-with + ay-obs))
                     prior (dissoc prior setting)
                     total (->> (vals prior) (apply +))
