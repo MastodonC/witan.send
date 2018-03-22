@@ -216,9 +216,9 @@
         (update-ifelse-assoc assoc-first-state second-state + diff)))
     transitions))
 
-(defn prep-inputs [initial-state splice-ncy valid-states transition-matrix transition-matrix-filtered
-                   population valid-setting-academic-years original-transitions setting-cost
-                   filter-transitions-from]
+(defn prep-inputs [initial-state splice-ncy valid-states valid-transitions transition-matrix
+                   transition-matrix-filtered population valid-setting-academic-years
+                   original-transitions setting-cost filter-transitions-from]
   (let [start-map {:population-by-age-state initial-state
                    :valid-setting-academic-years valid-setting-academic-years
                    :transition-matrix original-transitions
@@ -246,19 +246,19 @@
                                                      (p/alpha-params-joiner-states valid-states (u/transitions-map transition-matrix-filtered)))
 
               :mover-beta-params (stitch-ay-state-params splice-ncy
-                                                         (p/beta-params-movers valid-states transition-matrix)
-                                                         (p/beta-params-movers valid-states transition-matrix-filtered))
+                                                         (p/beta-params-movers valid-states valid-transitions transition-matrix)
+                                                         (p/beta-params-movers valid-states valid-transitions transition-matrix-filtered))
               :mover-state-alphas (stitch-ay-state-params splice-ncy
-                                                          (p/alpha-params-movers valid-states transition-matrix)
-                                                          (p/alpha-params-movers valid-states transition-matrix-filtered))})
+                                                          (p/alpha-params-movers valid-states valid-transitions transition-matrix)
+                                                          (p/alpha-params-movers valid-states valid-transitions transition-matrix-filtered))})
       (merge start-map
              {:joiner-beta-params (p/beta-params-joiners valid-states
                                                          transition-matrix
                                                          (ds/row-maps population))
               :leaver-beta-params (p/beta-params-leavers valid-states transition-matrix)
               :joiner-state-alphas (p/alpha-params-joiner-states valid-states (u/transitions-map transition-matrix))
-              :mover-beta-params (p/beta-params-movers valid-states transition-matrix)
-              :mover-state-alphas  (p/alpha-params-movers valid-states transition-matrix)}))))
+              :mover-beta-params (p/beta-params-movers valid-states valid-transitions transition-matrix)
+              :mover-state-alphas  (p/alpha-params-movers valid-states valid-transitions transition-matrix)}))))
 
 (defn build-states-to-change [settings-to-change valid-needs ages years]
   (if (= :nil (-> settings-to-change
@@ -307,10 +307,12 @@
   (let [original-transitions transition-matrix
         ages (distinct (map :academic-year (ds/row-maps population)))
         years (distinct (map :calendar-year (ds/row-maps population)))
-        valid-needs (->> (ds/row-maps valid-setting-academic-years)
-                         (states/calculate-valid-needs-from-setting-academic-years))
-        _ (when (not= 1 modify-transition-by)
-            (prn (str "Modifying transitions by " modify-transition-by)))
+        initialise-validation (ds/row-maps valid-setting-academic-years)
+        valid-transitions (states/calculate-valid-mover-transitions initialise-validation)
+        valid-needs (states/calculate-valid-needs-from-setting-academic-years initialise-validation)
+        valid-settings (states/calculate-valid-settings-from-setting-academic-years initialise-validation)
+        valid-states (states/calculate-valid-states-from-setting-academic-years initialise-validation)
+        valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years initialise-validation)
         states-to-change (when (not= 1 modify-transition-by)
                            (build-states-to-change settings-to-change valid-needs ages years))
         transition-matrix (ds/row-maps transition-matrix)
@@ -319,40 +321,28 @@
                                                        u/full-transitions-map)
                                            result (reduce (fn [m k] (modify-transitions m k * modify-transition-by)) convert states-to-change)]
                                        (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)) result)))
-        _ (if (nil? modified-transition-matrix)
-            (prn "Using input transitions matrix")
-            (prn "Using modified transitions matrix"))
-        transitions (if (nil? modified-transition-matrix)
-                      (u/transitions-map transition-matrix)
-                      (u/transitions-map modified-transition-matrix))
+        _ (if modified-transition-matrix
+            (prn "Using modified transitions matrix")
+            (prn "Using input transitions matrix"))
+        transitions (if modified-transition-matrix
+                      (u/transitions-map modified-transition-matrix)
+                      (u/transitions-map transition-matrix))
         transition-matrix-filtered (when filter-transitions-from
                                      (mapcat (fn [year] (filter #(= (:calendar-year %) year) (or modified-transition-matrix transition-matrix))) filter-transitions-from))
-
-        initial-state (initialise-model (ds/row-maps initial-send-population))
-
-        valid-settings (->> (ds/row-maps valid-setting-academic-years)
-                            (states/calculate-valid-settings-from-setting-academic-years))
-
-        valid-states (->> (ds/row-maps valid-setting-academic-years)
-                          (states/calculate-valid-states-from-setting-academic-years))
-
-        valid-year-settings (->> (ds/row-maps valid-setting-academic-years)
-                                 (states/calculate-valid-year-settings-from-setting-academic-years))]
-
+        initial-state (initialise-model (ds/row-maps initial-send-population))]
     (when (not= 1 modify-transition-by)
       (report/info "Modified transitions by " (report/bold modify-transition-by)))
-    (if (nil? modified-transition-matrix)
-      (report/info "Used " (report/bold "input") " transitions matrix\n")
-      (report/info "Used " (report/bold "modified") " transitions matrix\n"))
-
+    (if modified-transition-matrix
+      (report/info "Used " (report/bold "modified") " transitions matrix\n")
+      (report/info "Used " (report/bold "input") " transitions matrix\n"))
     (s/validate (sc/SENDPopulation+ valid-settings) initial-send-population)
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) setting-cost)
-    {:standard-projection (prep-inputs initial-state splice-ncy valid-states transition-matrix transition-matrix-filtered
+    {:standard-projection (prep-inputs initial-state splice-ncy valid-states valid-transitions transition-matrix transition-matrix-filtered
                                        population valid-setting-academic-years original-transitions setting-cost
                                        filter-transitions-from)
      :scenario-projection (when modified-transition-matrix
-                            (prep-inputs initial-state splice-ncy valid-states modified-transition-matrix
+                            (prep-inputs initial-state splice-ncy valid-states valid-transitions modified-transition-matrix
                                          transition-matrix-filtered population valid-setting-academic-years
                                          original-transitions setting-cost filter-transitions-from))
      :modify-transition-by modify-transition-by
@@ -541,7 +531,7 @@
       (report/info (report/bold "Not every historic transition present in projection!") "Consider checking valid state input.\n"))
     (when output
       (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
-                                       (reduce #(assoc %1 (:setting %2) (:setting->group %2)) {}))
+                                       (reduce #(assoc %1 (:setting %2) (:setting-group %2)) {}))
                                   :NON-SEND "Other" )
             years (sort (distinct (map :calendar-year transitions-data)))
             initial-projection-year (+ 1 (last years))
