@@ -366,3 +366,8 @@
 
 (defn projection->transitions [[state sum]]
   (repeat sum (projection-state-to-map state)))
+
+(defn duplicates [seq]
+  (for [[id freq] (frequencies seq)
+        :when (> freq 1)]
+    id))
