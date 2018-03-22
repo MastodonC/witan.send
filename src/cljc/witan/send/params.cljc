@@ -278,6 +278,7 @@
 (defn beta-params-movers
   "calculates the rate of the likelihood of a state transitioning for an academic year"
   [valid-states transitions]
+  [valid-states valid-transitions transitions]
   (let [academic-years (->> (map first valid-states)
                             (distinct)
                             (sort))
@@ -300,10 +301,12 @@
                                {} observations)
         prior-per-year (continue-for-latter-ays prior-per-year academic-years)]
     (reduce (fn [coll [ay state]]
-              (if-let [beta-params (merge-with +
-                                               (get-in observations [ay state])
-                                               (get prior-per-year ay))]
-                (assoc coll [ay state] beta-params)
+              (if (< 1 (count (get valid-transitions (second (s/need-setting state)))))
+                (if-let [beta-params (merge-with +
+                                                 (get-in observations [ay state])
+                                                 (get prior-per-year ay))]
+                  (assoc coll [ay state] beta-params)
+                  coll)
                 coll))
             {} valid-states)))
 
