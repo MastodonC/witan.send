@@ -275,8 +275,8 @@
         population-per-calendar-year (calculate-population-per-calendar-year population)]
     (weighted-joiner-beta-params valid-states joiners-per-calendar-year population-per-calendar-year)))
 
-(defn any-valid-transitions? [x]
-  (< 1 x))
+(defn any-valid-transitions? [state valid-transitions]
+  (< 1 (count (get valid-transitions (second (s/need-setting state))))))
 
 (defn beta-params-movers
   "calculates the rate of the likelihood of a state transitioning for an academic year"
@@ -303,7 +303,7 @@
                                {} observations)
         prior-per-year (continue-for-latter-ays prior-per-year academic-years)]
     (reduce (fn [coll [ay state]]
-              (if (any-valid-transitions? (count (get valid-transitions (second (s/need-setting state)))))
+              (if (any-valid-transitions? state valid-transitions)
                 (if-let [beta-params (merge-with +
                                                  (get-in observations [ay state])
                                                  (get prior-per-year ay))]
