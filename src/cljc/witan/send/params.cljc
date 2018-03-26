@@ -277,7 +277,6 @@
 
 (defn beta-params-movers
   "calculates the rate of the likelihood of a state transitioning for an academic year"
-  [valid-states transitions]
   [valid-states valid-transitions transitions]
   (let [academic-years (->> (map first valid-states)
                             (distinct)
