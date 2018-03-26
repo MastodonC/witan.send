@@ -52,14 +52,12 @@
               (update coll [ay need] (fnil conj #{}) setting)))
           {} valid-states))
 
-(defn calculate-valid-mover-transitions [valid-states]
-  (let [valid-need-settings (calculate-valid-settings-for-need-ay valid-states)]
-    (mapcat (fn [[ay state']]
-              (let [[need _] (need-setting state')
-                    settings (get valid-need-settings [(inc ay) need])]
-                (for [setting settings]
-                  (vector ay state' (state need setting)))))
-            valid-states)))
+(defn aggregate-setting->setting [setting setting->setting]
+  (hash-map setting (mapv keyword (str/split setting->setting #","))))
+
+(defn calculate-valid-mover-transitions [valid-setting-academic-years]
+  (reduce into {} (map (fn [row] (aggregate-setting->setting (:setting row) (:setting->setting row)))
+                       valid-setting-academic-years)))
 
 (defn transitions->initial-state
   [transitions]
