@@ -110,10 +110,11 @@
 
 (def ValidSettingAcademicYears
   (make-ordered-ds-schema [[:setting s/Keyword]
-                           [:setting->group s/Str]
+                           [:setting-group s/Str]
                            [:min-academic-year AcademicYear]
                            [:max-academic-year AcademicYear]
-                           [:needs s/Str]]))
+                           [:needs s/Str]
+                           [:setting->setting s/Str]]))
 
 (def PopulationByCalendarAndAcademicYear
   {CalendarYear {AcademicYear N}})
