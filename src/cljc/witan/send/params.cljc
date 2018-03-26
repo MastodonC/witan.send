@@ -247,10 +247,10 @@
             {} valid-states)))
 
 #_(defn beta-params-movers [valid-states transitions]
-  (weighted-beta-params valid-states transitions (some-fn joiner? leaver?) mover?))
+    (weighted-beta-params valid-states transitions (some-fn joiner? leaver?) mover?))
 
 #_(defn alpha-params-movers [valid-states valid-year-settings transitions]
-  (weighted-alpha-params valid-states valid-year-settings transitions mover?))
+    (weighted-alpha-params valid-states valid-year-settings transitions mover?))
 
 (defn alpha-params-joiner-states [valid-states transitions]
   (weighted-joiner-state-alpha-params valid-states transitions))
@@ -351,7 +351,7 @@
                     settings (->> (get valid-settings [ay need])
                                   vec
                                   (into valid-trans)
-                                  u/duplicates
+                                  u/keep-duplicates
                                   vec)
                     prior (->> (zipmap settings (repeat (/ 1.0 (count settings))))
                                (merge-with + ay-obs))
