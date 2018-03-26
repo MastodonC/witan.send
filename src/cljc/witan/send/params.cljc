@@ -247,10 +247,10 @@
             {} valid-states)))
 
 #_(defn beta-params-movers [valid-states transitions]
-  (weighted-beta-params valid-states transitions (some-fn joiner? leaver?) mover?))
+    (weighted-beta-params valid-states transitions (some-fn joiner? leaver?) mover?))
 
 #_(defn alpha-params-movers [valid-states valid-year-settings transitions]
-  (weighted-alpha-params valid-states valid-year-settings transitions mover?))
+    (weighted-alpha-params valid-states valid-year-settings transitions mover?))
 
 (defn alpha-params-joiner-states [valid-states transitions]
   (weighted-joiner-state-alpha-params valid-states transitions))
@@ -275,9 +275,12 @@
         population-per-calendar-year (calculate-population-per-calendar-year population)]
     (weighted-joiner-beta-params valid-states joiners-per-calendar-year population-per-calendar-year)))
 
+(defn any-valid-transitions? [state valid-transitions]
+  (< 1 (count (get valid-transitions (second (s/need-setting state))))))
+
 (defn beta-params-movers
   "calculates the rate of the likelihood of a state transitioning for an academic year"
-  [valid-states transitions]
+  [valid-states valid-transitions transitions]
   (let [academic-years (->> (map first valid-states)
                             (distinct)
                             (sort))
@@ -300,16 +303,18 @@
                                {} observations)
         prior-per-year (continue-for-latter-ays prior-per-year academic-years)]
     (reduce (fn [coll [ay state]]
-              (if-let [beta-params (merge-with +
-                                               (get-in observations [ay state])
-                                               (get prior-per-year ay))]
-                (assoc coll [ay state] beta-params)
+              (if (any-valid-transitions? state valid-transitions)
+                (if-let [beta-params (merge-with +
+                                                 (get-in observations [ay state])
+                                                 (get prior-per-year ay))]
+                  (assoc coll [ay state] beta-params)
+                  coll)
                 coll))
             {} valid-states)))
 
 (defn alpha-params-movers
   "calculates the rate of transitions to a new state at academic year X for state Y"
-  [valid-states transitions]
+  [valid-states valid-transitions transitions]
   (let [academic-years (->> (map first valid-states)
                             (distinct)
                             (sort))
@@ -340,10 +345,15 @@
         valid-settings (s/calculate-valid-settings-for-need-ay valid-states)]
     (reduce (fn [coll [ay state]]
               (let [[need setting] (s/need-setting state)
+                    valid-trans (get valid-transitions setting)
                     obs (get-in observations [ay state])
                     ay-obs (get observations-per-ay ay)
-                    settings (get valid-settings [ay need])
-                    prior (->> (zipmap (vec settings) (repeat (/ 1.0 (count settings))))
+                    settings (->> (get valid-settings [ay need])
+                                  vec
+                                  (into valid-trans)
+                                  u/keep-duplicates
+                                  vec)
+                    prior (->> (zipmap settings (repeat (/ 1.0 (count settings))))
                                (merge-with + ay-obs))
                     prior (dissoc prior setting)
                     total (->> (vals prior) (apply +))
