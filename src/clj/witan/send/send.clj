@@ -261,27 +261,26 @@
               :mover-state-alphas  (p/alpha-params-movers valid-states valid-transitions transition-matrix)}))))
 
 (defn build-states-to-change [settings-to-change valid-needs ages years]
-  (if (= :nil (-> settings-to-change
-                  ds/row-maps
-                  first
-                  :setting-2))
-    (let [states (->> settings-to-change
-                      ds/row-maps
-                      (map #(vector (:setting-1 %))))]
-      (vec (mapcat (fn [year]
-                     (mapcat (fn [age]
-                               (mapcat (fn [need]
-                                         (map (fn [setting] (vector (generate-transition-key year age need (first setting))))
-                                              states)) valid-needs)) ages)) years)))
-    (let [state-pairs (->> settings-to-change
-                           ds/row-maps
-                           (map #(vector (:setting-1 %) (:setting-2 %))))]
-      (vec (mapcat (fn [year]
-                     (mapcat (fn [age]
-                               (mapcat (fn [need]
-                                         (map (fn [setting] (vector (generate-transition-key year age need (first setting))
-                                                                    (generate-transition-key year age need (second setting))))
-                                              state-pairs)) valid-needs)) ages)) years)))))
+;;; Add an additional map/mapcat whereby we also map over all settings and needs to build a list states to transition from
+;;; may need to add mulitple options or make another function to deal with just joiners and joiners and movers
+  (let [to-maps (->> settings-to-change
+                     ds/row-maps)
+        states (if (= :nil (-> to-maps
+                               first
+                               :setting-2))
+                 (map #(vector (:setting-1 %)) to-maps)
+                 (map #(vector (:setting-1 %) (:setting-2 %)) to-maps))]
+    (vec (mapcat (fn [year]
+                   (mapcat (fn [age]
+                             (mapcat (fn [need]
+                                       (map (fn [setting] (let [generate-keys (partial generate-transition-key year age need)]
+                                                            (if (= :nil (-> to-maps
+                                                                            first
+                                                                            :setting-2))
+                                                              (vector (generate-keys (first setting)))
+                                                              (vector (generate-keys (first setting))
+                                                                      (generate-keys (second setting))))))
+                                            states)) valid-needs)) ages)) years))))
 
 (defworkflowfn prepare-send-inputs-1-0-0
   "Outputs the population for the last year of historic data, with one
