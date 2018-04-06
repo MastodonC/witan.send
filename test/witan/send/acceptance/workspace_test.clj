@@ -55,7 +55,7 @@
 
   :transitions-file - csv containing list of settings to modify by :transition-modifier (optional)
 
-  :which-transitions? - vector of either one or more transition type strings i.e. \"joiners\", \"movers-tp\",
+  :which-transitions? - vector of either one or more transition type strings i.e. \"joiners\", \"movers-to\",
   \"movers-from\" or \"leavers\", used in conjunction with :transition-modifier and :transitions-file (optional)
 
   :modify-transitions-from - set a year to start modifying transitions from when :transition-modifier & :transitions-file are set (optional)
@@ -69,6 +69,7 @@
   (report/info "Input Data: " (report/bold (str/replace (str/join "" (drop-last inputs-path)) #"/" " ")))
   (report/info "Number of iterations: " (report/bold iterations))
   (report/info "Output charts produced: " (report/bold output?))
+  (report/info "Modifying " (report/bold (if (nil? which-transitions?) "None" (str/join ", " which-transitions?))))
   (report/info "Transitions modifier: " (report/bold (if (nil? transition-modifier) "None" transition-modifier)))
   (report/info "Transitions file: " (report/bold (if (nil? transitions-file) "None" transitions-file)))
   (report/info "Modify transitions from: " (report/bold (if (nil? modify-transitions-from) "None" modify-transitions-from)))
