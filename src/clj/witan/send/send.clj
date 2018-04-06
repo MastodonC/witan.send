@@ -197,8 +197,19 @@
            {} a)
    b))
 
-(defn generate-transition-key [cy ay need setting]
-  (vector cy ay :NONSEND (states/state need setting)))
+(defn generate-transition-key [{:keys [transition-type cy ay need setting move-state]}]
+  (when (not= move-state (states/state need setting))
+    (cond (= transition-type "joiners")
+          (vector cy ay :NONSEND (states/state need setting))
+
+          (= transition-type "leavers")
+          (vector cy ay (states/state need setting) :NONSEND)
+
+          (= transition-type "movers-to")
+          (vector cy ay move-state (states/state need setting))
+
+          (= transition-type "movers-from")
+          (vector cy ay (states/state need setting) move-state))))
 
 (defn update-ifelse-assoc [m k arithmetic-fn v]
   (if (contains? m k)
@@ -260,27 +271,31 @@
               :mover-beta-params (p/beta-params-movers valid-states valid-transitions transition-matrix)
               :mover-state-alphas  (p/alpha-params-movers valid-states valid-transitions transition-matrix)}))))
 
-(defn build-states-to-change [settings-to-change valid-needs ages years]
-;;; Add an additional map/mapcat whereby we also map over all settings and needs to build a list states to transition from
-;;; may need to add mulitple options or make another function to deal with just joiners and joiners and movers
-  (let [to-maps (->> settings-to-change
+(defn build-states-to-change [input valid-needs valid-settings ages years transition-type]
+  (let [to-maps (->> input
                      ds/row-maps)
-        states (if (= :nil (-> to-maps
-                               first
-                               :setting-2))
-                 (map #(vector (:setting-1 %)) to-maps)
-                 (map #(vector (:setting-1 %) (:setting-2 %)) to-maps))]
-    (vec (mapcat (fn [year]
+        settings-to-change (if (= :nil (-> to-maps
+                                           first
+                                           :setting-2))
+                             (map #(vector (:setting-1 %)) to-maps)
+                             (map #(vector (:setting-1 %) (:setting-2 %)) to-maps))]
+    (->> (mapcat (fn [year]
                    (mapcat (fn [age]
                              (mapcat (fn [need]
-                                       (map (fn [setting] (let [generate-keys (partial generate-transition-key year age need)]
-                                                            (if (= :nil (-> to-maps
-                                                                            first
-                                                                            :setting-2))
-                                                              (vector (generate-keys (first setting)))
-                                                              (vector (generate-keys (first setting))
-                                                                      (generate-keys (second setting))))))
-                                            states)) valid-needs)) ages)) years))))
+                                       (mapcat (fn [setting]
+                                                 (map (fn [setting-to-change]
+                                                        (let [keys {:transition-type transition-type :cy year :ay age
+                                                                    :need need :move-state (states/state need setting)}]
+                                                          (if (= :nil (-> to-maps
+                                                                          first
+                                                                          :setting-2))
+                                                            (vector (generate-transition-key (merge keys {:setting (first setting-to-change)})))
+                                                            (vector (generate-transition-key (merge keys {:setting (first setting-to-change)}))
+                                                                    (generate-transition-key (merge keys {:setting (second setting-to-change)}))))))
+                                                      settings-to-change)) valid-settings)) valid-needs)) ages)) years)
+         vec
+         (remove #(nil? (first %)))
+         distinct)))
 
 (defworkflowfn prepare-send-inputs-1-0-0
   "Outputs the population for the last year of historic data, with one
@@ -293,7 +308,8 @@
                         :transition-matrix sc/TransitionCounts
                         :setting-cost sc/NeedSettingCost
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
-   :witan/param-schema {:modify-transition-by s/Num
+   :witan/param-schema {:which-transitions? sc/transition-type
+                        :modify-transition-by s/Num
                         :splice-ncy (s/maybe sc/AcademicYear)
                         :filter-transitions-from (s/maybe [sc/CalendarYear])}
    :witan/output-schema {:standard-projection sc/projection-map
@@ -302,7 +318,7 @@
                          :settings-to-change sc/SettingsToChange}}
   [{:keys [settings-to-change initial-send-population transition-matrix population
            setting-cost valid-setting-academic-years]}
-   {:keys [modify-transition-by splice-ncy filter-transitions-from]}]
+   {:keys [which-transitions? modify-transition-by splice-ncy filter-transitions-from]}]
   (let [original-transitions transition-matrix
         ages (distinct (map :academic-year (ds/row-maps population)))
         years (distinct (map :calendar-year (ds/row-maps population)))
@@ -313,7 +329,7 @@
         valid-states (states/calculate-valid-states-from-setting-academic-years initialise-validation)
         valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years initialise-validation)
         states-to-change (when (not= 1 modify-transition-by)
-                           (build-states-to-change settings-to-change valid-needs ages years))
+                           (mapcat (fn [transition-type] (build-states-to-change settings-to-change valid-needs valid-settings ages years transition-type)) which-transitions?))
         transition-matrix (ds/row-maps transition-matrix)
         modified-transition-matrix (when (not= 1 modify-transition-by)
                                      (let [convert (-> transition-matrix
