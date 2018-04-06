@@ -55,12 +55,16 @@
 
   :transitions-file - csv containing list of settings to modify by :transition-modifier (optional)
 
+  :which-transitions? - vector of either one or more transition type strings i.e. \"joiners\", \"movers-tp\",
+  \"movers-from\" or \"leavers\", used in conjunction with :transition-modifier and :transitions-file (optional)
+
   :modify-transitions-from - set a year to start modifying transitions from when :transition-modifier & :transitions-file are set (optional)
 
   :filter-transitions-from - sets a year or year range as a vector to filter historic transitions by for :splice-ncy (optional)
 
   :splice-ncy - sets a national curriculum year to ignore transitions of prior to :filter-transitions-from year (optional)"
-  [{:keys [iterations output? transition-modifier transitions-file modify-transitions-from filter-transitions-from splice-ncy]}]
+  [{:keys [iterations output? transition-modifier transitions-file which-transitions?
+           modify-transitions-from filter-transitions-from splice-ncy]}]
   (report/reset-send-report)
   (report/info "Input Data: " (report/bold (str/replace (str/join "" (drop-last inputs-path)) #"/" " ")))
   (report/info "Number of iterations: " (report/bold iterations))
@@ -80,7 +84,9 @@
                                                (map #(assoc-in % [:witan/params :output] output?)))
                             prep-catalog2 (if (nil? transition-modifier)
                                             prep-catalog1
-                                            (map #(assoc-in % [:witan/params :modify-transition-by] transition-modifier) prep-catalog1))
+                                            (->> prep-catalog1
+                                                 (map #(assoc-in % [:witan/params :modify-transition-by] transition-modifier))
+                                                 (map #(assoc-in % [:witan/params :which-transitions?] which-transitions?))))
                             prep-catalog3 (if (nil? modify-transitions-from)
                                             prep-catalog2
                                             (map #(assoc-in % [:witan/params :modify-transitions-from] modify-transitions-from) prep-catalog2))]
