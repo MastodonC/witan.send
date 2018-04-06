@@ -202,3 +202,6 @@
    :setting-cost-lookup SettingCostLookup
    :valid-setting-academic-years ValidSettingAcademicYears
    :transition-matrix TransitionCounts})
+
+(def transition-type
+  (s/maybe [s/Str]))
