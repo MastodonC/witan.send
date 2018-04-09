@@ -199,17 +199,18 @@
 
 (defn generate-transition-key [{:keys [transition-type cy ay need setting move-state]}]
   (when (not= move-state (states/state need setting))
-    (cond (= transition-type "joiners")
-          (vector cy ay :NONSEND (states/state need setting))
+    (case transition-type
+      "joiners"
+      (vector cy ay :NONSEND (states/state need setting))
 
-          (= transition-type "leavers")
-          (vector cy ay (states/state need setting) :NONSEND)
+      "leavers"
+      (vector cy ay (states/state need setting) :NONSEND)
 
-          (= transition-type "movers-to")
-          (vector cy ay move-state (states/state need setting))
+      "movers-to"
+      (vector cy ay move-state (states/state need setting))
 
-          (= transition-type "movers-from")
-          (vector cy ay (states/state need setting) move-state))))
+      "movers-from"
+      (vector cy ay (states/state need setting) move-state))))
 
 (defn update-ifelse-assoc [m k arithmetic-fn v]
   (if (contains? m k)
