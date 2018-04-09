@@ -279,20 +279,19 @@
                                            :setting-2))
                              (map #(vector (:setting-1 %)) to-maps)
                              (map #(vector (:setting-1 %) (:setting-2 %)) to-maps))]
-    (->> (mapcat (fn [year]
-                   (mapcat (fn [age]
-                             (mapcat (fn [need]
-                                       (mapcat (fn [setting]
-                                                 (map (fn [setting-to-change]
-                                                        (let [keys {:transition-type transition-type :cy year :ay age
-                                                                    :need need :move-state (states/state need setting)}]
-                                                          (if (= :nil (-> to-maps
-                                                                          first
-                                                                          :setting-2))
-                                                            (vector (generate-transition-key (merge keys {:setting (first setting-to-change)})))
-                                                            (vector (generate-transition-key (merge keys {:setting (first setting-to-change)}))
-                                                                    (generate-transition-key (merge keys {:setting (second setting-to-change)}))))))
-                                                      settings-to-change)) valid-settings)) valid-needs)) ages)) years)
+    (->> (for [year years
+               age ages
+               need valid-needs
+               setting valid-settings
+               setting-to-change settings-to-change]
+           (let [keys {:transition-type transition-type :cy year :ay age
+                       :need need :move-state (states/state need setting)}]
+             (if (= :nil (-> to-maps
+                             first
+                             :setting-2))
+               (vector (generate-transition-key (merge keys {:setting (first setting-to-change)})))
+               (vector (generate-transition-key (merge keys {:setting (first setting-to-change)}))
+                       (generate-transition-key (merge keys {:setting (second setting-to-change)}))))))
          (remove #(nil? (first %)))
          distinct)))
 
