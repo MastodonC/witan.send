@@ -197,8 +197,20 @@
            {} a)
    b))
 
-(defn generate-transition-key [cy ay need setting]
-  (vector cy ay :NONSEND (states/state need setting)))
+(defn generate-transition-key [{:keys [transition-type cy ay need setting move-state]}]
+  (when (not= move-state (states/state need setting))
+    (case transition-type
+      "joiners"
+      (vector cy ay :NONSEND (states/state need setting))
+
+      "leavers"
+      (vector cy ay (states/state need setting) :NONSEND)
+
+      "movers-to"
+      (vector cy ay move-state (states/state need setting))
+
+      "movers-from"
+      (vector cy ay (states/state need setting) move-state))))
 
 (defn update-ifelse-assoc [m k arithmetic-fn v]
   (if (contains? m k)
@@ -260,28 +272,28 @@
               :mover-beta-params (p/beta-params-movers valid-states valid-transitions transition-matrix)
               :mover-state-alphas  (p/alpha-params-movers valid-states valid-transitions transition-matrix)}))))
 
-(defn build-states-to-change [settings-to-change valid-needs ages years]
-  (if (= :nil (-> settings-to-change
-                  ds/row-maps
-                  first
-                  :setting-2))
-    (let [states (->> settings-to-change
-                      ds/row-maps
-                      (map #(vector (:setting-1 %))))]
-      (vec (mapcat (fn [year]
-                     (mapcat (fn [age]
-                               (mapcat (fn [need]
-                                         (map (fn [setting] (vector (generate-transition-key year age need (first setting))))
-                                              states)) valid-needs)) ages)) years)))
-    (let [state-pairs (->> settings-to-change
-                           ds/row-maps
-                           (map #(vector (:setting-1 %) (:setting-2 %))))]
-      (vec (mapcat (fn [year]
-                     (mapcat (fn [age]
-                               (mapcat (fn [need]
-                                         (map (fn [setting] (vector (generate-transition-key year age need (first setting))
-                                                                    (generate-transition-key year age need (second setting))))
-                                              state-pairs)) valid-needs)) ages)) years)))))
+(defn build-states-to-change [input valid-needs valid-settings ages years transition-type]
+  (let [to-maps (ds/row-maps input)
+        settings-to-change (if (= :nil (-> to-maps
+                                           first
+                                           :setting-2))
+                             (map #(vector (:setting-1 %)) to-maps)
+                             (map #(vector (:setting-1 %) (:setting-2 %)) to-maps))]
+    (->> (for [year years
+               age ages
+               need valid-needs
+               setting valid-settings
+               setting-to-change settings-to-change]
+           (let [keys {:transition-type transition-type :cy year :ay age
+                       :need need :move-state (states/state need setting)}]
+             (if (= :nil (-> to-maps
+                             first
+                             :setting-2))
+               (vector (generate-transition-key (merge keys {:setting (first setting-to-change)})))
+               (vector (generate-transition-key (merge keys {:setting (first setting-to-change)}))
+                       (generate-transition-key (merge keys {:setting (second setting-to-change)}))))))
+         (remove #(nil? (first %)))
+         distinct)))
 
 (defworkflowfn prepare-send-inputs-1-0-0
   "Outputs the population for the last year of historic data, with one
@@ -294,7 +306,8 @@
                         :transition-matrix sc/TransitionCounts
                         :setting-cost sc/NeedSettingCost
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
-   :witan/param-schema {:modify-transition-by s/Num
+   :witan/param-schema {:which-transitions? sc/transition-type
+                        :modify-transition-by s/Num
                         :splice-ncy (s/maybe sc/AcademicYear)
                         :filter-transitions-from (s/maybe [sc/CalendarYear])}
    :witan/output-schema {:standard-projection sc/projection-map
@@ -303,7 +316,7 @@
                          :settings-to-change sc/SettingsToChange}}
   [{:keys [settings-to-change initial-send-population transition-matrix population
            setting-cost valid-setting-academic-years]}
-   {:keys [modify-transition-by splice-ncy filter-transitions-from]}]
+   {:keys [which-transitions? modify-transition-by splice-ncy filter-transitions-from]}]
   (let [original-transitions transition-matrix
         ages (distinct (map :academic-year (ds/row-maps population)))
         years (distinct (map :calendar-year (ds/row-maps population)))
@@ -314,7 +327,7 @@
         valid-states (states/calculate-valid-states-from-setting-academic-years initialise-validation)
         valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years initialise-validation)
         states-to-change (when (not= 1 modify-transition-by)
-                           (build-states-to-change settings-to-change valid-needs ages years))
+                           (mapcat (fn [transition-type] (build-states-to-change settings-to-change valid-needs valid-settings ages years transition-type)) which-transitions?))
         transition-matrix (ds/row-maps transition-matrix)
         modified-transition-matrix (when (not= 1 modify-transition-by)
                                      (let [convert (-> transition-matrix
