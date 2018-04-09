@@ -273,8 +273,7 @@
               :mover-state-alphas  (p/alpha-params-movers valid-states valid-transitions transition-matrix)}))))
 
 (defn build-states-to-change [input valid-needs valid-settings ages years transition-type]
-  (let [to-maps (->> input
-                     ds/row-maps)
+  (let [to-maps (ds/row-maps input)
         settings-to-change (if (= :nil (-> to-maps
                                            first
                                            :setting-2))
@@ -294,7 +293,6 @@
                                                             (vector (generate-transition-key (merge keys {:setting (first setting-to-change)}))
                                                                     (generate-transition-key (merge keys {:setting (second setting-to-change)}))))))
                                                       settings-to-change)) valid-settings)) valid-needs)) ages)) years)
-         vec
          (remove #(nil? (first %)))
          distinct)))
 
