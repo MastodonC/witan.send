@@ -19,6 +19,9 @@
 (defn get-seed! []
   (swap! random-seed inc))
 
+(defn int-round ^long [^double n]
+  (int (Math/round (float n))))
+
 (defn round [x]
   (Double/parseDouble (format "%.02f" (double x))))
 
@@ -39,6 +42,12 @@
                            coll
                            as))
                  {}))))
+
+(defn sample-binomial
+  [n p]
+  (if (pos? n)
+    (draw (binomial {:n n :p p}) {:seed (get-seed!)})
+    0))
 
 (defn transitions-map
   [dataset]
@@ -61,21 +70,79 @@
 (defn split-need-state [state pos]
   (keyword (pos (str/split (name state) #"-"))))
 
+(defn needsetting-to-setting [state]
+  (merge (vec (drop-last state)) (split-need-state (last state) second)))
+
+;; This function replaces the current transition modifier implementation on master, it needs tidying and refactoring
+;; It needs to be broken up (is possible) into at least two functions;
+;; 1. Converts the "dataset" into transitions counts (two in this case/now)
+;; 2. Calculates new rates, applies them and apportions them
+(defn movers-to-transitions-map
+  [dataset states-to-change]
+  (let [sum-transitions-to (reduce (fn [coll {:keys [calendar-year academic-year-2 setting-2 need-2]}]
+                                     (update coll [calendar-year academic-year-2 setting-2 need-2] some+ 1))
+                                   {} dataset) ;; functionalise this? Used twice and possibly elsewhere in code?
+        unique-settings-to-change (distinct (map (fn [[first-state second-state]]
+                                                   (let [[a b c d] first-state]
+                                                     (into [a b] (states/need-setting d)))) states-to-change))
+        modified-transition-counts (mapcat (fn [[k v]]
+                                             (let [new-val (int-round (* 0.5 v)) ;; 0.5 hard coded!
+                                                   diff (- v new-val)] ;; applying the diff in two places here...
+                                               (assoc {} k new-val)))
+                                           (mapcat (fn [n] (filter (fn [[state _]] (let [[calendar-year academic-year-2 setting-2 need-2] state]
+                                                                                     (= [calendar-year academic-year-2 need-2 setting-2]
+                                                                                        n))) sum-transitions-to)) unique-settings-to-change))
+        sum-transitions (reduce (fn [coll {:keys [calendar-year academic-year-2 setting-1 need-1 setting-2 need-2]}]
+                                  (update coll [calendar-year academic-year-2 setting-1 need-1 setting-2 need-2] some+ 1))
+                                {} dataset)
+        apportion-new-vals (mapcat (fn [[k sum]] (let [filter-data (filter (fn [[[calendar-year academic-year-2 setting-1 need-1 setting-2 need-2] v]]
+                                                                             (= k [calendar-year academic-year-2 setting-2 need-2]))
+                                                                           sum-transitions)]
+                                                   (loop [balance-transitions (mapcat (fn [[k v]] (assoc {} k (sample-binomial v 0.5))) filter-data)] ;; 0.5 hard coded!
+                                                     (if (= (reduce + (vals balance-transitions)) sum)
+                                                       balance-transitions
+                                                       (recur
+                                                        (mapcat (fn [[k v]] (assoc {} k (sample-binomial v 0.5))) filter-data)))))) modified-transition-counts) ;; 0.5 hard coded!!
+        searchable-states-to-change (reduce (fn [acc [state1 state2]]
+                                              (let [[cal-1 ay-1 s1-1 s2-1] state1
+                                                    s1-1 (-> s1-1
+                                                             states/need-setting
+                                                             reverse
+                                                             vec)
+                                                    s2-1 (-> s2-1
+                                                             states/need-setting
+                                                             reverse
+                                                             vec)
+                                                    [cal-2 ay-2 s1-2 s2-2] state2
+                                                    s1-2 (-> s1-2
+                                                             states/need-setting
+                                                             reverse
+                                                             vec)
+                                                    s2-2 (-> s2-2
+                                                             states/need-setting
+                                                             reverse
+                                                             vec)]
+                                                (assoc acc (reduce into [cal-1 ay-1] [s1-1 s2-1]) ;; functionalise this
+                                                       (reduce into [cal-2 ay-2] [s1-2 s2-2])))) {} states-to-change)]
+    (reduce (fn [m [k v]] (let [orig-val (get sum-transitions k)
+                                diff (- orig-val v) ;; ...and down here, need to double check, but probably doesn't need to be done twice!
+                                change-to (get searchable-states-to-change k)
+                                change-to-val (get sum-transitions change-to)]
+                            (-> m
+                                (assoc k v)
+                                (assoc change-to (some+ change-to-val diff))))) sum-transitions apportion-new-vals)))
+
 (defn back-to-transitions-matrix [k v]
-  (let [[calendar-year academic-year-2 state-1 state-2] k
-        total v]
-    (repeat total (assoc {}
-                         :calendar-year calendar-year
-                         :academic-year-1 (- academic-year-2 1)
-                         :academic-year-2 academic-year-2
-                         :need-1 (split-need-state state-1 first)
-                         :setting-1 (if (nil? (split-need-state state-1 second))
-                                      (split-need-state state-1 first)
-                                      (split-need-state state-1 second))
-                         :need-2 (split-need-state state-2 first)
-                         :setting-2 (if (nil? (split-need-state state-2 second))
-                                      (split-need-state state-2 first)
-                                      (split-need-state state-2 second))))))
+  (let [[calendar-year academic-year-2 setting-1 need-1 setting-2 need-2] k]
+    (when (not= 0 v)
+      (repeat v (assoc {}
+                       :calendar-year calendar-year
+                       :academic-year-1 (- academic-year-2 1)
+                       :academic-year-2 academic-year-2
+                       :need-1 need-1
+                       :setting-1 setting-1
+                       :need-2 need-2
+                       :setting-2 setting-2)))))
 
 (defn sq [x] (* x x))
 (defn abs [x] (if (< x 0)
@@ -140,12 +207,6 @@
   [n params]
   (if (pos? n)
     (draw (beta-binomial n params) {:seed (get-seed!)})
-    0))
-
-(defn sample-binomial
-  [n p]
-  (if (pos? n)
-    (draw (binomial {:n n :p p}) {:seed (get-seed!)})
     0))
 
 (defn sample-send-transitions
@@ -347,9 +408,6 @@
     ([acc]
      (println "Complete rf...")
      (mapv #(rf %1) acc))))
-
-(defn int-ceil [n]
-  (int (Math/ceil n)))
 
 (defn projection-state-to-map [[calendar-year-2 ay-2 state-1 state-2]]
   (let [[need-1 setting-1] (states/need-setting state-1)

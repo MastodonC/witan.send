@@ -176,19 +176,20 @@
     (testing "all vals are numbers"
       (is (every? #(number? %) (reduce concat result))))))
 
+
 (deftest modify-transitions-test
-  (let [transitions {[2014 1 :NONSEND :SEMH-MMSIB] 2, [2014 1 :NONSEND :SP-MMSIB] 3, [2014 1 :SP-MU :SP-MU] 2}
-        state-change1 [[2014 1 :SP-MU :SP-MU] [2014 1 :NONSEND :SEMH-MMSIB]]
-        state-change2 [[2014 1 :NONSEND :SP-MMSIB] [2014 1 :NONSEND :SEMH-MMSIB]]]
+  (let [transitions {[2014 1 :NONSEND :MMSIB] 2, [2014 1 :NONSEND :MSSIB] 3, [2014 1 :MU :MU] 2}
+        state-change1 [[2014 1 :MU :MU] [2014 1 :NONSEND :MMSIB]]
+        state-change2 [[2014 1 :NONSEND :MMSIB] [2014 1 :NONSEND :MMSIB]]]
     (testing "modifies transitions"
       (is (not= transitions (modify-transitions transitions state-change1 * 0.5))))
     (testing "state [2014 8 :SP-MU :SP-MU] is divided by two"
-      (is (= 1 (get (modify-transitions transitions state-change1 * 0.5) [2014 1 :SP-MU :SP-MU]))))
+      (is (= 1 (get (modify-transitions transitions state-change1 * 0.5) [2014 1 :MU :MU]))))
     (testing "state [2014 0 :NONSEND :SP-MMSIB] takes the joiners of state [2014 8 :SP-MU :SP-MU]"
-      (is (= 3 (get (modify-transitions transitions state-change1 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB]))))
+      (is (= 3 (get (modify-transitions transitions state-change1 * 0.5) [2014 1 :NONSEND :MMSIB]))))
     (testing "odd values are rounded and exchanged correctly"
-      (is (= 3 (get (modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB])))
-      (is (= 2 (get (modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SP-MMSIB]))))))
+      (is (= 3 (get (modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :MSSIB])))
+      (is (= 2 (get (modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :MMSIB]))))))
 
 (deftest transition-present?-test
   (testing "transition state is present in coll"
@@ -200,26 +201,26 @@
   (testing "if key not present, insert key with val"
     (is (= 1 (:foo (update-ifelse-assoc {:baz 1 :bar 2} :foo + 1))))))
 
-(deftest generate-transition-key-test
+(deftest generate-transition-key-test ;;; needs fixing??
   (testing "generate joiner state transition"
     (is (= [2013 5 :NONSEND :CI-MSSOB]
            (generate-transition-key {:transition-type "joiners" :cy 2013 :ay 5
-                                     :need :CI :move-state :CI-MSSIB
+                                     :need :CI :static-setting :MSSIB
                                      :setting :MSSOB}))))
   (testing "generate leaver state transition"
     (is (= [2013 5 :CI-MSSOB :NONSEND]
            (generate-transition-key {:transition-type "leavers" :cy 2013 :ay 5
-                                     :need :CI :move-state :CI-MSSIB
+                                     :need :CI :static-setting :MSSIB
                                      :setting :MSSOB}))))
-  (testing "generate joiner state transition"
+  (testing "generate mover-to state transition" ;;; NEEDS FIXING
     (is (= [2013 5 :CI-MSSIB :CI-MSSOB]
            (generate-transition-key {:transition-type "movers-to" :cy 2013 :ay 5
-                                     :need :CI :move-state :CI-MSSIB
+                                     :need :CI :static-setting :MSSIB
                                      :setting :MSSOB}))))
-  (testing "generate joiner state transition"
+  (testing "generate mover-from state transition" ;;; NEEDS FIXING
     (is (= [2013 5 :CI-MSSOB :CI-MSSIB]
            (generate-transition-key {:transition-type "movers-from" :cy 2013 :ay 5
-                                     :need :CI :move-state :CI-MSSIB
+                                     :need :CI :static-setting :MSSIB
                                      :setting :MSSOB})))))
 
 (deftest build-states-to-change-test

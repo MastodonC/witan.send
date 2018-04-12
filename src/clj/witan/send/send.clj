@@ -8,7 +8,7 @@
             [witan.send.params :as p]
             [witan.send.step :as step]
             [witan.send.states :as states]
-            [witan.send.utils :as u :refer [round]]
+            [witan.send.utils :as u]
             [clojure.java.io :as io]
             [incanter.stats :as stats]
             [medley.core :as medley]
@@ -181,7 +181,7 @@
 (defn modify-transitions [transitions [first-state second-state] arithmetic-fn v]
   (if (contains? transitions first-state)
     (let [pop (get transitions first-state)
-          mod-pop (u/int-ceil (arithmetic-fn pop v))
+          mod-pop (u/int-round (arithmetic-fn pop v))
           diff (- pop mod-pop)
           assoc-first-state (assoc transitions first-state mod-pop)]
       (if (nil? second-state)
@@ -253,7 +253,7 @@
                (vector (generate-transition-key (merge keys {:setting (first setting-to-change)})))
                (vector (generate-transition-key (merge keys {:setting (first setting-to-change)}))
                        (generate-transition-key (merge keys {:setting (second setting-to-change)}))))))
-         (remove #(nil? (first %)))
+         (remove #(or (nil? (second %)) (nil? (first %))))
          distinct)))
 
 (defn build-input-datasets
@@ -272,8 +272,9 @@
                     (ds/row-maps setting-cost)
                     (ds/row-maps valid-setting-academic-years))
   (let [original-transitions transition-matrix
+        transition-matrix (ds/row-maps transition-matrix)
         ages (distinct (map :academic-year (ds/row-maps population)))
-        years (distinct (map :calendar-year (ds/row-maps population)))
+        years (distinct (map :calendar-year transition-matrix))
         initialise-validation (ds/row-maps valid-setting-academic-years)
         valid-transitions (states/calculate-valid-mover-transitions
                            initialise-validation)
@@ -286,17 +287,9 @@
         valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years
                              initialise-validation)
         states-to-change (when (not= 1 modify-transition-by)
-                           (mapcat (fn [transition-type]
-                                     (build-states-to-change settings-to-change
-                                                             valid-needs valid-settings
-                                                             ages years transition-type))
-                                   which-transitions?))
-        transition-matrix (ds/row-maps transition-matrix)
+                           (mapcat (fn [transition-type] (build-states-to-change settings-to-change valid-needs valid-settings ages years transition-type)) which-transitions?))
         modified-transition-matrix (when (not= 1 modify-transition-by)
-                                     (let [convert (-> transition-matrix
-                                                       u/full-transitions-map)
-                                           result (reduce (fn [m k] (modify-transitions m k * modify-transition-by))
-                                                          convert states-to-change)]
+                                     (let [result (u/movers-to-transitions-map transition-matrix states-to-change)]
                                        (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)) result)))
         transitions (if modified-transition-matrix
                       (u/transitions-map modified-transition-matrix)
@@ -553,8 +546,6 @@
             mover-rates (mover-rate filter-movers)
             mover-rates-CI (map #(confidence-interval mover-rates %) years)
             mover-ribbon-data (prep-ribbon-plot-data mover-rates-CI years n-colours)]
-        ;;future-transitions (mapcat u/projection->transitions projection) ;; for projection investigation
-
         (report/info "First year of input data: " (report/bold (first years)))
         (report/info "Final year of input data: " (report/bold (inc (last years))))
         (report/info "Final year of projection: " (report/bold (+ (last years) (count (map :total-in-send send-output)))))
@@ -563,7 +554,7 @@
           (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[[academic-year state] stats]]
-                                  (-> (medley/map-vals round stats)
+                                  (-> (medley/map-vals u/round stats)
                                       (assoc :academic-year academic-year :state state :calendar-year year))) (:by-state output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
                  (concat [(map name columns)])
@@ -572,7 +563,7 @@
           (let [columns [:calendar-year :academic-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[academic-year stats]]
-                                  (-> (medley/map-vals round stats)
+                                  (-> (medley/map-vals u/round stats)
                                       (assoc :academic-year academic-year :calendar-year year)))
                                 (:total-in-send-by-ay output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
@@ -582,7 +573,7 @@
           (let [columns [:calendar-year :need :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[need stats]]
-                                  (-> (medley/map-vals round stats)
+                                  (-> (medley/map-vals u/round stats)
                                       (assoc :need (name need) :calendar-year year)))
                                 (:total-in-send-by-need output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
@@ -592,7 +583,7 @@
           (let [columns [:calendar-year :setting :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[setting stats]]
-                                  (-> (medley/map-vals round stats)
+                                  (-> (medley/map-vals u/round stats)
                                       (assoc :setting (name setting) :calendar-year year)))
                                 (:total-in-send-by-setting output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
@@ -601,7 +592,7 @@
         (with-open [writer (io/writer (io/file (str dir "/Output_Count.csv")))]
           (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (map (fn [stats year]
-                        (-> (medley/map-vals round stats)
+                        (-> (medley/map-vals u/round stats)
                             (assoc :calendar-year year)))
                       (map :total-in-send send-output) (range initial-projection-year 3000))
                  (map (apply juxt columns))
@@ -610,7 +601,7 @@
         (with-open [writer (io/writer (io/file (str dir "/Output_Cost.csv")))]
           (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (map (fn [stats year]
-                        (-> (medley/map-vals round stats)
+                        (-> (medley/map-vals u/round stats)
                             (assoc :calendar-year year)))
                       (map :total-cost send-output) (range initial-projection-year 3000))
                  (map (apply juxt columns))
@@ -620,7 +611,7 @@
           (let [columns [:calendar-year :ay-group :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[ay-group stats]]
-                                  (-> (medley/map-vals round stats)
+                                  (-> (medley/map-vals u/round stats)
                                       (assoc :ay-group ay-group :calendar-year year)))
                                 (:total-in-send-by-ay-group output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
