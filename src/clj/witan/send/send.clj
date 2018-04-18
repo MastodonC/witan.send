@@ -5,6 +5,7 @@
                                          defworkflowoutput]]
             [schema.core :as s]
             [witan.send.schemas :as sc]
+            [clojure.core.matrix :as m]
             [clojure.core.matrix.dataset :as ds]
             [clojure.data.csv :as csv]
             [witan.datasets :as wds]
@@ -317,6 +318,9 @@
   [{:keys [settings-to-change initial-send-population transition-matrix population
            setting-cost valid-setting-academic-years]}
    {:keys [which-transitions? modify-transition-by splice-ncy filter-transitions-from]}]
+  ;(if (nil? sc/SENDPopulation)
+  (def ipop initial-send-population)
+  (def tm transition-matrix)
   (let [original-transitions transition-matrix
         ages (distinct (map :academic-year (ds/row-maps population)))
         years (distinct (map :calendar-year (ds/row-maps population)))
@@ -334,21 +338,26 @@
                                                        u/full-transitions-map)
                                            result (reduce (fn [m k] (modify-transitions m k * modify-transition-by)) convert states-to-change)]
                                        (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)) result)))
-        _ (if modified-transition-matrix
-            (prn "Using modified transitions matrix")
-            (prn "Using input transitions matrix"))
         transitions (if modified-transition-matrix
                       (u/transitions-map modified-transition-matrix)
                       (u/transitions-map transition-matrix))
         transition-matrix-filtered (when filter-transitions-from
                                      (mapcat (fn [year] (filter #(= (:calendar-year %) year) (or modified-transition-matrix transition-matrix))) filter-transitions-from))
-        initial-state (initialise-model (ds/row-maps initial-send-population))]
+        max-transition-year (apply max (map :calendar-year transition-matrix))
+        raw-initial-pop-data (filter #(= (:calendar-year %) max-transition-year) transition-matrix)
+
+        initial-state (initialise-model (ds/row-maps initial-send-population))
+        ]
+    (def y years)
+    (def tm2 transition-matrix)
+    (def ipop2 initial-state)
+    (def ipop-ti (ds/row-maps initial-send-population))
     (when (not= 1 modify-transition-by)
       (report/info "Modified transitions by " (report/bold modify-transition-by)))
     (if modified-transition-matrix
       (report/info "Used " (report/bold "modified") " transitions matrix\n")
       (report/info "Used " (report/bold "input") " transitions matrix\n"))
-    (s/validate (sc/SENDPopulation+ valid-settings) initial-send-population)
+    ;;(s/validate (sc/SENDPopulation+ valid-settings) initial-send-population)
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) setting-cost)
     {:standard-projection (prep-inputs initial-state splice-ncy valid-states valid-transitions transition-matrix transition-matrix-filtered
@@ -545,7 +554,7 @@
     (when output
       (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
                                        (reduce #(assoc %1 (:setting %2) (:setting-group %2)) {}))
-                                  :NON-SEND "Other" )
+                                  :NON-SEND "Other")
             years (sort (distinct (map :calendar-year transitions-data)))
             initial-projection-year (+ 1 (last years))
             joiners-count (p/calculate-joiners-per-calendar-year transitions-data)
@@ -563,10 +572,10 @@
                                         (= setting-2 sc/non-send))) transitions-data)
             mover-rates (mover-rate filter-movers)
             mover-rates-CI (map #(confidence-interval mover-rates %) years)
-            n-colours (take (count years) ch/palette)
+            n-colours (take (count years) ch/palette)]
             ;;n-colours (vec (repeatedly (count years) ch/random-colour)) ;; alternative random colour selection
             ;;future-transitions (mapcat u/projection->transitions projection) ;; for projection investigation
-            ]
+
         (report/info "First year of input data: " (report/bold (first years)))
         (report/info "Final year of input data: " (report/bold (inc (last years))))
         (report/info "Final year of projection: " (report/bold (+ (last years) (count (map :total-in-send send-output)))))
