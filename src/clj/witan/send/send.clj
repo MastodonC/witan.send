@@ -21,7 +21,9 @@
             [redux.core :as r]
             [clojure.string :as str]
             [clojure.java.shell :as sh]
-            [witan.send.report :as report])
+            [witan.send.report :as report]
+            [clojure.walk :refer [postwalk]]
+            [clojure.set :refer [rename-keys]])
   (:import [org.apache.commons.math3.distribution BetaDistribution]))
 
 (defn initialise-model [send-data]
@@ -344,14 +346,28 @@
         transition-matrix-filtered (when filter-transitions-from
                                      (mapcat (fn [year] (filter #(= (:calendar-year %) year) (or modified-transition-matrix transition-matrix))) filter-transitions-from))
         max-transition-year (apply max (map :calendar-year transition-matrix))
-        raw-initial-pop-data (filter #(= (:calendar-year %) max-transition-year) transition-matrix)
-
-        initial-state (initialise-model (ds/row-maps initial-send-population))
+        ;raw-initial-pop-data (filter #(= (:calendar-year %) max-transition-year) transition-matrix)
+        ;filtered-initial-send-population (filter #(not= (:setting-2 %) :NONSEND) raw-initial-pop-data)
+        initial-state (->> (filter #(= (:calendar-year %) max-transition-year) transition-matrix)
+                             (filter #(not= (:setting-2 %) :NONSEND))
+                             (postwalk #(if (map? %) (dissoc % :calendar-year :setting-1 :need-1 :academic-year-1) %))
+                             (frequencies)
+                             (map (fn [x] (assoc (first x) :population (last x) :calendar-year (inc max-transition-year))))
+                             (map #(rename-keys % {:setting-2 :setting, :need-2 :need :academic-year-2 :academic-year}))
+                             (initialise-model))
+        ;initial-state (initialise-model (ds/row-maps initial-send-population))
         ]
-    (def y years)
-    (def tm2 transition-matrix)
-    (def ipop2 initial-state)
-    (def ipop-ti (ds/row-maps initial-send-population))
+    ;(def y years)
+    ;(def tm2 transition-matrix)
+    ;(def ipop initial-state)
+    ;(def ipop2 initial-state-2)
+    ;(def raw filtered-initial-send-population)
+    ;(def ipop-ti (ds/row-maps initial-send-population))
+    ;(def raw2 (postwalk #(if (map? %) (dissoc % :calendar-year :setting-1 :need-1 :academic-year-1) %) raw))
+    ;(def raw3 (frequencies raw2))
+    ;(def raw4 (map (fn [x] (assoc (first x) :population (last x) :calendar-year (inc max-transition-year))) raw3)) ;;;needs to be generated automatically
+    ;(def raw5 (map #(rename-keys % {:setting-2 :setting, :need-2 :need :academic-year-2 :academic-year}) raw4))
+
     (when (not= 1 modify-transition-by)
       (report/info "Modified transitions by " (report/bold modify-transition-by)))
     (if modified-transition-matrix
