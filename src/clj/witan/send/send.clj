@@ -5,7 +5,6 @@
                                          defworkflowoutput]]
             [schema.core :as s]
             [witan.send.schemas :as sc]
-            [clojure.core.matrix :as m]
             [clojure.core.matrix.dataset :as ds]
             [clojure.data.csv :as csv]
             [witan.datasets :as wds]
@@ -141,12 +140,6 @@
    :witan/version "1.0.0"
    :witan/key :settings-to-change
    :witan/schema sc/SettingsToChange})
-
-#_ (definput initial-send-population-1-0-0
-  {:witan/name :send/initial-send-population
-   :witan/version "1.0.0"
-   :witan/key :initial-send-population
-   :witan/schema sc/SENDPopulation})
 
 (definput transition-matrix-1-0-0
   {:witan/name :send/transition-matrix
@@ -305,7 +298,6 @@
    :witan/version "1.0.0"
    :witan/input-schema {:settings-to-change sc/SettingsToChange
                         :population sc/PopulationDataset
-                        ;:initial-send-population sc/SENDPopulation
                         :transition-matrix sc/TransitionCounts
                         :setting-cost sc/NeedSettingCost
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
@@ -317,13 +309,9 @@
                          :scenario-projection (s/maybe sc/projection-map)
                          :modify-transition-by s/Num
                          :settings-to-change sc/SettingsToChange}}
-  [{:keys [settings-to-change ;initial-send-population
-           transition-matrix population
+  [{:keys [settings-to-change transition-matrix population
            setting-cost valid-setting-academic-years]}
    {:keys [which-transitions? modify-transition-by splice-ncy filter-transitions-from]}]
-  ;(if (nil? sc/SENDPopulation)
-  ;(def ipop initial-send-population)
-  ;(def tm transition-matrix)
   (let [original-transitions transition-matrix
         ages (distinct (map :academic-year (ds/row-maps population)))
         years (distinct (map :calendar-year (ds/row-maps population)))
@@ -347,34 +335,18 @@
         transition-matrix-filtered (when filter-transitions-from
                                      (mapcat (fn [year] (filter #(= (:calendar-year %) year) (or modified-transition-matrix transition-matrix))) filter-transitions-from))
         max-transition-year (apply max (map :calendar-year transition-matrix))
-        ;raw-initial-pop-data (filter #(= (:calendar-year %) max-transition-year) transition-matrix)
-        ;filtered-initial-send-population (filter #(not= (:setting-2 %) :NONSEND) raw-initial-pop-data)
         initial-state (->> (filter #(= (:calendar-year %) max-transition-year) transition-matrix)
                            (filter #(not= (:setting-2 %) :NONSEND))
                            (postwalk #(if (map? %) (dissoc % :calendar-year :setting-1 :need-1 :academic-year-1) %))
                            (frequencies)
                            (map #(assoc (first %) :population (last %) :calendar-year (inc max-transition-year)))
                            (map #(rename-keys % {:setting-2 :setting, :need-2 :need :academic-year-2 :academic-year}))
-                           (initialise-model))
-        ;initial-state (initialise-model (ds/row-maps initial-send-population))
-        ]
-    ;(def y years)
-    ;(def tm2 transition-matrix)
-    ;(def ipop initial-state)
-    ;(def ipop2 initial-state-2)
-    ;(def raw filtered-initial-send-population)
-    ;(def ipop-ti (ds/row-maps initial-send-population))
-    ;(def raw2 (postwalk #(if (map? %) (dissoc % :calendar-year :setting-1 :need-1 :academic-year-1) %) raw))
-    ;(def raw3 (frequencies raw2))
-    ;(def raw4 (map (fn [x] (assoc (first x) :population (last x) :calendar-year (inc max-transition-year))) raw3)) ;;;needs to be generated automatically
-    ;(def raw5 (map #(rename-keys % {:setting-2 :setting, :need-2 :need :academic-year-2 :academic-year}) raw4))
-
+                           (initialise-model))]
     (when (not= 1 modify-transition-by)
       (report/info "Modified transitions by " (report/bold modify-transition-by)))
     (if modified-transition-matrix
       (report/info "Used " (report/bold "modified") " transitions matrix\n")
       (report/info "Used " (report/bold "input") " transitions matrix\n"))
-    ;;(s/validate (sc/SENDPopulation+ valid-settings) initial-send-population)
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) setting-cost)
     {:standard-projection (prep-inputs initial-state splice-ncy valid-states valid-transitions transition-matrix transition-matrix-filtered
@@ -479,14 +451,11 @@
                                           projection))
                                       (doall))))
                          (doall))
-        ;; _ (println "Printing....")
-        ;; _ (prn (first (first projections)))
         reduced (doall
                  (for [projection projections]
                    (do (println "Reducing...")
                        (transduce (map #(map :model %)) (reduce-rf iterations valid-states setting-cost-lookup) projection))))
         projection (apply concat projections)]
-    ;;    (println mover-beta-params)
     (println "Combining...")
     {:projection (projection->transitions projection)
      :send-output (transduce identity (combine-rf iterations) reduced)
