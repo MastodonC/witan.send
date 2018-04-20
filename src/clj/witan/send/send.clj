@@ -142,7 +142,7 @@
    :witan/key :settings-to-change
    :witan/schema sc/SettingsToChange})
 
-(definput initial-send-population-1-0-0
+#_ (definput initial-send-population-1-0-0
   {:witan/name :send/initial-send-population
    :witan/version "1.0.0"
    :witan/key :initial-send-population
@@ -305,7 +305,7 @@
    :witan/version "1.0.0"
    :witan/input-schema {:settings-to-change sc/SettingsToChange
                         :population sc/PopulationDataset
-                        :initial-send-population sc/SENDPopulation
+                        ;:initial-send-population sc/SENDPopulation
                         :transition-matrix sc/TransitionCounts
                         :setting-cost sc/NeedSettingCost
                         :valid-setting-academic-years sc/ValidSettingAcademicYears}
@@ -317,12 +317,13 @@
                          :scenario-projection (s/maybe sc/projection-map)
                          :modify-transition-by s/Num
                          :settings-to-change sc/SettingsToChange}}
-  [{:keys [settings-to-change initial-send-population transition-matrix population
+  [{:keys [settings-to-change ;initial-send-population
+           transition-matrix population
            setting-cost valid-setting-academic-years]}
    {:keys [which-transitions? modify-transition-by splice-ncy filter-transitions-from]}]
   ;(if (nil? sc/SENDPopulation)
-  (def ipop initial-send-population)
-  (def tm transition-matrix)
+  ;(def ipop initial-send-population)
+  ;(def tm transition-matrix)
   (let [original-transitions transition-matrix
         ages (distinct (map :academic-year (ds/row-maps population)))
         years (distinct (map :calendar-year (ds/row-maps population)))
@@ -349,12 +350,12 @@
         ;raw-initial-pop-data (filter #(= (:calendar-year %) max-transition-year) transition-matrix)
         ;filtered-initial-send-population (filter #(not= (:setting-2 %) :NONSEND) raw-initial-pop-data)
         initial-state (->> (filter #(= (:calendar-year %) max-transition-year) transition-matrix)
-                             (filter #(not= (:setting-2 %) :NONSEND))
-                             (postwalk #(if (map? %) (dissoc % :calendar-year :setting-1 :need-1 :academic-year-1) %))
-                             (frequencies)
-                             (map (fn [x] (assoc (first x) :population (last x) :calendar-year (inc max-transition-year))))
-                             (map #(rename-keys % {:setting-2 :setting, :need-2 :need :academic-year-2 :academic-year}))
-                             (initialise-model))
+                           (filter #(not= (:setting-2 %) :NONSEND))
+                           (postwalk #(if (map? %) (dissoc % :calendar-year :setting-1 :need-1 :academic-year-1) %))
+                           (frequencies)
+                           (map #(assoc (first %) :population (last %) :calendar-year (inc max-transition-year)))
+                           (map #(rename-keys % {:setting-2 :setting, :need-2 :need :academic-year-2 :academic-year}))
+                           (initialise-model))
         ;initial-state (initialise-model (ds/row-maps initial-send-population))
         ]
     ;(def y years)
