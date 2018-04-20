@@ -7,12 +7,13 @@ packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "devtools")
 for(package in packages_to_check) {
   install_missing_packages(package) }
 
-devtools::install_github('thomasp85/ggforce') # used in gg4clj sankey plots
+# devtools::install_github('thomasp85/ggforce') # used in gg4clj sankey plots
 
 library(dplyr)
 library(ggplot2)
 library(reshape2)
 library(stringr)
+library(ggforce)
 
 ### Variables for all charts ###
 
