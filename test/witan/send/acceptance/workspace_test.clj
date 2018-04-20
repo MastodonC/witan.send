@@ -11,11 +11,10 @@
             [witan.send.report :as report]
             [clojure.string :as str]))
 
-(def inputs-path "version-A/")
+(def inputs-path "demo/")
 
 (defn test-inputs []
   {:settings-to-change ["data/demo/modify-settings.csv" sc/SettingsToChange]
-   ;:initial-send-population [(str "data/" inputs-path "send-population.csv") sc/SENDPopulation]
    :transition-matrix [(str "data/" inputs-path "transitions.csv") sc/TransitionCounts]
    :population [(str "data/" inputs-path "population.csv") sc/PopulationDataset]
    :setting-cost [(str "data/" inputs-path "need-setting-costs.csv") sc/NeedSettingCost]
