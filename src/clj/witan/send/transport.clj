@@ -3,7 +3,11 @@
             [witan.send.test-utils :as tu]
             [clojure.core.matrix.dataset :as ds]
             [kixi.stats.random :as r]
-            [schema.core :as schema])
+            [schema.core :as schema]
+            [clojure.data.csv :as csv]
+            [clojure.java.io :as io]
+            [gg4clj.core :as gg4clj]
+            )
   (:import [org.HdrHistogram DoubleHistogram]))
 
 ;; Calculate better confidence intervals around transport costs
@@ -33,7 +37,7 @@
                               [:max sc/N]]))
 
 (def proportion-lookup
-  (->> (tu/csv-to-dataset "data/towerhamlets/transport/transport-counts.csv" TransportCounts)
+  (->> (tu/csv-to-dataset "data/transport/A-new-transport-counts.csv" TransportCounts)
        (ds/row-maps)
        (map (juxt :state identity))
        (into {})))
@@ -94,10 +98,21 @@
   (transduce identity histogram-reducer (repeatedly 100 f)))
 
 
-(for [calendar-year [2017 2018 2019 2020 2021]]
-  (let [data (->> (tu/csv-to-dataset "data/towerhamlets/transport/output-ay-state.csv" OutputAYState)
-                  (ds/row-maps)
-                  (filter #(= (:calendar-year %) calendar-year)))
-        f #(->> (map sample-cost data)
-                (reduce +))]
-    {:calendar-year calendar-year :hist (calculate-ci f)}))
+(def output (for [calendar-year [2017 2018 2019 2020 2021 2022 2023 2024 2025 2026 2027]]
+              (let [data (->> (tu/csv-to-dataset "/Users/mike/witan.send/data/transport/TH-VersionA-baseline-29-03-18-AY-State.csv" OutputAYState)
+                              (ds/row-maps)
+                              (filter #(= (:calendar-year %) calendar-year)))
+                    f #(->> (map sample-cost data)
+                            (reduce +))]
+                {:calendar-year calendar-year :hist (calculate-ci f)})))
+
+
+(defn collapse-map [m]
+  (assoc (:hist m) :calendar-year (:calendar-year m)))
+
+(with-open [writer (io/writer (io/file "data/transport/Transport-Output.csv"))]
+  (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]
+        headers (mapv name columns)
+        rows (mapv #(mapv % columns) (map collapse-map output))]
+    (csv/write-csv writer (into [headers] rows))))
+
