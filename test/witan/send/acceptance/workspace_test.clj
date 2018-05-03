@@ -11,9 +11,9 @@
             [witan.send.report :as report]
             [clojure.string :as str]))
 
-(def inputs-path "demo/")
+(def default-inputs-path "demo/")
 
-(defn test-inputs []
+(defn test-inputs [inputs-path]
   {:settings-to-change ["data/demo/modify-settings.csv" sc/SettingsToChange]
    :transition-matrix [(str "data/" inputs-path "transitions.csv") sc/TransitionCounts]
    :population [(str "data/" inputs-path "population.csv") sc/PopulationDataset]
@@ -31,7 +31,7 @@
   (testing "The default model is run on the workspace and returns the outputs expected"
     (let [fixed-catalog (->> (:catalog m/send-model)
                              (mapv #(if (= (:witan/type %) :input)
-                                      (add-input-params (test-inputs) %)
+                                      (add-input-params (test-inputs default-inputs-path) %)
                                       (assoc-in % [:witan/params :simulations] 10)))
                              (map #(assoc-in % [:witan/params :output] false)))
           workspace     {:workflow  (:workflow m/send-model)
@@ -61,11 +61,14 @@
 
   :filter-transitions-from - sets a year or year range as a vector to filter historic transitions by for :splice-ncy (optional)
 
-  :splice-ncy - sets a national curriculum year to ignore transitions of prior to :filter-transitions-from year (optional)"
+  :splice-ncy - sets a national curriculum year to ignore transitions of prior to :filter-transitions-from year (optional)
+
+  :override-inputs-path - chooses a dir to use as input for the model e.g. demo/ (optional)"
+
   [{:keys [iterations output? transition-modifier transitions-file which-transitions?
-           modify-transitions-from filter-transitions-from splice-ncy]}]
+           modify-transitions-from filter-transitions-from splice-ncy override-inputs-path]}]
   (report/reset-send-report)
-  (report/info "Input Data: " (report/bold (str/replace (str/join "" (drop-last inputs-path)) #"/" " ")))
+  (report/info "Input Data: " (report/bold (str/replace (str/join "" (drop-last (or override-inputs-path default-inputs-path))) #"/" " ")))
   (report/info "Number of iterations: " (report/bold iterations))
   (report/info "Output charts produced: " (report/bold output?))
   (report/info "Modifying " (report/bold (if (nil? which-transitions?) "None" (str/join ", " which-transitions?))))
@@ -74,9 +77,10 @@
   (report/info "Modify transitions from: " (report/bold (if (nil? modify-transitions-from) "None" modify-transitions-from)))
   (report/info "Filter transitions from: " (report/bold (if (nil? filter-transitions-from) "None" filter-transitions-from)))
   (report/info "Splice NCY: " (report/bold (if (nil? splice-ncy) "None" splice-ncy)) "\n")
-  (let [file-input    (if (nil? transitions-file)
-                        (test-inputs)
-                        (assoc (test-inputs) :settings-to-change [(str "data/" inputs-path transitions-file) sc/SettingsToChange]))
+  (let [inputs-path  (or override-inputs-path default-inputs-path)
+        file-input    (if (nil? transitions-file)
+                        (test-inputs inputs-path)
+                        (assoc (test-inputs inputs-path) :settings-to-change [(str "data/" inputs-path transitions-file) sc/SettingsToChange]))
         fixed-catalog (let [prep-catalog1 (->> (:catalog m/send-model)
                                                (mapv #(if (= (:witan/type %) :input)
                                                         (add-input-params file-input %)
