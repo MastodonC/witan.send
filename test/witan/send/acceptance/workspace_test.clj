@@ -68,7 +68,7 @@
   [{:keys [iterations output? transition-modifier transitions-file which-transitions?
            modify-transitions-from filter-transitions-from splice-ncy override-inputs-path]}]
   (report/reset-send-report)
-  (report/info "Input Data: " (report/bold (str/replace (str/join "" (drop-last (if (nil? override-inputs-path) default-inputs-path override-inputs-path))) #"/" " ")))
+  (report/info "Input Data: " (report/bold (str/replace (str/join "" (drop-last (or override-inputs-path default-inputs-path))) #"/" " ")))
   (report/info "Number of iterations: " (report/bold iterations))
   (report/info "Output charts produced: " (report/bold output?))
   (report/info "Modifying " (report/bold (if (nil? which-transitions?) "None" (str/join ", " which-transitions?))))
@@ -77,9 +77,7 @@
   (report/info "Modify transitions from: " (report/bold (if (nil? modify-transitions-from) "None" modify-transitions-from)))
   (report/info "Filter transitions from: " (report/bold (if (nil? filter-transitions-from) "None" filter-transitions-from)))
   (report/info "Splice NCY: " (report/bold (if (nil? splice-ncy) "None" splice-ncy)) "\n")
-  (let [inputs-path  (if (nil? override-inputs-path)
-                      default-inputs-path
-                      override-inputs-path)
+  (let [inputs-path  (or override-inputs-path default-inputs-path)
         file-input    (if (nil? transitions-file)
                         (test-inputs inputs-path)
                         (assoc (test-inputs inputs-path) :settings-to-change [(str "data/" inputs-path transitions-file) sc/SettingsToChange]))
