@@ -32,6 +32,12 @@
       (doall
         (csv/read-csv reader)))))
 
+(defn load-csv-as-maps [file]
+  (csv-data->maps
+    (with-open [reader (io/reader file)]
+      (doall
+        (csv/read-csv reader)))))
+
 (defn get-validation-years [transitions]
   (->> (map :calendar-year transitions)
        (distinct)
@@ -55,15 +61,28 @@
 
 (defn move-target-files [year]
   (doseq [file ["Output_Count.csv" "Output_AY_State.csv"]]
-    (io/copy (io/file (str "target/" file)) (io/file (str "validation/" year "_modelled_" file)))))
+    (io/copy (io/file (str "target/" file)) (io/file (str "validation/model_" year "_" file)))))
 
+(defn return-testable-data [file test-years]
+  (->> (for [year test-years] (filter #(= year (:calendar-year %)) (load-csv-as-maps file)))
+       (mapcat seq)))
+
+(defn collate-fold [year]
+  (let [test (load-csv-as-maps (str "validation/test_" year ".csv"))
+        test-years (distinct (map :calendar-year test))
+        model-state (return-testable-data (str "validation/model_" year "_Output_AY_State.csv") test-years)
+        model-count (return-testable-data (str "validation/model_" year "_Output_Count.csv") test-years)]
+    ;; for each distinct year: get count of non-send
+    (def t test)
+    (def ty test-years)
+    (def ms model-state)
+    (def mc model-count))
+    )
 
 (defn validate-fold [input-path year transitions settings]
-  (if (contains? settings :override-inputs-path)
-    (throw (IllegalArgumentException. "Overriding inputs will break model validation")))
   (let [train (return-fold <= year transitions)
         test (return-fold > year transitions)
-        train-settings (merge settings {:override-inputs-path (str input-path "temp/" year "/")})]
+        train-settings (merge settings {:output? true :override-inputs-path (str input-path "temp/" year "/")})]
     (copy-input-files input-path year)
     (write-csv train (str "data/" input-path "temp/" year "/transitions.csv"))
     (write-csv test (str "validation/test_" year ".csv"))
