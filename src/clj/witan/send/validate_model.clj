@@ -2,6 +2,7 @@
   (:require [witan.send.test-utils :as tu]
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
+            [clojure.string :as str]
             [witan.send.acceptance.workspace-test :refer [run-model]]))
 
 
@@ -19,11 +20,11 @@
             repeat)
        (rest csv-data)))
 
-(defn write-csv [transitions path]
+(defn write-csv [data path]
   (with-open [writer (io/writer (io/file path))]
-    (let [columns (into [] (keys (first transitions)))
+    (let [columns (into [] (keys (first data)))
           headers (mapv name columns)
-          rows (mapv #(mapv % columns) transitions)]
+          rows (mapv #(mapv % columns) data)]
     (csv/write-csv writer (into [headers] rows)))))
 
 (defn load-transitions [path]
@@ -67,17 +68,50 @@
   (->> (for [year test-years] (filter #(= year (:calendar-year %)) (load-csv-as-maps file)))
        (mapcat seq)))
 
+(defn append-count-with-test [model-count test-data]
+  (let [test-year (str (dec (Integer/parseInt (:calendar-year model-count))))
+        test-data-for-year  (filter #(= test-year (:calendar-year %)) test-data)
+        send-test-data-for-year  (filter #(not= "NONSEND" (:need-2 %)) test-data-for-year)
+        ground-truth-count (count send-test-data-for-year)]
+    (assoc model-count :ground-truth (str ground-truth-count))))
+
+(defn append-state-with-test [model-state test-data]
+  (let [test-year (str (dec (Integer/parseInt (:calendar-year model-state))))
+        state-vector (str/split (str/replace (:state model-state) ":" "") #"-")
+        need (first state-vector)
+        setting (last state-vector)
+        academic-year (:academic-year model-state)
+        test-data-for-state (filter #(and (= test-year (:calendar-year %))
+                                         (= need (:need-2 %))
+                                         (= setting (:setting-2 %))
+                                         (= academic-year (:academic-year-2 %))) test-data)
+        ground-truth-count (count test-data-for-state)]
+    (assoc model-state :ground-truth (str ground-truth-count))))
+
+
+(defn append-model-with-test-data [model-data test-data filter-function  ])
+
 (defn collate-fold [year]
   (let [test (load-csv-as-maps (str "validation/test_" year ".csv"))
-        test-years (distinct (map :calendar-year test))
+
+        ;;test-years (distinct (map :calendar-year test))
+        test-years (->> (map :calendar-year test)
+                        (distinct)
+                        (map #(inc (Integer/parseInt %)))
+                        (into [])
+                        (map str))
         model-state (return-testable-data (str "validation/model_" year "_Output_AY_State.csv") test-years)
-        model-count (return-testable-data (str "validation/model_" year "_Output_Count.csv") test-years)]
+        model-count (return-testable-data (str "validation/model_" year "_Output_Count.csv") test-years)
+        count-results (map #(append-count-with-test % test) model-count)
+        state-results (map #(append-state-with-test % test) model-state)]
     ;; for each distinct year: get count of non-send
     (def t test)
     (def ty test-years)
     (def ms model-state)
-    (def mc model-count))
-    )
+    (def mc model-count)
+    (def cr count-results)
+    (write-csv count-results (str "validation/results_" year "_count.csv"))
+    (write-csv state-results (str "validation/results_" year "_state.csv"))))
 
 (defn validate-fold [input-path year transitions settings]
   (let [train (return-fold <= year transitions)
@@ -87,7 +121,8 @@
     (write-csv train (str "data/" input-path "temp/" year "/transitions.csv"))
     (write-csv test (str "validation/test_" year ".csv"))
     (run-model train-settings)
-    (move-target-files year)))
+    (move-target-files year)
+    (collate-fold year)))
 
 
 
