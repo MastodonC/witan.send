@@ -115,10 +115,10 @@
         years-to-validate (get-validation-years transitions)]
     (doseq [year years-to-validate]
       (validate-fold input-path year transitions settings-map))
-    (->> (map #(load-csv-as-maps (str "data/demo/temp/results_" % "_count.csv")) years-to-validate)
+    (->> (map #(load-csv-as-maps (str "data/" input-path "temp/results_" % "_count.csv")) years-to-validate)
          (flatten)
          (write-csv (str "validation_result_count_" (str/join (drop-last input-path)) ".csv")))
-    (->> (map #(load-csv-as-maps (str "data/demo/temp/results_" % "_state.csv")) years-to-validate)
+    (->> (map #(load-csv-as-maps (str "data/" input-path "temp/results_" % "_state.csv")) years-to-validate)
          (flatten)
          (write-csv (str "validation_result_state_" (str/join (drop-last input-path)) ".csv"))))
   (if (false? keep-temp-files?)
