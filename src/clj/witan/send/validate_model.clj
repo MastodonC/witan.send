@@ -5,6 +5,8 @@
             [witan.send.acceptance.workspace-test :refer [run-model]]))
 
 
+(def static-input-files ["modify-settings.csv" "population.csv" "need-setting-costs.csv" "valid-setting-academic-years.csv"])
+
 (defn temp-dir [input-path]
   (str "data/" input-path "temp/"))
 
@@ -46,7 +48,7 @@
   (let [source-path (str "data/" input-path)
         destination-path (str (temp-dir input-path) year "/")]
     (.mkdir (java.io.File. destination-path))
-    (doseq [file ["modify-settings.csv" "population.csv" "need-setting-costs.csv" "valid-setting-academic-years.csv"]]
+    (doseq [file static-input-files]
       (copy-if-exists source-path destination-path file))))
 
 (defn move-target-files [input-path year]
@@ -66,9 +68,7 @@
 
 (defn append-state-with-test [model-state test-data n-transitions]
   (let [test-year (str (dec (Integer/parseInt (:calendar-year model-state))))
-        state-vector (str/split (str/replace (:state model-state) ":" "") #"-")
-        need (first state-vector)
-        setting (last state-vector)
+        [need setting] (str/split (str/replace (:state model-state) ":" "") #"-")
         academic-year (:academic-year model-state)
         test-data-for-state (filter #(and (= test-year (:calendar-year %))
                                           (= need (:need-2 %))
@@ -82,7 +82,6 @@
         test-years (->> (map :calendar-year test-data)
                         (distinct)
                         (map #(inc (Integer/parseInt %)))
-                        (into [])
                         (map str))
         model-state (return-testable-data (str (temp-dir input-path) year "_Output_AY_State.csv") test-years)
         model-count (return-testable-data (str (temp-dir input-path) year "_Output_Count.csv") test-years)
@@ -92,7 +91,6 @@
     (write-csv (str (temp-dir input-path) "results_" year "_state.csv") state-results)))
 
 (defn validate-fold [input-path year transitions settings]
-  (def temp (temp-dir input-path))
   (let [train-data (return-fold <= year transitions)
         n-transitions (count (distinct (map :calendar-year train-data)))
         test-data (return-fold > year transitions)
@@ -121,6 +119,6 @@
     (->> (map #(load-csv-as-maps (str "data/" input-path "temp/results_" % "_state.csv")) years-to-validate)
          (flatten)
          (write-csv (str "validation_result_state_" (str/join (drop-last input-path)) ".csv"))))
-  (if (false? keep-temp-files?)
+  (if (not keep-temp-files?)
     (doseq [file (reverse (file-seq (io/file (temp-dir input-path))))]
       (io/delete-file file))))
