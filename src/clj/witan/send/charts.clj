@@ -73,6 +73,16 @@
        (sankey {:title "Joiner transitions"}))
   (move-file "Rplots.pdf" (str "target/Joiner_Transitions.pdf")))
 
+(defn sankey-leavers [data]
+  (->> data
+       (remove v/joiner?)
+       (filter #(= (:setting-2 %) :NONSEND))
+       (map #(-> (update % :setting-1 name) (update :setting-2 name)))
+       (gather-set-data :from "From" "To")
+       (seq-of-maps->data-frame)
+       (sankey {:title "Leaver transitions"}))
+  (move-file "Rplots.pdf" (str "target/Leaver_Transitions.pdf")))
+
 (defn sankey-setting-specific-transitions [data setting-to]
   (->> data
        (remove v/joiner?)
