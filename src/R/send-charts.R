@@ -218,13 +218,9 @@ count_data_projected = read.csv("/Users/sunnyt/Documents/Mastodon C/witan.send/t
 count_data = bind_rows(count_data_projected, count_data_historic)
 
 # plot
-ggplot(count_data, aes(x=calendar.year,
-                       y=mean)) +
-  ggtitle("SEND Population Projection") +
-  geom_point(colour="darkcyan") +
-  geom_line(aes(colour="darkcyan", linetype="solid")) +
-  geom_line(data=count_data_projected, aes(x=calendar.year, y=high.ci, colour="grey38", linetype="dashed")) +
-  geom_line(data=count_data_projected, aes(x=calendar.year, y=low.ci, colour="grey38", linetype="dashed")) +
+ggplot(count_data, aes(x=calendar.year)) +
+  geom_line(aes(y=mean)) +
+  geom_ribbon(aes(ymin=low.ci, ymax=high.ci), alpha=0.2) +
   scale_y_continuous(name = "Total SEND Population",
                      limits = c(min(count_data$mean), max(count_data$high.ci))) +
   scale_x_continuous(name="Year", 
@@ -232,14 +228,16 @@ ggplot(count_data, aes(x=calendar.year,
                      limits = c(min(count_data$calendar.year), max(count_data$calendar.year))) +
   theme_bw() +
   theme(axis.text.x = element_text(size=8)) +
-  scale_linetype_manual(name="", values=c("solid", "dashed"), labels=c("Mean", "95% Confidence")) +
-  scale_colour_manual(name="", values=c("darkcyan", "grey38"), labels=c("Mean", "95% Confidence")) +
+  ggtitle("SEND Population Projection") +
   geom_vline(xintercept = max(count_data_historic$calendar.year) + 1,
              color = "dodgerblue",
-             linetype = "dashed") +
+             linetype = "dashed")  +
   annotate("text",label = "<-- Historical      Projected -->",
            x=max(count_data_historic$calendar.year) + 1,
            y=max(count_data_projected$max), color = "dodgerblue")
+
+ggsave("../../target/Total_Population_fromR.pdf")
+
 
 
 ### Delete automatically produced Rplots.pdf file ###
