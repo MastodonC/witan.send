@@ -201,6 +201,37 @@ ggplot(df_type, aes(x=calendar.year, y=mean, group=Type)) +
 ggsave("../../target/Setting_Type_Counts.pdf")
 
 
+
+### SEND population Projection ###
+
+count_data_historic = df_historical %>%
+  group_by(calendar.year) %>%
+  count() %>%
+  rename(mean=n, calendar.year.str=calendar.year) %>%
+  mutate(calendar.year =  as.numeric(calendar.year.str))
+
+count_data_projected = read.csv("../../target/Output_Count.csv")
+
+count_data = bind_rows(count_data_projected, count_data_historic)
+
+ggplot(count_data, aes(x=calendar.year,
+                       y=mean)) +
+  geom_line(size=.1) +
+  geom_point() +
+  geom_line(data=count_data, aes(x=calendar.year, y=low.ci), linetype=2) +
+  geom_line(data=count_data, aes(x=calendar.year, y=high.ci), linetype=2) +
+  scale_y_continuous(name = "Total SEND Population",
+                     limits = c(0, max(count_data$high.ci))) +
+  scale_x_continuous(name="Year", 
+                     breaks = seq(min(count_data$calendar.year), max(count_data$calendar.year)),
+                     limits = c(min(count_data$calendar.year)-0.5, max(count_data$calendar.year)+0.5)) +
+  theme_bw() +
+  ggtitle("SEND Population Projection")
+
+ggsave("../../target/Total_Population_fromR.pdf")
+
+
+
 ### Delete automatically produced Rplots.pdf file ###
 
 if (file.exists("Rplots.pdf")) file.remove("Rplots.pdf")
