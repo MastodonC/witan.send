@@ -204,32 +204,42 @@ ggsave("../../target/Setting_Type_Counts.pdf")
 
 ### SEND population Projection ###
 
+# historic
 count_data_historic = df_historical %>%
   group_by(calendar.year) %>%
   count() %>%
   rename(mean=n, calendar.year.str=calendar.year) %>%
   mutate(calendar.year =  as.numeric(calendar.year.str))
 
-count_data_projected = read.csv("../../target/Output_Count.csv")
+# projected
+count_data_projected = read.csv("/Users/sunnyt/Documents/Mastodon C/witan.send/target/Output_Count.csv")
 
+# combine into single dataframe
 count_data = bind_rows(count_data_projected, count_data_historic)
 
+# plot
 ggplot(count_data, aes(x=calendar.year,
                        y=mean)) +
-  geom_line(size=.1) +
-  geom_point() +
-  geom_line(data=count_data, aes(x=calendar.year, y=low.ci), linetype=2) +
-  geom_line(data=count_data, aes(x=calendar.year, y=high.ci), linetype=2) +
+  ggtitle("SEND Population Projection") +
+  geom_point(colour="darkcyan") +
+  geom_line(aes(colour="darkcyan", linetype="solid")) +
+  geom_line(data=count_data_projected, aes(x=calendar.year, y=high.ci, colour="grey38", linetype="dashed")) +
+  geom_line(data=count_data_projected, aes(x=calendar.year, y=low.ci, colour="grey38", linetype="dashed")) +
   scale_y_continuous(name = "Total SEND Population",
-                     limits = c(0, max(count_data$high.ci))) +
+                     limits = c(min(count_data$mean), max(count_data$high.ci))) +
   scale_x_continuous(name="Year", 
                      breaks = seq(min(count_data$calendar.year), max(count_data$calendar.year)),
-                     limits = c(min(count_data$calendar.year)-0.5, max(count_data$calendar.year)+0.5)) +
+                     limits = c(min(count_data$calendar.year), max(count_data$calendar.year))) +
   theme_bw() +
-  ggtitle("SEND Population Projection")
-
-ggsave("../../target/Total_Population_fromR.pdf")
-
+  theme(axis.text.x = element_text(size=8)) +
+  scale_linetype_manual(name="", values=c("solid", "dashed"), labels=c("Mean", "95% Confidence")) +
+  scale_colour_manual(name="", values=c("darkcyan", "grey38"), labels=c("Mean", "95% Confidence")) +
+  geom_vline(xintercept = max(count_data_historic$calendar.year) + 1,
+             color = "dodgerblue",
+             linetype = "dashed") +
+  annotate("text",label = "<-- Historical      Projected -->",
+           x=max(count_data_historic$calendar.year) + 1,
+           y=max(count_data_projected$max), color = "dodgerblue")
 
 
 ### Delete automatically produced Rplots.pdf file ###
