@@ -48,8 +48,7 @@ comparative_plot_cost = function(data1_folder, data2_folder){
          width=8,
          height=6,
          units="in")
-  
-  print(g)
+
   
   ## ribbon plot - zero-indexed
   g + scale_y_continuous(limits = c(0, max(cost_data1$q3, na.rm=T)))
