@@ -3,11 +3,11 @@ comparative_plot_cost = function(data1_folder, data2_folder){
   # DATA
   
   ## import the baseline dataset and convert to millions
-  cost_data1 = read.csv(paste0(data1_folder, "/", sub(".*/", "", data1_folder), "-Cost.csv"))
+  cost_data1 = read.csv(paste0("data/", data1_folder, "/", sub(".*/", "", data1_folder), "-Cost.csv"))
   cost_data1[,-1] =  cost_data1[,-1] / 1000000
 
   ## import the scenario dataset and convert to millions
-  cost_data2 = read.csv(paste0(data2_folder, "/", sub(".*/", "", data2_folder),  "-Cost.csv"))
+  cost_data2 = read.csv(paste0("data/", data2_folder, "/", sub(".*/", "", data2_folder),  "-Cost.csv"))
   cost_data2[,-1] =  cost_data2[,-1] / 1000000
 
   
