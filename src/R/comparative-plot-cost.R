@@ -1,4 +1,4 @@
-send_cost_plot_comparative = function(data1_folder, data2_folder){
+comparative_plot_cost = function(data1_folder, data2_folder){
   
   # DATA
   
