@@ -24,11 +24,11 @@ comparative_plot_population = function(data1_folder, data2_folder){
   ## projections
   
   ### import the baseline dataset
-  count_data1 = read.csv(paste0(data1_folder, "/", sub(".*/", "", data1_folder), "-Count.csv"))
+  count_data1 = read.csv(paste0("data/", data1_folder, "/", sub(".*/", "", data1_folder), "-Count.csv"))
   
   ### import the scenario dataset
   ### then bind to historic data for use in plot
-  count_data2 = read.csv(paste0(data2_folder, "/", sub(".*/", "", data2_folder),  "-Count.csv")) %>%
+  count_data2 = read.csv(paste0("data/", data2_folder, "/", sub(".*/", "", data2_folder),  "-Count.csv")) %>%
     bind_rows(count_data_historic)
   
   

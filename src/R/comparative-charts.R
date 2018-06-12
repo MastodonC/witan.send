@@ -4,7 +4,7 @@ library(ggplot2)
 
 # DATA
 
-## path to the folder containing the 2 data sets you want to compare. 
+## names of the folders containing the 2 data sets you want to compare. 
 ### The code expects the folder and the data to be in specific forms and places: 
 ### - the data must be placed inside the data/ folder
 ### - the data must be csvs
@@ -12,8 +12,8 @@ library(ggplot2)
 ### - plus an additional name-part for the type of data (e.g. -Cost, -Count) followed by the .csv extension
 ### The code will extract what type of run the data comes from (e.g baseline, Scenario 1) the name of the folder, and will use this for
 ### labelling the plot
-data1_folder = "data/TH-VersionA-baseline-29-03-18"
-data2_folder = "data/TH-VersionA-scenario1-27-04-18"
+data1_folder = "TH-VersionA-baseline-29-03-18"
+data2_folder = "TH-VersionA-scenario1-27-04-18"
 
 
 # INPUTS
