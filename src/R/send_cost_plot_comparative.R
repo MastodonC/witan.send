@@ -1,40 +1,46 @@
-send_cost_plot_comparative = function(baseline_filenameandpath, scenario_filenameandpath){
+send_cost_plot_comparative = function(data1_folder, data2_folder){
   
   # DATA
   
-  ### import the baseline dataset and convert to millions
-  cost_data_baseline = read.csv(baseline_filenameandpath)
-  cost_data_baseline[,-1] =  cost_data_baseline[,-1] / 1000000
-  cost_data_baseline$group = "baseline"
-  
-  ### import the scenario dataset and convert to millions
-  cost_data_scenario = read.csv(scenario_filenameandpath)
-  cost_data_scenario[,-1] =  cost_data_scenario[,-1] / 1000000
-  cost_data_scenario$group = "scenario"
-  
+  ## import the baseline dataset and convert to millions
+  cost_data1 = read.csv(paste0(data1_folder, "/", sub(".*/", "", data1_folder), "-Cost.csv"))
+  cost_data1[,-1] =  cost_data1[,-1] / 1000000
+
+  ## import the scenario dataset and convert to millions
+  cost_data2 = read.csv(paste0(data2_folder, "/", sub(".*/", "", data2_folder),  "-Cost.csv"))
+  cost_data2[,-1] =  cost_data2[,-1] / 1000000
+
   
   # PLOTS
-  ## ribbon plot - not zero-indexed
+
+  ## helpers for plots
+  min_x = min(cost_data1$calendar.year)
+  max_x = max(cost_data1$calendar.year)
   
-  g <- ggplot(cost_data_baseline, aes(x=calendar.year)) +
+  ## data labels for plots
+  data1_label = str_to_title(sapply(strsplit(data1_folder, "-"), "[", 3))
+  data2_label = str_to_title(sapply(strsplit(data2_folder, "-"), "[", 3))
+  
+  ## ribbon plot - not zero-indexed
+  g <- ggplot(cost_data1, aes(x=calendar.year)) +
     geom_line(aes(y=mean), colour=cols[1], alpha = alpha_line) +
     geom_ribbon(aes(ymin=q1, ymax=q3), fill=cols[1], alpha = alpha_ribbon)  +
     geom_ribbon(aes(ymin=q1, ymax=q3), fill=cols[1], alpha = alpha_ribbon) +
-    geom_line(data=cost_data_scenario, aes(y=mean), colour=cols[2], alpha = alpha_line) +
-    geom_ribbon(data=cost_data_scenario, aes(ymin=q1, ymax=q3), fill=cols[2], alpha = alpha_ribbon) +
+    geom_line(data=cost_data2, aes(y=mean), colour=cols[2], alpha = alpha_line) +
+    geom_ribbon(data=cost_data2, aes(ymin=q1, ymax=q3), fill=cols[2], alpha = alpha_ribbon) +
     labs(y = "Total Projected SEND Cost / £ million") +
     scale_x_continuous(name="Year",
-                       breaks = seq(min(cost_data_baseline$calendar.year), max(cost_data_baseline$calendar.year)),
-                       limits = c(min(cost_data_baseline$calendar.year), max(cost_data_baseline$calendar.year)+1)) +
+                       breaks = seq(min_x, max_x),
+                       limits = c(min_x, max_x+1)) +
     ggtitle("SEND Cost Projection") +
     theme(axis.text.x = element_text(size=8)) +
-    geom_text(x=2027+0.8,
-              y=cost_data_baseline$mean[cost_data_baseline$calendar.year==2027],
-              label= "Baseline",
+    geom_text(x=max_x+0.8,
+              y=cost_data1$mean[cost_data1$calendar.year==max_x],
+              label= data1_label,
               colour = cols[1]) +
-    geom_text(x=2027+0.8,
-              y=cost_data_scenario$mean[cost_data_scenario$calendar.year==2027],
-              label= "Scenario A",
+    geom_text(x=max_x+0.8,
+              y=cost_data2$mean[cost_data2$calendar.year==max_x],
+              label= data2_label,
               colour = cols[2]) +
     theme(legend.position="none")
   
@@ -43,13 +49,12 @@ send_cost_plot_comparative = function(baseline_filenameandpath, scenario_filenam
          height=6,
          units="in")
   
-  
+  print(g)
   
   ## ribbon plot - zero-indexed
+  g + scale_y_continuous(limits = c(0, max(cost_data1$q3, na.rm=T)))
   
-  g + scale_y_continuous(limits = c(0, max(cost_data_baseline$q3, na.rm=T)))
-  
-  ggsave("target/zero_indexed/Total_Cost_Comparative_Zeroindexed.pdf",
+  ggsave("target/Total_Cost_Comparative_Zeroindexed.pdf",
          width=8,
          height=6,
          units="in")

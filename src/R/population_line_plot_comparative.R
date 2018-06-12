@@ -1,4 +1,4 @@
-population_count_plot_comparative = function(baseline_filenameandpath, scenario_filenameandpath){
+population_count_plot_comparative = function(data1_folder, data2_folder){
   
   # DATA
   
@@ -24,43 +24,50 @@ population_count_plot_comparative = function(baseline_filenameandpath, scenario_
   ## projections
   
   ### import the baseline dataset
-  count_data_baseline = read.csv(baseline_filenameandpath) %>%
-    mutate(group = "baseline")
+  count_data1 = read.csv(paste0(data1_folder, "/", sub(".*/", "", data1_folder), "-Count.csv"))
   
   ### import the scenario dataset
-  count_data_scenario = read.csv(scenario_filenameandpath) %>%
-    mutate(group = "scenario") %>%
+  ### then bind to historic data for use in plot
+  count_data2 = read.csv(paste0(data2_folder, "/", sub(".*/", "", data2_folder),  "-Count.csv")) %>%
     bind_rows(count_data_historic)
   
   
   # PLOTS
   
-  # ribbon plot version - not zero-indexed
-  g <- ggplot(count_data_baseline, aes(x=calendar.year)) +
+  ## helpers for plots
+  min_x = min(count_data_historic$calendar.year)
+  max_x = max(count_data1$calendar.year)
+  
+  ## data labels for plots
+  data1_label = str_to_title(sapply(strsplit(data1_folder, "-"), "[", 3))
+  data2_label = str_to_title(sapply(strsplit(data2_folder, "-"), "[", 3))
+
+  ## ribbon plot version - not zero-indexed
+  g <- ggplot(count_data1, aes(x=calendar.year)) +
     geom_line(aes(y=mean), colour=cols[1], alpha = alpha_line) +
     geom_ribbon(aes(ymin=q1, ymax=q3), fill=cols[1], alpha = alpha_ribbon) +
-    geom_line(data=count_data_scenario, aes(y=mean), colour=cols[2], alpha = alpha_line) +
-    geom_ribbon(data=count_data_scenario, aes(ymin=q1, ymax=q3), fill=cols[2], alpha = alpha_ribbon) +
+    geom_line(data=count_data2, aes(y=mean), colour=cols[2], alpha = alpha_line) +
+    geom_ribbon(data=count_data2, aes(ymin=q1, ymax=q3), fill=cols[2], alpha = alpha_ribbon) +
     labs(y="Total SEND Population") +
     scale_x_continuous(name="Year",
-                       breaks = seq(min(count_data_historic$calendar.year), max(count_data_baseline$calendar.year)),
-                       limits = c(min(count_data_historic$calendar.year), max(count_data_baseline$calendar.year)+1.5)) +
+                       breaks = seq(min_x, max_x),
+                       limits = c(min_x, max_x+1.5)) +
     ggtitle("SEND Population Projection") +
     theme(axis.text.x = element_text(size=8)) +
     geom_vline(xintercept = max(count_data_historic$calendar.year) + 0.5,
                color = "dodgerblue",
                linetype = "dashed")  +
     geom_text(x=max(count_data_historic$calendar.year) + 0.5,
-              y=max(count_data_baseline$q3, na.rm=T),
+              y=max(count_data1$q3, na.rm=T),
               label = "<-- Historical      Projected -->",
               color = "dodgerblue") +
-    geom_text(x=2027+1,
-              y=count_data_baseline$mean[count_data_baseline$calendar.year==2027]+20,
-              label= "Baseline",
+    geom_text(x=max_x+1,
+              y=count_data1$mean[count_data1$calendar.year==max_x]+20,
+              label= data1_label,
               colour = cols[1]) +
-    geom_text(x=2027+1,
-              y=count_data_scenario$mean[count_data_scenario$calendar.year==2027]-20,
-              label= "Scenario A",
+    geom_text(x=max_x+1,
+              y=count_data2$mean[count_data2$calendar.year==max_x]-20,
+              label= data2_label,
               colour = cols[2]) +
     theme(legend.position="none")
   
@@ -69,11 +76,12 @@ population_count_plot_comparative = function(baseline_filenameandpath, scenario_
          height=6,
          units="in")
   
+  print(g)
   
   # ribbon plot version - zero-indexed
-  g + scale_y_continuous(limits = c(0, max(count_data_baseline$q3, na.rm=T)))
+  g + scale_y_continuous(limits = c(0, max(count_data1$q3, na.rm=T)))
   
-  ggsave("target/zero_indexed/Total_Population_Comparative_Zeroindexed.pdf",
+  ggsave("target/Total_Population_Comparative_Zeroindexed.pdf",
          width=8,
          height=6,
          units="in")
