@@ -12,8 +12,8 @@ library(ggplot2)
 ### - plus an additional name-part for the type of data (e.g. -Cost, -Count) followed by the .csv extension
 ### The code will extract what type of run the data comes from (e.g baseline, Scenario 1) the name of the folder, and will use this for
 ### labelling the plot
-data1_folder = "TH-VersionA-baseline-29-03-18"
-data2_folder = "TH-VersionA-scenario1-27-04-18"
+data1_folder = "folder_name"
+data2_folder = "folder_name"
 
 
 # INPUTS
