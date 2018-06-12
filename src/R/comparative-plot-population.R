@@ -1,4 +1,4 @@
-population_count_plot_comparative = function(data1_folder, data2_folder){
+comparative_plot_population = function(data1_folder, data2_folder){
   
   # DATA
   
