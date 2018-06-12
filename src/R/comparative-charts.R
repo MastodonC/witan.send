@@ -4,13 +4,16 @@ library(ggplot2)
 
 # DATA
 
-## cost
-baseline_cost_data = "data/total_cost/TH-VersionA-baseline-29-03-18-Cost.csv"
-scenario_cost_data = "data/total_cost/TH-VersionA-scenario1-27-04-18-Cost.csv"
-
-## population count
-baseline_pop_data = "data/total_population/TH-VersionA-baseline-29-03-18-Count.csv"
-scenario_pop_data = "data/total_population/TH-VersionA-scenario1-27-04-18-Count.csv"
+## path to the folder containing the 2 data sets you want to compare. 
+### The code expects the folder and the data to be in specific forms and places: 
+### - the data must be placed inside the data/ folder
+### - the data must be csvs
+### - the data must take the same name as the folder (i.e. TH-VersionA-baseline-29-03-18)
+### - plus an additional name-part for the type of data (e.g. -Cost, -Count) followed by the .csv extension
+### The code will extract what type of run the data comes from (e.g baseline, Scenario 1) the name of the folder, and will use this for
+### labelling the plot
+data1_folder = "data/TH-VersionA-baseline-29-03-18"
+data2_folder = "data/TH-VersionA-scenario1-27-04-18"
 
 
 # INPUTS
@@ -38,8 +41,8 @@ cols = cbPalette[c(2,6)]
 
 ## cost
 source("src/R/send_cost_plot_comparative.R") 
-send_cost_plot_comparative(baseline_cost_data, scenario_cost_data)
+send_cost_plot_comparative(data1_folder, data2_folder)
 
 ## population count
 source("src/R/population_line_plot_comparative.R") 
-population_count_plot_comparative(baseline_pop_data, scenario_pop_data)
+population_count_plot_comparative(data1_folder, data2_folder)
