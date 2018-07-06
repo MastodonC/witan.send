@@ -79,12 +79,40 @@ df_historical_set <- df_historical %>%
   as.data.frame()
 
 
-df_set <- rbind(df_historical_set[,c(2,1,3)], df_projected_set)
+df_set <- rbind(df_historical_set[,c(2,1,3)], df_projected_set) %>%
+  filter(Setting != 'ELSEWHERE') %>%
+  mutate(Setting = gsub("_", " ", Setting))
+
+df_set_years = unique(df_set$calendar.year)
+
+df_set_setting = unique(df_set$Setting)
+
+check_years_present <- function(year, setting, df) {
+  if(nrow(merge(data.frame(calendar.year=year, Setting=setting), df)) == 0) {
+    df_new = df %>%
+      rbind(c(year, setting, 0))
+  } else {
+    df_new = df
+  }
+  return(df_new)
+}
+
+for (y in df_set_years){
+  for (s in df_set_setting){
+    df_set = check_years_present(y, s, df_set)
+  }
+}
+
+df_set = df_set %>%
+  mutate(mean = as.numeric(mean))
+
 
 df_set_counts <- df_set %>%
+  filter(mean != 0) %>%
   group_by(Setting) %>%
   summarise(mean(mean)) %>%
   rename(mean = "mean(mean)")
+
 
 split_1 <- quantile(df_set_counts$mean, 0.25)
 split_2 <- quantile(df_set_counts$mean, 0.5)
