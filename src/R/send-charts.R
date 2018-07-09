@@ -229,6 +229,62 @@ ggplot(df_type, aes(x=calendar.year, y=mean, group=Type)) +
 ggsave("../../target/Setting_Type_Counts.pdf")
 
 
+### SEND population Projection ###
+
+count_data_historic = df_historical %>%
+  group_by(calendar.year) %>%
+  count() %>%
+  rename(mean=n, calendar.year.str=calendar.year) %>%
+  mutate(calendar.year =  as.numeric(calendar.year.str))
+
+count_data_projected <- read.csv("../../target/Output_Count.csv")
+
+count_data <- bind_rows(count_data_projected, count_data_historic)
+
+ggplot(count_data, aes(x=calendar.year, y=mean)) +
+  geom_line(aes(colour='mean', linetype='mean')) +
+  geom_point(colour='darkcyan') +
+  geom_line(aes(y=low.ci, colour='conf', linetype='conf')) +
+  geom_line(aes(y=high.ci, colour='conf', linetype='conf')) +
+  scale_y_continuous(name = "Total SEND Population",
+                     limits = c(0, max(count_data$high.ci))) +
+  scale_x_continuous(name="Year", 
+                     breaks = seq(min(count_data$calendar.year), max(count_data$calendar.year)),
+                     limits = c(min(count_data$calendar.year), max(count_data$calendar.year))) +
+  scale_linetype_manual(name="", values=c(mean='solid', conf='dashed'), labels=c(mean='Mean', conf="95% Confidence")) +
+  scale_color_manual(name="", values=c(mean='darkcyan', conf="grey38"), labels=c(mean='Mean', conf="95% Confidence")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(size=8)) +
+  ggtitle("SEND Population Projection") +
+  geom_vline(xintercept = max(count_data_historic$calendar.year) + 1.0,
+             color = "dodgerblue",
+             linetype = "dashed")  +
+  annotate("text",label = "<-- Historical      Projected -->",
+           x=max(count_data_historic$calendar.year) + 1.0,
+           y=max(count_data_projected$max), color = "dodgerblue")
+
+ggsave("../../target/Total_Population.pdf")
+
+
+### SEND cost projection ####
+
+cost_projected <- read.csv("../../target/Output_Cost.csv")
+cost_projected[,-1] <-  cost_projected[,-1] / 1000000
+min_x = min(cost_projected$calendar.year)
+max_x = max(cost_projected$calendar.year)
+
+ggplot(cost_projected, aes(x=calendar.year)) +
+  geom_boxplot(aes(lower = q1, upper = q3, middle = median,
+                   ymin = low.ci, ymax = high.ci), fill='snow', colour='darkcyan', stat = "identity") +
+  ggtitle("SEND Cost Projection") +
+  scale_x_continuous(name='Calendar Year', breaks=seq(min_x, max_x, by=1), limits=c(min_x-0.5, max_x+0.5)) +
+  scale_y_continuous(name = "Total projected SEND cost / £ million",
+                     limits = c(0, max(cost_projected$high.ci))) +
+  theme_bw()
+
+ggsave("../../target/Total_Cost.pdf")
+
+
 ### Delete automatically produced Rplots.pdf file ###
 
 if (file.exists("Rplots.pdf")) file.remove("Rplots.pdf")
