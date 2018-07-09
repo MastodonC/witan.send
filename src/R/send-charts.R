@@ -256,11 +256,11 @@ ggplot(count_data, aes(x=calendar.year, y=mean)) +
   theme_bw() +
   theme(axis.text.x = element_text(size=8)) +
   ggtitle("SEND Population Projection") +
-  geom_vline(xintercept = max(count_data_historic$calendar.year) + 1.5,
+  geom_vline(xintercept = max(count_data_historic$calendar.year) + 1.0,
              color = "dodgerblue",
              linetype = "dashed")  +
   annotate("text",label = "<-- Historical      Projected -->",
-           x=max(count_data_historic$calendar.year) + 1.5,
+           x=max(count_data_historic$calendar.year) + 1.0,
            y=max(count_data_projected$max), color = "dodgerblue")
 
 ggsave("../../target/Total_Population.pdf")
