@@ -650,8 +650,6 @@
         (ch/ribbon-plot joiner-rates-CI "Joiner" years n-colours)
         (ch/ribbon-plot leaver-rates-CI "Leaver" years n-colours)
         (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
-        (ch/population-line-plot transitions-data (map :total-in-send send-output))
-        (ch/send-cost-plot (map :total-cost send-output) years)
         (io/delete-file "target/historic-data.csv" :quiet)
         (io/delete-file "target/valid-settings.csv" :quiet)))
     (report/write-send-report))
