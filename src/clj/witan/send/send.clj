@@ -21,6 +21,7 @@
             [clojure.string :as str]
             [clojure.java.shell :as sh]
             [witan.send.report :as report]
+            [witan.send.check-inputs :as check-inputs]
             [clojure.walk :refer [postwalk]]
             [clojure.set :refer [rename-keys]])
   (:import [org.apache.commons.math3.distribution BetaDistribution]))
@@ -312,6 +313,14 @@
   [{:keys [settings-to-change transition-matrix population
            setting-cost valid-setting-academic-years]}
    {:keys [which-transitions? modify-transition-by splice-ncy filter-transitions-from]}]
+               (def stc (ds/row-maps settings-to-change))
+               (def pop (ds/row-maps population))
+               (def sc (ds/row-maps setting-cost))
+               (def vsay (ds/row-maps valid-setting-academic-years))
+               (def tm (ds/row-maps transition-matrix))
+               (check-inputs/check-missing-costs (ds/row-maps transition-matrix) (ds/row-maps setting-cost))
+
+
   (let [original-transitions transition-matrix
         ages (distinct (map :academic-year (ds/row-maps population)))
         years (distinct (map :calendar-year (ds/row-maps population)))
@@ -654,3 +663,4 @@
         (io/delete-file "target/valid-settings.csv" :quiet)))
     (report/write-send-report))
   send-output)
+
