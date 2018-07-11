@@ -18,3 +18,4 @@
   (is (= true (valid-ay-for-state? {:setting :X :academic-year 10} test-valid-setting-ay)))
   (is (= true (valid-ay-for-state? {:setting :X :academic-year 20} test-valid-setting-ay)))
   (is (= false (valid-ay-for-state? {:setting :X :academic-year 21} test-valid-setting-ay))))
+
