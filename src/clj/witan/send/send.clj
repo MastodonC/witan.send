@@ -347,10 +347,10 @@
                            (map #(rename-keys % {:setting-2 :setting, :need-2 :need :academic-year-2 :academic-year}))
                            (initialise-model))]
     (when (not= 1 modify-transition-by)
-      (report/info "Modified transitions by " (report/bold modify-transition-by)))
+      (report/info "\nModified transitions by " (report/bold modify-transition-by)))
     (if modified-transition-matrix
-      (report/info "Used " (report/bold "modified") " transitions matrix\n")
-      (report/info "Used " (report/bold "input") " transitions matrix\n"))
+      (report/info "\nUsed " (report/bold "modified") " transitions matrix\n")
+      (report/info "\nUsed " (report/bold "input") " transitions matrix\n"))
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) setting-cost)
     {:standard-projection (prep-inputs initial-state splice-ncy valid-states valid-transitions transition-matrix transition-matrix-filtered
