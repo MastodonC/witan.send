@@ -104,4 +104,3 @@
                        :contracts (p/available-fns (m/model-library))}
         workspace'    (s/with-fn-validation (wex/build! workspace))
         result        (apply merge (wex/run!! workspace' {}))]))
-
