@@ -21,6 +21,7 @@
             [clojure.string :as str]
             [clojure.java.shell :as sh]
             [witan.send.report :as report]
+            [witan.send.check-inputs :refer [run-input-checks]]
             [clojure.walk :refer [postwalk]]
             [clojure.set :refer [rename-keys]])
   (:import [org.apache.commons.math3.distribution BetaDistribution]))
@@ -312,6 +313,9 @@
   [{:keys [settings-to-change transition-matrix population
            setting-cost valid-setting-academic-years]}
    {:keys [which-transitions? modify-transition-by splice-ncy filter-transitions-from]}]
+  (run-input-checks (ds/row-maps transition-matrix)
+                    (ds/row-maps setting-cost)
+                    (ds/row-maps valid-setting-academic-years))
   (let [original-transitions transition-matrix
         ages (distinct (map :academic-year (ds/row-maps population)))
         years (distinct (map :calendar-year (ds/row-maps population)))
@@ -343,10 +347,10 @@
                            (map #(rename-keys % {:setting-2 :setting, :need-2 :need :academic-year-2 :academic-year}))
                            (initialise-model))]
     (when (not= 1 modify-transition-by)
-      (report/info "Modified transitions by " (report/bold modify-transition-by)))
+      (report/info "\nModified transitions by " (report/bold modify-transition-by)))
     (if modified-transition-matrix
-      (report/info "Used " (report/bold "modified") " transitions matrix\n")
-      (report/info "Used " (report/bold "input") " transitions matrix\n"))
+      (report/info "\nUsed " (report/bold "modified") " transitions matrix\n")
+      (report/info "\nUsed " (report/bold "input") " transitions matrix\n"))
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) setting-cost)
     {:standard-projection (prep-inputs initial-state splice-ncy valid-states valid-transitions transition-matrix transition-matrix-filtered
@@ -654,3 +658,4 @@
         (io/delete-file "target/valid-settings.csv" :quiet)))
     (report/write-send-report))
   send-output)
+
