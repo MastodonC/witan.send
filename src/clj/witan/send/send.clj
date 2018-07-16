@@ -641,7 +641,7 @@
           (let [send-only (filter #(not= (:setting-1 %) :NONSEND) transitions-data)
                 columns [:calendar-year :setting-1 :need-1 :academic-year-1]
                 headers (mapv name columns)
-                rows (mapv #(mapv % columns) transitions-data)]
+                rows (mapv #(mapv % columns) send-only)]
             (csv/write-csv writer (into [headers] rows))))
         (with-open [writer (io/writer (io/file "target/valid-settings.csv"))]
           (csv/write-csv writer valid-settings))
