@@ -80,7 +80,6 @@ df_historical_set <- df_historical %>%
 
 
 df_set <- rbind(df_historical_set[,c(2,1,3)], df_projected_set) %>%
-  filter(Setting != 'ELSEWHERE') %>%
   mutate(Setting = gsub("_", " ", Setting))
 
 df_set_years = unique(df_set$calendar.year)
@@ -248,7 +247,7 @@ ggplot(count_data, aes(x=calendar.year, y=mean)) +
   geom_line(aes(y=high.ci, colour='conf', linetype='conf')) +
   scale_y_continuous(name = "Total SEND Population",
                      limits = c(0, max(count_data$high.ci))) +
-  scale_x_continuous(name="Year", 
+  scale_x_continuous(name="Year",
                      breaks = seq(min(count_data$calendar.year), max(count_data$calendar.year)),
                      limits = c(min(count_data$calendar.year), max(count_data$calendar.year))) +
   scale_linetype_manual(name="", values=c(mean='solid', conf='dashed'), labels=c(mean='Mean', conf="95% Confidence")) +
