@@ -563,8 +563,8 @@
             mover-rates (mover-rate filter-movers)
             mover-rates-CI (map #(confidence-interval mover-rates %) years)
             n-colours (take (count years) ch/palette)]
-            ;;n-colours (vec (repeatedly (count years) ch/random-colour)) ;; alternative random colour selection
-            ;;future-transitions (mapcat u/projection->transitions projection) ;; for projection investigation
+        ;;n-colours (vec (repeatedly (count years) ch/random-colour)) ;; alternative random colour selection
+        ;;future-transitions (mapcat u/projection->transitions projection) ;; for projection investigation
 
         (report/info "First year of input data: " (report/bold (first years)))
         (report/info "Final year of input data: " (report/bold (inc (last years))))
@@ -638,8 +638,9 @@
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file "target/historic-data.csv"))]
-          (let [send-only (filter #(not= (:setting-1 %) :NONSEND) transitions-data)
-                columns [:calendar-year :setting-1 :need-1 :academic-year-1]
+          (let [send-only (filter #(or (not= (:setting-2 %) :NONSEND)
+                                       (not= (:setting-1 %) :NONSEND)) transitions-data)
+                columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
                 headers (mapv name columns)
                 rows (mapv #(mapv % columns) send-only)]
             (csv/write-csv writer (into [headers] rows))))
@@ -658,4 +659,3 @@
         (io/delete-file "target/valid-settings.csv" :quiet)))
     (report/write-send-report))
   send-output)
-
