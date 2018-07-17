@@ -1,14 +1,10 @@
 (ns witan.send.acceptance.workspace-test
-  (:require [clojure.core.matrix.dataset :as ds]
+  (:require [clojure.string :as str]
             [clojure.test :refer :all]
-            [schema.core :as s]
-            [witan.send.model :as m]
-            [witan.send.schemas :as sc]
-            [witan.send.states :as states]
-            [witan.send.test-utils :as tu]
-            [witan.send.send :as send]
             [witan.send.report :as report]
-            [clojure.string :as str]))
+            [witan.send.schemas :as sc]
+            [witan.send.send :as send]
+            [witan.send.test-utils :as tu]))
 
 (def file-inputs
   {:settings-to-change "data/demo/modify-settings.csv" 
@@ -94,13 +90,12 @@
    (-> (build-input-datasets fi si)
        (send/prepare-send-inputs tp)
        (send/run-send-model rp)
-       #_(send/output-send-results op))))
+       (send/output-send-results op))))
 
 (deftest send-test
   (is (= #{:total-in-send-by-ay :total-in-send-by-ay-group 
            :total-in-send :total-in-send-by-need :total-in-send-by-setting}
          (-> (run-send)
-             (:send-output)
              (first)
              (keys)
              (set)))))

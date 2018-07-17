@@ -2,7 +2,6 @@
   (:require [clojure.core.matrix.dataset :as ds]
             [clojure.data.avl :as avl]
             [clojure.set :refer [union]]
-            [witan.workspace-api.utils :as utils]
             [witan.send.schemas :as sc]
             [witan.send.states :as states]
             [kixi.stats.core :as kixi]
