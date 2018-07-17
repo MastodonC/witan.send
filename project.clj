@@ -12,7 +12,6 @@
                  [org.clojure/test.check "0.9.0"]
                  [org.clojure/data.avl "0.0.17"]
                  [org.clojure/data.csv "0.1.3"]
-                 [witan.workspace-api "0.1.22" :exclusions [org.clojure/clojure]]
                  [prismatic/schema "1.1.3"]
                  [schema-contrib "0.1.3"]
                  [kixi/stats "0.3.9"]
@@ -28,15 +27,13 @@
                  [me.raynes/fs "1.4.6"]]
   :plugins [[lein-gorilla "0.4.0"]
             [lein-cljsbuild "1.1.4"]
-            [cider/cider-nrepl "0.16.0"]]
+            [cider/cider-nrepl "0.18.0-SNAPSHOT"]]
   :main witan.send.main
   :aot [witan.send.main]
 
   :source-paths ["src/clj" "src/cljs" "src/cljc"]
   :target-path "target/%s"
-  :profiles {:dev {:dependencies [[witan.workspace-executor "0.2.6"
-                                   :exclusions [witan.workspace-api]]
-                                  [criterium "0.4.4"]
+  :profiles {:dev {:dependencies [[criterium "0.4.4"]
                                   [clj-time "0.13.0"]
                                   [binaryage/devtools "0.8.2"]
                                   [figwheel-sidecar "0.5.9"]
