@@ -6,101 +6,101 @@
             [witan.send.schemas :as sc]
             [witan.send.states :as states]
             [witan.send.test-utils :as tu]
-            [witan.workspace-api.protocols :as p]
-            [witan.workspace-executor.core :as wex]
+            [witan.send.send :as send]
             [witan.send.report :as report]
             [clojure.string :as str]))
 
-(def default-inputs-path "demo/")
+(def file-inputs
+  {:settings-to-change "data/demo/modify-settings.csv" 
+   :transition-matrix "data/demo/transitions.csv" 
+   :population "data/demo/population.csv"
+   :setting-cost "data/demo/need-setting-costs.csv" 
+   :valid-setting-academic-years "data/demo/valid-setting-academic-years.csv"})
 
-(defn test-inputs [inputs-path]
-  {:settings-to-change ["data/demo/modify-settings.csv" sc/SettingsToChange]
-   :transition-matrix [(str "data/" inputs-path "transitions.csv") sc/TransitionCounts]
-   :population [(str "data/" inputs-path "population.csv") sc/PopulationDataset]
-   :setting-cost [(str "data/" inputs-path "need-setting-costs.csv") sc/NeedSettingCost]
-   :valid-setting-academic-years [(str "data/" inputs-path "valid-setting-academic-years.csv") sc/ValidSettingAcademicYears]})
+(def schema-inputs
+  {:settings-to-change sc/SettingsToChange
+   :transition-matrix sc/TransitionCounts
+   :population sc/PopulationDataset
+   :setting-cost sc/NeedSettingCost
+   :valid-setting-academic-years sc/ValidSettingAcademicYears})
 
-(defn add-input-params
-  [file-map input]
-  (assoc-in input [:witan/params :fn] (fn [a b]
-                                        (tu/read-inputs file-map input a b))))
+(def default-transition-parameters 
+  {:filter-transitions-from nil
+   :which-transitions? nil
+   :splice-ncy nil
+   :modify-transition-by 1})
 
-(witan.workspace-api/set-api-logging! println)
+(def default-run-parameters
+  {:modify-transitions-from nil
+   :random-seed 50
+   :simulations 10
+   :seed-year 2017})
 
-(deftest send-workspace-test
-  (testing "The default model is run on the workspace and returns the outputs expected"
-    (let [fixed-catalog (->> (:catalog m/send-model)
-                             (mapv #(if (= (:witan/type %) :input)
-                                      (add-input-params (test-inputs default-inputs-path) %)
-                                      (assoc-in % [:witan/params :simulations] 10)))
-                             (map #(assoc-in % [:witan/params :output] false)))
-          workspace     {:workflow  (:workflow m/send-model)
-                         :catalog   fixed-catalog
-                         :contracts (p/available-fns (m/model-library))}
-          workspace'    (s/with-fn-validation (wex/build! workspace))
-          result        (apply merge (wex/run!! workspace' {}))]
-      (is (= #{:total-in-send-by-ay :total-in-send-by-ay-group :by-state :total-cost
-               :total-in-send :total-in-send-by-need :total-in-send-by-setting}
-             (-> result first keys set))))))
+(def default-output-parameters
+  {:run-reports false
+   :run-report-header true})
 
-(defn run-model
-  "function expects a map of the following keys
+(defn build-input-datasets
+  "Build a map of the datasets to use for input"
+  ([] (build-input-datasets file-inputs schema-inputs))
+  ([fi si]
+   (into {} (for [[k v] fi]
+              [k (tu/csv-to-dataset v (k si))]))))
 
-  :iterations - number of simulations/iterations (min 8)
+(defn generate-report-header
+  "Build a header for the report"
+  [file-inputs schema-inputs transition-parameters run-parameters output-parameters]
+  (let [wt  (:which-transitions? transition-parameters)
+        mtb (or (:modify-transition-by transition-parameters) "None")
+        tm  (or (:transition-matrix file-inputs) "None")
+        mtf (or (:modify-transitions-from run-parameters) "None")
+        ftf (or (:filter-transitions-from transition-parameters) "None")
+        sn  (or (:splice-ncy transition-parameters) "None")
+        report-fn (fn [[k v]] (report/info k (report/bold v)))]
+    (when (output-parameters :run-report-header)
+      (report/reset-send-report)
+      (dorun (map report-fn [["Input Data: " (str/join ", " (vals file-inputs))]
+                             ["Number of iterations: " (:simulations run-parameters)]
+                             ["Output charts produced: " (:run-reports output-parameters)]
+                             ["Modifying: " (if (nil? wt) "None" (str/join ", " wt))]
+                             ["Transitions modifier: " mtb]
+                             ["Transitions file: " tm]
+                             ["Modify transitions from: " mtf]
+                             ["Filter transitions from: " ftf]
+                             ["Splice NCY: " (str sn "\n")]])))))
 
-  :output? - true/false to output data and charts
+(defn run-send
+  "Function expects a map of the following keys, if a key is not present
+  it will use defaults (as will no map at all):
+  :file-inputs - map of input files
+  :schema-inputs - map of schemas
+  :transition-parameters - map of parameters for the preparation phase
+  :run-parameters - map of parameters for the run phase
+  :output-parameters - map of parameters for the output phase
+  "
+  ([] (run-send {}))
+  ([{fi :file-inputs 
+     si :schema-inputs
+     tp :transition-parameters
+     rp :run-parameters
+     op :output-parameters
+     :or {fi file-inputs
+          si schema-inputs
+          tp default-transition-parameters
+          rp default-run-parameters
+          op default-output-parameters}}]
+   (generate-report-header fi si tp rp op)
+   ;The main workflow of the model
+   (-> (build-input-datasets fi si)
+       (send/prepare-send-inputs tp)
+       (send/run-send-model rp)
+       #_(send/output-send-results op))))
 
-  :transition-modifier - value to modify transition rate of :transitions-file contents by (optional)
-
-  :transitions-file - csv containing list of settings to modify by :transition-modifier (optional)
-
-  :which-transitions? - vector of either one or more transition type strings i.e. \"joiners\", \"movers-to\",
-  \"movers-from\" or \"leavers\", used in conjunction with :transition-modifier and :transitions-file (optional)
-
-  :modify-transitions-from - set a year to start modifying transitions from when :transition-modifier & :transitions-file are set (optional)
-
-  :filter-transitions-from - sets a year or year range as a vector to filter historic transitions by for :splice-ncy (optional)
-
-  :splice-ncy - sets a national curriculum year to ignore transitions of prior to :filter-transitions-from year (optional)
-
-  :override-inputs-path - chooses a dir to use as input for the model e.g. demo/ (optional)"
-
-  [{:keys [iterations output? transition-modifier transitions-file which-transitions?
-           modify-transitions-from filter-transitions-from splice-ncy override-inputs-path]}]
-  (report/reset-send-report)
-  (report/info "Input Data: " (report/bold (str/replace (str/join "" (drop-last (or override-inputs-path default-inputs-path))) #"/" " ")))
-  (report/info "Number of iterations: " (report/bold iterations))
-  (report/info "Output charts produced: " (report/bold output?))
-  (report/info "Modifying " (report/bold (if (nil? which-transitions?) "None" (str/join ", " which-transitions?))))
-  (report/info "Transitions modifier: " (report/bold (if (nil? transition-modifier) "None" transition-modifier)))
-  (report/info "Transitions file: " (report/bold (if (nil? transitions-file) "None" transitions-file)))
-  (report/info "Modify transitions from: " (report/bold (if (nil? modify-transitions-from) "None" modify-transitions-from)))
-  (report/info "Filter transitions from: " (report/bold (if (nil? filter-transitions-from) "None" filter-transitions-from)))
-  (report/info "Splice NCY: " (report/bold (if (nil? splice-ncy) "None" splice-ncy)) "\n")
-  (let [inputs-path  (or override-inputs-path default-inputs-path)
-        file-input    (if (nil? transitions-file)
-                        (test-inputs inputs-path)
-                        (assoc (test-inputs inputs-path) :settings-to-change [(str "data/" inputs-path transitions-file) sc/SettingsToChange]))
-        fixed-catalog (let [prep-catalog1 (->> (:catalog m/send-model)
-                                               (mapv #(if (= (:witan/type %) :input)
-                                                        (add-input-params file-input %)
-                                                        (assoc-in % [:witan/params :simulations] iterations)))
-                                               (map #(assoc-in % [:witan/params :output] output?)))
-                            prep-catalog2 (if (nil? transition-modifier)
-                                            prep-catalog1
-                                            (->> prep-catalog1
-                                                 (map #(assoc-in % [:witan/params :modify-transition-by] transition-modifier))
-                                                 (map #(assoc-in % [:witan/params :which-transitions?] which-transitions?))))
-                            prep-catalog3 (if (nil? modify-transitions-from)
-                                            prep-catalog2
-                                            (map #(assoc-in % [:witan/params :modify-transitions-from] modify-transitions-from) prep-catalog2))]
-                        (if (nil? filter-transitions-from)
-                          prep-catalog3
-                          (->> prep-catalog3
-                               (map #(assoc-in % [:witan/params :filter-transitions-from] filter-transitions-from))
-                               (map #(assoc-in % [:witan/params :splice-ncy] splice-ncy)))))
-        workspace     {:workflow  (:workflow m/send-model)
-                       :catalog   fixed-catalog
-                       :contracts (p/available-fns (m/model-library))}
-        workspace'    (s/with-fn-validation (wex/build! workspace))
-        result        (apply merge (wex/run!! workspace' {}))]))
+(deftest send-test
+  (is (= #{:total-in-send-by-ay :total-in-send-by-ay-group 
+           :total-in-send :total-in-send-by-need :total-in-send-by-setting}
+         (-> (run-send)
+             (:send-output)
+             (first)
+             (keys)
+             (set)))))
