@@ -3,7 +3,8 @@
             [witan.send.model :as m]
             [witan.workspace-api.protocols :as p]
             [witan.workspace-executor.core :as wex]
-            [witan.send.acceptance.workspace-test :as w])
+            [witan.send.acceptance.workspace-test :as w]
+            [witan.send.send :as send])
   (:gen-class))
 
 (defn -main []
@@ -15,4 +16,3 @@
         workspace'    (s/with-fn-validation (wex/build! workspace))
         result        (apply merge (wex/run!! workspace' {}))]
     result))
-
