@@ -283,6 +283,40 @@ ggplot(cost_projected, aes(x=calendar.year)) +
 
 ggsave("../../target/Total_Cost.pdf")
 
+### SEND Primary to Secondary Transitions ###
+
+years = unique(df_historical$calendar.year)
+
+settings = unique(df_historical$setting.1)
+
+yr6_to_yr7_2013 <- df_historical %>% filter(calendar.year == 2013 & academic.year.1 == 6)
+yr6_to_yr7_2014 <- df_historical %>% filter(calendar.year == 2014 & academic.year.1 == 6)
+yr6_to_yr7_2015 <- df_historical %>% filter(calendar.year == 2015 & academic.year.1 == 6)
+
+get_transition <- function(data, setting1, setting2) {
+  table((data$setting.1 == setting1) & (data$setting.2 == setting2))[[2]]
+}
+
+result<-data.frame(Transition=character(), Count=as.numeric())
+
+for (s1 in settings) {
+  for (s2 in settings) {
+    baz <- try(get_transition(yr6_to_yr7_2013, s1, s2), silent = T)
+    if(is.numeric(baz)) {
+      result <- rbind(result, data.frame(Transition = paste(s1,s2), Count = baz))
+    }
+  }
+}
+
+
+## ripped from gg4clj
+#ggplot(data, aes(x, id = id, split = factor(y), value = value)) +
+#  ggtitle("Joiner transitions") +
+#  geom_parallel_sets_axes(axis.width = 0.2, fill = "#F6F6F6", color = "#DDDDDD") +
+#  geom_parallel_sets(aes(fill = setting), alpha = 0.5, axis.width = 0.1) +
+#  geom_parallel_sets_labels(color = "#444444", angle = 0, size = 2.5) +
+#  theme(axis.title.x = element_blank(), axis.text.y = element_blank())
+
 
 ### Delete automatically produced Rplots.pdf file ###
 
