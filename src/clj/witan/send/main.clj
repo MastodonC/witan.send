@@ -19,7 +19,7 @@
 
 (defn run-send
   "Run the send model, the function expects a map as seen in
-  data/demo/config.edn (typically use `(config \"config.edn\")` to
+  data/demo/config.edn (typically use `(config \"data/demo\")` to
   generate it)"
   [config]
   (generate-report-header config)  
