@@ -14,6 +14,7 @@
                   :simulations 10
                   :seed-year 2017}
 
- :output-parameters {:run-reports false
-                     :run-report-header true
+ :output-parameters {:run-report-header true
+                     :run-reports true
+                     :run-charts false
                      :output-dir "results"}}

@@ -35,12 +35,15 @@
 (defn info [& messages]
   (swap! send-report conj (apply str messages)))
 
-(defn write-send-report []
-  (io/delete-file send-report-file :quiet)
-  (spit send-report-file (str/join "\n" @send-report) :append true))
+(defn write-send-report
+  ([]
+   (write-send-report send-report-file))
+  ([report-file]
+   (io/delete-file report-file :quiet)
+   (spit report-file (str/join "\n" @send-report) :append true)))
 
 (defn generate-report-header
-  "Build a header for the report"
+  "Build a header for the report, expects a full config map"
   [{:keys [file-inputs schema-inputs transition-parameters run-parameters output-parameters]}]
   (let [wt  (:which-transitions? transition-parameters)
         mtb (or (:modify-transition-by transition-parameters) "None")
