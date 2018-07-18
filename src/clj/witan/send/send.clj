@@ -259,9 +259,9 @@
 
 (defn build-input-datasets
   "Build a map of the datasets to use for input"
-  [fi si]
-  (into {} (for [[k v] fi]
-             [k (tu/csv-to-dataset v (k si))])))
+  [project-dir file-inputs schema-inputs]
+  (into {} (for [[k v] file-inputs]
+             [k (tu/csv-to-dataset (str project-dir "/" v) (k schema-inputs))])))
 
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
@@ -467,7 +467,7 @@
    to get the total cost."
   [{:keys [projection send-output transition-matrix valid-setting-academic-years
            population modify-transition-by settings-to-change]}
-   {:keys [run-reports]}]
+   {:keys [run-reports project-dir output-dir]}]
   (let [transitions-data (ds/row-maps transition-matrix)
         transform-transitions (->> transitions-data
                                    (map #(vector
@@ -478,9 +478,10 @@
         transform-projection (->> projection
                                   keys
                                   (map #(vec (drop 1 %)))
-                                  distinct)]
-    (if (not (.isDirectory (io/file "target/")))
-      (.mkdir (io/file "target/")))
+                                  distinct)
+        dir (str project-dir "/" output-dir)]
+    (if (not (.isDirectory (io/file dir)))
+      (.mkdir (io/file dir)))
     (when (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
       (report/info (report/bold "Not every historic transition present in projection!") "Consider checking valid state input.\n"))
     (when run-reports
@@ -511,8 +512,8 @@
         (report/info "First year of input data: " (report/bold (first years)))
         (report/info "Final year of input data: " (report/bold (inc (last years))))
         (report/info "Final year of projection: " (report/bold (+ (last years) (count (map :total-in-send send-output)))))
-        (output-transitions "target/transitions.edn" projection)
-        (with-open [writer (io/writer (io/file "target/Output_AY_State.csv"))]
+        (output-transitions (str dir "/transitions.edn") projection)
+        (with-open [writer (io/writer (io/file (str dir "/Output_AY_State.csv")))]
           (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[[academic-year state] stats]]
@@ -521,7 +522,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/Output_AY.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/Output_AY.csv")))]
           (let [columns [:calendar-year :academic-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[academic-year stats]]
@@ -531,7 +532,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/Output_Need.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/Output_Need.csv")))]
           (let [columns [:calendar-year :need :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[need stats]]
@@ -541,7 +542,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/Output_Setting.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/Output_Setting.csv")))]
           (let [columns [:calendar-year :setting :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[setting stats]]
@@ -551,7 +552,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/Output_Count.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/Output_Count.csv")))]
           (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (map (fn [stats year]
                         (-> (medley/map-vals round stats)
@@ -560,7 +561,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/Output_Cost.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/Output_Cost.csv")))]
           (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (map (fn [stats year]
                         (-> (medley/map-vals round stats)
@@ -569,7 +570,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/Output_AY_Group.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/Output_AY_Group.csv")))]
           (let [columns [:calendar-year :ay-group :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[ay-group stats]]
@@ -579,19 +580,19 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/historic-data.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/historic-data.csv")))]
           (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
                 headers (mapv name columns)
                 rows (mapv #(mapv % columns) transitions-data)]
             (csv/write-csv writer (into [headers] rows))))
-        (with-open [writer (io/writer (io/file "target/valid-settings.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/valid-settings.csv")))]
           (csv/write-csv writer valid-settings))
         (println "Producing charts...")
         (sh/sh "Rscript" "--vanilla" "send-charts.R"  :dir "src/R")
         (ch/ribbon-plot joiner-rates-CI "Joiner" years n-colours)
         (ch/ribbon-plot leaver-rates-CI "Leaver" years n-colours)
         (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
-        (io/delete-file "target/historic-data.csv" :quiet)
-        (io/delete-file "target/valid-settings.csv" :quiet)))
+        (io/delete-file (str dir "/historic-data.csv") :quiet)
+        (io/delete-file (str dir "/valid-settings.csv") :quiet)))
     (report/write-send-report))
   send-output)
