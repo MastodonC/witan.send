@@ -10,9 +10,9 @@
 
 ;; Use real population datasets for testing
 (def test-inputs
-  {:initial-population ["data/demo/population.csv" sc/PopulationDataset]
-   :initial-send-population ["data/demo/send-population.csv" sc/SENDPopulation]
-   :transition-matrix ["data/demo/transitions.csv" sc/TransitionCounts]})
+  {:initial-population ["data/demo/data/population.csv" sc/PopulationDataset]
+   :initial-send-population ["data/demo/data/send-population.csv" sc/SENDPopulation]
+   :transition-matrix ["data/demo/data/transitions.csv" sc/TransitionCounts]})
 
 (defn get-individual-input [key-name]
   (tu/read-inputs
