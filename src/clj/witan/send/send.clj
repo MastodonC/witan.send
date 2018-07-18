@@ -10,6 +10,7 @@
             [witan.send.states :as states]
             [witan.send.utils :as u :refer [round]]
             [witan.send.charts :as ch]
+            [witan.send.test-utils :as tu]
             [clojure.java.io :as io]
             [incanter.stats :as stats]
             [medley.core :as medley]
@@ -255,6 +256,12 @@
                        (generate-transition-key (merge keys {:setting (second setting-to-change)}))))))
          (remove #(nil? (first %)))
          distinct)))
+
+(defn build-input-datasets
+  "Build a map of the datasets to use for input"
+  [fi si]
+  (into {} (for [[k v] fi]
+             [k (tu/csv-to-dataset v (k si))])))
 
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
