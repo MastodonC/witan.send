@@ -646,7 +646,6 @@
           (csv/write-csv writer valid-settings))
         (println "Producing charts...")
         (sh/sh "Rscript" "--vanilla" "send-charts.R"  :dir "src/R")
-        (ch/sankey-joiners transitions-data)
         (when (not= 1 modify-transition-by)
           (run! (partial ch/sankey-setting-specific-transitions transitions-data) (map :setting-1 (ds/row-maps settings-to-change))))
         (ch/ribbon-plot joiner-rates-CI "Joiner" years n-colours)
