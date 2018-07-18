@@ -74,7 +74,8 @@ To use the REPL to run the model, launch and simply run
 (-main "/home/matt/demo")
 ```
 
-### 
+edit the projects `config.edn` to alter the parameters.
+
 ## License
 
 Copyright © 2017 MastodonC Ltd
