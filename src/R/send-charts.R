@@ -344,6 +344,26 @@ for (f in years) {
   ggsave(paste0("../../target/Historic_Transitions_",f,".pdf"))
 }
 
+### SEND Joiner Transitions ###
+
+df_joiners <- df_historical %>%
+  filter(setting.1 == "NONSEND")
+
+df_joiners_trans<-data.frame()
+v = -1
+
+for (s2 in settings) {
+  transitions <- try(get_transition(df_joiner_trans, "NONSEND", s2), silent = T)
+  if(is.numeric(transitions)) {
+    v = v + 1
+    df_joiners_trans <- rbind(df_joiners_trans, data.frame(y = "NONSEND", value = transitions, Setting = s2, id = v, x = "from"))
+    df_joiners_trans <- rbind(df_joiners_trans, data.frame(y = s2, value = transitions, Setting = s2, id = v, x = "to"))
+  }
+}
+
+sankey(df_joiners_trans, "Joiner Transitions")
+ggsave("../../target/Joiner_Transitions.pdf")
+
 ### Delete automatically produced Rplots.pdf file ###
 
 if (file.exists("Rplots.pdf")) file.remove("Rplots.pdf")
