@@ -467,7 +467,7 @@
    to get the total cost."
   [{:keys [projection send-output transition-matrix valid-setting-academic-years
            population modify-transition-by settings-to-change]}
-   {:keys [run-reports project-dir output-dir]}]
+   {:keys [run-reports run-charts project-dir output-dir]}]
   (let [transitions-data (ds/row-maps transition-matrix)
         transform-transitions (->> transitions-data
                                    (map #(vector

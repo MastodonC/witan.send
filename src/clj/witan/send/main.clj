@@ -8,21 +8,22 @@
 
 (defn config [project-dir]
   "Read a config file and merge it with schema inputs"
-  (merge (read-config (str project-dir "/config.edn"))
-         {:schema-inputs {:settings-to-change sc/SettingsToChange
-                          :transition-matrix sc/TransitionCounts
-                          :population sc/PopulationDataset
-                          :setting-cost sc/NeedSettingCost
-                          :valid-setting-academic-years sc/ValidSettingAcademicYears}}
-         {:project-dir project-dir}
-         {:output-parameters {:project-dir project-dir}}))
+  (merge-with merge
+              (read-config (str project-dir "/config.edn"))
+              {:schema-inputs {:settings-to-change sc/SettingsToChange
+                               :transition-matrix sc/TransitionCounts
+                               :population sc/PopulationDataset
+                               :setting-cost sc/NeedSettingCost
+                               :valid-setting-academic-years sc/ValidSettingAcademicYears}}
+              {:project-dir project-dir}
+              {:output-parameters {:project-dir project-dir}}))
 
 (defn run-send
   "Run the send model, the function expects a map as seen in
   data/demo/config.edn (typically use `(config \"data/demo\")` to
   generate it)"
   [config]
-  (generate-report-header config)  
+  (generate-report-header config)
   (-> (send/build-input-datasets (:project-dir config) (:file-inputs config) (:schema-inputs config))
       (send/prepare-send-inputs (:transition-parameters config))
       (send/run-send-model (:run-parameters config))
