@@ -19,8 +19,7 @@ library(ggforce)
 
 remove_colons <-  function(x) {str_replace(x, ':', '')}
 df_historical <- read.csv("../../target/historic-data.csv") %>%
-  mutate_all(funs(remove_colons)) %>%
-  filter(need.1 != "NONSEND")
+  mutate_all(funs(remove_colons))
 
 n_hist_years <-  df_historical %>%
   summarise(n_distinct(calendar.year)) + 1.5
@@ -81,6 +80,7 @@ df_historical_set <- df_historical %>%
 
 
 df_set <- rbind(df_historical_set[,c(2,1,3)], df_projected_set) %>%
+  filter(Setting != "NONSEND") %>%
   mutate(Setting = gsub("_", " ", Setting))
 
 df_set_years = unique(df_set$calendar.year)
@@ -149,6 +149,7 @@ df_projected_need <- read.csv("../../target/Output_Need.csv") %>%
   rename(Need = need)
 
 df_historical_need <- df_historical %>%
+  filter(need.1 != "NONSEND") %>%
   group_by(need.1, calendar.year) %>%
   count() %>%
   rename(Need = need.1, mean = n) %>%
@@ -211,6 +212,7 @@ df_valid_settings <- read.csv("../../target/valid-settings.csv", header = FALSE)
 df_set_type <- merge(df_set,  df_valid_settings, by="Setting")
 
 df_type <- df_set_type %>%
+  filter(Setting != "NONSEND") %>%
   group_by(calendar.year, Type) %>%
   summarise(mean = sum(mean))
 
