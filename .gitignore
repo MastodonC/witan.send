@@ -4,6 +4,8 @@
 /target
 /classes
 /checkouts
+/data
+^/data/demo
 pom.xml
 pom.xml.asc
 *.jar
