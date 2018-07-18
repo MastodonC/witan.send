@@ -309,14 +309,14 @@ for (s1 in settings) {
   }
 }
 
-
-## ripped from gg4clj
-#ggplot(data, aes(x, id = id, split = factor(y), value = value)) +
-#  ggtitle("Joiner transitions") +
-#  geom_parallel_sets_axes(axis.width = 0.2, fill = "#F6F6F6", color = "#DDDDDD") +
-#  geom_parallel_sets(aes(fill = setting), alpha = 0.5, axis.width = 0.1) +
-#  geom_parallel_sets_labels(color = "#444444", angle = 0, size = 2.5) +
-#  theme(axis.title.x = element_blank(), axis.text.y = element_blank())
+sankey <- function(data, title) {
+  ggplot(data, aes(x, id = id, split = factor(y), value = value)) +
+    ggtitle(title) +
+    geom_parallel_sets_axes(axis.width = 0.2, fill = "#F6F6F6", color = "#DDDDDD") +
+    geom_parallel_sets(aes(fill = setting), alpha = 0.5, axis.width = 0.1) +
+    geom_parallel_sets_labels(color = "#444444", angle = 0, size = 2.5) +
+    theme(axis.title.x = element_blank(), axis.text.y = element_blank())
+}
 
 
 ### Delete automatically produced Rplots.pdf file ###
