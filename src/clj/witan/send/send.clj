@@ -638,11 +638,9 @@
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file "target/historic-data.csv"))]
-          (let [send-only (filter #(or (not= (:setting-2 %) :NONSEND)
-                                       (not= (:setting-1 %) :NONSEND)) transitions-data)
-                columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
+          (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
                 headers (mapv name columns)
-                rows (mapv #(mapv % columns) send-only)]
+                rows (mapv #(mapv % columns) transitions-data)]
             (csv/write-csv writer (into [headers] rows))))
         (with-open [writer (io/writer (io/file "target/valid-settings.csv"))]
           (csv/write-csv writer valid-settings))
