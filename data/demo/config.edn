@@ -1,0 +1,19 @@
+{:file-inputs {:settings-to-change "data/demo/modify-settings.csv" 
+               :transition-matrix "data/demo/transitions.csv" 
+               :population "data/demo/population.csv"
+               :setting-cost "data/demo/need-setting-costs.csv" 
+               :valid-setting-academic-years "data/demo/valid-setting-academic-years.csv"}
+
+ :transition-parameters {:filter-transitions-from nil
+                         :which-transitions? nil
+                         :splice-ncy nil
+                         :modify-transition-by 1}
+
+ :run-parameters {:modify-transitions-from nil
+                  :random-seed 50
+                  :simulations 10
+                  :seed-year 2017}
+
+ :output-parameters {:run-reports false
+                     :run-report-header true
+                     :output-dir ""}}
