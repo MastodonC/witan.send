@@ -286,40 +286,63 @@ ggplot(cost_projected, aes(x=calendar.year)) +
 
 ggsave("../../target/Total_Cost.pdf")
 
-### SEND Primary to Secondary Transitions ###
-
-years = unique(df_historical$calendar.year)
-
-settings = unique(df_historical$setting.1)
-
-yr6_to_yr7_2013 <- df_historical %>% filter(calendar.year == 2013 & academic.year.1 == 6)
-yr6_to_yr7_2014 <- df_historical %>% filter(calendar.year == 2014 & academic.year.1 == 6)
-yr6_to_yr7_2015 <- df_historical %>% filter(calendar.year == 2015 & academic.year.1 == 6)
-
-get_transition <- function(data, setting1, setting2) {
-  table((data$setting.1 == setting1) & (data$setting.2 == setting2))[[2]]
-}
-
-result<-data.frame(Transition=character(), Count=as.numeric())
-
-for (s1 in settings) {
-  for (s2 in settings) {
-    baz <- try(get_transition(yr6_to_yr7_2013, s1, s2), silent = T)
-    if(is.numeric(baz)) {
-      result <- rbind(result, data.frame(Transition = paste(s1,s2), Count = baz))
-    }
-  }
-}
+### Sankey plot ###
 
 sankey <- function(data, title) {
   ggplot(data, aes(x, id = id, split = factor(y), value = value)) +
     ggtitle(title) +
     geom_parallel_sets_axes(axis.width = 0.2, fill = "#F6F6F6", color = "#DDDDDD") +
-    geom_parallel_sets(aes(fill = setting), alpha = 0.5, axis.width = 0.1) +
+    geom_parallel_sets(aes(fill = Setting), alpha = 0.5, axis.width = 0.1) +
     geom_parallel_sets_labels(color = "#444444", angle = 0, size = 2.5) +
     theme(axis.title.x = element_blank(), axis.text.y = element_blank())
 }
 
+### SEND Primary to Secondary Transitions ###
+
+df_prim_sec_trans <- df_historical %>%
+  filter(setting.1 != "NONSEND" & academic.year.1 == 6) %>%
+  filter(setting.2 != "NONSEND")
+
+years = as.numeric(unique(df_historical$calendar.year))
+
+settings = unique(df_historical$setting.1)
+
+get_transition <- function(data, setting1, setting2) {
+  table((data$setting.1 == setting1) & (data$setting.2 == setting2))[[2]]
+}
+
+sankey_prim_sec_trans <- function(data, calendar_year) {
+  result<-data.frame()
+  v = -1
+  filtered_data<-filter(data, calendar.year == calendar_year)
+  
+  for (s1 in settings) {
+    for (s2 in settings) {
+      transitions <- try(get_transition(filtered_data, s1, s2), silent = T)
+      if(is.numeric(transitions)) {
+        v = v + 1
+        result <- rbind(result, data.frame(y = s1, value = transitions, Setting = s2, id = v, x = "from"))
+        result <- rbind(result, data.frame(y = s2, value = transitions, Setting = s2, id = v, x = "to"))
+      }
+    }
+  }
+  
+  result <- merge(result,  df_valid_settings, by="Setting") %>%
+    subset(select = -c(Setting)) %>%
+    rename(temp = Type) %>%
+    rename(Setting = y) %>%
+    merge(df_valid_settings, by="Setting") %>%
+    subset(select = -c(Setting)) %>%
+    rename(Setting = temp) %>%
+    rename(y = Type)
+  
+  sankey(result, paste0("Aggregate Settings Transitions ", calendar_year, "/", (calendar_year + 1)))
+}
+
+for (f in years) {
+  sankey_prim_sec_trans(df_prim_sec_trans, f)
+  ggsave(paste0("../../target/Historic_Transitions_",f,".pdf"))
+}
 
 ### Delete automatically produced Rplots.pdf file ###
 
