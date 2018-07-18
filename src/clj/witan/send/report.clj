@@ -38,3 +38,25 @@
 (defn write-send-report []
   (io/delete-file send-report-file :quiet)
   (spit send-report-file (str/join "\n" @send-report) :append true))
+
+(defn generate-report-header
+  "Build a header for the report"
+  [{:keys [file-inputs schema-inputs transition-parameters run-parameters output-parameters]}]
+  (let [wt  (:which-transitions? transition-parameters)
+        mtb (or (:modify-transition-by transition-parameters) "None")
+        tm  (or (:transition-matrix file-inputs) "None")
+        mtf (or (:modify-transitions-from run-parameters) "None")
+        ftf (or (:filter-transitions-from transition-parameters) "None")
+        sn  (or (:splice-ncy transition-parameters) "None")
+        report-fn (fn [[k v]] (info k (bold v)))]
+    (when (output-parameters :run-report-header)
+      (reset-send-report)
+      (dorun (map report-fn [["Input Data: " (str/join ", " (vals file-inputs))]
+                             ["Number of iterations: " (:simulations run-parameters)]
+                             ["Output charts produced: " (:run-reports output-parameters)]
+                             ["Modifying: " (if (nil? wt) "None" (str/join ", " wt))]
+                             ["Transitions modifier: " mtb]
+                             ["Transitions file: " tm]
+                             ["Modify transitions from: " mtf]
+                             ["Filter transitions from: " ftf]
+                             ["Splice NCY: " (str sn "\n")]])))))
