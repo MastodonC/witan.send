@@ -76,6 +76,26 @@ To use the REPL to run the model, launch and simply run
 
 edit the projects `config.edn` to alter the parameters.
 
+## R Dependencies
+
+This is very fragile and *will* break in the future.
+
+For Ubuntu, get enough of an env that will allow compilation of R
+packages.
+
+``` bash
+sudo apt install r-base r-cra-ggplot2 libudunits2-dev libcairo2-dev \
+                 libcurl4-openssl-dev libv8-3.14-dev libgdal-dev
+```
+
+Force an install of the latest `ggforce` package from github.
+
+``` rscript
+install.packages("devtools")
+install.packages("concaveman")
+devtools::install_github('thomasp85/ggforce')
+```
+
 ## License
 
 Copyright © 2017 MastodonC Ltd
