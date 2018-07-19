@@ -6,7 +6,7 @@ install_missing_packages <- function(package_name) {
     install.packages(package_name, repos='http://cran.us.r-project.org') } }
 
 # svglite requires cairo dev packages
-packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite", "ggforce")
+packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite")
 
 for(package in packages_to_check) {
   install_missing_packages(package) }
