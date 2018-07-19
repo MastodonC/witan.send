@@ -380,7 +380,7 @@ ribbon <- function(data, title) {
     ylab("95% probability interval") +
     scale_fill_manual(name = "Years", labels = c("2013", "2014", "2015", "2016"), values = c("#1b9e77", "#d95f02", "#7570b3", "#e7298a")) +
     scale_x_discrete(breaks = c(-2, 0, 2, 4, 6, 8, 10), limit = c(-3, 12))
-  ggsave(filename = paste0("../../target/", title, "_Probability.pdf"), width = .5, height = 4.017305315203955)
+  ggsave(filename = paste0("../../target/", title, "_Probability.pdf"), width = 6.5, height = 4.017305315203955)
 }
 
 ### Ribbon plot data ###
