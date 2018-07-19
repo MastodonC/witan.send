@@ -66,6 +66,25 @@ The `config.edn` file looks like this
 Alter this file to change the configuration. Particularly the
 `:output-dir` key to save new runs in a different location.
 
+To make life easier for yourself you can add this to your `.bashrc`
+
+``` bash
+#send
+send () {
+    _PWD=${PWD}
+    pushd $HOME/src/github/mastodonc/witan.send/
+    lein run ${_PWD}
+    popd
+}
+```
+
+Then to execute, change to a project dir and run.
+
+``` bash
+$ cd ~/src/github/mastodonc/witan.sendruns/mastodonc/demo
+$ send
+```
+
 ### REPL
 
 To use the REPL to run the model, launch and simply run
