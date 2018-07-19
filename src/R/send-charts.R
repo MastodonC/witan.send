@@ -2,24 +2,22 @@ install_missing_packages <- function(package_name) {
   if(!require(package_name, character.only = TRUE)) {
     install.packages(package_name, repos='http://cran.us.r-project.org') } }
 
-packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "devtools", "svglite")
+packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite", "ggforce")
 
 for(package in packages_to_check) {
   install_missing_packages(package) }
-
-# devtools::install_github('thomasp85/ggforce') # used in gg4clj sankey plots
 
 library(dplyr)
 library(ggplot2)
 library(reshape2)
 library(stringr)
+library(ggforce)
 
 ### Variables for all charts ###
 
 remove_colons <-  function(x) {str_replace(x, ':', '')}
 df_historical <- read.csv("../../target/historic-data.csv") %>%
-  mutate_all(funs(remove_colons)) %>%
-  filter(need.1 != "NONSEND")
+  mutate_all(funs(remove_colons))
 
 n_hist_years <-  df_historical %>%
   summarise(n_distinct(calendar.year)) + 1.5
@@ -80,6 +78,7 @@ df_historical_set <- df_historical %>%
 
 
 df_set <- rbind(df_historical_set[,c(2,1,3)], df_projected_set) %>%
+  filter(Setting != "NONSEND") %>%
   mutate(Setting = gsub("_", " ", Setting))
 
 df_set_years = unique(df_set$calendar.year)
@@ -148,6 +147,7 @@ df_projected_need <- read.csv("../../target/Output_Need.csv") %>%
   rename(Need = need)
 
 df_historical_need <- df_historical %>%
+  filter(need.1 != "NONSEND") %>%
   group_by(need.1, calendar.year) %>%
   count() %>%
   rename(Need = need.1, mean = n) %>%
@@ -210,6 +210,7 @@ df_valid_settings <- read.csv("../../target/valid-settings.csv", header = FALSE)
 df_set_type <- merge(df_set,  df_valid_settings, by="Setting")
 
 df_type <- df_set_type %>%
+  filter(Setting != "NONSEND") %>%
   group_by(calendar.year, Type) %>%
   summarise(mean = sum(mean))
 
@@ -283,6 +284,83 @@ ggplot(cost_projected, aes(x=calendar.year)) +
 
 ggsave("../../target/Total_Cost.pdf")
 
+### Sankey plot ###
+
+sankey <- function(data, title) {
+  ggplot(data, aes(x, id = id, split = factor(y), value = value)) +
+    ggtitle(title) +
+    geom_parallel_sets_axes(axis.width = 0.2, fill = "#F6F6F6", color = "#DDDDDD") +
+    geom_parallel_sets(aes(fill = Setting), alpha = 0.5, axis.width = 0.1) +
+    geom_parallel_sets_labels(color = "#444444", angle = 0, size = 2.5) +
+    theme(axis.title.x = element_blank(), axis.text.y = element_blank())
+}
+
+### SEND Primary to Secondary Transitions ###
+
+df_prim_sec_trans <- df_historical %>%
+  filter(setting.1 != "NONSEND" & academic.year.1 == 6) %>%
+  filter(setting.2 != "NONSEND")
+
+years = as.numeric(unique(df_historical$calendar.year))
+
+settings = unique(df_historical$setting.1)
+
+get_transition <- function(data, setting1, setting2) {
+  table((data$setting.1 == setting1) & (data$setting.2 == setting2))[[2]]
+}
+
+sankey_prim_sec_trans <- function(data, calendar_year) {
+  result<-data.frame()
+  v = -1
+  filtered_data<-filter(data, calendar.year == calendar_year)
+  
+  for (s1 in settings) {
+    for (s2 in settings) {
+      transitions <- try(get_transition(filtered_data, s1, s2), silent = T)
+      if(is.numeric(transitions)) {
+        v = v + 1
+        result <- rbind(result, data.frame(y = s1, value = transitions, Setting = s2, id = v, x = "from"))
+        result <- rbind(result, data.frame(y = s2, value = transitions, Setting = s2, id = v, x = "to"))
+      }
+    }
+  }
+  
+  result <- merge(result,  df_valid_settings, by="Setting") %>%
+    subset(select = -c(Setting)) %>%
+    rename(temp = Type) %>%
+    rename(Setting = y) %>%
+    merge(df_valid_settings, by="Setting") %>%
+    subset(select = -c(Setting)) %>%
+    rename(Setting = temp) %>%
+    rename(y = Type)
+  
+  sankey(result, paste0("Aggregate Settings Transitions ", calendar_year, "/", (calendar_year + 1)))
+}
+
+for (f in years) {
+  sankey_prim_sec_trans(df_prim_sec_trans, f)
+  ggsave(paste0("../../target/Historic_Transitions_",f,".pdf"))
+}
+
+### SEND Joiner Transitions ###
+
+df_joiners <- df_historical %>%
+  filter(setting.1 == "NONSEND")
+
+df_joiners_trans<-data.frame()
+v = -1
+
+for (s2 in settings) {
+  transitions <- try(get_transition(df_joiners, "NONSEND", s2), silent = T)
+  if(is.numeric(transitions)) {
+    v = v + 1
+    df_joiners_trans <- rbind(df_joiners_trans, data.frame(y = "NONSEND", value = transitions, Setting = s2, id = v, x = "from"))
+    df_joiners_trans <- rbind(df_joiners_trans, data.frame(y = s2, value = transitions, Setting = s2, id = v, x = "to"))
+  }
+}
+
+sankey(df_joiners_trans, "Joiner Transitions")
+ggsave("../../target/Joiner_Transitions.pdf")
 
 ### Delete automatically produced Rplots.pdf file ###
 

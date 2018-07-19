@@ -563,8 +563,8 @@
             mover-rates (mover-rate filter-movers)
             mover-rates-CI (map #(confidence-interval mover-rates %) years)
             n-colours (take (count years) ch/palette)]
-            ;;n-colours (vec (repeatedly (count years) ch/random-colour)) ;; alternative random colour selection
-            ;;future-transitions (mapcat u/projection->transitions projection) ;; for projection investigation
+        ;;n-colours (vec (repeatedly (count years) ch/random-colour)) ;; alternative random colour selection
+        ;;future-transitions (mapcat u/projection->transitions projection) ;; for projection investigation
 
         (report/info "First year of input data: " (report/bold (first years)))
         (report/info "Final year of input data: " (report/bold (inc (last years))))
@@ -638,19 +638,14 @@
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file "target/historic-data.csv"))]
-          (let [send-only (filter #(not= (:setting-1 %) :NONSEND) transitions-data)
-                columns [:calendar-year :setting-1 :need-1 :academic-year-1]
+          (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
                 headers (mapv name columns)
-                rows (mapv #(mapv % columns) send-only)]
+                rows (mapv #(mapv % columns) transitions-data)]
             (csv/write-csv writer (into [headers] rows))))
         (with-open [writer (io/writer (io/file "target/valid-settings.csv"))]
           (csv/write-csv writer valid-settings))
         (println "Producing charts...")
         (sh/sh "Rscript" "--vanilla" "send-charts.R"  :dir "src/R")
-        (run! #(ch/sankey-transitions transitions-data % valid-settings) years)
-        (ch/sankey-joiners transitions-data)
-        (when (not= 1 modify-transition-by)
-          (run! (partial ch/sankey-setting-specific-transitions transitions-data) (map :setting-1 (ds/row-maps settings-to-change))))
         (ch/ribbon-plot joiner-rates-CI "Joiner" years n-colours)
         (ch/ribbon-plot leaver-rates-CI "Leaver" years n-colours)
         (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
@@ -658,4 +653,3 @@
         (io/delete-file "target/valid-settings.csv" :quiet)))
     (report/write-send-report))
   send-output)
-
