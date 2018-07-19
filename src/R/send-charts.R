@@ -2,12 +2,10 @@ install_missing_packages <- function(package_name) {
   if(!require(package_name, character.only = TRUE)) {
     install.packages(package_name, repos='http://cran.us.r-project.org') } }
 
-packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "devtools", "svglite", "ggforce")
+packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite", "ggforce")
 
 for(package in packages_to_check) {
   install_missing_packages(package) }
-
-# devtools::install_github('thomasp85/ggforce') # used in gg4clj sankey plots
 
 library(dplyr)
 library(ggplot2)
