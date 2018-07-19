@@ -353,7 +353,7 @@ df_joiners_trans<-data.frame()
 v = -1
 
 for (s2 in settings) {
-  transitions <- try(get_transition(df_joiner_trans, "NONSEND", s2), silent = T)
+  transitions <- try(get_transition(df_joiners, "NONSEND", s2), silent = T)
   if(is.numeric(transitions)) {
     v = v + 1
     df_joiners_trans <- rbind(df_joiners_trans, data.frame(y = "NONSEND", value = transitions, Setting = s2, id = v, x = "from"))
