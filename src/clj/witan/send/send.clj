@@ -9,8 +9,6 @@
             [witan.send.step :as step]
             [witan.send.states :as states]
             [witan.send.utils :as u :refer [round]]
-            [witan.send.charts :as ch]
-            [witan.send.test-utils :as tu]
             [clojure.java.io :as io]
             [incanter.stats :as stats]
             [medley.core :as medley]
@@ -265,7 +263,7 @@
 
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
-   row for each individual/year/simulation. Also includes age & state columns"  
+   row for each individual/year/simulation. Also includes age & state columns"
   [{:keys [settings-to-change transition-matrix population
            setting-cost valid-setting-academic-years]}
    {:keys [which-transitions? modify-transition-by splice-ncy filter-transitions-from]}]
@@ -462,6 +460,40 @@
 (defn transition-present? [transition projection]
   (some #(= % transition) projection))
 
+(defn pull-year
+  [data pos]
+  (->> (nth data pos)
+       (map (fn [[a b c]] (if (zero? b) [a :NA :NA] [a b c])))
+       (apply mapv vector)))
+
+(defn create-keys [string year-count]
+  (map (fn [n] (keyword (str string n))) (range year-count)))
+
+(defn create-CI-map [string data pos year-count]
+  (reduce into {}
+          (map (fn [k v]
+                 (assoc {} k v))
+               (create-keys string year-count)
+               (map #(nth (nth data %) pos) (range year-count)))))
+
+(defn valid-years-vector? [data]
+  (not= (last data) 0))
+
+(defn prep-ribbon-plot-data
+  [data years colours]
+  (let [n-years (count years)
+        filter-data (map #(pull-year data %) (range n-years))
+        ay (first (first filter-data))
+        uppers (create-CI-map "upper" filter-data 1 n-years)
+        lowers (create-CI-map "lower" filter-data 2 n-years)
+        non-zero-data (filter valid-years-vector? (first data))
+        min-year (first (first non-zero-data))
+        max-year (first (last non-zero-data))]
+    (merge lowers uppers {:year ay})))
+
+(defn ribbon-data-rows [ribbon-data]
+  (mapv (fn [x] (mapv #(nth % x) (map val ribbon-data))) (range (count (val (last ribbon-data))))))
+
 (defn output-send-results
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
    to get the total cost."
@@ -495,18 +527,20 @@
                                  ds/row-maps
                                  p/calculate-population-per-calendar-year)
             ages (-> population-count first val keys)
+            n-colours (take (count years) ["#1b9e77" "#d95f02" "#7570b3" "#e7298a" "#D55E00" "#CC79A7"])
             joiner-rates (joiner-rate joiners-count population-count ages years)
             joiner-rates-CI (map #(confidence-interval joiner-rates %) years)
+            joiner-ribbon-data (prep-ribbon-plot-data joiner-rates-CI years n-colours)
             filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send)) transitions-data)
             leaver-rates (leaver-rate filter-leavers)
             leaver-rates-CI (map #(confidence-interval leaver-rates %) years)
+            leaver-ribbon-data (prep-ribbon-plot-data leaver-rates-CI years n-colours)
             filter-movers (remove (fn [{:keys [setting-1 setting-2]}]
                                     (or (= setting-1 sc/non-send)
                                         (= setting-2 sc/non-send))) transitions-data)
             mover-rates (mover-rate filter-movers)
             mover-rates-CI (map #(confidence-interval mover-rates %) years)
-            n-colours (take (count years) ch/palette)]
-        ;;n-colours (vec (repeatedly (count years) ch/random-colour)) ;; alternative random colour selection
+            mover-ribbon-data (prep-ribbon-plot-data mover-rates-CI years n-colours)]
         ;;future-transitions (mapcat u/projection->transitions projection) ;; for projection investigation
 
         (report/info "First year of input data: " (report/bold (first years)))
@@ -588,11 +622,24 @@
         (with-open [writer (io/writer (io/file (str dir "/valid-settings.csv")))]
           (csv/write-csv writer valid-settings))
         (when run-charts
+          (with-open [writer (io/writer (io/file "target/joiner-rates.csv"))]
+            (let [columns (into [] (keys joiner-ribbon-data))
+                  headers (mapv name columns)
+                  rows (ribbon-data-rows joiner-ribbon-data)]
+              (csv/write-csv writer (into [headers] rows))))
+          (with-open [writer (io/writer (io/file "target/leaver-rates.csv"))]
+            (let [columns (into [] (keys leaver-ribbon-data))
+                  headers (mapv name columns)
+                  rows (ribbon-data-rows leaver-ribbon-data)]
+              (csv/write-csv writer (into [headers] rows))))
+          (with-open [writer (io/writer (io/file "target/mover-rates.csv"))]
+            (let [columns (into [] (keys mover-ribbon-data))
+                  headers (mapv name columns)
+                  rows (ribbon-data-rows mover-ribbon-data)]
+              (csv/write-csv writer (into [headers] rows))))
           (println "Producing charts...")
           (sh/sh "Rscript" "--vanilla" "send-charts.R" dir :dir "src/R")
-          (ch/ribbon-plot joiner-rates-CI "Joiner" years n-colours)
-          (ch/ribbon-plot leaver-rates-CI "Leaver" years n-colours)
-          (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
-          (io/delete-file (str dir "/historic-data.csv") :quiet)
-          (io/delete-file (str dir "/valid-settings.csv") :quiet))))
+          (run! #(io/delete-file (str "target/" %) :quiet)
+                ["historic-data.csv" "valid-settings.csv" "joiner-rates.csv"
+                 "leaver-rates.csv" "mover-rates.csv"])
     (report/write-send-report)))
