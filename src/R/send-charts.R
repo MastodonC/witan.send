@@ -317,7 +317,7 @@ sankey_prim_sec_trans <- function(data, calendar_year) {
   result<-data.frame()
   v = -1
   filtered_data<-filter(data, calendar.year == calendar_year)
-  
+
   for (s1 in settings) {
     for (s2 in settings) {
       transitions <- try(get_transition(filtered_data, s1, s2), silent = T)
@@ -328,7 +328,7 @@ sankey_prim_sec_trans <- function(data, calendar_year) {
       }
     }
   }
-  
+
   result <- merge(result,  df_valid_settings, by="Setting") %>%
     subset(select = -c(Setting)) %>%
     rename(temp = Type) %>%
@@ -337,7 +337,7 @@ sankey_prim_sec_trans <- function(data, calendar_year) {
     subset(select = -c(Setting)) %>%
     rename(Setting = temp) %>%
     rename(y = Type)
-  
+
   sankey(result, paste0("Aggregate Settings Transitions ", calendar_year, "/", (calendar_year + 1)))
 }
 
@@ -365,6 +365,33 @@ for (s2 in settings) {
 
 sankey(df_joiners_trans, "Joiner Transitions")
 ggsave(paste0(output_dir, "/Joiner_Transitions.pdf"))
+
+
+### Ribbon plot ###
+
+ribbon <- function(data, title) {
+  ggplot(data, aes(year, upper0)) +
+    geom_ribbon(aes(ymax = upper0, ymin = lower0, fill = "#1b9e77"), alpha = 0.2) +
+    geom_ribbon(aes(ymax = upper1, ymin = lower1, fill = "#d95f02"), alpha = 0.2) +
+    geom_ribbon(aes(ymax = upper2, ymin = lower2, fill = "#7570b3"), alpha = 0.2) +
+    geom_ribbon(aes(ymax = upper3, ymin = lower3, fill = "#e7298a"), alpha = 0.2) +
+    ggtitle(paste(title, "probability by academic year")) +
+    xlab("NCY") +
+    ylab("95% probability interval") +
+    scale_fill_manual(name = "Years", labels = c("2013", "2014", "2015", "2016"), values = c("#1b9e77", "#d95f02", "#7570b3", "#e7298a")) +
+    scale_x_discrete(breaks = c(-2, 0, 2, 4, 6, 8, 10), limit = c(-3, 12))
+  ggsave(filename = paste0("../../target/", title, "_Probability.pdf"), width = .5, height = 4.017305315203955)
+}
+
+### Ribbon plot data ###
+
+df_joiner_ribbon_data <- read.csv("../../target/joiner-rates.csv", na.strings=":NA")
+df_leaver_ribbon_data <- read.csv("../../target/leaver-rates.csv", na.strings=":NA")
+df_mover_ribbon_data <- read.csv("../../target/mover-rates.csv", na.strings=":NA")
+
+ribbon(df_joiner_ribbon_data, "Joiner")
+ribbon(df_leaver_ribbon_data, "Leaver")
+ribbon(df_mover_ribbon_data, "Mover")
 
 ### Delete automatically produced Rplots.pdf file ###
 
