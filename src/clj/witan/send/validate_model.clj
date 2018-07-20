@@ -42,6 +42,7 @@
   (->> (map :calendar-year transitions)
        (distinct)
        (map #(Integer/parseInt %))
+       (sort)
        (drop-last)))
 
 
