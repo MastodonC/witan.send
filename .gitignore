@@ -4,6 +4,10 @@
 /target
 /classes
 /checkouts
+/data/*
+!/data/demo
+!/data/demo/*
+/data/demo/results/*
 pom.xml
 pom.xml.asc
 *.jar
@@ -11,6 +15,6 @@ pom.xml.asc
 /.lein-*
 /.nrepl-port
 *.DS_Store
-/data
 figwheel_server.log
 /resources/public/js/compiled
+data/demo/validation/
