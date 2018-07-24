@@ -22,15 +22,17 @@
   "Run the send model, the function expects a map as seen in
   data/demo/config.edn (typically use `(config \"data/demo\")` to
   generate it)"
-  [config]
-  (generate-report-header config)
-  (-> (send/build-input-datasets (:project-dir config) (:file-inputs config) (:schema-inputs config))
-      (send/prepare-send-inputs (:transition-parameters config))
-      (send/run-send-model (:run-parameters config))
-      (send/output-send-results (:output-parameters config))))
+  ([] (run-send (config "data/demo")))
+  ([config]
+   (generate-report-header config)
+   (-> (send/build-input-datasets (:project-dir config) (:file-inputs config) (:schema-inputs config))
+       (send/prepare-send-inputs (:transition-parameters config))
+       (send/run-send-model (:run-parameters config)))))
 
 (defn -main
   "Run the send model, defaulting to the inbuilt demo data if no project passed in."
   ([] (-main "data/demo/"))
   ([project-dir]
-   (run-send (config project-dir))))
+   (let [config (config project-dir)]
+     (-> (run-send config)
+         (send/output-send-results (:output-parameters config))))))

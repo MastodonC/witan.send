@@ -44,7 +44,6 @@
             {}
             sc/academic-years)))
 
-
 (defn leaver-rate
   []
   (let [transitions (-> (tu/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts)
@@ -103,8 +102,6 @@
 
 (defn beta-quantile [alpha beta p]
   (.inverseCumulativeProbability (BetaDistribution. alpha beta) p))
-
-
 
 (defn format-academic-year-ci
   [data]
