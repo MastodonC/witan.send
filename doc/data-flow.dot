@@ -1,0 +1,87 @@
+digraph top {
+     
+    subgraph cluster_1 {
+    node [style=filled,color=white];
+    "test-utils/csv-to-dataset";
+    label = "send/build-input-datasets";
+    style=filled;
+    color=lightgrey;
+    }
+
+"file input"->"ns/function"->":data structure"
+"file input"[shape=Mdiamond]
+":data structure"
+"ns/function"[shape=square]
+
+    subgraph cluster_key {
+    node [style=filled,color=white];
+    label = "main/function";
+    ":data structure","ns/function"
+    style=filled;
+    color=lightgrey;
+    }
+    
+"population.csv"-> "test-utils/csv-to-dataset";
+"transitions.csv"->"test-utils/csv-to-dataset";
+"need-setting-costs.csv"-> "test-utils/csv-to-dataset";
+"valid-setting-academic-years.csv"->"test-utils/csv-to-dataset";
+"config.edn"->"projection"
+
+"test-utils/csv-to-dataset" -> ":setting-cost";
+"test-utils/csv-to-dataset" -> ":transition-matrix";
+"test-utils/csv-to-dataset" -> ":valid-setting-academic-years"
+"test-utils/csv-to-dataset"->":population"
+
+
+":transition-matrix", ":setting-cost", ":valid-setting-academic-years" ->"check-inputs/run-input-checks"
+#":transition-matrix", ":setting-cost", ":valid-setting-academic-years" ->"send/prep-inputs"
+
+    subgraph cluster_2 {
+    node [style=filled,color=white];
+    "check-inputs/run-input-checks","params/beta-params-joiners","params/alpha-params-movers","params/alpha-params-joiner-states",
+    ":valid-states",":valid-transitions",":initial-state","params/beta-params-leavers","params/mover-beta-params";
+    label = "send/prepare-send-inputs";
+    style=filled;
+    color=lightgrey;
+    }
+
+":valid-setting-academic-years"->":valid-states",":valid-transitions"
+":transition-matrix"->":initial-state"
+
+
+":population",":valid-states",":transition-matrix"->"params/beta-params-joiners"->":joiner-beta-params"
+":valid-transitions",":transition-matrix"->"params/alpha-params-movers"->":mover-state-alphas"
+":transition-matrix",":valid-states",":valid-transitions"->"params/mover-beta-params"->":mover-beta-params"
+":initial-state"->":population-by-age-state"
+":valid-states",":transition-matrix"->"params/beta-params-leavers"->":leaver-beta-params"
+
+":transition-matrix",":valid-states"->"params/alpha-params-joiner-states"->":joiner-state-alphas"
+":valid-setting-academic-years"->":valid-setting-academic-years_"
+
+
+":population"->":projected-population"
+":setting-cost"->":setting-cost-lookup"
+":transition-matrix"->"projection"
+
+
+"params/alpha-params-joiner-states"[shape=box]
+
+
+":mover-state-alphas",":population-by-age-state",":leaver-beta-params",":joiner-state-alphas" -> "projection"
+":setting-cost-lookup",":projected-population",":valid-setting-academic-years_" -> "projection"
+":mover-beta-params",":joiner-beta-params" -> "projection"
+
+
+    subgraph cluster_4 {
+    node [style=filled,color=white];
+    "projection";
+    label = "send/run-send-model";
+    style=filled;
+    color=lightgrey;
+    }
+
+"config.edn","valid-setting-academic-years.csv","need-setting-costs.csv","transitions.csv","population.csv"[shape=Mdiamond];
+"test-utils/csv-to-dataset","params/beta-params-joiners","params/alpha-params-movers","projection",
+"params/alpha-params-joiner-states","params/beta-params-leavers","params/mover-beta-params"[shape=box];
+
+}
