@@ -1,9 +1,5 @@
 (ns witan.send.send
-  (:require [witan.workspace-api :refer [defworkflowfn
-                                         definput
-                                         defworkflowpred
-                                         defworkflowoutput]]
-            [schema.core :as s]
+  (:require [schema.core :as s]
             [witan.send.schemas :as sc]
             [clojure.core.matrix.dataset :as ds]
             [clojure.data.csv :as csv]
@@ -14,6 +10,7 @@
             [witan.send.states :as states]
             [witan.send.utils :as u :refer [round]]
             [witan.send.charts :as ch]
+            [witan.send.test-utils :as tu]
             [clojure.java.io :as io]
             [incanter.stats :as stats]
             [medley.core :as medley]
@@ -133,38 +130,6 @@
                                     sc/academic-years)]
     (println "Completed transitions....")
     {:model model :transitions transitions}))
-
-;; Workflow functions
-
-(definput settings-to-change-1-0-0
-  {:witan/name :send/settings-to-change
-   :witan/version "1.0.0"
-   :witan/key :settings-to-change
-   :witan/schema sc/SettingsToChange})
-
-(definput transition-matrix-1-0-0
-  {:witan/name :send/transition-matrix
-   :witan/version "1.0.0"
-   :witan/key :transition-matrix
-   :witan/schema sc/TransitionCounts})
-
-(definput population-1-0-0
-  {:witan/name :send/population
-   :witan/version "1.0.0"
-   :witan/key :population
-   :witan/schema sc/PopulationDataset})
-
-(definput setting-cost-1-0-0
-  {:witan/name :send/setting-cost
-   :witan/version "1.0.0"
-   :witan/key :setting-cost
-   :witan/schema sc/NeedSettingCost})
-
-(definput valid-setting-academic-years-1-0-0
-  {:witan/name :send/valid-setting-academic-years
-   :witan/version "1.0.0"
-   :witan/key :valid-setting-academic-years
-   :witan/schema sc/ValidSettingAcademicYears})
 
 (defn stitch-ay-state-params
   [x a b]
@@ -292,24 +257,15 @@
          (remove #(nil? (first %)))
          distinct)))
 
-(defworkflowfn prepare-send-inputs-1-0-0
+(defn build-input-datasets
+  "Build a map of the datasets to use for input"
+  [project-dir file-inputs schema-inputs]
+  (into {} (for [[k v] file-inputs]
+             [k (tu/csv-to-dataset (str project-dir "/" v) (k schema-inputs))])))
+
+(defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
-   row for each individual/year/simulation. Also includes age & state columns"
-  {:witan/name :send/prepare-send-inputs
-   :witan/version "1.0.0"
-   :witan/input-schema {:settings-to-change sc/SettingsToChange
-                        :population sc/PopulationDataset
-                        :transition-matrix sc/TransitionCounts
-                        :setting-cost sc/NeedSettingCost
-                        :valid-setting-academic-years sc/ValidSettingAcademicYears}
-   :witan/param-schema {:which-transitions? sc/transition-type
-                        :modify-transition-by s/Num
-                        :splice-ncy (s/maybe sc/AcademicYear)
-                        :filter-transitions-from (s/maybe [sc/CalendarYear])}
-   :witan/output-schema {:standard-projection sc/projection-map
-                         :scenario-projection (s/maybe sc/projection-map)
-                         :modify-transition-by s/Num
-                         :settings-to-change sc/SettingsToChange}}
+   row for each individual/year/simulation. Also includes age & state columns"  
   [{:keys [settings-to-change transition-matrix population
            setting-cost valid-setting-academic-years]}
    {:keys [which-transitions? modify-transition-by splice-ncy filter-transitions-from]}]
@@ -320,24 +276,36 @@
         ages (distinct (map :academic-year (ds/row-maps population)))
         years (distinct (map :calendar-year (ds/row-maps population)))
         initialise-validation (ds/row-maps valid-setting-academic-years)
-        valid-transitions (states/calculate-valid-mover-transitions initialise-validation)
-        valid-needs (states/calculate-valid-needs-from-setting-academic-years initialise-validation)
-        valid-settings (states/calculate-valid-settings-from-setting-academic-years initialise-validation)
-        valid-states (states/calculate-valid-states-from-setting-academic-years initialise-validation)
-        valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years initialise-validation)
+        valid-transitions (states/calculate-valid-mover-transitions
+                           initialise-validation)
+        valid-needs (states/calculate-valid-needs-from-setting-academic-years
+                     initialise-validation)
+        valid-settings (states/calculate-valid-settings-from-setting-academic-years
+                        initialise-validation)
+        valid-states (states/calculate-valid-states-from-setting-academic-years
+                      initialise-validation)
+        valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years
+                             initialise-validation)
         states-to-change (when (not= 1 modify-transition-by)
-                           (mapcat (fn [transition-type] (build-states-to-change settings-to-change valid-needs valid-settings ages years transition-type)) which-transitions?))
+                           (mapcat (fn [transition-type]
+                                     (build-states-to-change settings-to-change
+                                                             valid-needs valid-settings
+                                                             ages years transition-type))
+                                   which-transitions?))
         transition-matrix (ds/row-maps transition-matrix)
         modified-transition-matrix (when (not= 1 modify-transition-by)
                                      (let [convert (-> transition-matrix
                                                        u/full-transitions-map)
-                                           result (reduce (fn [m k] (modify-transitions m k * modify-transition-by)) convert states-to-change)]
+                                           result (reduce (fn [m k] (modify-transitions m k * modify-transition-by))
+                                                          convert states-to-change)]
                                        (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)) result)))
         transitions (if modified-transition-matrix
                       (u/transitions-map modified-transition-matrix)
                       (u/transitions-map transition-matrix))
         transition-matrix-filtered (when filter-transitions-from
-                                     (mapcat (fn [year] (filter #(= (:calendar-year %) year) (or modified-transition-matrix transition-matrix))) filter-transitions-from))
+                                     (mapcat (fn [year] (filter #(= (:calendar-year %) year)
+                                                                (or modified-transition-matrix transition-matrix)))
+                                             filter-transitions-from))
         max-transition-year (apply max (map :calendar-year transition-matrix))
         initial-state (->> (filter #(= (:calendar-year %) max-transition-year) transition-matrix)
                            (filter #(not= (:setting-2 %) :NONSEND))
@@ -353,11 +321,14 @@
       (report/info "\nUsed " (report/bold "input") " transitions matrix\n"))
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) setting-cost)
-    {:standard-projection (prep-inputs initial-state splice-ncy valid-states valid-transitions transition-matrix transition-matrix-filtered
+    {:standard-projection (prep-inputs initial-state splice-ncy
+                                       valid-states valid-transitions transition-matrix
+                                       transition-matrix-filtered
                                        population valid-setting-academic-years original-transitions setting-cost
                                        filter-transitions-from)
      :scenario-projection (when modified-transition-matrix
-                            (prep-inputs initial-state splice-ncy valid-states valid-transitions modified-transition-matrix
+                            (prep-inputs initial-state splice-ncy valid-states
+                                         valid-transitions modified-transition-matrix
                                          transition-matrix-filtered population valid-setting-academic-years
                                          original-transitions setting-cost filter-transitions-from))
      :modify-transition-by modify-transition-by
@@ -402,28 +373,9 @@
                               :total-cost (u/histogram-combiner-rf number-of-significant-digits)
                               :total-in-send-by-ay-group (u/merge-with-rf (u/histogram-combiner-rf number-of-significant-digits))})))
 
-
-
-(defworkflowfn run-send-model-1-0-0
+(defn run-send-model
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
-  {:witan/name :send/run-send-model
-   :witan/version "1.0.0"
-   :witan/input-schema {:standard-projection sc/projection-map
-                        :scenario-projection (s/maybe sc/projection-map)
-                        :modify-transition-by s/Num
-                        :settings-to-change sc/SettingsToChange}
-   :witan/param-schema {:seed-year sc/YearSchema
-                        :simulations s/Int
-                        :random-seed s/Int
-                        :modify-transitions-from (s/maybe sc/YearSchema)}
-   :witan/output-schema {:projection sc/Projection
-                         :send-output sc/Results
-                         :transition-matrix sc/TransitionCounts
-                         :valid-setting-academic-years sc/ValidSettingAcademicYears
-                         :population sc/PopulationDataset
-                         :modify-transition-by s/Num
-                         :settings-to-change sc/SettingsToChange}}
   [{:keys [standard-projection scenario-projection modify-transition-by settings-to-change]}
    {:keys [seed-year random-seed simulations modify-transitions-from]}]
   (u/set-seed! random-seed)
@@ -486,7 +438,6 @@
                   (update-in [academic-year-1 calendar-year :beta] u/some+ (if leaver? 0 1)))))
           {} transitions-filtered))
 
-
 (defn mover-rate [transitions-filtered]
   (reduce (fn [coll {:keys [calendar-year academic-year-1 setting-1 setting-2]}]
             (let [mover? (not= setting-1 setting-2)]
@@ -511,21 +462,12 @@
 (defn transition-present? [transition projection]
   (some #(= % transition) projection))
 
-(defworkflowoutput output-send-results-1-0-0
+(defn output-send-results
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
    to get the total cost."
-  {:witan/name :send/output-send-results
-   :witan/version "1.0.0"
-   :witan/input-schema {:projection sc/Projection
-                        :send-output sc/Results
-                        :transition-matrix sc/TransitionCounts
-                        :valid-setting-academic-years sc/ValidSettingAcademicYears
-                        :population sc/PopulationDataset
-                        :modify-transition-by s/Num
-                        :settings-to-change sc/SettingsToChange}
-   :witan/param-schema {:output s/Bool}}
   [{:keys [projection send-output transition-matrix valid-setting-academic-years
-           population modify-transition-by settings-to-change]} {:keys [output]}]
+           population modify-transition-by settings-to-change]}
+   {:keys [run-reports run-charts project-dir output-dir]}]
   (let [transitions-data (ds/row-maps transition-matrix)
         transform-transitions (->> transitions-data
                                    (map #(vector
@@ -536,12 +478,13 @@
         transform-projection (->> projection
                                   keys
                                   (map #(vec (drop 1 %)))
-                                  distinct)]
-    (if (not (.isDirectory (io/file "target/")))
-      (.mkdir (io/file "target/")))
+                                  distinct)
+        dir (str project-dir "/" output-dir)]
+    (if (not (.isDirectory (io/file dir)))
+      (.mkdir (io/file dir)))
     (when (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
       (report/info (report/bold "Not every historic transition present in projection!") "Consider checking valid state input.\n"))
-    (when output
+    (when run-reports
       (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
                                        (reduce #(assoc %1 (:setting %2) (:setting-group %2)) {}))
                                   :NON-SEND "Other")
@@ -569,8 +512,8 @@
         (report/info "First year of input data: " (report/bold (first years)))
         (report/info "Final year of input data: " (report/bold (inc (last years))))
         (report/info "Final year of projection: " (report/bold (+ (last years) (count (map :total-in-send send-output)))))
-        (output-transitions "target/transitions.edn" projection)
-        (with-open [writer (io/writer (io/file "target/Output_AY_State.csv"))]
+        (output-transitions (str dir "/transitions.edn") projection)
+        (with-open [writer (io/writer (io/file (str dir "/Output_AY_State.csv")))]
           (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[[academic-year state] stats]]
@@ -579,7 +522,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/Output_AY.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/Output_AY.csv")))]
           (let [columns [:calendar-year :academic-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[academic-year stats]]
@@ -589,7 +532,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/Output_Need.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/Output_Need.csv")))]
           (let [columns [:calendar-year :need :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[need stats]]
@@ -599,7 +542,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/Output_Setting.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/Output_Setting.csv")))]
           (let [columns [:calendar-year :setting :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[setting stats]]
@@ -609,7 +552,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/Output_Count.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/Output_Count.csv")))]
           (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (map (fn [stats year]
                         (-> (medley/map-vals round stats)
@@ -618,7 +561,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/Output_Cost.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/Output_Cost.csv")))]
           (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (map (fn [stats year]
                         (-> (medley/map-vals round stats)
@@ -627,7 +570,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/Output_AY_Group.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/Output_AY_Group.csv")))]
           (let [columns [:calendar-year :ay-group :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[ay-group stats]]
@@ -637,19 +580,19 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file "target/historic-data.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/historic-data.csv")))]
           (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
                 headers (mapv name columns)
                 rows (mapv #(mapv % columns) transitions-data)]
             (csv/write-csv writer (into [headers] rows))))
-        (with-open [writer (io/writer (io/file "target/valid-settings.csv"))]
+        (with-open [writer (io/writer (io/file (str dir "/valid-settings.csv")))]
           (csv/write-csv writer valid-settings))
-        (println "Producing charts...")
-        (sh/sh "Rscript" "--vanilla" "send-charts.R"  :dir "src/R")
-        (ch/ribbon-plot joiner-rates-CI "Joiner" years n-colours)
-        (ch/ribbon-plot leaver-rates-CI "Leaver" years n-colours)
-        (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
-        (io/delete-file "target/historic-data.csv" :quiet)
-        (io/delete-file "target/valid-settings.csv" :quiet)))
-    (report/write-send-report))
-  send-output)
+        (when run-charts
+          (println "Producing charts...")
+          (sh/sh "Rscript" "--vanilla" "send-charts.R" dir :dir "src/R")
+          (ch/ribbon-plot joiner-rates-CI "Joiner" years n-colours)
+          (ch/ribbon-plot leaver-rates-CI "Leaver" years n-colours)
+          (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
+          (io/delete-file (str dir "/historic-data.csv") :quiet)
+          (io/delete-file (str dir "/valid-settings.csv") :quiet))))
+    (report/write-send-report)))

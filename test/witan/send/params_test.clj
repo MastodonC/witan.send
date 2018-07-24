@@ -25,10 +25,10 @@
    {:setting :PRU, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year 2, :max-academic-year 14, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}])
 
 (def population-dataset
-  (tu/csv-to-dataset "data/demo/population.csv" sc/PopulationDataset))
+  (tu/csv-to-dataset "data/demo/data/population.csv" sc/PopulationDataset))
 
 (def transitions-matrix
-  (tu/csv-to-dataset "data/demo/transitions.csv" sc/TransitionCounts))
+  (tu/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts))
 
 (def valid-states
   (-> valid-setting-academic-years

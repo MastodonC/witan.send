@@ -28,10 +28,10 @@
 
 (defn joiner-rate
   []
-  (let [joiners (-> (tu/csv-to-dataset "data/demo/transitions.csv" sc/TransitionCounts)
+  (let [joiners (-> (tu/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts)
                     ds/row-maps
                     p/calculate-joiners-per-calendar-year)
-        population (-> (tu/csv-to-dataset "data/demo/population.csv" sc/PopulationDataset)
+        population (-> (tu/csv-to-dataset "data/demo/data/population.csv" sc/PopulationDataset)
                        ds/row-maps
                        p/calculate-population-per-calendar-year)]
     (reduce (fn [coll academic-year]
@@ -44,10 +44,9 @@
             {}
             sc/academic-years)))
 
-
 (defn leaver-rate
   []
-  (let [transitions (-> (tu/csv-to-dataset "data/demo/transitions.csv" sc/TransitionCounts)
+  (let [transitions (-> (tu/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts)
                         ds/row-maps)
         filtered (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send)) transitions)]
     (reduce (fn [coll {:keys [calendar-year academic-year-1 setting-1 setting-2]}]
@@ -60,7 +59,7 @@
 
 (defn mover-rate
   []
-  (let [transitions (-> (tu/csv-to-dataset "data/demo/transitions.csv" sc/TransitionCounts)
+  (let [transitions (-> (tu/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts)
                         ds/row-maps)
         filtered (remove (fn [{:keys [setting-1 setting-2]}]
                            (or (= setting-1 sc/non-send)
@@ -103,8 +102,6 @@
 
 (defn beta-quantile [alpha beta p]
   (.inverseCumulativeProbability (BetaDistribution. alpha beta) p))
-
-
 
 (defn format-academic-year-ci
   [data]
