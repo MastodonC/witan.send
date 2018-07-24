@@ -6,6 +6,7 @@
   (is (= #{:total-in-send-by-ay :total-in-send-by-ay-group :by-state :total-cost
            :total-in-send :total-in-send-by-need :total-in-send-by-setting}
          (-> (run-send (config "data/demo"))
+             (:send-output)
              (first)
              (keys)
              (set)))))
