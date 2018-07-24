@@ -8,7 +8,7 @@ Special educational needs and disability (demand and costs) model in development
 
 ## Running the Model
 
-At the top level of the send repo runs
+At the top level of the send repo run:
 
 ``` bash
 lein run ~/demo
@@ -67,12 +67,14 @@ Alter this file to change the configuration. Particularly the
 `:output-dir` key to save new runs in a different location.
 
 To make life easier for yourself you can add this to your `.bashrc`
+customise the location of repo appropriately.
 
 ``` bash
 #send
+export SEND_REPO=$HOME/src/github/mastodonc/witan.send/
 send () {
     _PWD=${PWD}
-    pushd $HOME/src/github/mastodonc/witan.send/
+    pushd $SEND_REPO
     lein run ${_PWD}
     popd
 }
@@ -107,7 +109,7 @@ sudo apt install r-base r-cra-ggplot2 libudunits2-dev libcairo2-dev \
                  libcurl4-openssl-dev libv8-3.14-dev libgdal-dev
 ```
 
-Force an install of the latest `ggforce` package from github.
+Force an install of `ggforce` package from Github master branch.
 
 ``` rscript
 install.packages("devtools")

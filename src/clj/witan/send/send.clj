@@ -595,5 +595,4 @@
           (ch/ribbon-plot mover-rates-CI "Mover" years n-colours)
           (io/delete-file (str dir "/historic-data.csv") :quiet)
           (io/delete-file (str dir "/valid-settings.csv") :quiet))))
-    (report/write-send-report))
-  send-output)
+    (report/write-send-report)))

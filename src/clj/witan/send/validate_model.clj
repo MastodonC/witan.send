@@ -3,8 +3,8 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [me.raynes.fs :refer [copy-dir]]
-            [witan.send.main :refer [run-send config]]))
-
+            [witan.send.main :refer [config run-send]]
+            [witan.send.send :refer [output-send-results]]))
 
 (defn temp-dir [project-dir]
   "Returns path to validation temp dir for project"
@@ -110,7 +110,8 @@
     (.mkdir (java.io.File. (str project-dir "data/temp/" year "/")))
     (write-csv (str project-dir fold-train-path) train-data)
     (write-csv (str (temp-dir project-dir) year "/test.csv") test-data)
-    (run-send fold-config)
+    (-> (run-send fold-config)
+        (output-send-results (:output-parameters fold-config)))
     (collate-fold project-dir test-data year n-transitions)))
 
 
@@ -155,4 +156,3 @@
         results (doall (map #(validate-fold config %) years-to-validate))]
     (write-validation-results project-dir results))
   (tear-down-validation-dirs project-dir keep-temp-files?))
-
