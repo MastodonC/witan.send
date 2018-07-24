@@ -30,7 +30,8 @@
        (send/run-send-model (:run-parameters config)))))
 
 (defn -main
-  "Run the send model, defaulting to the inbuilt demo data if no project passed in."
+  "Run the send model producing outputs, defaulting to the inbuilt demo
+  data if no project passed in."
   ([] (-main "data/demo/"))
   ([project-dir]
    (let [config (config project-dir)]
