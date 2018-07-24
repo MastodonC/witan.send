@@ -6,7 +6,7 @@
             [clojure.core.matrix.dataset :as ds]))
 
 (defn test-inputs []
-  {:valid-setting-academic-years ["data/demo/valid-setting-academic-years.csv" sc/ValidSettingAcademicYears]})
+  {:valid-setting-academic-years ["data/demo/data/valid-setting-academic-years.csv" sc/ValidSettingAcademicYears]})
 
 (deftest calculate-valid-year-settings-from-setting-academic-years-test
   (let [[path schema] (:valid-setting-academic-years (test-inputs))

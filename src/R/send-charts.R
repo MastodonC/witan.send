@@ -1,7 +1,11 @@
+args = commandArgs(trailingOnly=TRUE)
+output_dir = args[1]
+
 install_missing_packages <- function(package_name) {
   if(!require(package_name, character.only = TRUE)) {
     install.packages(package_name, repos='http://cran.us.r-project.org') } }
 
+# svglite requires cairo dev packages
 packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite", "ggforce")
 
 for(package in packages_to_check) {
@@ -16,7 +20,7 @@ library(ggforce)
 ### Variables for all charts ###
 
 remove_colons <-  function(x) {str_replace(x, ':', '')}
-df_historical <- read.csv("../../target/historic-data.csv") %>%
+df_historical <- read.csv(paste0(output_dir, "/historic-data.csv")) %>%
   mutate_all(funs(remove_colons))
 
 n_hist_years <-  df_historical %>%
@@ -24,7 +28,7 @@ n_hist_years <-  df_historical %>%
 
 ###  Send by academic year ###
 
-df_projected_ay <- read.csv("../../target/Output_AY.csv") %>%
+df_projected_ay <- read.csv(paste0(output_dir, "/Output_AY.csv")) %>%
   select(calendar.year, academic.year, mean)
 
 df_historical_ay <- df_historical %>%
@@ -35,7 +39,7 @@ df_historical_ay <- df_historical %>%
   as.data.frame()
 
 df_ay <- rbind(df_historical_ay[,c(2,1,3)], df_projected_ay) %>%
-  transform(academic.year = as.numeric(academic.year))
+    transform(academic.year = as.numeric(academic.year))
 
 plot_ay <- df_ay %>%
   group_by(calendar.year) %>%
@@ -61,12 +65,12 @@ ggplot(plot_ay, aes(x=calendar.year, y=value, group=variable)) +
   geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
   annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
 
-ggsave("../../target/NCY_Population_Trends.pdf")
+ggsave(paste0(output_dir, "/NCY_Population_Trends.pdf"))
 
 
 ### Projected count by setting ###
 
-df_projected_set <- read.csv("../../target/Output_Setting.csv") %>%
+df_projected_set <- read.csv(paste0(output_dir, "/Output_Setting.csv")) %>%
   select(calendar.year, setting, mean) %>%
   rename(Setting = setting)
 
@@ -136,13 +140,13 @@ for(i in 1:4) {
     geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
     annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
 
-  ggsave(paste("../../target/Settings_Trends_",i,".pdf",sep=""))
+  ggsave(paste(output_dir, "/Settings_Trends_",i,".pdf",sep=""))
 }
 
 
 ### Projected count by need type ###
 
-df_projected_need <- read.csv("../../target/Output_Need.csv") %>%
+df_projected_need <- read.csv(paste0(output_dir, "/Output_Need.csv")) %>%
   select(calendar.year, need, mean) %>%
   rename(Need = need)
 
@@ -166,12 +170,12 @@ ggplot(df_need, aes(x=calendar.year, y=mean, group=Need)) +
   geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
   annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
 
-ggsave("../../target/Need_Trends.pdf")
+ggsave(paste0(output_dir, "/Need_Trends.pdf"))
 
 
 ### Projected special setting count ###
 
-df_projected_set <- read.csv("../../target/Output_Setting.csv") %>%
+df_projected_set <- read.csv(paste0(output_dir, "/Output_Setting.csv")) %>%
   select(calendar.year, setting, mean) %>%
   rename(Setting = setting)
 
@@ -198,12 +202,12 @@ ggplot(df_set_ss, aes(x = calendar.year, y = mean)) +
   geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
   annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max$max, color = "dodgerblue")
 
-ggsave("../../target/Special_Setting_Counts.pdf")
+ggsave(paste0(output_dir, "/Special_Setting_Counts.pdf"))
 
 
 ### Projected aggregate setting count ###
 
-df_valid_settings <- read.csv("../../target/valid-settings.csv", header = FALSE) %>%
+df_valid_settings <- read.csv(paste0(output_dir, "/valid-settings.csv"), header = FALSE) %>%
   mutate_all(funs(remove_colons)) %>%
   rename(Setting = V1, Type = V2)
 
@@ -226,7 +230,7 @@ ggplot(df_type, aes(x=calendar.year, y=mean, group=Type)) +
   geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
   annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
 
-ggsave("../../target/Setting_Type_Counts.pdf")
+ggsave(paste0(output_dir, "/Setting_Type_Counts.pdf"))
 
 
 ### SEND population Projection ###
@@ -237,7 +241,7 @@ count_data_historic = df_historical %>%
   rename(mean=n, calendar.year.str=calendar.year) %>%
   mutate(calendar.year =  as.numeric(calendar.year.str))
 
-count_data_projected <- read.csv("../../target/Output_Count.csv")
+count_data_projected <- read.csv(paste0(output_dir, "/Output_Count.csv"))
 
 count_data <- bind_rows(count_data_projected, count_data_historic)
 
@@ -263,12 +267,12 @@ ggplot(count_data, aes(x=calendar.year, y=mean)) +
            x=max(count_data_historic$calendar.year) + 1.0,
            y=max(count_data_projected$max), color = "dodgerblue")
 
-ggsave("../../target/Total_Population.pdf")
+ggsave(paste0(output_dir, "/Total_Population.pdf"))
 
 
 ### SEND cost projection ####
 
-cost_projected <- read.csv("../../target/Output_Cost.csv")
+cost_projected <- read.csv(paste0(output_dir, "/Output_Cost.csv"))
 cost_projected[,-1] <-  cost_projected[,-1] / 1000000
 min_x = min(cost_projected$calendar.year)
 max_x = max(cost_projected$calendar.year)
@@ -282,7 +286,7 @@ ggplot(cost_projected, aes(x=calendar.year)) +
                      limits = c(0, max(cost_projected$high.ci))) +
   theme_bw()
 
-ggsave("../../target/Total_Cost.pdf")
+ggsave(paste0(output_dir, "/Total_Cost.pdf"))
 
 ### Sankey plot ###
 
@@ -339,7 +343,7 @@ sankey_prim_sec_trans <- function(data, calendar_year) {
 
 for (f in years) {
   sankey_prim_sec_trans(df_prim_sec_trans, f)
-  ggsave(paste0("../../target/Historic_Transitions_",f,".pdf"))
+  ggsave(paste0(output_dir, "/Historic_Transitions_",f,".pdf"))
 }
 
 ### SEND Joiner Transitions ###
@@ -360,7 +364,7 @@ for (s2 in settings) {
 }
 
 sankey(df_joiners_trans, "Joiner Transitions")
-ggsave("../../target/Joiner_Transitions.pdf")
+ggsave(paste0(output_dir, "/Joiner_Transitions.pdf"))
 
 ### Delete automatically produced Rplots.pdf file ###
 

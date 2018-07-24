@@ -2,7 +2,6 @@
   (:require [clojure.core.matrix.dataset :as ds]
             [clojure.data.avl :as avl]
             [clojure.set :refer [union]]
-            [witan.workspace-api.utils :as utils]
             [witan.send.schemas :as sc]
             [witan.send.states :as states]
             [kixi.stats.core :as kixi]
@@ -11,7 +10,7 @@
             [medley.core :as medley]
             [schema.core :as s]
             [clojure.string :as str]
-            [witan.send.utils :as u])
+            )
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
 
 (def random-seed (atom 0))
@@ -36,7 +35,7 @@
                    (zero? s)) weight-alpha-sums)
          (reduce (fn [coll [w as s]]
                    (reduce (fn [coll [x a]]
-                             (update coll x u/some+ (* m w (/ a s))))
+                             (update coll x some+ (* m w (/ a s))))
                            coll
                            as))
                  {}))))
@@ -47,7 +46,7 @@
        (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-2]}]
                  (let [state-1 (states/state need-1 setting-1)
                        state-2 (states/state need-2 setting-2)]
-                   (update coll [academic-year-2 state-1 state-2] u/some+ 1)))
+                   (update coll [academic-year-2 state-1 state-2] some+ 1)))
                {})))
 
 (defn full-transitions-map
@@ -56,7 +55,7 @@
        (reduce (fn [coll {:keys [calendar-year setting-1 need-1 setting-2 need-2 academic-year-2]}]
                  (let [state-1 (states/state need-1 setting-1)
                        state-2 (states/state need-2 setting-2)]
-                   (update coll [calendar-year academic-year-2 state-1 state-2] u/some+ 1)))
+                   (update coll [calendar-year academic-year-2 state-1 state-2] some+ 1)))
                {})))
 
 (defn split-need-state [state pos]
