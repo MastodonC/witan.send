@@ -24,7 +24,7 @@
 (defn reset-send-report []
   (sh/sh "git" "fetch" "--tags")
   (let [model-version (heading (str "SEND Model " (:out (sh/sh "git" "describe" "--abbrev=0" "--tags"))))
-        run-datetime (str (italic "Run on") " " (f/unparse-local (f/formatter "YYYY-MM-dd") (t/today)) " " (italic "at") " " (f/unparse (f/formatter "HH:mm") (t/now)))
+        run-datetime (str (italic "Run on") " " (f/unparse-local (f/formatter "YYYY-MM-dd") (t/today)) " " (italic "at") " " (f/unparse-local (f/formatter-local "HH:mm") (t/time-now)))
         os-version (str (System/getProperty "os.name") " " (System/getProperty "os.version"))
         clj-version (str "Clojure " (clojure-version) ", JVM " (System/getProperty "java.vm.version"))
         git-branch (str "Using branch: " (bold (str/join "" (drop-last (:out (sh/sh "git" "rev-parse" "--symbolic-full-name" "--abbrev-ref" "HEAD"))))))
