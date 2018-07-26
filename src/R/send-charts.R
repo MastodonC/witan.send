@@ -369,17 +369,37 @@ ggsave(paste0(output_dir, "/Joiner_Transitions.pdf"))
 
 ### Ribbon plot ###
 
-ribbon <- function(data, title) {
-  ggplot(data, aes(year, upper0)) +
-    geom_ribbon(aes(ymax = upper0, ymin = lower0, fill = "#1b9e77"), alpha = 0.2) +
-    geom_ribbon(aes(ymax = upper1, ymin = lower1, fill = "#d95f02"), alpha = 0.2) +
-    geom_ribbon(aes(ymax = upper2, ymin = lower2, fill = "#7570b3"), alpha = 0.2) +
-    geom_ribbon(aes(ymax = upper3, ymin = lower3, fill = "#e7298a"), alpha = 0.2) +
-    ggtitle(paste(title, "probability by academic year")) +
-    xlab("NCY") +
-    ylab("95% probability interval") +
-    scale_fill_manual(name = "Years", labels = years, values = c("#1b9e77", "#d95f02", "#7570b3", "#e7298a")) +
-    scale_x_discrete(breaks = c(-2, 0, 2, 4, 6, 8, 10), limit = c(-3, 12))
+evaluate_string <- function(string) {
+  eval(parse(text=string))
+}
+
+colour_palette = c("#1b9e77", "#d95f02", "#7570b3", "#e7298a")
+
+create_ribbon_str <- function(year, n) {
+  upper = paste0("upper", n)
+  lower = paste0("lower", n)
+  col = colour_palette[(n + 1)]
+  paste0("geom_ribbon(aes(ymax = ", upper, ", ymin = ", lower, ", fill = \"", col, "\"), alpha = 0.2) +")
+}
+
+cum <- 0
+cum_ribbon_text <- ""
+year_count <- length(years)
+for(y in years){
+  cum_ribbon_text <- paste(cum_ribbon_text, create_ribbon_str(y, cum))
+  cum <- cum + 1
+}
+
+ribbon_plot <- function(data, title) {
+  concat_text <-  paste0("ggplot(data, aes(year, upper0)) +",
+                        cum_ribbon_text,
+                        "ggtitle(paste(title, \"probability by academic year\")) +",
+                        "xlab(\"NCY\") + ",
+                        "ylab(\"95% probability interval\") +",
+                        "scale_fill_manual(name = \"Years\", labels = years, values = colour_palette) +",
+                        "scale_x_continuous(breaks = c(-2, 0, 2, 4, 6, 8, 10, 12), limit = c(-3, 12))"
+                        )
+  eval(parse(text=concat_text))
   ggsave(filename = paste0("../../target/", title, "_Probability.pdf"), width = 6.5, height = 4.017305315203955)
 }
 
@@ -389,9 +409,9 @@ df_joiner_ribbon_data <- read.csv("../../target/joiner-rates.csv", na.strings=":
 df_leaver_ribbon_data <- read.csv("../../target/leaver-rates.csv", na.strings=":NA")
 df_mover_ribbon_data <- read.csv("../../target/mover-rates.csv", na.strings=":NA")
 
-ribbon(df_joiner_ribbon_data, "Joiner")
-ribbon(df_leaver_ribbon_data, "Leaver")
-ribbon(df_mover_ribbon_data, "Mover")
+ribbon_plot(df_joiner_ribbon_data, "Joiner")
+ribbon_plot(df_leaver_ribbon_data, "Leaver")
+ribbon_plot(df_mover_ribbon_data, "Mover")
 
 ### Delete automatically produced Rplots.pdf file ###
 
