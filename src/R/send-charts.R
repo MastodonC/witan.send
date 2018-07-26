@@ -403,14 +403,14 @@ ribbon_plot <- function(data, title) {
                         "scale_x_continuous(breaks = c(-2, 0, 2, 4, 6, 8, 10, 12), limit = c(-3, 12))"
                         )
   eval(parse(text=concat_text))
-  ggsave(filename = paste0("../../target/", title, "_Probability.pdf"), width = 6.5, height = 4.017305315203955)
+  ggsave(filename = paste0(output_dir, "/", title, "_Probability.pdf"), width = 6.5, height = 4.017305315203955)
 }
 
 ### Ribbon plot data ###
-
-df_joiner_ribbon_data <- read.csv("../../target/joiner-rates.csv", na.strings=":NA")
-df_leaver_ribbon_data <- read.csv("../../target/leaver-rates.csv", na.strings=":NA")
-df_mover_ribbon_data <- read.csv("../../target/mover-rates.csv", na.strings=":NA")
+read.csv(paste0(output_dir, "/historic-data.csv"))
+df_joiner_ribbon_data <- read.csv(paste0(output_dir, "/joiner-rates.csv"), na.strings=":NA")
+df_leaver_ribbon_data <- read.csv(paste0(output_dir, "/leaver-rates.csv"), na.strings=":NA")
+df_mover_ribbon_data <- read.csv(paste0(output_dir, "/mover-rates.csv"), na.strings=":NA")
 
 ribbon_plot(df_joiner_ribbon_data, "Joiner")
 ribbon_plot(df_leaver_ribbon_data, "Leaver")

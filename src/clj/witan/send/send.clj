@@ -623,24 +623,24 @@
               (csv/write-csv writer (into [headers] rows))))
           (with-open [writer (io/writer (io/file (str dir "/valid-settings.csv")))]
             (csv/write-csv writer valid-settings))
-          (with-open [writer (io/writer (io/file "target/joiner-rates.csv"))]
+          (with-open [writer (io/writer (io/file (str dir "/joiner-rates.csv")))]
             (let [columns (into [] (keys joiner-ribbon-data))
                   headers (mapv name columns)
                   rows (ribbon-data-rows joiner-ribbon-data)]
               (csv/write-csv writer (into [headers] rows))))
-          (with-open [writer (io/writer (io/file "target/leaver-rates.csv"))]
+          (with-open [writer (io/writer (io/file (str dir "/leaver-rates.csv")))]
             (let [columns (into [] (keys leaver-ribbon-data))
                   headers (mapv name columns)
                   rows (ribbon-data-rows leaver-ribbon-data)]
               (csv/write-csv writer (into [headers] rows))))
-          (with-open [writer (io/writer (io/file "target/mover-rates.csv"))]
+          (with-open [writer (io/writer (io/file (str dir "/mover-rates.csv")))]
             (let [columns (into [] (keys mover-ribbon-data))
                   headers (mapv name columns)
                   rows (ribbon-data-rows mover-ribbon-data)]
               (csv/write-csv writer (into [headers] rows))))
           (println "Producing charts...")
-          (sh/sh "Rscript" "--vanilla" "send-charts.R" dir :dir "src/R")
-          (run! #(io/delete-file (str "target/" %) :quiet)
+          (sh/sh "Rscript" "--vanilla" "src/R/send-charts.R" dir)
+          (run! #(io/delete-file (str dir "/" %) :quiet)
                 ["historic-data.csv" "valid-settings.csv" "joiner-rates.csv"
                  "leaver-rates.csv" "mover-rates.csv"]))))
     (report/write-send-report (str dir "/SEND_Report.md"))))
