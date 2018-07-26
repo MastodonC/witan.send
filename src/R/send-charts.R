@@ -255,8 +255,8 @@ ggplot(count_data, aes(x=calendar.year, y=mean)) +
   scale_x_continuous(name="Year",
                      breaks = seq(min(count_data$calendar.year), max(count_data$calendar.year)),
                      limits = c(min(count_data$calendar.year), max(count_data$calendar.year))) +
-  scale_linetype_manual(name="", values=c(mean='solid', conf='dashed'), labels=c(mean='Mean', conf="95% Confidence")) +
-  scale_color_manual(name="", values=c(mean='darkcyan', conf="grey38"), labels=c(mean='Mean', conf="95% Confidence")) +
+  scale_linetype_manual(name="", values=c(mean='solid', conf='dashed'), labels=c(mean='Mean', conf="Confidence Bounds")) +
+  scale_color_manual(name="", values=c(mean='darkcyan', conf="grey38"), labels=c(mean='Mean', conf="Confidence Bounds")) +
   theme_bw() +
   theme(axis.text.x = element_text(size=8)) +
   ggtitle("SEND Population Projection") +
