@@ -642,5 +642,5 @@
           (sh/sh "Rscript" "--vanilla" "send-charts.R" dir :dir "src/R")
           (run! #(io/delete-file (str "target/" %) :quiet)
                 ["historic-data.csv" "valid-settings.csv" "joiner-rates.csv"
-                 "leaver-rates.csv" "mover-rates.csv"])
-    (report/write-send-report)))
+                 "leaver-rates.csv" "mover-rates.csv"]))))
+    (report/write-send-report (str dir "/SEND_Report.md"))))
