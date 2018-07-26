@@ -615,14 +615,14 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file (str dir "/historic-data.csv")))]
-          (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
-                headers (mapv name columns)
-                rows (mapv #(mapv % columns) transitions-data)]
-            (csv/write-csv writer (into [headers] rows))))
-        (with-open [writer (io/writer (io/file (str dir "/valid-settings.csv")))]
-          (csv/write-csv writer valid-settings))
         (when run-charts
+          (with-open [writer (io/writer (io/file (str dir "/historic-data.csv")))]
+            (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
+                  headers (mapv name columns)
+                  rows (mapv #(mapv % columns) transitions-data)]
+              (csv/write-csv writer (into [headers] rows))))
+          (with-open [writer (io/writer (io/file (str dir "/valid-settings.csv")))]
+            (csv/write-csv writer valid-settings))
           (with-open [writer (io/writer (io/file "target/joiner-rates.csv"))]
             (let [columns (into [] (keys joiner-ribbon-data))
                   headers (mapv name columns)
