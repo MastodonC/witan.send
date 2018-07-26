@@ -6,7 +6,7 @@ install_missing_packages <- function(package_name) {
     install.packages(package_name, repos='http://cran.us.r-project.org') } }
 
 # svglite requires cairo dev packages
-packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite", "ggforce")
+packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite")
 
 for(package in packages_to_check) {
   install_missing_packages(package) }
@@ -82,7 +82,7 @@ df_historical_set <- df_historical %>%
 
 
 df_set <- rbind(df_historical_set[,c(2,1,3)], df_projected_set) %>%
-  filter(Setting != "NONSEND") %>%
+  filter(Setting != "NONSEND" & Setting != "Elsewhere") %>%
   mutate(Setting = gsub("_", " ", Setting))
 
 df_set_years = unique(df_set$calendar.year)
@@ -255,8 +255,8 @@ ggplot(count_data, aes(x=calendar.year, y=mean)) +
   scale_x_continuous(name="Year",
                      breaks = seq(min(count_data$calendar.year), max(count_data$calendar.year)),
                      limits = c(min(count_data$calendar.year), max(count_data$calendar.year))) +
-  scale_linetype_manual(name="", values=c(mean='solid', conf='dashed'), labels=c(mean='Mean', conf="95% Confidence")) +
-  scale_color_manual(name="", values=c(mean='darkcyan', conf="grey38"), labels=c(mean='Mean', conf="95% Confidence")) +
+  scale_linetype_manual(name="", values=c(mean='solid', conf='dashed'), labels=c(mean='Mean', conf="Confidence Bounds")) +
+  scale_color_manual(name="", values=c(mean='darkcyan', conf="grey38"), labels=c(mean='Mean', conf="Confidence Bounds")) +
   theme_bw() +
   theme(axis.text.x = element_text(size=8)) +
   ggtitle("SEND Population Projection") +
@@ -317,7 +317,7 @@ sankey_prim_sec_trans <- function(data, calendar_year) {
   result<-data.frame()
   v = -1
   filtered_data<-filter(data, calendar.year == calendar_year)
-  
+
   for (s1 in settings) {
     for (s2 in settings) {
       transitions <- try(get_transition(filtered_data, s1, s2), silent = T)
@@ -328,7 +328,7 @@ sankey_prim_sec_trans <- function(data, calendar_year) {
       }
     }
   }
-  
+
   result <- merge(result,  df_valid_settings, by="Setting") %>%
     subset(select = -c(Setting)) %>%
     rename(temp = Type) %>%
@@ -337,7 +337,7 @@ sankey_prim_sec_trans <- function(data, calendar_year) {
     subset(select = -c(Setting)) %>%
     rename(Setting = temp) %>%
     rename(y = Type)
-  
+
   sankey(result, paste0("Aggregate Settings Transitions ", calendar_year, "/", (calendar_year + 1)))
 }
 
@@ -363,8 +363,58 @@ for (s2 in settings) {
   }
 }
 
+df_joiners_trans$y <- as.character(df_joiners_trans$y)
+df_joiners_trans$Setting <- as.character(df_joiners_trans$Setting)
+
 sankey(df_joiners_trans, "Joiner Transitions")
 ggsave(paste0(output_dir, "/Joiner_Transitions.pdf"))
+
+
+### Ribbon plot ###
+
+evaluate_string <- function(string) {
+  eval(parse(text=string))
+}
+
+colour_palette = c("#1b9e77", "#d95f02", "#7570b3", "#e7298a")
+
+create_ribbon_str <- function(year, n) {
+  upper = paste0("upper", n)
+  lower = paste0("lower", n)
+  col = colour_palette[(n + 1)]
+  paste0("geom_ribbon(aes(ymax = ", upper, ", ymin = ", lower, ", fill = \"", col, "\"), alpha = 0.2) +")
+}
+
+cum <- 0
+cum_ribbon_text <- ""
+year_count <- length(years)
+for(y in years){
+  cum_ribbon_text <- paste(cum_ribbon_text, create_ribbon_str(y, cum))
+  cum <- cum + 1
+}
+
+ribbon_plot <- function(data, title) {
+  concat_text <-  paste0("ggplot(data, aes(year, upper0)) +",
+                        cum_ribbon_text,
+                        "ggtitle(paste(title, \"probability by academic year\")) +",
+                        "xlab(\"NCY\") + ",
+                        "ylab(\"95% probability interval\") +",
+                        "scale_fill_manual(name = \"Years\", labels = years, values = colour_palette) +",
+                        "scale_x_continuous(breaks = c(-2, 0, 2, 4, 6, 8, 10, 12), limit = c(-3, 12))"
+                        )
+  eval(parse(text=concat_text))
+  ggsave(filename = paste0(output_dir, "/", title, "_Probability.pdf"), width = 6.5, height = 4.017305315203955)
+}
+
+### Ribbon plot data ###
+read.csv(paste0(output_dir, "/historic-data.csv"))
+df_joiner_ribbon_data <- read.csv(paste0(output_dir, "/joiner-rates.csv"), na.strings=":NA")
+df_leaver_ribbon_data <- read.csv(paste0(output_dir, "/leaver-rates.csv"), na.strings=":NA")
+df_mover_ribbon_data <- read.csv(paste0(output_dir, "/mover-rates.csv"), na.strings=":NA")
+
+ribbon_plot(df_joiner_ribbon_data, "Joiner")
+ribbon_plot(df_leaver_ribbon_data, "Leaver")
+ribbon_plot(df_mover_ribbon_data, "Mover")
 
 ### Delete automatically produced Rplots.pdf file ###
 
