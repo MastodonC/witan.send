@@ -82,7 +82,7 @@ df_historical_set <- df_historical %>%
 
 
 df_set <- rbind(df_historical_set[,c(2,1,3)], df_projected_set) %>%
-  filter(Setting != "NONSEND") %>%
+  filter(Setting != "NONSEND" & Setting != "Elsewhere") %>%
   mutate(Setting = gsub("_", " ", Setting))
 
 df_set_years = unique(df_set$calendar.year)
