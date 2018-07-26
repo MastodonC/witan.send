@@ -363,6 +363,9 @@ for (s2 in settings) {
   }
 }
 
+df_joiners_trans$y <- as.character(df_joiners_trans$y)
+df_joiners_trans$Setting <- as.character(df_joiners_trans$Setting)
+
 sankey(df_joiners_trans, "Joiner Transitions")
 ggsave(paste0(output_dir, "/Joiner_Transitions.pdf"))
 
