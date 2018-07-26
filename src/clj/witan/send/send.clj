@@ -18,7 +18,8 @@
             [witan.send.report :as report]
             [witan.send.check-inputs :refer [run-input-checks]]
             [clojure.walk :refer [postwalk]]
-            [clojure.set :refer [rename-keys]])
+            [clojure.set :refer [rename-keys]]
+            [witan.send.test-utils :as tu])
   (:import [org.apache.commons.math3.distribution BetaDistribution]))
 
 (defn initialise-model [send-data]
