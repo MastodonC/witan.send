@@ -21,19 +21,21 @@
               {:project-dir project-dir}
               {:output-parameters {:project-dir project-dir}}))
 
+(defn get-output-dir [config]
+  (join "/" [(config :project-dir)
+             (get-in config [:output-parameters :output-dir])]))
+
 (defn save-runtime-config
   [config]
-  (spit (join "/" [(config :project-dir)
-                   (get-in config [:output-parameters :output-dir])
-                   "runtime-config.edn"])
+  (spit (join "/" [(get-output-dir config) "runtime-config.edn"])
         (with-out-str
-          (pprint (dissoc config :schema-inputs)))))
+          (pprint (-> config
+                      (dissoc :schema-inputs)
+                      (dissoc :project-dir))))))
 
 (defn save-runtime-metadata
   [config metadata]
-  (spit (join "/" [(config :project-dir)
-                   (get-in config [:output-parameters :output-dir])
-                   "runtime-metadata.edn"])
+  (spit (join "/" [(get-output-dir config) "runtime-metadata.edn"])
         (with-out-str
           (pprint (md/merge-end-time metadata)))))
 
