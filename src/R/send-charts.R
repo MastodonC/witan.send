@@ -32,6 +32,7 @@ df_projected_ay <- read.csv(paste0(output_dir, "/Output_AY.csv")) %>%
   select(calendar.year, academic.year, mean)
 
 df_historical_ay <- df_historical %>%
+  filter(need.1 != "NONSEND" | setting.1 != "NONSEND") %>%
   group_by(academic.year.1, calendar.year) %>%
   rename(academic.year = academic.year.1) %>%
   count() %>%
@@ -151,7 +152,7 @@ df_projected_need <- read.csv(paste0(output_dir, "/Output_Need.csv")) %>%
   rename(Need = need)
 
 df_historical_need <- df_historical %>%
-  filter(need.1 != "NONSEND") %>%
+  filter(need.1 != "NONSEND" | setting.1 != "NONSEND") %>%
   group_by(need.1, calendar.year) %>%
   count() %>%
   rename(Need = need.1, mean = n) %>%
@@ -236,6 +237,7 @@ ggsave(paste0(output_dir, "/Setting_Type_Counts.pdf"))
 ### SEND population Projection ###
 
 count_data_historic = df_historical %>%
+  filter(need.1 != "NONSEND" | setting.1 != "NONSEND") %>%
   group_by(calendar.year) %>%
   count() %>%
   rename(mean=n, calendar.year.str=calendar.year) %>%
@@ -349,7 +351,7 @@ for (f in years) {
 ### SEND Joiner Transitions ###
 
 df_joiners <- df_historical %>%
-  filter(setting.1 == "NONSEND")
+  filter(need.1 != "NONSEND" | setting.1 != "NONSEND") %>%
 
 df_joiners_trans<-data.frame()
 v = -1
