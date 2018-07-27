@@ -2,7 +2,7 @@
   (:require [schema.core :as s]
             [witan.send.send :as send]
             [witan.send.schemas :as sc]
-            [witan.send.report :refer [generate-report-header]]
+            [witan.send.report :refer [reset-send-report]]
             [aero.core :refer [read-config]]
             [clojure.string :refer [join]]
             [clojure.pprint :refer [pprint]]
@@ -43,7 +43,7 @@
   generate it)"
   ([] (run-send (config "data/demo")))
   ([config]
-   #_(generate-report-header config)
+   (reset-send-report)
    (-> (send/build-input-datasets (:project-dir config) (:file-inputs config) (:schema-inputs config))
        (send/prepare-send-inputs (:transition-parameters config))
        (send/run-send-model (:run-parameters config)))))
