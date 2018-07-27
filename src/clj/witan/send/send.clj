@@ -643,4 +643,4 @@
           (run! #(io/delete-file (str dir "/" %) :quiet)
                 ["historic-data.csv" "valid-settings.csv" "joiner-rates.csv"
                  "leaver-rates.csv" "mover-rates.csv"]))))
-    (report/write-send-report (str dir "/SEND_Report.md"))))
+    (report/write-send-report (str dir "/SEND_Log.md"))))
