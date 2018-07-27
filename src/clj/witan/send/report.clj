@@ -1,8 +1,6 @@
 (ns witan.send.report
   (:require [clojure.java.io :as io]
-            [clj-time.core :as t]
-            [clj-time.format :as f]
-            [clojure.java.shell :as sh]
+            [witan.send.metadata :as md]
             [clojure.string :as str]))
 
 (def send-report (atom []))
@@ -21,17 +19,6 @@
 (defn link [string url]
   (str "[" string "](" url ")"))
 
-(defn reset-send-report []
-  (sh/sh "git" "fetch" "--tags")
-  (let [model-version (heading (str "SEND Model " (:out (sh/sh "git" "describe" "--abbrev=0" "--tags"))))
-        run-datetime (str (italic "Run on") " " (f/unparse-local (f/formatter "YYYY-MM-dd") (t/today)) " " (italic "at") " " (f/unparse-local (f/formatter-local "HH:mm") (t/time-now)))
-        os-version (str (System/getProperty "os.name") " " (System/getProperty "os.version"))
-        clj-version (str "Clojure " (clojure-version) ", JVM " (System/getProperty "java.vm.version"))
-        git-branch (str "Using branch: " (bold (str/join "" (drop-last (:out (sh/sh "git" "rev-parse" "--symbolic-full-name" "--abbrev-ref" "HEAD"))))))
-        git-commit-id (str/join "" (drop-last (str/replace (:out (sh/sh "git" "log" "--format=\"%H\"" "-n" "1")) "\"" "")))
-        git-commit-info (str "ID of last commit: " (link (str/join "" (take 7 git-commit-id)) (str "https://github.com/MastodonC/witan.send/commit/" git-commit-id)) "\n\n")]
-    (reset! send-report [model-version run-datetime os-version clj-version git-branch git-commit-info])))
-
 (defn info [& messages]
   (swap! send-report conj (apply str messages)))
 
@@ -41,6 +28,19 @@
   ([report-file]
    (io/delete-file report-file :quiet)
    (spit report-file (str/join "\n" @send-report) :append true)))
+
+(defn reset-send-report
+  [md]
+  (let [model-version (heading (str "SEND Model " (md :model-version)))
+        run-datetime (str (italic "Run on") " " (md :date) " " (italic "at") " " (md :time))
+        os-version (str (md :os-name) " " (md :os-version))
+        clj-version (str "Clojure " (md :clj-version) ", JVM " (md :jvm-version))
+        git-branch (str "Using branch: " (bold (md :git-branch)))
+        git-commit-info (str "ID of last commit: "
+                             (link (md :git-commit-id)
+                                   (md :git-url))
+                             "\n\n")]
+    (reset! send-report [model-version run-datetime os-version clj-version git-branch git-commit-info])))
 
 (defn generate-report-header
   "Build a header for the report, expects a full config map"
@@ -53,7 +53,7 @@
         sn  (or (:splice-ncy transition-parameters) "None")
         report-fn (fn [[k v]] (info k (bold v)))]
     (when (output-parameters :run-report-header)
-      (reset-send-report)
+      (reset-send-report (md/runtime-metadata) )
       (dorun (map report-fn [["Input Data: " (str/join ", " (vals file-inputs))]
                              ["Number of iterations: " (:simulations run-parameters)]
                              ["Output charts produced: " (:run-reports output-parameters)]
