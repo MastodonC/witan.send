@@ -19,7 +19,7 @@
                                                "-n"
                                                "1"))
                                   "\"" "")))]
-    {:model-version (drop-last (:out (sh/sh "git" "describe" "--abbrev=0" "--tags")))
+    {:model-version (str/join "" (drop-last (:out (sh/sh "git" "describe" "--abbrev=0" "--tags"))))
      :os-name (System/getProperty "os.name")
      :os-version (System/getProperty "os.version")
      :clj-version (clojure-version)
@@ -38,7 +38,7 @@
 (defn time-metadata
   []
   {:date (f/unparse-local (f/formatter "YYYY-MM-dd") (t/today))
-   :time (f/unparse-local (f/formatter-local "HH:mm") (t/time-now))})
+   :time (f/unparse-local (f/formatter-local "HH:mm:ss") (t/time-now))})
 
 (defn file-input-md5s
   [{:keys [project-dir file-inputs]}]
@@ -48,7 +48,7 @@
 (defn metadata
   [config]
   {:execution {:start (time-metadata)}
-   :environment-metadata (runtime-metadata)
+   :environment-metadata (environment-metadata)
    :file-inputs-md5s (file-input-md5s config)})
 
 (defn merge-end-time
