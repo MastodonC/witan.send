@@ -9,17 +9,18 @@
             [witan.send.metadata :as md])
   (:gen-class))
 
-(defn config [project-dir]
+(defn config [config-path]
   "Read a config file and merge it with schema inputs"
-  (merge-with merge
-              (read-config (str project-dir "/config.edn"))
+  (let [project-dir (.getParent(java.io.File. config-path))]
+    (merge-with merge
+              (read-config config-path)
               {:schema-inputs {:settings-to-change sc/SettingsToChange
                                :transition-matrix sc/TransitionCounts
                                :population sc/PopulationDataset
                                :setting-cost sc/NeedSettingCost
                                :valid-setting-academic-years sc/ValidSettingAcademicYears}}
               {:project-dir project-dir}
-              {:output-parameters {:project-dir project-dir}}))
+              {:output-parameters {:project-dir project-dir}})))
 
 (defn get-output-dir [config]
   (join "/" [(config :project-dir)
@@ -43,7 +44,7 @@
   "Run the send model, the function expects a map as seen in
   data/demo/config.edn (typically use `(config \"data/demo\")` to
   generate it)"
-  ([] (run-send (config "data/demo")))
+  ([] (run-send (config "data/demo/config.edn")))
   ([config]
    (reset-send-report)
    (-> (send/build-input-datasets (:project-dir config) (:file-inputs config) (:schema-inputs config))
@@ -53,9 +54,9 @@
 (defn -main
   "Run the send model producing outputs, defaulting to the inbuilt demo
   data if no project passed in."
-  ([] (-main "data/demo/"))
-  ([project-dir]
-   (let [config (config project-dir)
+  ([] (-main "data/demo/config.edn"))
+  ([config-path]
+   (let [config (config config-path)
          metadata (md/metadata config)]
      (-> (run-send config)
          (send/output-send-results (:output-parameters config)))
