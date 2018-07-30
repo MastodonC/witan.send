@@ -15,7 +15,7 @@
                        "Output_Setting.csv" "4f0d1e51a49f678df5637c33c604bbe1"
                        "transitions.edn" "4ea4b6076e4fed0ce36cfeeece5aa901"}
         files (keys expected-md5s)
-        config (m/config "data/demo")
+        config (m/config "data/demo/config.edn")
         output-dir (m/get-output-dir config)]
     (run! #(let [file (join "/" [output-dir %])]
              (when (.exists (io/file file))
