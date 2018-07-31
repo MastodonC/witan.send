@@ -1,0 +1,5 @@
+## Setting memory limits for the JVM
+
+machine:
+  environment:
+    _JAVA_OPTIONS: "-Xms512m -Xmx3072m"
