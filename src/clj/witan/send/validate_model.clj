@@ -127,7 +127,7 @@
 
 (defn setup-validation-dirs [project-dir]
   "Create dirs required for validation process"
-  (doseq [dir [(temp-dir project-dir) (str project-dir "validation/")]]
+  (doseq [dir [(temp-dir project-dir) (str/join "/" [project-dir "validation"])]]
     (.mkdir (java.io.File. dir))))
 
 
@@ -143,15 +143,15 @@
   "Main function to validate SEND model.
 
   Args:
-    project-dir: the same path you would would pass to run the main send model, which must contain a config.edn file
+    config-file: the same file you would pass to run the main send model
     keep-temp-files? false by default, true if you wish to inspect training, test and output data for individual folds
 
   Results are stored in a directory called validation within the project"
-  ([config-path] (run-validation config-path false))
-  ([config-path keep-temp-files?]
-    (let [project-dir (.getParent (java.io.File. config-path))]
+  ([config-file] (run-validation config-file false))
+  ([config-file keep-temp-files?]
+    (let [project-dir (.getParent (java.io.File. config-file))]
       (setup-validation-dirs project-dir)
-      (let [config (config config-path)
+      (let [config (config config-file)
             years-to-validate (-> (io/file project-dir (:transition-matrix (:file-inputs config)))
                                   load-csv-as-maps
                                   get-validation-years)
