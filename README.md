@@ -11,10 +11,10 @@ Special educational needs and disability (demand and costs) model in development
 At the top level of the send repo run:
 
 ``` bash
-lein run ~/demo
+lein run ~/demo/config.edn
 ```
 
-where `demo` is a project dir.
+where `demo` is a project dir and `config.edn` is the input you'd like to use.
 
 ``` bash
 ├── config.edn
@@ -75,7 +75,7 @@ export SEND_REPO=$HOME/src/github/mastodonc/witan.send/
 send () {
     _PWD=${PWD}
     pushd $SEND_REPO
-    lein run ${_PWD}
+    lein run ${_PWD}/$1
     popd
 }
 ```
@@ -84,7 +84,7 @@ Then to execute, change to a project dir and run.
 
 ``` bash
 $ cd ~/src/github/mastodonc/witan.sendruns/mastodonc/demo
-$ send
+$ send config.edn
 ```
 
 ### REPL
@@ -92,7 +92,7 @@ $ send
 To use the REPL to run the model, launch and simply run
 
 ``` clojure
-(-main "/home/matt/demo")
+(-main "/home/matt/demo/config.edn")
 ```
 
 edit the projects `config.edn` to alter the parameters.

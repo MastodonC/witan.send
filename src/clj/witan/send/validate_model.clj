@@ -8,7 +8,7 @@
 
 (defn temp-dir [project-dir]
   "Returns path to validation temp dir for project"
-  (str project-dir "data/temp/"))
+  (str project-dir "/data/temp/"))
 
 
 (defn csv-data->maps [csv-data]
@@ -97,7 +97,7 @@
   Returns map containing results of comparing model predictions with test data for total count and individual states"
 
   (let [project-dir (:project-dir config)
-        transitions (load-csv-as-maps (str project-dir (:transition-matrix (:file-inputs config))))
+        transitions (load-csv-as-maps (io/file project-dir (:transition-matrix (:file-inputs config))))
         train-data (return-fold <= year transitions)
         n-transitions (count (distinct (map :calendar-year train-data)))
         test-data (return-fold > year transitions)
@@ -107,9 +107,9 @@
                       (assoc-in [:run-parameters :seed-year] (inc year))
                       (assoc-in [:output-parameters :run-charts] false)
                       (assoc-in [:output-parameters :output-dir] (str "data/temp/" year "/")))]
-    (.mkdir (java.io.File. (str project-dir "data/temp/" year "/")))
-    (write-csv (str project-dir fold-train-path) train-data)
-    (write-csv (str (temp-dir project-dir) year "/test.csv") test-data)
+    (.mkdir (io/file project-dir (str "data/temp/" year)))
+    (write-csv (io/file project-dir fold-train-path) train-data)
+    (write-csv (io/file (temp-dir project-dir) (str year "/test.csv")) test-data)
     (-> (run-send fold-config)
         (output-send-results (:output-parameters fold-config)))
     (collate-fold project-dir test-data year n-transitions)))
@@ -119,40 +119,42 @@
   "Takes seq of maps containing results returned by (validate-fold) and writes to disk"
   (->> (map :count results)
        flatten
-       (write-csv (str project-dir "validation/validation_result_count.csv")))
+       (write-csv (io/file project-dir "validation/validation_results_count.csv")))
   (->> (map :state results)
        flatten
-       (write-csv (str project-dir "validation/validation_results_state.csv"))))
+       (write-csv (io/file project-dir "validation/validation_results_state.csv"))))
 
 
 (defn setup-validation-dirs [project-dir]
   "Create dirs required for validation process"
-  (doseq [dir [(temp-dir project-dir) (str project-dir "validation/")]]
+  (doseq [dir [(temp-dir project-dir) (str/join "/" [project-dir "validation"])]]
     (.mkdir (java.io.File. dir))))
 
 
 (defn tear-down-validation-dirs [project-dir keep-temp-files?]
   "Remove input data and results for separate folds, move to validation dir if keep-temp-files is true"
   (if keep-temp-files?
-    (copy-dir (temp-dir project-dir) (str project-dir "validation/")))
+    (copy-dir (temp-dir project-dir) (io/file project-dir "validation/")))
   (doseq [file (reverse (file-seq (io/file (temp-dir project-dir))))]
     (io/delete-file file)))
 
 
-(defn run-validation [project-dir keep-temp-files?]
+(defn run-validation
   "Main function to validate SEND model.
 
   Args:
-    project-dir: the same path you would would pass to run the main send model, which must contain a config.edn file
-    keep-temp-files? true if you wish to inspect training, test and output data for individual folds, false otherwise
+    config-file: the same file you would pass to run the main send model
+    keep-temp-files? false by default, true if you wish to inspect training, test and output data for individual folds
 
   Results are stored in a directory called validation within the project"
-
-  (setup-validation-dirs project-dir)
-  (let [config (config project-dir)
-        years-to-validate (-> (str project-dir (:transition-matrix (:file-inputs config)))
-                              load-csv-as-maps
-                              get-validation-years)
-        results (doall (map #(validate-fold config %) years-to-validate))]
-    (write-validation-results project-dir results))
-  (tear-down-validation-dirs project-dir keep-temp-files?))
+  ([config-file] (run-validation config-file false))
+  ([config-file keep-temp-files?]
+    (let [project-dir (.getParent (java.io.File. config-file))]
+      (setup-validation-dirs project-dir)
+      (let [config (config config-file)
+            years-to-validate (-> (io/file project-dir (:transition-matrix (:file-inputs config)))
+                                  load-csv-as-maps
+                                  get-validation-years)
+            results (doall (map #(validate-fold config %) years-to-validate))]
+        (write-validation-results project-dir results))
+      (tear-down-validation-dirs project-dir keep-temp-files?))))
