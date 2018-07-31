@@ -1,0 +1,19 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/MastodonC/witan.send
+    environment:
+      LEIN_ROOT: nbd
+      JVM_OPTS: -Xmx3200m
+    docker:
+      - image: circleci/clojure:lein-2.8.1
+    steps:
+      - checkout
+      - restore_cache:
+          key: witan.send-{{ checksum "project.clj" }}
+    - run: lein deps
+    - save_cache:
+        key: witan.send-{{ checksum "project.clj" }} 
+        paths:
+          - ~/.m2
+    - run: lein test
