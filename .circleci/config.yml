@@ -11,9 +11,9 @@ jobs:
       - checkout
       - restore_cache:
           key: witan-send-{{ checksum "project.clj" }}
-    - run: lein deps
-    - save_cache:
-        key: witan-send-{{ checksum "project.clj" }} 
-        paths:
-          - ~/.m2
-    - run: lein test
+      - run: lein deps
+      - save_cache:
+          key: witan-send-{{ checksum "project.clj" }} 
+          paths:
+            - ~/.m2
+      - run: lein test
