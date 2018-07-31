@@ -4,7 +4,7 @@ jobs:
     working_directory: ~/MastodonC/witan.send
     environment:
       LEIN_ROOT: nbd
-      JVM_OPTS: -Xmx3200m
+      _JAVA_OPTIONS: -Xms512m -Xmx3072m
     docker:
       - image: circleci/clojure:lein-2.8.1
     steps:
