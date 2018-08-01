@@ -26,7 +26,8 @@
                  [org.apache.commons/commons-math3 "3.6.1"]
                  [me.raynes/fs "1.4.6"]
                  [aero "1.1.3"]
-                 [digest "1.4.8"]]
+                 [digest "1.4.8"]
+                 [clj-time "0.13.0"]]
   :plugins [[lein-gorilla "0.4.0"]
             [lein-cljsbuild "1.1.4"]
             [cider/cider-nrepl "0.18.0-SNAPSHOT"]]
@@ -36,11 +37,12 @@
   :source-paths ["src/clj" "src/cljs" "src/cljc"]
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[criterium "0.4.4"]
-                                  [clj-time "0.13.0"]
                                   [binaryage/devtools "0.8.2"]
                                   [figwheel-sidecar "0.5.9"]
-                                  [com.cemerick/piggieback "0.2.1"]]}
-             :plugins [[lein-figwheel "0.5.9"]]}
+                                  [com.cemerick/piggieback "0.2.1"]]
+                   :plugins [[lein-binplus "0.6.2"]]}
+             :plugins [[lein-figwheel "0.5.9"]]
+             :uberjar {:aot :all}}
   :jvm-opts ["-Xmx8g"]
 
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
@@ -72,4 +74,8 @@
                     :pretty-print    false}}
 
 
-    ]})
+    ]}
+
+  :bin {:name "send"
+        :bin-path "~/bin"}
+  )

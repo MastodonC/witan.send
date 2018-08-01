@@ -72,7 +72,7 @@ customise the location of repo appropriately.
 ``` bash
 #send
 export SEND_REPO=$HOME/src/github/mastodonc/witan.send/
-send () {
+sendl () {
     _PWD=${PWD}
     pushd $SEND_REPO
     lein run ${_PWD}/$1
@@ -84,8 +84,24 @@ Then to execute, change to a project dir and run.
 
 ``` bash
 $ cd ~/src/github/mastodonc/witan.sendruns/mastodonc/demo
-$ send config.edn
+$ sendl config.edn
 ```
+
+### Binary
+
+You can build a binary of the send model via
+
+``` bash
+lein bin
+```
+
+it will install `send` into `~/bin` so make sure that's in your
+path. For batch runs this is important as it prevents re-compilation.
+
+The binary is also all that anyone needs to run the model.  If you
+turn off chart generation in the config then this binary should work
+on all platforms.
+
 
 ### REPL
 
