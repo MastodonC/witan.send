@@ -343,7 +343,6 @@
      (println "Initialising...")
      (mapv #(%1) (repeat n rf)))
     ([acc xs]
-     (println "Reduce rf...")
      (mapv #(rf %1 %2) acc xs))
     ([acc]
      (println "Complete rf...")
