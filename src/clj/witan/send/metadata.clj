@@ -1,7 +1,6 @@
 (ns witan.send.metadata
   (:require [clj-time.format :as f]
             [clj-time.core :as t]
-            [clj-time.format :as f]
             [clojure.java.shell :as sh]
             [clojure.string :as str]
             [digest]
