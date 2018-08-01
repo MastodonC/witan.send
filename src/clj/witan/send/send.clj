@@ -127,7 +127,6 @@
                                       (apply-joiners-for-academic-year model-state academic-year projected-population params calendar-year))
                                     [model transitions]
                                     sc/academic-years)]
-    (println "Completed transitions....")
     {:model model :transitions transitions}))
 
 (defn stitch-ay-state-params
