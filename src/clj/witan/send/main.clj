@@ -2,11 +2,11 @@
   (:require [schema.core :as s]
             [witan.send.send :as send]
             [witan.send.schemas :as sc]
-            [witan.send.report :refer [reset-send-report]]
             [aero.core :refer [read-config]]
             [clojure.string :refer [join]]
             [clojure.pprint :refer [pprint]]
-            [witan.send.metadata :as md])
+            [witan.send.metadata :as md]
+            [witan.send.validate-model :as vm])
   (:gen-class))
 
 (defn config [config-path]
@@ -40,25 +40,28 @@
         (with-out-str
           (pprint (md/merge-end-time metadata)))))
 
+;; The run-* fns are just handy repl shortcuts from the main ns.
 (defn run-send
-  "Run the send model, the function expects a map as seen in
-  data/demo/config.edn (typically use `(config \"data/demo\")` to
-  generate it)"
   ([] (run-send (config "data/demo/config.edn")))
   ([config]
-   (reset-send-report)
-   (-> (send/build-input-datasets (:project-dir config) (:file-inputs config) (:schema-inputs config))
-       (send/prepare-send-inputs (:transition-parameters config))
-       (send/run-send-model (:run-parameters config)))))
+   (send/run-send-workflow config)))
+
+(defn run-validation
+  ([] (run-validation (config "data/demo/config.edn")))
+  ([config]
+   (vm/run-send-validation config)))
 
 (defn -main
   "Run the send model producing outputs, defaulting to the inbuilt demo
-  data if no project passed in."
+  data if no project passed in.  If the config is set to run validation
+  do that as well.  Save the config and metadata also re the run also."
   ([] (-main "data/demo/config.edn"))
   ([config-path]
    (let [config (config config-path)
          metadata (md/metadata config)]
-     (-> (run-send config)
+     (-> (send/run-send-workflow config)
          (send/output-send-results (:output-parameters config)))
+     (when (get-in config [:validation-parameters :run-as-default])
+       (vm/run-send-validation config))
      (save-runtime-config config)
      (save-runtime-metadata config metadata))))

@@ -3,8 +3,7 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [me.raynes.fs :refer [copy-dir]]
-            [witan.send.main :refer [config run-send]]
-            [witan.send.send :refer [output-send-results]]))
+            [witan.send.send :as send]))
 
 (defn temp-dir [project-dir]
   "Returns path to validation temp dir for project"
@@ -110,8 +109,8 @@
     (.mkdir (io/file project-dir (str "data/temp/" year)))
     (write-csv (io/file project-dir fold-train-path) train-data)
     (write-csv (io/file (temp-dir project-dir) (str year "/test.csv")) test-data)
-    (-> (run-send fold-config)
-        (output-send-results (:output-parameters fold-config)))
+    (-> (send/run-send-workflow fold-config)
+        (send/output-send-results (:output-parameters fold-config)))
     (collate-fold project-dir test-data year n-transitions)))
 
 
@@ -138,23 +137,22 @@
   (doseq [file (reverse (file-seq (io/file (temp-dir project-dir))))]
     (io/delete-file file)))
 
-
-(defn run-validation
+(defn run-send-validation
   "Main function to validate SEND model.
 
   Args:
-    config-file: the same file you would pass to run the main send model
+    config: the same config you would pass to run the main send model
     keep-temp-files? false by default, true if you wish to inspect training, test and output data for individual folds
 
   Results are stored in a directory called validation within the project"
-  ([config-file] (run-validation config-file false))
-  ([config-file keep-temp-files?]
-    (let [project-dir (.getParent (java.io.File. config-file))]
-      (setup-validation-dirs project-dir)
-      (let [config (config config-file)
-            years-to-validate (-> (io/file project-dir (:transition-matrix (:file-inputs config)))
-                                  load-csv-as-maps
-                                  get-validation-years)
-            results (doall (map #(validate-fold config %) years-to-validate))]
-        (write-validation-results project-dir results))
-      (tear-down-validation-dirs project-dir keep-temp-files?))))
+  ([config]
+   (let [project-dir (:project-dir config)
+         keep-temp-files? (or (get-in config [:validation-parameters :keep-temp-files?])
+                              false)]
+     (setup-validation-dirs project-dir)
+     (let [years-to-validate (-> (io/file project-dir (:transition-matrix (:file-inputs config)))
+                                 load-csv-as-maps
+                                 get-validation-years)
+           results (doall (map #(validate-fold config %) years-to-validate))]
+       (write-validation-results project-dir results))
+     (tear-down-validation-dirs project-dir keep-temp-files?))))
