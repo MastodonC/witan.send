@@ -650,7 +650,11 @@
                   rows (ribbon-data-rows mover-ribbon-data)]
               (csv/write-csv writer (into [headers] rows))))
           (println "Producing charts...")
-          (sh/sh "Rscript" "--vanilla" "src/R/send-charts.R" dir)
+          (let [R-plots (.getFile (io/resource "send-charts.R"))
+                foo (sh/sh "Rscript" "--vanilla" R-plots dir)]
+            (println dir)
+            (println (:out foo))
+            (println (:err foo)))
           (run! #(io/delete-file (str dir "/" %) :quiet)
                 ["historic-data.csv" "valid-settings.csv" "joiner-rates.csv"
                  "leaver-rates.csv" "mover-rates.csv"]))))
