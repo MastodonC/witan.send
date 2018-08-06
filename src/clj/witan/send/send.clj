@@ -19,7 +19,8 @@
             [witan.send.check-inputs :refer [run-input-checks]]
             [clojure.walk :refer [postwalk]]
             [clojure.set :refer [rename-keys]]
-            [witan.send.test-utils :as tu])
+            [witan.send.test-utils :as tu]
+            [witan.send.report :refer [reset-send-report]])
   (:import [org.apache.commons.math3.distribution BetaDistribution]))
 
 (defn initialise-model [send-data]
@@ -418,6 +419,17 @@
      :population population
      :modify-transition-by modify-transition-by
      :settings-to-change settings-to-change}))
+
+(defn run-send-workflow
+  "Run the send model, the function expects a map as seen in
+  data/demo/config.edn (typically use `(config \"data/demo\")` to
+  generate it)"
+  ([config]
+   (reset-send-report)
+   (-> (build-input-datasets (:project-dir config) (:file-inputs config) (:schema-inputs config))
+       (prepare-send-inputs (:transition-parameters config))
+       (run-send-model (:run-parameters config)))))
+
 
 (defn joiner-rate [joiners population ages years]
   (reduce (fn [coll academic-year]
