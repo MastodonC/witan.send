@@ -650,8 +650,9 @@
                   rows (ribbon-data-rows mover-ribbon-data)]
               (csv/write-csv writer (into [headers] rows))))
           (println "Producing charts...")
-          (let [R-plots (.getFile (io/resource "send-charts.R"))
-                foo (sh/sh "Rscript" "--vanilla" R-plots dir)]
+          (with-open [in (io/input-stream (io/resource "send-charts.R"))]
+            (io/copy in (io/file "/tmp/send-charts.R")))
+          (let [foo (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir)]
             (println dir)
             (println (:out foo))
             (println (:err foo)))
