@@ -1,5 +1,5 @@
 (ns witan.send.send
-  (:require [witan.send.model.initialise :as i]
+  (:require [witan.send.model.input :as i]
             [witan.send.model.run :as r]
             [witan.send.report :refer [reset-send-report]]))
 

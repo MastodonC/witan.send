@@ -2,8 +2,8 @@
   (:require [witan.send.schemas :as sc]
             [witan.send.main :as main]
             [witan.send.send :as send]
+            [witan.send.model.output :as si]
             [clojure.math.combinatorics :as combo]))
-
 
 (def default-config
   "Static settings for all runs with different configs (settings in inputs will be overwritten)"
@@ -24,18 +24,15 @@
                        :run-charts true
                        :output-dir "results"}})
 
-
 (def example-params-inputs
   "Inputs for run-multi-configs should take this nested vec form, with a vec containing the path to
   the config parameter followed by a vec containing the possible values to take."
   [[[:run-parameters :random-seed] [1 42]]
    [[:run-parameters :simulations] [10 20 30]]])
 
-
 (defn generate-param-options [param-name-vec values-vec]
   "Takes two vecs and returns form required for combo/cartesian-product"
   (mapv #(conj param-name-vec %) values-vec))
-
 
 (defn name-output-dir [combo]
   "Adds unique output-dir val to combination map for given combination of parameters"
@@ -43,18 +40,15 @@
         (-> (apply str (doall (map #(take-last 2 %) combo)))
             (clojure.string/replace #"[(): ]" ""))))
 
-
 (defn generate-params [inputs]
   "Generates combinations of input parameters based on input vectors"
   (let [param-value-pairs (map #(generate-param-options (first %) (last %)) inputs)
         combos (apply combo/cartesian-product param-value-pairs)]
     (map #(conj % (name-output-dir %)) combos)))
 
-
 (defn update-nested-map [acc n]
   "Helper fn to update nested hashmap given vector output of generate-params"
   (assoc-in acc (subvec n 0 (dec (count n))) (last n)))
-
 
 (defn run-multi-configs [inputs project-dir]
   "Main function to run multi configs. Edit default-config to specify consistent config settings.
@@ -76,6 +70,5 @@
                       {:project-dir project-dir}
                       {:output-parameters {:project-dir project-dir}})))]
     (map #(do (-> (main/run-send %)
-                  (send/output-send-results (:output-parameters %)))
+                  (si/output-send-results (:output-parameters %)))
               (main/save-runtime-config %)) configs)))
-

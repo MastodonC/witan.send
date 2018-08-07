@@ -1,14 +1,14 @@
 (ns witan.send.send-test
-  (:require [clojure.test :refer :all]
-            [witan.send.send :refer :all]
-            [witan.send.model.output :as so]
-            [witan.send.model.initialise :as si]
-            [witan.send.schemas :as sc]
-            [witan.send.test-utils :as tu]
-            [witan.send.utils :as u]
-            [clojure.core.matrix.dataset :as ds]
+  (:require [clojure.core.matrix.dataset :as ds]
+            [clojure.test :refer :all]
             [witan.datasets :as wds]
-            [witan.send.params :as p]))
+            [witan.send.model.input :as si]
+            [witan.send.model.output :as so]
+            [witan.send.params :as p]
+            [witan.send.schemas :as sc]
+            [witan.send.send :refer :all]
+            [witan.send.test-utils :as tu]
+            [witan.send.utils :as u]))
 
 ;; Use real population datasets for testing
 (def test-inputs
