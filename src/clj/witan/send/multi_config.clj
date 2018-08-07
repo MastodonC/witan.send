@@ -6,6 +6,7 @@
 
 
 (def default-config
+  "Static settings for all runs with different configs (settings in inputs will be overwritten)"
   {:file-inputs {:transition-matrix "data/transitions.csv"
                  :population "data/population.csv"
                  :setting-cost "data/need-setting-costs.csv"
@@ -25,9 +26,10 @@
 
 
 (def example-params-inputs
-  "Inputs for run-multi-configs should take this form"
-  [[[:run-parameters :random-seed] '[1 2 3]]
-   [[:run-parameters :simulations] '[10 20 30]]])
+  "Inputs for run-multi-configs should take this nested vec form, with a vec containing the path to
+  the config parameter followed by a vec containing the possible values to take."
+  [[[:run-parameters :random-seed] [1 42]]
+   [[:run-parameters :simulations] [10 20 30]]])
 
 
 (defn generate-param-options [param-name-vec values-vec]
@@ -50,7 +52,7 @@
 
 
 (defn update-nested-map [acc n]
-  "Helper fn to updates nested hashmap given vector output of generate-params"
+  "Helper fn to update nested hashmap given vector output of generate-params"
   (assoc-in acc (subvec n 0 (dec (count n))) (last n)))
 
 
@@ -59,7 +61,7 @@
 
   Args:
     inputs: nested vectors with [:parameter val] structure, see example-params-inputs
-    project-dir: full path to project (dir which would normally contain config.edn)
+    project-dir: full path to project (dir which contains file-inputs in default-config)
 
   Returns nil. Model results for each run are output to unique folder in project-dir."
 
