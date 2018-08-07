@@ -1,2 +1,0 @@
-(ns witan.send.core)
-

@@ -1,6 +1,8 @@
 (ns witan.send.send-test
   (:require [clojure.test :refer :all]
             [witan.send.send :refer :all]
+            [witan.send.model.output :as so]
+            [witan.send.model.initialise :as si]
             [witan.send.schemas :as sc]
             [witan.send.test-utils :as tu]
             [witan.send.utils :as u]
@@ -145,7 +147,7 @@
         population-count (-> :initial-population get-individual-input ds/row-maps p/calculate-population-per-calendar-year)
         ages (-> population-count first val keys)
         years [2013 2014 2015 2016]
-        result (joiner-rate joiner-count population-count ages years)]
+        result (so/joiner-rate joiner-count population-count ages years)]
     (testing "output is not empty"
       (is (not= empty? result)))
     (testing "all ages have rates calculated"
@@ -155,19 +157,19 @@
   (let [mover-count (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1 setting-2]}]
                                                                                        (or (= setting-1 sc/non-send)
                                                                                            (= setting-2 sc/non-send)))))
-        result (mover-rate mover-count)]
+        result (so/mover-rate mover-count)]
     (testing "output is not empty"
       (is (not= empty? result)))))
 
 (deftest leaver-rate-test
   (let [leaver-count (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send))))
-        result (leaver-rate leaver-count)]
+        result (so/leaver-rate leaver-count)]
     (testing "output is not empty"
       (is (not= empty? result)))))
 
 (deftest confidence-interval-test
-  (let [leaver-rates (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send))) leaver-rate)
-        result (confidence-interval leaver-rates 2014)]
+  (let [leaver-rates (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send))) so/leaver-rate)
+        result (so/confidence-interval leaver-rates 2014)]
     (testing "output is not empty"
       (is (not= empty? result) ))
     (testing "all intervals are between 0 and 1"
@@ -181,44 +183,44 @@
         state-change1 [[2014 1 :SP-MU :SP-MU] [2014 1 :NONSEND :SEMH-MMSIB]]
         state-change2 [[2014 1 :NONSEND :SP-MMSIB] [2014 1 :NONSEND :SEMH-MMSIB]]]
     (testing "modifies transitions"
-      (is (not= transitions (modify-transitions transitions state-change1 * 0.5))))
+      (is (not= transitions (si/modify-transitions transitions state-change1 * 0.5))))
     (testing "state [2014 8 :SP-MU :SP-MU] is divided by two"
-      (is (= 1 (get (modify-transitions transitions state-change1 * 0.5) [2014 1 :SP-MU :SP-MU]))))
+      (is (= 1 (get (si/modify-transitions transitions state-change1 * 0.5) [2014 1 :SP-MU :SP-MU]))))
     (testing "state [2014 0 :NONSEND :SP-MMSIB] takes the joiners of state [2014 8 :SP-MU :SP-MU]"
-      (is (= 3 (get (modify-transitions transitions state-change1 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB]))))
+      (is (= 3 (get (si/modify-transitions transitions state-change1 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB]))))
     (testing "odd values are rounded and exchanged correctly"
-      (is (= 3 (get (modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB])))
-      (is (= 2 (get (modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SP-MMSIB]))))))
+      (is (= 3 (get (si/modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB])))
+      (is (= 2 (get (si/modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SP-MMSIB]))))))
 
 (deftest transition-present?-test
   (testing "transition state is present in coll"
-    (is (transition-present? [11 :CI-MSSOB :CI-ISSR] '([6 :OTH-MSSSH :OTH-MSSSH] [6 :SP-MU :SP-MU] [6 :UKN-MMSIB :UKN-MMSIB] [11 :CI-MSSOB :CI-ISSR] [6 :SP-IMS :SP-IMS] [6 :SEMH-MSSCT :SEMH-NMSS] [8 :CI-OOE :CI-ISS] [8 :CI-MMSOB :CI-MMSOB] [6 :SP-MU :SP-NMSS] [6 :CI-MSSSH :CI-MSSSH] [8 :SEMH-MMSIB :NONSEND] [13 :SP-MSSOB :NONSEND] [4 :CL-MSSSH :NONSEND])))))
+    (is (so/transition-present? [11 :CI-MSSOB :CI-ISSR] '([6 :OTH-MSSSH :OTH-MSSSH] [6 :SP-MU :SP-MU] [6 :UKN-MMSIB :UKN-MMSIB] [11 :CI-MSSOB :CI-ISSR] [6 :SP-IMS :SP-IMS] [6 :SEMH-MSSCT :SEMH-NMSS] [8 :CI-OOE :CI-ISS] [8 :CI-MMSOB :CI-MMSOB] [6 :SP-MU :SP-NMSS] [6 :CI-MSSSH :CI-MSSSH] [8 :SEMH-MMSIB :NONSEND] [13 :SP-MSSOB :NONSEND] [4 :CL-MSSSH :NONSEND])))))
 
 (deftest update-ifelse-assoc-test
   (testing "if key present +1 to val"
-    (is (= 2 (:foo (update-ifelse-assoc {:foo 1 :bar 2} :foo + 1)))))
+    (is (= 2 (:foo (si/update-ifelse-assoc {:foo 1 :bar 2} :foo + 1)))))
   (testing "if key not present, insert key with val"
-    (is (= 1 (:foo (update-ifelse-assoc {:baz 1 :bar 2} :foo + 1))))))
+    (is (= 1 (:foo (si/update-ifelse-assoc {:baz 1 :bar 2} :foo + 1))))))
 
 (deftest generate-transition-key-test
   (testing "generate joiner state transition"
     (is (= [2013 5 :NONSEND :CI-MSSOB]
-           (generate-transition-key {:transition-type "joiners" :cy 2013 :ay 5
+           (si/generate-transition-key {:transition-type "joiners" :cy 2013 :ay 5
                                      :need :CI :move-state :CI-MSSIB
                                      :setting :MSSOB}))))
   (testing "generate leaver state transition"
     (is (= [2013 5 :CI-MSSOB :NONSEND]
-           (generate-transition-key {:transition-type "leavers" :cy 2013 :ay 5
+           (si/generate-transition-key {:transition-type "leavers" :cy 2013 :ay 5
                                      :need :CI :move-state :CI-MSSIB
                                      :setting :MSSOB}))))
   (testing "generate joiner state transition"
     (is (= [2013 5 :CI-MSSIB :CI-MSSOB]
-           (generate-transition-key {:transition-type "movers-to" :cy 2013 :ay 5
+           (si/generate-transition-key {:transition-type "movers-to" :cy 2013 :ay 5
                                      :need :CI :move-state :CI-MSSIB
                                      :setting :MSSOB}))))
   (testing "generate joiner state transition"
     (is (= [2013 5 :CI-MSSOB :CI-MSSIB]
-           (generate-transition-key {:transition-type "movers-from" :cy 2013 :ay 5
+           (si/generate-transition-key {:transition-type "movers-from" :cy 2013 :ay 5
                                      :need :CI :move-state :CI-MSSIB
                                      :setting :MSSOB})))))
 
@@ -226,16 +228,16 @@
   (let [input (ds/dataset [{:setting-1 :MMSOB :setting-2 :MMSIB}])]
     (testing "move MSSOB joiners to MSSIB"
       (is (= [[2013 5 :NONSEND :CI-MMSOB] [2013 5 :NONSEND :CI-MMSIB]]
-             (first (build-states-to-change input [:CI] [:MSSOB] [5] [2013] "joiners")))))
+             (first (si/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "joiners")))))
     (testing "move MSSOB leavers to MSSIB"
       (is (= [[2013 5 :CI-MMSOB :NONSEND] [2013 5 :CI-MMSIB :NONSEND]]
-             (first (build-states-to-change input [:CI] [:MSSOB] [5] [2013] "leavers")))))
+             (first (si/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "leavers")))))
     (testing "move MSSOB movers-to to MSSIB"
       (is (= [[2013 5 :CI-MSSOB :CI-MMSOB] [2013 5 :CI-MSSOB :CI-MMSIB]]
-             (first (build-states-to-change input [:CI] [:MSSOB] [5] [2013] "movers-to")))))
+             (first (si/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "movers-to")))))
     (testing "move MSSOB movers-from to MSSIB"
       (is (= [[2013 5 :CI-MMSOB :CI-MSSOB] [2013 5 :CI-MMSIB :CI-MSSOB]]
-             (first (build-states-to-change input [:CI] [:MSSOB] [5] [2013] "movers-from")))))
+             (first (si/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "movers-from")))))
     (testing "return nil when move to and from state the same"
       (is (= nil
-             (first (build-states-to-change input [:CI] [:MMSOB] [5] [2013] "movers-to")))))))
+             (first (si/build-states-to-change input [:CI] [:MMSOB] [5] [2013] "movers-to")))))))

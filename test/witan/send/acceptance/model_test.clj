@@ -1,7 +1,8 @@
 (ns witan.send.acceptance.model-test
   (:require [clojure.test :refer :all]
-            [witan.send.main :as m]
             [witan.send.send :as send]
+            [witan.send.model.output :as so]
+            [witan.send.main :as m]
             [clojure.java.io :as io]
             [clojure.string :refer [join]]))
 
@@ -20,8 +21,8 @@
     (run! #(let [file (join "/" [output-dir %])]
              (when (.exists (io/file file))
                (io/delete-file file))) files)
-    (->(m/run-send config)
-       (send/output-send-results (:output-parameters config)))
+    (->(send/run-send-workflow config)
+       (so/output-send-results (:output-parameters config)))
     (is (= expected-md5s
            (into {} (for [f files]
                       [f (-> (io/file output-dir f) (digest/md5))]))))))
