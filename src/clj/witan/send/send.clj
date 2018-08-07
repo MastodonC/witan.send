@@ -650,7 +650,9 @@
                   rows (ribbon-data-rows mover-ribbon-data)]
               (csv/write-csv writer (into [headers] rows))))
           (println "Producing charts...")
-          (sh/sh "Rscript" "--vanilla" "src/R/send-charts.R" dir)
+          (with-open [in (io/input-stream (io/resource "send-charts.R"))]
+            (io/copy in (io/file "/tmp/send-charts.R")))
+          (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir)
           (run! #(io/delete-file (str dir "/" %) :quiet)
                 ["historic-data.csv" "valid-settings.csv" "joiner-rates.csv"
                  "leaver-rates.csv" "mover-rates.csv"]))))

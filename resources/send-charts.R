@@ -6,7 +6,7 @@ install_missing_packages <- function(package_name) {
     install.packages(package_name, repos='http://cran.us.r-project.org') } }
 
 # svglite requires cairo dev packages
-packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite")
+packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite", "logging")
 
 for(package in packages_to_check) {
   install_missing_packages(package) }
@@ -16,6 +16,10 @@ library(ggplot2)
 library(reshape2)
 library(stringr)
 library(ggforce)
+
+library(logging)
+basicConfig()
+loginfo(output_dir)
 
 ### Variables for all charts ###
 
@@ -351,7 +355,7 @@ for (f in years) {
 ### SEND Joiner Transitions ###
 
 df_joiners <- df_historical %>%
-  filter(need.1 != "NONSEND" | setting.1 != "NONSEND") %>%
+  filter(need.1 == "NONSEND" | setting.1 == "NONSEND")
 
 df_joiners_trans<-data.frame()
 v = -1
@@ -409,7 +413,6 @@ ribbon_plot <- function(data, title) {
 }
 
 ### Ribbon plot data ###
-read.csv(paste0(output_dir, "/historic-data.csv"))
 df_joiner_ribbon_data <- read.csv(paste0(output_dir, "/joiner-rates.csv"), na.strings=":NA")
 df_leaver_ribbon_data <- read.csv(paste0(output_dir, "/leaver-rates.csv"), na.strings=":NA")
 df_mover_ribbon_data <- read.csv(paste0(output_dir, "/mover-rates.csv"), na.strings=":NA")
