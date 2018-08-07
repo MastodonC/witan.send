@@ -652,10 +652,7 @@
           (println "Producing charts...")
           (with-open [in (io/input-stream (io/resource "send-charts.R"))]
             (io/copy in (io/file "/tmp/send-charts.R")))
-          (let [foo (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir)]
-            (println dir)
-            (println (:out foo))
-            (println (:err foo)))
+          (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir)
           (run! #(io/delete-file (str dir "/" %) :quiet)
                 ["historic-data.csv" "valid-settings.csv" "joiner-rates.csv"
                  "leaver-rates.csv" "mover-rates.csv"]))))
