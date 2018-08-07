@@ -1,6 +1,7 @@
 (ns witan.send.main
   (:require [schema.core :as s]
             [witan.send.send :as send]
+            [witan.send.model.output :as so]
             [witan.send.schemas :as sc]
             [aero.core :refer [read-config]]
             [clojure.string :refer [join]]
@@ -60,7 +61,7 @@
    (let [config (config config-path)
          metadata (md/metadata config)]
      (-> (send/run-send-workflow config)
-         (send/output-send-results (:output-parameters config)))
+         (so/output-send-results (:output-parameters config)))
      (when (get-in config [:validation-parameters :run-as-default])
        (vm/run-send-validation config))
      (save-runtime-config config)
