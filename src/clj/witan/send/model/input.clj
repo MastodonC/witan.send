@@ -1,4 +1,4 @@
-(ns witan.send.model.initialise
+(ns witan.send.model.input
   (:require [witan.send.test-utils :as tu]
             [clojure.core.matrix.dataset :as ds]
             [witan.send.states :as states]
