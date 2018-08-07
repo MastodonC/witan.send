@@ -1,7 +1,6 @@
 (ns witan.send.model.run
   (:require [witan.send.schemas :as sc]
             [clojure.core.matrix.dataset :as ds]
-            [witan.datasets.stats :as wst]
             [witan.send.params :as p]
             [witan.send.step :as step]
             [witan.send.states :as states]
