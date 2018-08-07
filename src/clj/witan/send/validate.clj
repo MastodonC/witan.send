@@ -129,15 +129,3 @@
                  (assoc coll k (format-academic-year-ci vs)))
                {} data)
        (squash-all)))
-
-(defn confidence-interval
-  [results calendar-year]
-  (let [academic-years (keys results)]
-    (->> (for [academic-year (sort academic-years)]
-           (let [alpha (get-in results [academic-year calendar-year :alpha] 0)
-                 beta (get-in results [academic-year calendar-year :beta])]
-             (apply vector academic-year
-                    (if (and (pos? alpha) (pos? beta))
-                      [(.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.025)
-                       (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.975)]
-                      [0 0])))))))
