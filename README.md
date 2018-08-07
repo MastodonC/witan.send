@@ -113,7 +113,7 @@ To use the REPL to run the model, launch and simply run
 
 edit the projects `config.edn` to alter the parameters.
 
-## R Dependencies
+### R Dependencies
 
 This is very fragile and *will* break in the future.
 
@@ -132,6 +132,18 @@ install.packages("devtools")
 install.packages("concaveman")
 devtools::install_github('thomasp85/ggforce')
 ```
+## Features
+
+##### Experiments with different configurations
+
+The `multi-configs` namespace contains functionality for easily running many different model
+inputs with minimal effort. You can use any number of parameters available in the 
+config.edn (e.g. file inputs, numerical parameters) and all possible combinations will be created 
+and  run automatically. This would be useful, for example, if you wanted to compare model results 
+for many different alternative scenario parameters. Example input for the main `run-multi-configs` 
+function are given in the NS.
+
+ 
 
 ## License
 
