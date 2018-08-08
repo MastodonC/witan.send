@@ -35,47 +35,13 @@
   :main witan.send.main
   :aot [witan.send.main]
 
-  :source-paths ["src/clj" "src/cljs" "src/cljc"]
+  :source-paths ["src/clj"]
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[criterium "0.4.4"]
-                                  [binaryage/devtools "0.8.2"]
-                                  [figwheel-sidecar "0.5.9"]
-                                  [com.cemerick/piggieback "0.2.1"]]
+                                  [binaryage/devtools "0.8.2"]]
                    :plugins [[lein-binplus "0.6.2"]]}
-             :plugins [[lein-figwheel "0.5.9"]]
              :uberjar {:aot :all}}
   :jvm-opts ["-Xmx8g"]
-
-  :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
-
-  :figwheel {:css-dirs ["resources/public/css"]}
-
-  :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
-
-  :cljsbuild
-  {:builds
-   [{:id           "dev"
-     :source-paths ["src/cljs" "src/cljc"]
-     :figwheel     {:on-jsload "witan.send.core/mount-root"}
-     :compiler     {:main                 witan.send.core
-                    :output-to            "resources/public/js/compiled/app.js"
-                    :output-dir           "resources/public/js/compiled/out"
-                    :asset-path           "js/compiled/out"
-                    :source-map-timestamp true
-                    :preloads             [devtools.preload]
-                    :external-config      {:devtools/config {:features-to-install :all}}
-                    }}
-
-    {:id           "min"
-     :source-paths ["src/cljs" "src/cljc"]
-     :compiler     {:main            witan.send.core
-                    :output-to       "resources/public/js/compiled/app.js"
-                    :optimizations   :advanced
-                    :closure-defines {goog.DEBUG false}
-                    :pretty-print    false}}
-
-
-    ]}
 
   :bin {:name "send"
         :bin-path "~/bin"}

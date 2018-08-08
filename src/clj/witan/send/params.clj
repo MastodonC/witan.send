@@ -246,10 +246,10 @@
                 coll))
             {} valid-states)))
 
-#_(defn beta-params-movers [valid-states transitions]
+(defn beta-params-movers [valid-states transitions]
     (weighted-beta-params valid-states transitions (some-fn joiner? leaver?) mover?))
 
-#_(defn alpha-params-movers [valid-states valid-year-settings transitions]
+(defn alpha-params-movers [valid-states valid-year-settings transitions]
     (weighted-alpha-params valid-states valid-year-settings transitions mover?))
 
 (defn alpha-params-joiner-states [valid-states transitions]
