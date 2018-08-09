@@ -495,7 +495,7 @@
 ;; **
 ;;; This matrix represents a graph of the population. 
 ;;; 
-;;; ![Graph](https://github.com/MastodonC/witan.send/blob/gorilla-prep/graph.png?raw=true)
+;;; ![Graph](https://github.com/MastodonC/witan.send/blob/gorilla-prep/gorilla/transition-pop-graph.png?raw=true)
 ;;; 
 ;;; It does not contain any information about where the increases in population for one state came from.  However in this simple graph a solution can easily be inferred (not the only solution).  In general they can not (i dont' think).  The transition matrix would be needed for this.
 ;; **
@@ -530,13 +530,13 @@
 ;;; 
 ;;; Looking at `[1 :BA]`
 ;;; 
-;;; ![1ba beta dist]()
+;;; ![1ba beta dist](https://github.com/MastodonC/witan.send/blob/gorilla-prep/gorilla/1ba-leaver-beta.png?raw=true)
 ;;; 
 ;;; The graph shows the probability of someone successfully leaving is likely between 0 and 0.1 - so very low but not zero as the actual data shows.
 ;;; 
 ;;; Looking at `[5 :BA]`
 ;;; 
-;;; ![5ba beta dist]()
+;;; ![5ba beta dist](https://github.com/MastodonC/witan.send/blob/gorilla-prep/gorilla/5ba-leaver-beta.png?raw=true)
 ;;; 
 ;;; The graph shows the probability of someone successfully leaving is likely between 0.9 and 1.0 - so very high but not zero as the actual data shows.
 ;;; 
@@ -577,13 +577,13 @@
 ;;; 
 ;;; Looking at `[1 :ba]`
 ;;; 
-;;; ![1ba-movers-beta]()
+;;; ![1ba-movers-beta](https://github.com/MastodonC/witan.send/blob/gorilla-prep/gorilla/1ba-mover-beta.png?raw=true)
 ;;; 
 ;;; We see that the probability that someone moves is between 0.25 and 0.42 and the expected value is 0.33.  This matches the fact that population count directed graph shows that 1 out of the 3 students in `[1 :ba]` moved.
 ;;; 
 ;;; Looking at `[1 :dc]` 
 ;;; 
-;;; ![1dc-movers-beta]()
+;;; ![1dc-movers-beta](https://github.com/MastodonC/witan.send/blob/gorilla-prep/gorilla/1dc-mover-beta.png?raw=true)
 ;;; 
 ;;; We see a probabilty graph that represents we saw 0 movers but has used the prior expectation to say it can't actually be 0.
 ;;; 
@@ -655,7 +655,7 @@
 ;; **
 ;;; Note: It's pretty important that valid settings allows for year 0 elsewise these results don't make sense.
 ;;; 
-;;; ![joiner-beta-dist]()
+;;; ![joiner-beta-dist](https://github.com/MastodonC/witan.send/blob/gorilla-prep/gorilla/joiner-beta-ay-1.png?raw=true)
 ;;; 
 ;;; The data shows currently 5 joiners per year.  With a static population of 7000 and the expected probabilty of 0.0007 we have `7000 * 0.0007 = 5`.
 ;;; 
