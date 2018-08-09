@@ -1,0 +1,36 @@
+digraph g {
+        ranksep=0.7;
+        nodesep=1.2;
+	node [shape=plaintext];
+
+        "[1 :BA]" [xlabel="3"];
+        "[1 :DC]" [xlabel="2"];
+        
+	"[1 :BA]" -> "[2 :BA]" ;
+	"[1 :DC]" -> "[2 :DC]" ;
+	"[1 :BA]" -> "[2 :DC]" ;
+ 	"[1 :DC]" -> "[2 :BA]" ;
+
+        "[2 :BA]" [xlabel="2"];
+        "[2 :DC]" [xlabel="3"];
+
+        "[2 :BA]" -> "[3 :BA]";  
+	"[2 :DC]" -> "[3 :DC]";
+	"[2 :BA]" -> "[3 :DC]";
+ 	"[2 :DC]" -> "[3 :BA]"
+
+        "[3 :BA]" [xlabel="2"];
+        "[3 :DC]" [xlabel="3"];
+
+        "[3 :BA]" -> "[4 :BA]";
+	"[3 :DC]" -> "[4 :DC]";
+	"[3 :BA]" -> "[4 :DC]";
+ 	"[3 :DC]" -> "[4 :BA]";
+
+        "[4 :BA]" [xlabel="3"];
+        "[4 :DC]" [xlabel="2"];
+
+
+	{ rank=same; "[1 :BA]" "[2 :BA]" "[3 :BA]" "[4 :BA]" }
+        { rank=same; "[1 :DC]" "[2 :DC]" "[3 :DC]" "[4 :DC]" } 
+}

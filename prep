@@ -1,0 +1,522 @@
+;; gorilla-repl.fileformat = 1
+
+;; **
+;;; # 40K View of Input Preparation
+;; **
+
+;; @@
+(ns witan.send.explore-model.gorilla
+  (:require [witan.send.model.input :as i]
+            [witan.send.model.run :as r]
+            [witan.send.report :refer [reset-send-report]]
+            [witan.send.main :as m]
+            [clojure.pprint :refer [pprint]]
+            [clojure.core.matrix.impl.pprint :as pp]))
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; Some helper functions for viewing data
+;; **
+
+;; @@
+(defn types [m]
+  "Build a map replacing the values with there types"
+  (into {} (for [[k v] m]
+             [k (type v)])))
+
+(defn ppds [ds]
+  "Pretty print a datastore"
+  (str (pp/pm (:column-names ds)) "\n" (pp/pm ds)))
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-var'>#&#x27;witan.send.explore-model.gorilla/ppds</span>","value":"#'witan.send.explore-model.gorilla/ppds"}
+;; <=
+
+;; **
+;;; ##Loading The Data
+;;; 
+;;; Load our config
+;; **
+
+;; @@
+(def ss (m/config "/home/matt/src/github/mastodonc/witan.send-runs/mastodonc/simple-examples/two-states.edn"))
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-var'>#&#x27;witan.send.explore-model.gorilla/ss</span>","value":"#'witan.send.explore-model.gorilla/ss"}
+;; <=
+
+;; **
+;;; Explore the config file a little
+;; **
+
+;; @@
+(pprint (keys ss))
+;; @@
+;; ->
+;;; (:file-inputs
+;;;  :transition-parameters
+;;;  :run-parameters
+;;;  :output-parameters
+;;;  :schema-inputs
+;;;  :project-dir)
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; @@
+(pprint (:file-inputs ss))
+;; @@
+;; ->
+;;; {:transition-matrix
+;;;  &quot;data/two-states/transitions-regular-movement-two-states.csv&quot;,
+;;;  :population &quot;data/population-static.csv&quot;,
+;;;  :setting-cost &quot;data/two-states/need-setting-costs-two-states.csv&quot;,
+;;;  :valid-setting-academic-years
+;;;  &quot;data/two-states/valid-setting-two-states.csv&quot;}
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; The first step is to build the input-datasets
+;; **
+
+;; @@
+(def input-datasets (i/build-input-datasets (:project-dir ss) (:file-inputs ss) (:schema-inputs ss)))
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-var'>#&#x27;witan.send.explore-model.gorilla/input-datasets</span>","value":"#'witan.send.explore-model.gorilla/input-datasets"}
+;; <=
+
+;; **
+;;; What do these look like?
+;; **
+
+;; @@
+(pprint (types input-datasets))
+;; @@
+;; ->
+;;; {:transition-matrix clojure.core.matrix.impl.dataset.DataSet,
+;;;  :population clojure.core.matrix.impl.dataset.DataSet,
+;;;  :setting-cost clojure.core.matrix.impl.dataset.DataSet,
+;;;  :valid-setting-academic-years clojure.core.matrix.impl.dataset.DataSet}
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; ### The Transition Matrix
+;;; 
+;; **
+
+;; @@
+(print (ppds (:transition-matrix input-datasets)))
+;; @@
+;; ->
+;;; [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2 :academic-year-2]
+;;; [[2014.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
+;;;  [2014.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
+;;;  [2014.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
+;;;  [2014.000  :NONSEND :NONSEND 0.000 :settingC   :needD 1.000]
+;;;  [2014.000  :NONSEND :NONSEND 0.000 :settingC   :needD 1.000]
+;;;  [2014.000 :settingA   :needB 1.000 :settingA   :needB 2.000]
+;;;  [2014.000 :settingA   :needB 1.000 :settingA   :needB 2.000]
+;;;  [2014.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
+;;;  [2014.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
+;;;  [2014.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
+;;;  [2014.000 :settingA   :needB 1.000 :settingA   :needB 3.000]
+;;;  [2014.000 :settingA   :needB 1.000 :settingA   :needB 3.000]
+;;;  [2014.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
+;;;  [2014.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
+;;;  [2014.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
+;;;  [2014.000 :settingA   :needB 1.000 :settingA   :needB 4.000]
+;;;  [2014.000 :settingA   :needB 1.000 :settingA   :needB 4.000]
+;;;  [2014.000 :settingC   :needD 1.000 :settingC   :needD 4.000]
+;;;  [2014.000 :settingC   :needD 1.000 :settingC   :needD 4.000]
+;;;  [2014.000 :settingC   :needD 1.000 :settingA   :needB 4.000]
+;;;  [2014.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2014.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2014.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2014.000 :settingC   :needD 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2014.000 :settingC   :needD 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2015.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
+;;;  [2015.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
+;;;  [2015.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
+;;;  [2015.000  :NONSEND :NONSEND 0.000 :settingC   :needD 1.000]
+;;;  [2015.000  :NONSEND :NONSEND 0.000 :settingC   :needD 1.000]
+;;;  [2015.000 :settingA   :needB 1.000 :settingA   :needB 2.000]
+;;;  [2015.000 :settingA   :needB 1.000 :settingA   :needB 2.000]
+;;;  [2015.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
+;;;  [2015.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
+;;;  [2015.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
+;;;  [2015.000 :settingA   :needB 1.000 :settingA   :needB 3.000]
+;;;  [2015.000 :settingA   :needB 1.000 :settingA   :needB 3.000]
+;;;  [2015.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
+;;;  [2015.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
+;;;  [2015.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
+;;;  [2015.000 :settingA   :needB 1.000 :settingA   :needB 4.000]
+;;;  [2015.000 :settingA   :needB 1.000 :settingA   :needB 4.000]
+;;;  [2015.000 :settingC   :needD 1.000 :settingC   :needD 4.000]
+;;;  [2015.000 :settingC   :needD 1.000 :settingC   :needD 4.000]
+;;;  [2015.000 :settingC   :needD 1.000 :settingA   :needB 4.000]
+;;;  [2015.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2015.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2015.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2015.000 :settingC   :needD 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2015.000 :settingC   :needD 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2016.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
+;;;  [2016.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
+;;;  [2016.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
+;;;  [2016.000  :NONSEND :NONSEND 0.000 :settingC   :needD 1.000]
+;;;  [2016.000  :NONSEND :NONSEND 0.000 :settingC   :needD 1.000]
+;;;  [2016.000 :settingA   :needB 1.000 :settingA   :needB 2.000]
+;;;  [2016.000 :settingA   :needB 1.000 :settingA   :needB 2.000]
+;;;  [2016.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
+;;;  [2016.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
+;;;  [2016.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
+;;;  [2016.000 :settingA   :needB 1.000 :settingA   :needB 3.000]
+;;;  [2016.000 :settingA   :needB 1.000 :settingA   :needB 3.000]
+;;;  [2016.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
+;;;  [2016.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
+;;;  [2016.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
+;;;  [2016.000 :settingA   :needB 1.000 :settingA   :needB 4.000]
+;;;  [2016.000 :settingA   :needB 1.000 :settingA   :needB 4.000]
+;;;  [2016.000 :settingC   :needD 1.000 :settingC   :needD 4.000]
+;;;  [2016.000 :settingC   :needD 1.000 :settingC   :needD 4.000]
+;;;  [2016.000 :settingC   :needD 1.000 :settingA   :needB 4.000]
+;;;  [2016.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2016.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2016.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2016.000 :settingC   :needD 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2016.000 :settingC   :needD 4.000  :NONSEND :NONSEND 5.000]]
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; The transition matrix, above, models how students move between years.  Columns 2,3 and 4 can be merged into one like so `[0 :settingA-needB]`.  Doing the same for columns 5,6 and 7 gives us `[1 :settingA-needB]`.  This row therefore represents the transition:
+;;; 
+;;;     [0 :settingA-needB] -> [1 :settingA-needB]
+;;;     
+;;; This tells us one student in academic year 0 transitioned to academic year 1 and kept the setting and need the same.
+;;; 
+;;; ### Population Matrix
+;; **
+
+;; @@
+(print (ppds (:population input-datasets)))
+;; @@
+;; ->
+;;; [:calendar-year :academic-year :population]
+;;; [[2014.000 0.000 7000.000]
+;;;  [2014.000 1.000 7000.000]
+;;;  [2014.000 2.000 7000.000]
+;;;  [2014.000 3.000 7000.000]
+;;;  [2014.000 4.000 7000.000]
+;;;  [2014.000 5.000 7000.000]
+;;;  [2015.000 0.000 7000.000]
+;;;  [2015.000 1.000 7000.000]
+;;;  [2015.000 2.000 7000.000]
+;;;  [2015.000 3.000 7000.000]
+;;;  [2015.000 4.000 7000.000]
+;;;  [2015.000 5.000 7000.000]
+;;;  [2016.000 0.000 7000.000]
+;;;  [2016.000 1.000 7000.000]
+;;;  [2016.000 2.000 7000.000]
+;;;  [2016.000 3.000 7000.000]
+;;;  [2016.000 4.000 7000.000]
+;;;  [2016.000 5.000 7000.000]
+;;;  [2017.000 0.000 7000.000]
+;;;  [2017.000 1.000 7000.000]
+;;;  [2017.000 2.000 7000.000]
+;;;  [2017.000 3.000 7000.000]
+;;;  [2017.000 4.000 7000.000]
+;;;  [2017.000 5.000 7000.000]
+;;;  [2018.000 0.000 7000.000]
+;;;  [2018.000 1.000 7000.000]
+;;;  [2018.000 2.000 7000.000]
+;;;  [2018.000 3.000 7000.000]
+;;;  [2018.000 4.000 7000.000]
+;;;  [2018.000 5.000 7000.000]
+;;;  [2019.000 0.000 7000.000]
+;;;  [2019.000 1.000 7000.000]
+;;;  [2019.000 2.000 7000.000]
+;;;  [2019.000 3.000 7000.000]
+;;;  [2019.000 4.000 7000.000]
+;;;  [2019.000 5.000 7000.000]
+;;;  [2020.000 0.000 7000.000]
+;;;  [2020.000 1.000 7000.000]
+;;;  [2020.000 2.000 7000.000]
+;;;  [2020.000 3.000 7000.000]
+;;;  [2020.000 4.000 7000.000]
+;;;  [2020.000 5.000 7000.000]
+;;;  [2021.000 0.000 7000.000]
+;;;  [2021.000 1.000 7000.000]
+;;;  [2021.000 2.000 7000.000]
+;;;  [2021.000 3.000 7000.000]
+;;;  [2021.000 4.000 7000.000]
+;;;  [2021.000 5.000 7000.000]
+;;;  [2022.000 0.000 7000.000]
+;;;  [2022.000 1.000 7000.000]
+;;;  [2022.000 2.000 7000.000]
+;;;  [2022.000 3.000 7000.000]
+;;;  [2022.000 4.000 7000.000]
+;;;  [2022.000 5.000 7000.000]]
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; @@
+(print (ppds (:settings-cost input-datasets)))
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; @@
+(print (ppds (:valid-setting-academic-years input-datasets)))
+;; @@
+;; ->
+;;; [:setting :setting-group :min-academic-year :max-academic-year :needs :setting-&gt;setting]
+;;; [[:settingA Other 1.000 5.000 needB settingA,settingC]
+;;;  [:settingC Other 1.000 5.000 needD settingA,settingC]]
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; ## Preparing the Inputs
+;; **
+
+;; @@
+(def prepared-inputs (i/prepare-send-inputs input-datasets (:transition-parameters ss)))
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-var'>#&#x27;witan.send.explore-model.gorilla/prepared-inputs</span>","value":"#'witan.send.explore-model.gorilla/prepared-inputs"}
+;; <=
+
+;; **
+;;; Where
+;; **
+
+;; @@
+(pprint (:transition-parameters ss))
+;; @@
+;; ->
+;;; {:filter-transitions-from nil,
+;;;  :which-transitions? nil,
+;;;  :splice-ncy nil,
+;;;  :modify-transition-by 1}
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; The results are
+;; **
+
+;; @@
+(type prepared-inputs)
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-class'>clojure.lang.PersistentArrayMap</span>","value":"clojure.lang.PersistentArrayMap"}
+;; <=
+
+;; @@
+(pprint (types prepared-inputs))
+;; @@
+;; ->
+;;; {:standard-projection clojure.lang.PersistentHashMap,
+;;;  :scenario-projection nil,
+;;;  :modify-transition-by java.lang.Long,
+;;;  :settings-to-change nil}
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; What is `:standard-projection`?
+;; **
+
+;; @@
+(pprint (types (:standard-projection prepared-inputs)))
+;; @@
+;; ->
+;;; {:mover-state-alphas clojure.lang.PersistentHashMap,
+;;;  :population-by-age-state clojure.lang.PersistentArrayMap,
+;;;  :leaver-beta-params clojure.lang.PersistentHashMap,
+;;;  :joiner-state-alphas clojure.lang.PersistentArrayMap,
+;;;  :setting-cost-lookup clojure.lang.PersistentArrayMap,
+;;;  :transition-matrix clojure.core.matrix.impl.dataset.DataSet,
+;;;  :projected-population clojure.lang.PersistentHashMap,
+;;;  :valid-setting-academic-years
+;;;  clojure.core.matrix.impl.dataset.DataSet,
+;;;  :population clojure.core.matrix.impl.dataset.DataSet,
+;;;  :mover-beta-params clojure.lang.PersistentHashMap,
+;;;  :joiner-beta-params clojure.lang.PersistentArrayMap}
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; This is much more interesting!
+;;; 
+;;; First we see that the datasets are all unchanged from the initial creation
+;; **
+
+;; @@
+(= (:transition-matrix (:standard-projection prepared-inputs))
+   (:transition-matrix input-datasets))
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-unkown'>true</span>","value":"true"}
+;; <=
+
+;; @@
+(= (:valid-setting-academic-years (:standard-projection prepared-inputs))
+   (:valid-setting-academic-years input-datasets))
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-unkown'>true</span>","value":"true"}
+;; <=
+
+;; @@
+(= (:population (:standard-projection prepared-inputs))
+   (:population input-datasets))
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-unkown'>true</span>","value":"true"}
+;; <=
+
+;; **
+;;; What are the new keys introduced?
+;; **
+
+;; @@
+(def added-sp-keys (clojure.set/difference
+                     (set (keys (:standard-projection prepared-inputs)))
+                     (set (keys input-datasets))))
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-var'>#&#x27;witan.send.explore-model.gorilla/added-sp-keys</span>","value":"#'witan.send.explore-model.gorilla/added-sp-keys"}
+;; <=
+
+;; @@
+(pprint added-sp-keys)
+;; @@
+;; ->
+;;; #{:mover-state-alphas :population-by-age-state :leaver-beta-params
+;;;   :joiner-state-alphas :setting-cost-lookup :projected-population
+;;;   :mover-beta-params :joiner-beta-params}
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; @@
+(pprint (types (select-keys (:standard-projection prepared-inputs) added-sp-keys)))
+;; @@
+;; ->
+;;; {:mover-state-alphas clojure.lang.PersistentHashMap,
+;;;  :population-by-age-state clojure.lang.PersistentArrayMap,
+;;;  :leaver-beta-params clojure.lang.PersistentHashMap,
+;;;  :joiner-state-alphas clojure.lang.PersistentArrayMap,
+;;;  :setting-cost-lookup clojure.lang.PersistentArrayMap,
+;;;  :projected-population clojure.lang.PersistentHashMap,
+;;;  :mover-beta-params clojure.lang.PersistentHashMap,
+;;;  :joiner-beta-params clojure.lang.PersistentArrayMap}
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; At a 40k view we are not so much interested in how these maps are calculated but rather what they represent.
+;;; 
+;;; ### Population by Age State
+;; **
+
+;; **
+;;; 
+;; **
+
+;; @@
+(pprint (:population-by-age-state (:standard-projection prepared-inputs)))
+;; @@
+;; ->
+;;; {[1 :needB-settingA] 3,
+;;;  [1 :needD-settingC] 2,
+;;;  [2 :needB-settingA] 2,
+;;;  [2 :needD-settingC] 3,
+;;;  [3 :needB-settingA] 2,
+;;;  [3 :needD-settingC] 3,
+;;;  [4 :needB-settingA] 3,
+;;;  [4 :needD-settingC] 2}
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; This matrix represents a graph of the population. 
+;;; 
+;;; ![Graph](./graph.png)
+;;; 
+;;; It does not contain any information about where the increases in population for one state came from.  However in this simple graph they can easily be inferred.  In general they can not (i dont' think).  The transition matrix would be needed for this.
+;; **
+
+;; **
+;;; ### Leaver Beta Parameters
+;;; 
+;; **
+
+;; @@
+(pprint (:leaver-beta-params (:standard-projection prepared-inputs)))
+;; @@
+;; ->
+;;; {[2 :needD-settingC]
+;;;  {:alpha 0.010869565217391304, :beta 0.9891304347826086},
+;;;  [4 :needD-settingC] {:alpha 6.96875, :beta 0.03125},
+;;;  [1 :needD-settingC]
+;;;  {:beta 18.98913043478261, :alpha 0.010869565217391304},
+;;;  [2 :needB-settingA]
+;;;  {:alpha 0.010869565217391304, :beta 0.9891304347826086},
+;;;  [5 :needD-settingC] {:alpha 0.96875, :beta 0.03125},
+;;;  [4 :needB-settingA] {:alpha 9.96875, :beta 0.03125},
+;;;  [3 :needD-settingC]
+;;;  {:alpha 0.010869565217391304, :beta 0.9891304347826086},
+;;;  [5 :needB-settingA] {:alpha 0.96875, :beta 0.03125},
+;;;  [3 :needB-settingA]
+;;;  {:alpha 0.010869565217391304, :beta 0.9891304347826086},
+;;;  [1 :needB-settingA]
+;;;  {:beta 27.98913043478261, :alpha 0.010869565217391304}}
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; @@
+
+;; @@
