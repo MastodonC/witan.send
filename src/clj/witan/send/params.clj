@@ -4,6 +4,8 @@
 
 (def some+ (fnil + 0))
 
+
+
 (def natural-prior 1/3)
 
 (defn multimerge-alphas [total & weight-alphas]
@@ -171,7 +173,7 @@
 (defn continue-for-latter-ays [params academic-years]
   (reduce (fn [coll ay]
             (if-let [v (or (get coll ay)
-                           (get coll (dec ay)))]
+                           nil)]
               (assoc coll ay v)
               coll))
           params (sort academic-years)))
