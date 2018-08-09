@@ -131,23 +131,23 @@
 ;;;  [2014.000 :settingA   :needB 1.000 :settingA   :needB 2.000]
 ;;;  [2014.000 :settingA   :needB 1.000 :settingA   :needB 2.000]
 ;;;  [2014.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
-;;;  [2014.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
-;;;  [2014.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
-;;;  [2014.000 :settingA   :needB 1.000 :settingA   :needB 3.000]
-;;;  [2014.000 :settingA   :needB 1.000 :settingA   :needB 3.000]
-;;;  [2014.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
-;;;  [2014.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
-;;;  [2014.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
-;;;  [2014.000 :settingA   :needB 1.000 :settingA   :needB 4.000]
-;;;  [2014.000 :settingA   :needB 1.000 :settingA   :needB 4.000]
-;;;  [2014.000 :settingC   :needD 1.000 :settingC   :needD 4.000]
-;;;  [2014.000 :settingC   :needD 1.000 :settingC   :needD 4.000]
-;;;  [2014.000 :settingC   :needD 1.000 :settingA   :needB 4.000]
-;;;  [2014.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2014.000 :settingC   :needD 1.000 :settingC   :needD 2.000]
+;;;  [2014.000 :settingC   :needD 1.000 :settingC   :needD 2.000]
+;;;  [2014.000 :settingA   :needB 2.000 :settingA   :needB 3.000]
+;;;  [2014.000 :settingA   :needB 2.000 :settingA   :needB 3.000]
+;;;  [2014.000 :settingC   :needD 2.000 :settingC   :needD 3.000]
+;;;  [2014.000 :settingC   :needD 2.000 :settingC   :needD 3.000]
+;;;  [2014.000 :settingC   :needD 2.000 :settingC   :needD 3.000]
+;;;  [2014.000 :settingA   :needB 3.000 :settingA   :needB 4.000]
+;;;  [2014.000 :settingA   :needB 3.000 :settingA   :needB 4.000]
+;;;  [2014.000 :settingC   :needD 3.000 :settingC   :needD 4.000]
+;;;  [2014.000 :settingC   :needD 3.000 :settingC   :needD 4.000]
+;;;  [2014.000 :settingC   :needD 3.000 :settingA   :needB 4.000]
 ;;;  [2014.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
 ;;;  [2014.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
 ;;;  [2014.000 :settingC   :needD 4.000  :NONSEND :NONSEND 5.000]
 ;;;  [2014.000 :settingC   :needD 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2014.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
 ;;;  [2015.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
 ;;;  [2015.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
 ;;;  [2015.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
@@ -156,23 +156,23 @@
 ;;;  [2015.000 :settingA   :needB 1.000 :settingA   :needB 2.000]
 ;;;  [2015.000 :settingA   :needB 1.000 :settingA   :needB 2.000]
 ;;;  [2015.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
-;;;  [2015.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
-;;;  [2015.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
-;;;  [2015.000 :settingA   :needB 1.000 :settingA   :needB 3.000]
-;;;  [2015.000 :settingA   :needB 1.000 :settingA   :needB 3.000]
-;;;  [2015.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
-;;;  [2015.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
-;;;  [2015.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
-;;;  [2015.000 :settingA   :needB 1.000 :settingA   :needB 4.000]
-;;;  [2015.000 :settingA   :needB 1.000 :settingA   :needB 4.000]
-;;;  [2015.000 :settingC   :needD 1.000 :settingC   :needD 4.000]
-;;;  [2015.000 :settingC   :needD 1.000 :settingC   :needD 4.000]
-;;;  [2015.000 :settingC   :needD 1.000 :settingA   :needB 4.000]
-;;;  [2015.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2015.000 :settingC   :needD 1.000 :settingC   :needD 2.000]
+;;;  [2015.000 :settingC   :needD 1.000 :settingC   :needD 2.000]
+;;;  [2015.000 :settingA   :needB 2.000 :settingA   :needB 3.000]
+;;;  [2015.000 :settingA   :needB 2.000 :settingA   :needB 3.000]
+;;;  [2015.000 :settingC   :needD 2.000 :settingC   :needD 3.000]
+;;;  [2015.000 :settingC   :needD 2.000 :settingC   :needD 3.000]
+;;;  [2015.000 :settingC   :needD 2.000 :settingC   :needD 3.000]
+;;;  [2015.000 :settingA   :needB 3.000 :settingA   :needB 4.000]
+;;;  [2015.000 :settingA   :needB 3.000 :settingA   :needB 4.000]
+;;;  [2015.000 :settingC   :needD 3.000 :settingC   :needD 4.000]
+;;;  [2015.000 :settingC   :needD 3.000 :settingC   :needD 4.000]
+;;;  [2015.000 :settingC   :needD 3.000 :settingA   :needB 4.000]
 ;;;  [2015.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
 ;;;  [2015.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
 ;;;  [2015.000 :settingC   :needD 4.000  :NONSEND :NONSEND 5.000]
 ;;;  [2015.000 :settingC   :needD 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2015.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
 ;;;  [2016.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
 ;;;  [2016.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
 ;;;  [2016.000  :NONSEND :NONSEND 0.000 :settingA   :needB 1.000]
@@ -181,23 +181,23 @@
 ;;;  [2016.000 :settingA   :needB 1.000 :settingA   :needB 2.000]
 ;;;  [2016.000 :settingA   :needB 1.000 :settingA   :needB 2.000]
 ;;;  [2016.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
-;;;  [2016.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
-;;;  [2016.000 :settingA   :needB 1.000 :settingC   :needD 2.000]
-;;;  [2016.000 :settingA   :needB 1.000 :settingA   :needB 3.000]
-;;;  [2016.000 :settingA   :needB 1.000 :settingA   :needB 3.000]
-;;;  [2016.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
-;;;  [2016.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
-;;;  [2016.000 :settingC   :needD 1.000 :settingC   :needD 3.000]
-;;;  [2016.000 :settingA   :needB 1.000 :settingA   :needB 4.000]
-;;;  [2016.000 :settingA   :needB 1.000 :settingA   :needB 4.000]
-;;;  [2016.000 :settingC   :needD 1.000 :settingC   :needD 4.000]
-;;;  [2016.000 :settingC   :needD 1.000 :settingC   :needD 4.000]
-;;;  [2016.000 :settingC   :needD 1.000 :settingA   :needB 4.000]
-;;;  [2016.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2016.000 :settingC   :needD 1.000 :settingC   :needD 2.000]
+;;;  [2016.000 :settingC   :needD 1.000 :settingC   :needD 2.000]
+;;;  [2016.000 :settingA   :needB 2.000 :settingA   :needB 3.000]
+;;;  [2016.000 :settingA   :needB 2.000 :settingA   :needB 3.000]
+;;;  [2016.000 :settingC   :needD 2.000 :settingC   :needD 3.000]
+;;;  [2016.000 :settingC   :needD 2.000 :settingC   :needD 3.000]
+;;;  [2016.000 :settingC   :needD 2.000 :settingC   :needD 3.000]
+;;;  [2016.000 :settingA   :needB 3.000 :settingA   :needB 4.000]
+;;;  [2016.000 :settingA   :needB 3.000 :settingA   :needB 4.000]
+;;;  [2016.000 :settingC   :needD 3.000 :settingC   :needD 4.000]
+;;;  [2016.000 :settingC   :needD 3.000 :settingC   :needD 4.000]
+;;;  [2016.000 :settingC   :needD 3.000 :settingA   :needB 4.000]
 ;;;  [2016.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
 ;;;  [2016.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]
 ;;;  [2016.000 :settingC   :needD 4.000  :NONSEND :NONSEND 5.000]
-;;;  [2016.000 :settingC   :needD 4.000  :NONSEND :NONSEND 5.000]]
+;;;  [2016.000 :settingC   :needD 4.000  :NONSEND :NONSEND 5.000]
+;;;  [2016.000 :settingA   :needB 4.000  :NONSEND :NONSEND 5.000]]
 ;; <-
 ;; =>
 ;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
@@ -218,60 +218,60 @@
 ;; @@
 ;; ->
 ;;; [:calendar-year :academic-year :population]
-;;; [[2014.000 0.000 7000.000]
-;;;  [2014.000 1.000 7000.000]
-;;;  [2014.000 2.000 7000.000]
-;;;  [2014.000 3.000 7000.000]
-;;;  [2014.000 4.000 7000.000]
-;;;  [2014.000 5.000 7000.000]
-;;;  [2015.000 0.000 7000.000]
-;;;  [2015.000 1.000 7000.000]
-;;;  [2015.000 2.000 7000.000]
-;;;  [2015.000 3.000 7000.000]
-;;;  [2015.000 4.000 7000.000]
-;;;  [2015.000 5.000 7000.000]
-;;;  [2016.000 0.000 7000.000]
-;;;  [2016.000 1.000 7000.000]
-;;;  [2016.000 2.000 7000.000]
-;;;  [2016.000 3.000 7000.000]
-;;;  [2016.000 4.000 7000.000]
-;;;  [2016.000 5.000 7000.000]
-;;;  [2017.000 0.000 7000.000]
-;;;  [2017.000 1.000 7000.000]
-;;;  [2017.000 2.000 7000.000]
-;;;  [2017.000 3.000 7000.000]
-;;;  [2017.000 4.000 7000.000]
-;;;  [2017.000 5.000 7000.000]
-;;;  [2018.000 0.000 7000.000]
-;;;  [2018.000 1.000 7000.000]
-;;;  [2018.000 2.000 7000.000]
-;;;  [2018.000 3.000 7000.000]
-;;;  [2018.000 4.000 7000.000]
-;;;  [2018.000 5.000 7000.000]
-;;;  [2019.000 0.000 7000.000]
-;;;  [2019.000 1.000 7000.000]
-;;;  [2019.000 2.000 7000.000]
-;;;  [2019.000 3.000 7000.000]
-;;;  [2019.000 4.000 7000.000]
-;;;  [2019.000 5.000 7000.000]
-;;;  [2020.000 0.000 7000.000]
-;;;  [2020.000 1.000 7000.000]
-;;;  [2020.000 2.000 7000.000]
-;;;  [2020.000 3.000 7000.000]
-;;;  [2020.000 4.000 7000.000]
-;;;  [2020.000 5.000 7000.000]
-;;;  [2021.000 0.000 7000.000]
-;;;  [2021.000 1.000 7000.000]
-;;;  [2021.000 2.000 7000.000]
-;;;  [2021.000 3.000 7000.000]
-;;;  [2021.000 4.000 7000.000]
-;;;  [2021.000 5.000 7000.000]
-;;;  [2022.000 0.000 7000.000]
-;;;  [2022.000 1.000 7000.000]
-;;;  [2022.000 2.000 7000.000]
-;;;  [2022.000 3.000 7000.000]
-;;;  [2022.000 4.000 7000.000]
-;;;  [2022.000 5.000 7000.000]]
+;;; [[2014.000 0.000  7000.000]
+;;;  [2014.000 1.000  7000.000]
+;;;  [2014.000 2.000  7000.000]
+;;;  [2014.000 3.000  7000.000]
+;;;  [2014.000 4.000  7000.000]
+;;;  [2014.000 5.000  7000.000]
+;;;  [2015.000 0.000 70000.000]
+;;;  [2015.000 1.000 70000.000]
+;;;  [2015.000 2.000 70000.000]
+;;;  [2015.000 3.000 70000.000]
+;;;  [2015.000 4.000 70000.000]
+;;;  [2015.000 5.000 70000.000]
+;;;  [2016.000 0.000 80000.000]
+;;;  [2016.000 1.000 80000.000]
+;;;  [2016.000 2.000 80000.000]
+;;;  [2016.000 3.000 80000.000]
+;;;  [2016.000 4.000 80000.000]
+;;;  [2016.000 5.000  8000.000]
+;;;  [2017.000 0.000  7000.000]
+;;;  [2017.000 1.000  7000.000]
+;;;  [2017.000 2.000  7000.000]
+;;;  [2017.000 3.000  7000.000]
+;;;  [2017.000 4.000  7000.000]
+;;;  [2017.000 5.000  7000.000]
+;;;  [2018.000 0.000  7000.000]
+;;;  [2018.000 1.000  7000.000]
+;;;  [2018.000 2.000  7000.000]
+;;;  [2018.000 3.000  7000.000]
+;;;  [2018.000 4.000  7000.000]
+;;;  [2018.000 5.000  7000.000]
+;;;  [2019.000 0.000  7000.000]
+;;;  [2019.000 1.000  7000.000]
+;;;  [2019.000 2.000  7000.000]
+;;;  [2019.000 3.000  7000.000]
+;;;  [2019.000 4.000  7000.000]
+;;;  [2019.000 5.000  7000.000]
+;;;  [2020.000 0.000 70000.000]
+;;;  [2020.000 1.000 70000.000]
+;;;  [2020.000 2.000 70000.000]
+;;;  [2020.000 3.000 70000.000]
+;;;  [2020.000 4.000 70000.000]
+;;;  [2020.000 5.000 70000.000]
+;;;  [2021.000 0.000 70000.000]
+;;;  [2021.000 1.000 70000.000]
+;;;  [2021.000 2.000 70000.000]
+;;;  [2021.000 3.000 70000.000]
+;;;  [2021.000 4.000 70000.000]
+;;;  [2021.000 5.000 70000.000]
+;;;  [2022.000 0.000 70000.000]
+;;;  [2022.000 1.000 70000.000]
+;;;  [2022.000 2.000 70000.000]
+;;;  [2022.000 3.000 70000.000]
+;;;  [2022.000 4.000 70000.000]
+;;;  [2022.000 5.000 70000.000]]
 ;; <-
 ;; =>
 ;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
@@ -289,12 +289,26 @@
 ;; @@
 ;; ->
 ;;; [:setting :setting-group :min-academic-year :max-academic-year :needs :setting-&gt;setting]
-;;; [[:settingA Other 1.000 5.000 needB settingA,settingC]
-;;;  [:settingC Other 1.000 5.000 needD settingA,settingC]]
+;;; [[:settingA Other 0.000 5.000 needB settingA,settingC]
+;;;  [:settingC Other 0.000 5.000 needD settingA,settingC]]
 ;; <-
 ;; =>
 ;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
 ;; <=
+
+;; **
+;;; This matrix limits the state space and is particular important to get right.
+;;; 
+;;; Omiting year 0 (lowest AY) will cause the joiner rate distribution to be skewed (and others).  The final column is not a mapping (as the header suggests) but rather a set of all settings the current setting can map to.  For example, in this case A can go to itself and to C.
+;;; 
+;;; The DSL used here to implement restrictions is not powerful enough to fully restrict state spaces as it doesn't take into account needs. In this case the states allowed by this file are
+;;; 
+;;;     [AB] [CA] [CD] [AD]
+;;;     
+;;; Whereas our observation data only has `[AB]` and `[CD]`
+;;; 
+;;; By not being able to fix needs we have to states `[CA]` adn `[AD]` in our model we've no real interest in.  These will actually come up in probabiltiy distributions used to model transitions.  However interestingly they don't come up in the final result graphs and outputs but we do see them in transitions - something strange is happening here and needs investigating. 
+;; **
 
 ;; **
 ;;; ## Preparing the Inputs
@@ -481,9 +495,9 @@
 ;; **
 ;;; This matrix represents a graph of the population. 
 ;;; 
-;;; ![Graph](./graph.png)
+;;; ![Graph](https://github.com/MastodonC/witan.send/blob/gorilla-prep/graph.png?raw=true)
 ;;; 
-;;; It does not contain any information about where the increases in population for one state came from.  However in this simple graph they can easily be inferred.  In general they can not (i dont' think).  The transition matrix would be needed for this.
+;;; It does not contain any information about where the increases in population for one state came from.  However in this simple graph a solution can easily be inferred (not the only solution).  In general they can not (i dont' think).  The transition matrix would be needed for this.
 ;; **
 
 ;; **
@@ -492,31 +506,183 @@
 ;; **
 
 ;; @@
-(pprint (:leaver-beta-params (:standard-projection prepared-inputs)))
+(pprint  (sort (:leaver-beta-params (:standard-projection prepared-inputs))))
 ;; @@
 ;; ->
-;;; {[2 :needD-settingC]
-;;;  {:alpha 0.010869565217391304, :beta 0.9891304347826086},
-;;;  [4 :needD-settingC] {:alpha 6.96875, :beta 0.03125},
-;;;  [1 :needD-settingC]
-;;;  {:beta 18.98913043478261, :alpha 0.010869565217391304},
-;;;  [2 :needB-settingA]
-;;;  {:alpha 0.010869565217391304, :beta 0.9891304347826086},
-;;;  [5 :needD-settingC] {:alpha 0.96875, :beta 0.03125},
-;;;  [4 :needB-settingA] {:alpha 9.96875, :beta 0.03125},
-;;;  [3 :needD-settingC]
-;;;  {:alpha 0.010869565217391304, :beta 0.9891304347826086},
-;;;  [5 :needB-settingA] {:alpha 0.96875, :beta 0.03125},
-;;;  [3 :needB-settingA]
-;;;  {:alpha 0.010869565217391304, :beta 0.9891304347826086},
-;;;  [1 :needB-settingA]
-;;;  {:beta 27.98913043478261, :alpha 0.010869565217391304}}
+;;; ([[1 :needB-settingA] {:beta 9.96875, :alpha 0.03125}]
+;;;  [[1 :needD-settingC] {:beta 6.96875, :alpha 0.03125}]
+;;;  [[2 :needB-settingA] {:beta 6.96875, :alpha 0.03125}]
+;;;  [[2 :needD-settingC] {:beta 9.96875, :alpha 0.03125}]
+;;;  [[3 :needB-settingA] {:beta 6.96875, :alpha 0.03125}]
+;;;  [[3 :needD-settingC] {:beta 9.96875, :alpha 0.03125}]
+;;;  [[4 :needB-settingA] {:alpha 9.96875, :beta 0.03125}]
+;;;  [[4 :needD-settingC] {:alpha 6.96875, :beta 0.03125}]
+;;;  [[5 :needB-settingA] {:alpha 0.96875, :beta 0.03125}]
+;;;  [[5 :needD-settingC] {:alpha 0.96875, :beta 0.03125}])
 ;;; 
 ;; <-
 ;; =>
 ;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
 ;; <=
 
-;; @@
+;; **
+;;; To model people leaving SEND, with very limited data and sometimes no data, we have to introduce some expectation. For example if no one leaves SEND in year 2 it's unreasonable to conclude the probability of leaving is 0.  The beta distribution is used to provide the probability of the probablity-of-leaving.
+;;; 
+;;; Looking at `[1 :BA]`
+;;; 
+;;; ![1ba beta dist]()
+;;; 
+;;; The graph shows the probability of someone successfully leaving is likely between 0 and 0.1 - so very low but not zero as the actual data shows.
+;;; 
+;;; Looking at `[5 :BA]`
+;;; 
+;;; ![5ba beta dist]()
+;;; 
+;;; The graph shows the probability of someone successfully leaving is likely between 0.9 and 1.0 - so very high but not zero as the actual data shows.
+;;; 
+;;; The remaining state probabilities take the form of very likely or very unlikely for this sample set.
+;;; 
+;;; 
+;;; 
+;;; 
+;;; 
+;; **
+
+;; **
+;;; ### Mover Beta Parameters
+;; **
 
 ;; @@
+(pprint  (sort (:mover-beta-params (:standard-projection prepared-inputs))))
+;; @@
+;; ->
+;;; ([[1 :needB-settingA] {:beta 6.78125, :alpha 3.21875}]
+;;;  [[1 :needD-settingC] {:beta 6.78125, :alpha 0.21875}]
+;;;  [[2 :needB-settingA] {:beta 6.96875, :alpha 0.03125}]
+;;;  [[2 :needD-settingC] {:beta 9.96875, :alpha 0.03125}]
+;;;  [[3 :needB-settingA] {:beta 6.78125, :alpha 0.21875}]
+;;;  [[3 :needD-settingC] {:beta 6.78125, :alpha 3.21875}]
+;;;  [[4 :needB-settingA] {:alpha 0.21875, :beta 0.78125}]
+;;;  [[4 :needD-settingC] {:alpha 0.21875, :beta 0.78125}]
+;;;  [[5 :needB-settingA] {:alpha 0.21875, :beta 0.78125}]
+;;;  [[5 :needD-settingC] {:alpha 0.21875, :beta 0.78125}])
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; The probability of someone moving placements is done in the same way as the leavers using a beta distribution.
+;;; 
+;;; Looking at `[1 :ba]`
+;;; 
+;;; ![1ba-movers-beta]()
+;;; 
+;;; We see that the probability that someone moves is between 0.25 and 0.42 and the expected value is 0.33.  This matches the fact that population count directed graph shows that 1 out of the 3 students in `[1 :ba]` moved.
+;;; 
+;;; Looking at `[1 :dc]` 
+;;; 
+;;; ![1dc-movers-beta]()
+;;; 
+;;; We see a probabilty graph that represents we saw 0 movers but has used the prior expectation to say it can't actually be 0.
+;;; 
+;;; 
+;;; We also need to know the probabilities where someone will actually move to.
+;; **
+
+;; **
+;;; ### Mover Alpha Parameters
+;; **
+
+;; @@
+(pprint  (sort (:mover-state-alphas (:standard-projection prepared-inputs))))
+;; @@
+;; ->
+;;; ([[0 :needB-settingA] {}]
+;;;  [[0 :needD-settingC] {}]
+;;;  [[1 :needB-settingA] {:needB-settingC 1.0, :needD-settingC 3}]
+;;;  [[1 :needD-settingC] {}]
+;;;  [[2 :needB-settingA] {:needB-settingC 1.0}]
+;;;  [[2 :needD-settingC] {}]
+;;;  [[3 :needB-settingA] {}]
+;;;  [[3 :needD-settingC] {:needD-settingA 1.0, :needB-settingA 3}]
+;;;  [[4 :needB-settingA] {}]
+;;;  [[4 :needD-settingC] {:needD-settingA 1.0}]
+;;;  [[5 :needB-settingA] {}]
+;;;  [[5 :needD-settingC] {:needD-settingA 1.0}])
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; The Alpha parameters are inputs into the Dirichlet distribution - which is the multinomial equivalent to the Beta distribution.  i.e, it works on multiple outcomes.
+;;; 
+;;; Like the Beta distribution it allows us to sample the probabilities a mover will go to a partiuclar state.
+;;; 
+;;; For `[1 :BA]` we can write the alphas as `4 * (0.25, 0.75)`.  This reads as the mean probability of going from `[1 :BA] -> [BC]` is 0.25 and `[1 :BA] -> [DC]` is 0.75.
+;;; 
+;;; 
+;;; For `[1 :DC]` we have `4 * (0.25, 0.75)`, so `[1 :DC] -> [:DA]` is 0.25 and `[1 :DC] -> [BA]` is 0.75.
+;;; 
+;;; I'm unable to properly explain why the `[2: BA] -> BC` has a probabilty of 1.  This is a state that doesn't exist in the transitions but does exist as an allowed state (see the section input data discussing this).  Perhaps the probabilty of going to the other states from the observed data is 0 and so it's mass is all dumped here?
+;;; 
+;;; 
+;;; 
+;; **
+
+;; **
+;;; ### Joiner Beta Parameters
+;; **
+
+;; @@
+(pprint  (sort (:joiner-beta-params (:standard-projection prepared-inputs))))
+;; @@
+;; ->
+;;; ([1 {:alpha 5N, :beta 6995N}]
+;;;  [2 {:alpha 5N, :beta 6995N}]
+;;;  [3 {:alpha 5N, :beta 6995N}]
+;;;  [4 {:alpha 5N, :beta 6995N}]
+;;;  [5 {:alpha 5N, :beta 6995N}])
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; Note: It's pretty important that valid settings allows for year 0 elsewise these results don't make sense.
+;;; 
+;;; ![joiner-beta-dist]()
+;;; 
+;;; The data shows currently 5 joiners per year.  With a static population of 7000 and the expected probabilty of 0.0007 we have `7000 * 0.0007 = 5`.
+;;; 
+;;; The repeated beta parameters here are perculiar.  Each years distribution is the same.  This is due to the Academic Year 1 being copied to Year 2 when no data is present.  This happens for all 5 Academic years.  In reality the Joiner rates are much higher for year 1 and much lower for the subsequent years - the copy of the distrubtion at least for Joiners does not feel like the correct thing to do.  Also the function to copy the distribution is used in movers and leavers also - these should be visited also.
+;;; 
+;;; A first pass at a fix has been put in place.
+;; **
+
+;; **
+;;; ### Joiner Alpha Parameters
+;; **
+
+;; @@
+(pprint  (sort (:joiner-state-alphas (:standard-projection prepared-inputs))))
+;; @@
+;; ->
+;;; ([1 {:needB-settingA 9.5, :needD-settingC 6.5}]
+;;;  [2 {:needB-settingA 9.5, :needD-settingC 6.5}]
+;;;  [3 {:needB-settingA 9.5, :needD-settingC 6.5}]
+;;;  [4 {:needB-settingA 9.5, :needD-settingC 6.5}]
+;;;  [5 {:needB-settingA 9.5, :needD-settingC 6.5}])
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; **
+;;; This distribution says that on average 60% of the joiners will go to BA and 40% to DC.  However as before it doesn't seem reasonable to copy these distributions to subseqent academic years.
+;; **
