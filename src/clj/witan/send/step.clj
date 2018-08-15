@@ -4,7 +4,7 @@
 
 (defn age-population
   [projection model-state]
-  (-> (reduce (fn [coll [[year state :as k] population]]
+  (-> (reduce (fn [coll [[year state] population]]
                 (cond-> coll
                   (< year const/max-academic-year)
                   (assoc [(inc year) state] population)))
