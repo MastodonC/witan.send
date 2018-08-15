@@ -1,15 +1,10 @@
 (ns witan.send.model.run
   (:require [witan.send.schemas :as sc]
             [clojure.core.matrix.dataset :as ds]
-            [witan.send.params :as p]
             [witan.send.step :as step]
             [witan.send.states :as states]
             [witan.send.utils :as u :refer [round]]
-            [incanter.stats :as stats]
-            [medley.core :as medley]
             [redux.core :as r]
-            [clojure.string :as str]
-            [witan.send.report :as report]
             [witan.send.report :refer [reset-send-report]]))
 
 (defn incorporate-new-states-for-academic-year-state
@@ -32,10 +27,8 @@
   "We're calling this function 'unsafe' because it doesn't check whether the state or
   or academic year range is valid."
   [[model transitions] [[year state] population]
-   {:keys [joiner-beta-params joiner-state-alphas
-           leaver-beta-params mover-beta-params
-           mover-state-alphas
-           valid-year-settings] :as params}
+   {:keys [leaver-beta-params mover-beta-params
+           mover-state-alphas valid-year-settings]}
    calendar-year]
   (if-let [probs (get mover-state-alphas [(dec year) state])]
     (let [leaver-params (get leaver-beta-params [(dec year) state])
@@ -53,16 +46,12 @@
   "Take single cohort of users and process them into the model state.
   Calls 'unsafe' equivalent once we've removed non-send and children outside
   valid academic year range."
-  [[model transitions :as model-state] [[year state] population :as cohort]
-   {:keys [joiner-beta-params joiner-state-alphas
-           leaver-beta-params
-           mover-beta-params mover-state-alphas
-           valid-year-settings] :as params}
-   calendar-year]
+  [[model transitions :as model-state]
+   [[year state] population :as cohort]
+   params calendar-year]
   (cond
     (= state sc/non-send)
     model-state
-
     (or (<= year sc/min-academic-year)
         (> year sc/max-academic-year))
     [model
@@ -88,14 +77,10 @@
 (defn run-model-iteration
   "Takes the model & transitions, transition params, and the projected population and produce the next state of the model & transitions"
   [modify-transitions-from
-   simulation {:keys [joiner-beta-params joiner-state-alphas
-                      leaver-beta-params
-                      mover-beta-params mover-state-alphas
-                      valid-year-settings] :as standard-projection}
-   {:keys [modified-joiner-beta-params modified-joiner-state-alphas
-           modified-leaver-beta-params modified-mover-beta-params
-           modified-mover-state-alphas] :as scenario-projection}
-   {:keys [model transitions]} [calendar-year projected-population]]
+   standard-projection
+   scenario-projection
+   {model-state :model}
+   [calendar-year projected-population]]
   (let [params (if (nil? modify-transitions-from)
                  (if ((complement nil?) scenario-projection)
                    scenario-projection
@@ -103,7 +88,7 @@
                  (if (>= calendar-year modify-transitions-from)
                    scenario-projection
                    standard-projection))
-        cohorts (step/age-population projected-population model)
+        cohorts (step/age-population projected-population model-state)
         [model transitions] (reduce (fn [model-state cohort]
                                       (apply-leavers-movers-for-cohort model-state cohort params calendar-year))
                                     [{} {}]
@@ -156,10 +141,10 @@
   [{:keys [standard-projection scenario-projection modify-transition-by settings-to-change]}
    {:keys [seed-year random-seed simulations modify-transitions-from]}]
   (u/set-seed! random-seed)
-  (let [{:keys [population population-by-age-state projected-population joiner-beta-params
-                joiner-state-alphas leaver-beta-params mover-beta-params mover-state-alphas
-                setting-cost-lookup valid-setting-academic-years
-                transition-matrix] :as inputs} standard-projection
+  (println "Preparing" simulations "simulations...")
+  (let [{:keys [population population-by-age-state
+                projected-population setting-cost-lookup
+                valid-setting-academic-years transition-matrix] :as inputs} standard-projection
         modified-inputs (when ((complement nil?) scenario-projection)
                           (assoc scenario-projection :valid-year-settings
                                  (->> (ds/row-maps valid-setting-academic-years)
@@ -175,12 +160,10 @@
         projections (->> (range simulations)
                          (partition-all (int (/ simulations 8)))
                          (pmap (fn [simulations]
-                                 (->> (for [simulation simulations]
-                                        (let [projection (reductions (partial run-model-iteration modify-transitions-from simulation inputs modified-inputs)
-                                                                     {:model population-by-age-state
-                                                                      :transitions {}}
+                                 (->> (for [_ simulations]
+                                        (let [projection (reductions (partial run-model-iteration modify-transitions-from inputs modified-inputs)
+                                                                     {:model population-by-age-state}
                                                                      projected-future-pop-by-year)]
-                                          (println (format "Created projection %d" simulation))
                                           projection))
                                       (doall))))
                          (doall))

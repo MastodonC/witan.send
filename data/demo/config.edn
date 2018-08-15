@@ -20,5 +20,5 @@
                      :output-dir "results"}
 
  :validation-parameters {:keep-temp-files? false
-                         :run-as-default true}
+                         :run-as-default false}
  }
