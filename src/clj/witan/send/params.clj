@@ -1,6 +1,5 @@
 (ns witan.send.params
   (:require [witan.send.states :as s]
-            [witan.send.constants :as const]
             [witan.send.utils :as u]))
 
 (def some+ (fnil + 0))
@@ -109,7 +108,7 @@
 
 (defn beta-params-academic-year-setting
   [transitions f]
-  (reduce (fn [coll [[ay state-1 state-2 :as transition] n]]
+  (reduce (fn [coll [[ay state-1 :as transition] n]]
             (let [[_ setting] (s/need-setting state-1)]
               (if (f transition)
                 (update-in coll [[ay setting] :alpha] some+ n)
@@ -125,7 +124,7 @@
                                    {}))
         academic-year-setting (beta-params-academic-year-setting transitions select)]
     (reduce (fn [coll [ay state]]
-              (let [[need setting] (s/need-setting state)
+              (let [[_ setting] (s/need-setting state)
                     observed (get academic-year-setting [ay setting] {})
                     by-ay (get academic-year ay {})]
                 (assoc coll [ay state] (merge-with + {:alpha natural-prior :beta natural-prior} by-ay observed))))
@@ -149,7 +148,6 @@
 (defn weighted-alpha-params
   [valid-states valid-year-settings transitions select]
   (let [transitions (select-transitions transitions select)
-        overall (alpha-params transitions (juxt state-2-setting))
         by-ay (alpha-params transitions (juxt academic-year state-2-setting))
         by-ay-setting (alpha-params transitions (juxt (juxt academic-year state-1-setting) state-2-setting))]
     (reduce (fn [coll [ay state]]
@@ -163,8 +161,7 @@
                     observed (-> (get by-ay-setting [ay setting])
                                  (select-keys valid-settings))
                     by-ay (->> (select-keys (get by-ay ay) valid-settings)
-                               (weighted-alphas natural-prior))
-                    prior (merge-with + prior-alphas overall by-ay)]
+                               (weighted-alphas natural-prior))]
                 (assoc coll [ay state] (->> (merge-with + prior-alphas by-ay observed)
                                             (map-keys #(s/state need %))
                                             (filter-vals pos?)))))
@@ -182,7 +179,6 @@
 (defn weighted-joiner-state-alpha-params
   [valid-states transitions]
   (let [transitions (select-transitions transitions joiner?)
-        joiners (alpha-params transitions (juxt state-2))
         by-ay (alpha-params transitions (juxt academic-year state-2))
         academic-years (->> (map first valid-states) distinct sort)
         params (reduce (fn [coll ay]
