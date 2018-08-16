@@ -13,7 +13,7 @@ Here each scenario is simply defined in terms of the collection of parameters to
 * Parameters = `:filter-transitions-from` & `:splice-ncy`
 * Arguments = a calendar year (`2016`) and national curriculum year (`11`)
 * Defines a separate set of transition rates based on a defined start year and minimum age
-* For example, historic transitions may date back to 2014, but a user may only want to use data for a specific age group from 2016
+* For [example](https://gist.github.com/seb231/c752e3a8562017c29ea0df01f76b0169), historic transitions may date back to 2014, but a user may only want to use data for a specific age group from 2016
 * Providing `:splice-ncy` with 11 filters anyone over that age
 * Typically we see a significant change in the trends in those over NCY 11, as these are only recently included in SEND, so data prior to this change may not want to be included as it could skew the models results
 
@@ -26,15 +26,15 @@ Here each scenario is simply defined in terms of the collection of parameters to
   * “Movers-to”
   * “Movers-from”
 * Defines single or multiple settings and type of transitions to modify the rates of, and by how much
-* For [example](https://gist.github.com/seb231/78edb8bc9c125ffa3c3c68f10040ec6d), a user may want to modify how many individuals are joining to the setting “Mainstream” by halving the current rate.
+* For [example](https://gist.github.com/seb231/b994bc040ed967e136424b623f165403), a user may want to modify how many individuals are joining to the setting “Mainstream” by halving the current rate.
 
 ### _“Modify setting(s) transitions rates and transfer individuals to alternative setting(s)”_
 
 * Parameter and Arguments as described above, however additionally takes a list of settings to transfer individuals in the modified setting(s) to (see [modify-settings2.csv](https://github.com/MastodonC/witan.send/blob/master/data/demo/data/modify-settings2.csv))
-* An example may be if a user halves the number of individuals joining “Mainstream”, they may wish to redistribute those joiners to another setting, for example “Special Independent”
+* An [example](https://gist.github.com/seb231/b994bc040ed967e136424b623f165403) may be if a user halves the number of individuals joining “Mainstream”, they may wish to redistribute those joiners to another setting, for example “Special Independent”
 
 ### _“Modify transitions from a specific future calendar year”_
 
 * Parameters = `:modify-transitions-from`, `:which-transitions?`, `:modify-transitions-by` and `:settings-to-change`
 * Arguments = as with above two scenarios, and additionally takes a calendar year (`2020`) from when a user may wish to apply the new transition rates
-* An example may be that a user only wants to start modelling a transition rate policy change in three years time and maintain the current trends until that time
+* An [example](https://gist.github.com/seb231/0218cb773df526e4e99b992db028703d) may be that a user only wants to start modelling a transition rate policy change in three years time and maintain the current trends until that time
