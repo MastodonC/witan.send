@@ -145,7 +145,7 @@ function are given in the NS.
 
 ## Tools
  
- In `utils` you will find tools for preparing a a valid states file purely from a transitions file and for making comparative plots for total count and cost for alternative runs of the model.
+ In `utils` you will find tools for preparing a a valid states file purely from a transitions file and for making comparative plots between total count and cost for alternative runs of the model.
 
 ## License
 
