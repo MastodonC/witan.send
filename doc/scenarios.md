@@ -12,9 +12,10 @@ Here each scenario is simply defined in terms of the collection of parameters to
 
 * Parameters = `:filter-transitions-from` & `:splice-ncy`
 * Arguments = a calendar year (`2016`) and national curriculum year (`11`)
-* Defines a separate set of transition rates based on a defined start year and age
-* For example, historic transitions may data back to 2014, but a user may only want to use data for a specific age group from 2016
-Typically we see a significant change in the behaviour in those over NCY 11, as these are only recently included in SEND, so data prior to this change may not want to be included as it could skew the models results
+* Defines a separate set of transition rates based on a defined start year and minimum age
+* For example, historic transitions may date back to 2014, but a user may only want to use data for a specific age group from 2016
+* Providing `:splice-ncy` with 11 filters anyone over that age
+* Typically we see a significant change in the trends in those over NCY 11, as these are only recently included in SEND, so data prior to this change may not want to be included as it could skew the models results
 
 ### _“Modify setting(s) transitions rates”_
 
