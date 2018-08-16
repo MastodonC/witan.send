@@ -1,13 +1,13 @@
-comparative_plot_cost = function(data1_folder, data2_folder){
+comparative_plot_cost = function(data_folder, data1, data2){
   
   # DATA
   
   ## import the baseline dataset and convert to millions
-  cost_data1 = read.csv(paste0("data/", data1_folder, "/", sub(".*/", "", data1_folder), "-Cost.csv"))
+  cost_data1 = read.csv(paste0(data_folder, data1, "Output_Cost.csv"))
   cost_data1[,-1] =  cost_data1[,-1] / 1000000
 
   ## import the scenario dataset and convert to millions
-  cost_data2 = read.csv(paste0("data/", data2_folder, "/", sub(".*/", "", data2_folder),  "-Cost.csv"))
+  cost_data2 = read.csv(paste0(data_folder, data2, "Output_Cost.csv"))
   cost_data2[,-1] =  cost_data2[,-1] / 1000000
 
   
@@ -44,7 +44,7 @@ comparative_plot_cost = function(data1_folder, data2_folder){
               colour = cols[2]) +
     theme(legend.position="none")
   
-  ggsave("target/Total_Cost_Comparative.pdf",
+  ggsave(paste0(data_folder, "Total_Cost_Comparative.pdf"),
          width=8,
          height=6,
          units="in")
@@ -53,7 +53,7 @@ comparative_plot_cost = function(data1_folder, data2_folder){
   ## ribbon plot - zero-indexed
   g + scale_y_continuous(limits = c(0, max(cost_data1$q3, na.rm=T)))
   
-  ggsave("target/Total_Cost_Comparative_Zeroindexed.pdf",
+  ggsave(paste0(data_folder, "Total_Cost_Comparative_Zeroindexed.pdf"),
          width=8,
          height=6,
          units="in")

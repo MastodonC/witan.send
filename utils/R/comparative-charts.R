@@ -1,19 +1,17 @@
 library(dplyr)
 library(ggplot2)
-
+library(stringr)
 
 # DATA
 
-## names of the folders containing the 2 data sets you want to compare. 
-### The code expects the folder and the data to be in specific forms and places: 
-### - the data must be placed inside the data/ folder
-### - the data must be csvs
-### - the data must take the same name as the folder (i.e. TH-VersionA-baseline-29-03-18)
-### - plus an additional name-part for the type of data (e.g. -Cost, -Count) followed by the .csv extension
+### Names of the folders containing the 2 data sets you want to compare.
+### The code expects the folder and the data to be in specific forms and places:
+### Each folder must contain all results of a witan.send model run
 ### The code will extract what type of run the data comes from (e.g baseline, Scenario 1) the name of the folder, and will use this for
 ### labelling the plot
-data1_folder = "folder_name"
-data2_folder = "folder_name"
+data_folder = "~/witan.send/data/demo/"
+data1 = "results/"
+data2 = "results-alt/"
 
 
 # INPUTS
@@ -40,9 +38,10 @@ cols = cbPalette[c(2,6)]
 # PLOTS
 
 ## cost
-source("src/R/comparative-plot-cost.R") 
-comparative_plot_cost(data1_folder, data2_folder)
+source("utils/R/comparative-plot-cost.R")
+comparative_plot_cost(data_folder, data1, data2)
 
 ## population count
-source("src/R/comparative-plot-population.R") 
-comparative_plot_population(data1_folder, data2_folder)
+source("utils/R/comparative-plot-population.R")
+comparative_plot_population(data_folder, data1, data2)
+
