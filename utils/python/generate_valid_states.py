@@ -4,9 +4,8 @@
 This tool processes a SEND transitions history CSV file and writes a valid_settings_academic_years CSV file
 based on the needs, settings and academic years observed in the input transitions.
 
-This script should be run from the command line with two arguments. The first is the path to the transitions
+This script can be run from the command line with two arguments. The first is the path to the transitions
 history input file, and the second is the path where the output valid settings file should be written.
-
 e.g:
     ./generate_valid_states.py path/to/transitions.csv path/to/new_valid_settings.csv
 
@@ -14,6 +13,9 @@ e.g:
 
 import sys
 import pandas as pd
+
+if sys.version_info[0] < 3:
+    raise Exception("Python 3 is required.")
 
 TRANSITIONS_PATH = sys.argv[1]
 VALID_STATES_PATH = sys.argv[2]
@@ -65,9 +67,6 @@ def generate_valid_states(transitions):
 
 
 if __name__ == "__main__":
-    if sys.version_info[0] < 3:
-        raise Exception("Python 3 is required.")
-
     print("reading", TRANSITIONS_PATH)
     in_df = pd.read_csv(TRANSITIONS_PATH)
     validate_input(in_df)
