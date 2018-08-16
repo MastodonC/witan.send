@@ -1,12 +1,14 @@
-comparative_plot_population = function(data1_folder, data2_folder){
+comparative_plot_population = function(data_folder, data1, data2){
   
   # DATA
   
   ## historic data
+  #historic_data <- read.csv(paste0(data_folder, "data/transitions.csv")) %>%
+    
   
   ### import historic data - taken from send_charts.R
   remove_colons <-  function(x) {str_replace(x, ':', '')}
-  df_historical <- read.csv("target/historic-data.csv") %>%
+  df_historical <- read.csv(paste0(data_folder, "data/transitions.csv")) %>%
     mutate_all(funs(remove_colons)) %>%
     filter(need.1 != "NONSEND")
   
@@ -24,11 +26,11 @@ comparative_plot_population = function(data1_folder, data2_folder){
   ## projections
   
   ### import the baseline dataset
-  count_data1 = read.csv(paste0("data/", data1_folder, "/", sub(".*/", "", data1_folder), "-Count.csv"))
+  count_data1 = read.csv(paste0(data_folder, data1, "Output_Count.csv"))
   
   ### import the scenario dataset
   ### then bind to historic data for use in plot
-  count_data2 = read.csv(paste0("data/", data2_folder, "/", sub(".*/", "", data2_folder),  "-Count.csv")) %>%
+  count_data2 = read.csv(paste0(data_folder, data2, "Output_Count.csv")) %>%
     bind_rows(count_data_historic)
   
   
@@ -71,7 +73,7 @@ comparative_plot_population = function(data1_folder, data2_folder){
               colour = cols[2]) +
     theme(legend.position="none")
   
-  ggsave("target/Total_Population_Comparative.pdf",
+  ggsave(paste0(data_folder, "Total_Population_Comparative.pdf"),
          width=8,
          height=6,
          units="in")
@@ -80,7 +82,7 @@ comparative_plot_population = function(data1_folder, data2_folder){
   # ribbon plot version - zero-indexed
   g + scale_y_continuous(limits = c(0, max(count_data1$q3, na.rm=T)))
   
-  ggsave("target/Total_Population_Comparative_Zeroindexed.pdf",
+  ggsave(paste0(data_folder, "Total_Population_Comparative_Zeroindexed.pdf"),
          width=8,
          height=6,
          units="in")

@@ -21,3 +21,4 @@ data/demo/validation/
 .idea/*
 *.RData
 *.Rhistory
+.Rproj.user
