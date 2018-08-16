@@ -26,7 +26,7 @@ Here each scenario is simply defined in terms of the collection of parameters to
   * “Movers-to”
   * “Movers-from”
 * Defines single or multiple settings and type of transitions to modify the rates of, and by how much
-* For example, a user may want to modify how many individuals are joining to the setting “Mainstream” by halving the current rate.
+* For [example](https://gist.github.com/seb231/78edb8bc9c125ffa3c3c68f10040ec6d), a user may want to modify how many individuals are joining to the setting “Mainstream” by halving the current rate.
 
 ### _“Modify setting(s) transitions rates and transfer individuals to alternative setting(s)”_
 
