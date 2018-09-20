@@ -1,7 +1,7 @@
-{:file-inputs {:settings-to-change "data/modify-settings.csv" 
-               :transition-matrix "data/transitions.csv" 
+{:file-inputs {:settings-to-change "data/modify-settings1.csv"
+               :transition-matrix "data/transitions.csv"
                :population "data/population.csv"
-               :setting-cost "data/need-setting-costs.csv" 
+               :setting-cost "data/need-setting-costs.csv"
                :valid-setting-academic-years "data/valid-setting-academic-years.csv"}
 
  :transition-parameters {:filter-transitions-from nil
@@ -15,9 +15,10 @@
                   :seed-year 2017}
 
  :output-parameters {:run-report-header true
-                     :run-reports true
+                     :run-outputs true
                      :run-charts false
-                     :output-dir "results"}
+                     :output-dir "results"
+                     :settings-to-exclude-in-charts ""}
 
  :validation-parameters {:keep-temp-files? false
                          :run-as-default false}
