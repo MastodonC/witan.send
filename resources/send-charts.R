@@ -1,5 +1,6 @@
 args = commandArgs(trailingOnly=TRUE)
 output_dir = args[1]
+settings_to_remove <- strsplit(args[2], split=",")[[1]]
 
 install_missing_packages <- function(package_name) {
   if(!require(package_name, character.only = TRUE)) {
@@ -16,8 +17,8 @@ library(ggplot2)
 library(reshape2)
 library(stringr)
 library(ggforce)
-
 library(logging)
+
 basicConfig()
 loginfo(output_dir)
 
@@ -85,9 +86,12 @@ df_historical_set <- df_historical %>%
   rename(Setting = setting.1, mean = n) %>%
   as.data.frame()
 
+nonsend_list = c("NONSEND")
+
+list_to_filter_by <- c(nonsend_list, settings_to_remove)
 
 df_set <- rbind(df_historical_set[,c(2,1,3)], df_projected_set) %>%
-  filter(Setting != "NONSEND" & Setting != "Elsewhere") %>%
+  filter(!Setting %in% list_to_filter_by) %>%
   mutate(Setting = gsub("_", " ", Setting))
 
 df_set_years = unique(df_set$calendar.year)

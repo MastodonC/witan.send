@@ -94,7 +94,7 @@
    to get the total cost."
   [{:keys [projection send-output transition-matrix valid-setting-academic-years
            population modify-transition-by settings-to-change]}
-   {:keys [run-reports run-charts project-dir output-dir]}]
+   {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts]}]
   (let [transitions-data (ds/row-maps transition-matrix)
         transform-transitions (->> transitions-data
                                    (map #(vector
@@ -111,7 +111,7 @@
       (.mkdir (io/file dir)))
     (when (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
       (report/info (report/bold "Not every historic transition present in projection!") "Consider checking valid state input.\n"))
-    (when run-reports
+    (when run-outputs
       (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
                                        (reduce #(assoc %1 (:setting %2) (:setting-group %2)) {}))
                                   :NON-SEND "Other")
@@ -235,7 +235,7 @@
           (println "Producing charts...")
           (with-open [in (io/input-stream (io/resource "send-charts.R"))]
             (io/copy in (io/file "/tmp/send-charts.R")))
-          (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir)
+          (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir settings-to-exclude-in-charts)
           (run! #(io/delete-file (str dir "/" %) :quiet)
                 ["historic-data.csv" "valid-settings.csv" "joiner-rates.csv"
                  "leaver-rates.csv" "mover-rates.csv"]))))
