@@ -33,10 +33,10 @@
   "Produces warnings for states without costs via REPL and SEND_report.md"
   (let [states (set-of-input-states transitions false)]
     (doseq [s states]
-      (if-not (cost-for-state? s setting-cost)
+      (when-not (cost-for-state? s setting-cost)
         (do (r/info (r/bold "Inconsistent inputs!")
-                         " Missing cost for state in transitions.csv: "
-                         (str (:need s) (:setting s)))
+                    " Missing cost for state in transitions.csv: "
+                    (str (:need s) (:setting s)))
             (repl-warn "Entry in transitions without cost: "(:need s) (:setting s)))))))
 
 
