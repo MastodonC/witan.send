@@ -96,6 +96,22 @@
          (map #(str "Invalid setting for academic year in transitions.csv: "
                     (:need %) " " (:setting %) " academic-year: " (:academic-year %))))))
 
+(defn miscoded-nonsend-state? [transition]
+  "Checks setting-n and need-n are both NONSEND"
+  (or (and (not= (:setting-1 transition) :NONSEND) (= (:need-1 transition) :NONSEND))
+      (and (= (:setting-1 transition) :NONSEND) (not= (:need-1 transition) :NONSEND))
+      (and (not= (:setting-2 transition) :NONSEND) (= (:need-2 transition) :NONSEND))
+      (and (= (:setting-2 transition) :NONSEND) (not= (:need-2 transition) :NONSEND))))
+
+(defn check-nonsend-states-valid [transitions]
+  "Checks setting-n and need-n are both NONSEND"
+  (let [count-nonsend-errors (->> transitions
+                                  (filter miscoded-nonsend-state?)
+                                  count)]
+    (when (> count-nonsend-errors 0)
+      (str "There are " count-nonsend-errors " occurrences where Non-SEND states are miscoded"))))
+
+
 
 (defn run-input-checks [transitions setting-cost valid-setting-academic-years]
   "Takes row-maps of input CSVs and runs checks"
@@ -103,4 +119,5 @@
   (log-warnings (check-all-ages-present transitions))
   (log-warnings (check-ages-go-up-one-year transitions))
   (log-warnings (check-missing-costs transitions setting-cost))
-  (log-warnings (check-states-in-valid-ays transitions valid-setting-academic-years)))
+  (log-warnings (check-states-in-valid-ays transitions valid-setting-academic-years))
+  (log-warnings (check-nonsend-states-valid transitions)))
