@@ -26,7 +26,9 @@ loginfo(output_dir)
 
 remove_colons <-  function(x) {str_replace(x, ':', '')}
 df_historical <- read.csv(paste0(output_dir, "/historic-data.csv")) %>%
-  mutate_all(funs(remove_colons))
+  mutate_all(funs(remove_colons)) %>%
+  mutate(setting.2 = gsub("_", " ", setting.2)) %>%
+  mutate(setting.1 = gsub("_", " ", setting.1))
 
 n_hist_years <-  df_historical %>%
   summarise(n_distinct(calendar.year)) + 1.5
@@ -156,11 +158,15 @@ for(i in 1:4) {
 ### Projected count by need type ###
 
 df_projected_need <- read.csv(paste0(output_dir, "/Output_Need.csv")) %>%
+  mutate(need = gsub("_", " ", need)) %>%
+  mutate(need = str_to_title(need)) %>%
   select(calendar.year, need, mean) %>%
   rename(Need = need)
 
 df_historical_need <- df_historical %>%
   filter(need.1 != "NONSEND" | setting.1 != "NONSEND") %>%
+  mutate(need.1 = gsub("_", " ", need.1)) %>%
+  mutate(need.1 = str_to_title(need.1)) %>%
   group_by(need.1, calendar.year) %>%
   count() %>%
   rename(Need = need.1, mean = n) %>%
@@ -359,7 +365,8 @@ for (f in years) {
 ### SEND Joiner Transitions ###
 
 df_joiners <- df_historical %>%
-  filter(need.1 == "NONSEND" | setting.1 == "NONSEND")
+  filter(need.1 == "NONSEND" | setting.1 == "NONSEND") %>%
+  mutate(setting.2 = gsub("_", " ", setting.2))
 
 df_joiners_trans<-data.frame()
 v = -1
