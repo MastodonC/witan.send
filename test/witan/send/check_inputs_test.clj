@@ -19,9 +19,9 @@
   (is (= true (valid-ay-for-state? {:setting :X :academic-year 20} test-valid-setting-ay)))
   (is (= false (valid-ay-for-state? {:setting :X :academic-year 21} test-valid-setting-ay))))
 
-(def transitions [{:academic-year-1 1 :academic-year-2 2 :setting-1 :NONSEND :setting-2 :SEMH}
-                  {:academic-year-1 2 :academic-year-2 3 :setting-1 :ASD :setting-2 :ASD}
-                  {:academic-year-1 4 :academic-year-2 3 :setting-1 :SEMH :setting-2 :NONSEND}])
+(def transitions [{:academic-year-1 1 :academic-year-2 2 :setting-1 :NONSEND :setting-2 :ABC :need-1 :NONSEND :need-2 :SEMH}
+                  {:academic-year-1 2 :academic-year-2 3 :setting-1 :DEF :setting-2 :DEF :need-1 :SEMH :need-2 :SEMH}
+                  {:academic-year-1 4 :academic-year-2 3 :setting-1 :XYZ :setting-2 :NONSEND :need-1 :SEMH :need-2 :NONSEND}])
 
 (deftest check-all-ages-present-test
   (testing "No transitions from AY3 or to AY4"
@@ -36,4 +36,5 @@
 (deftest check-ages-go-up-one-year-test
   (testing "Aging from AY4 to AY3 is not reported"
     (is (= (check-ages-go-up-one-year transitions)
-           '("Academic years 1 and 2 are not incremental for {:academic-year-1 4, :academic-year-2 3, :setting-1 :SEMH, :setting-2 :NONSEND}")))))
+           '("Academic years 1 and 2 are not incremental for {:academic-year-1 4, :academic-year-2 3, :setting-1 :XYZ, :setting-2 :NONSEND, :need-1 :SEMH, :need-2 :NONSEND}")))))
+
