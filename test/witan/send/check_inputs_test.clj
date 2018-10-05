@@ -38,3 +38,9 @@
     (is (= (check-ages-go-up-one-year transitions)
            '("Academic years 1 and 2 are not incremental for {:academic-year-1 4, :academic-year-2 3, :setting-1 :XYZ, :setting-2 :NONSEND, :need-1 :SEMH, :need-2 :NONSEND}")))))
 
+(deftest check-nonsend-states-valid-test
+  (let [wrong-transition {:academic-year-1 4 :academic-year-2 3 :setting-1 :ABC :setting-2 :NONSEND :need-1 :SEMH :need-2 :SEMH}]
+    (testing "Non-SEND states are correctly coded"
+      (is (= nil (check-nonsend-states-valid transitions)))
+      (is (= "There are 1 occurrences where Non-SEND states are miscoded"
+             (check-nonsend-states-valid (merge transitions wrong-transition)))))))
