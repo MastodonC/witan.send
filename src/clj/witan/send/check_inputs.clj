@@ -35,39 +35,43 @@
 (defn leaver? [age transition]
   (and (= (:academic-year-1 transition) age) (= (:setting-2 transition) :NONSEND)))
 
+(defn log-warnings [warnings]
+  (doseq [w warnings]
+    (r/info (r/bold w))
+    (repl-warn w)))
+
 (defn check-all-ages-present [transitions]
   "Checks all ages are represented in both academic years 1 and 2"
-  (let [transitions-to-ages (distinct (map :academic-year-2 transitions))
-        transitions-from-ages (distinct (map :academic-year-1 transitions))
-        all-ages (sort (distinct (concat transitions-to-ages transitions-from-ages)))
-        possible-ages (range (first all-ages) (+ 1 (last all-ages)))]
-    (doseq [a (drop 1 possible-ages)]
-      (when-not (some #(= a %) transitions-to-ages)
-        (do (r/info (r/bold (str "There are no transitions to AY " a)))
-            (repl-warn (str "There are no transitions to AY " a)))))
-    (doseq [a (drop-last 1 possible-ages)]
-      (when-not (some #(= a %) transitions-from-ages)
-        (do (r/info (r/bold (str "There are no transitions from AY " a)))
-            (repl-warn (str "There are no transitions from AY " a)))))))
+  (let [transitions-to-ages (into #{} (map :academic-year-2 transitions))
+        transitions-from-ages (into #{} (map :academic-year-1 transitions))
+        all-ages (into transitions-to-ages transitions-from-ages)
+        possible-ages (range (apply min all-ages) (+ 1 (apply max all-ages)))]
+    (into (->> possible-ages
+               (drop 1)
+               (remove (fn [a] (some #(= a %) transitions-to-ages)))
+               (map #(str "There are no transitions to AY " %)))
+          (->> possible-ages
+               (drop-last 1)
+               (remove (fn [a] (some #(= a %) transitions-from-ages)))
+               (map #(str "There are no transitions from AY " %))))))
 
 (defn check-joiner-leaver-gaps [transitions]
   "bring in range of ages in dataset, check that all ages have joiners and leavers"
   (let [ages (sort (distinct (concat (map :academic-year-2 transitions) (map :academic-year-1 transitions))))]
-    (doseq [a (drop-last 1 ages)]
-      (when (empty? (filter #(joiner? a %) transitions))
-        (do (r/info (r/bold (str "There are no joiners to AY " a)))
-            (repl-warn (str "There are no joiners to AY " a)))))
-    (doseq [a (drop 1 ages)]
-      (when (empty? (filter #(leaver? a %) transitions))
-        (do (r/info (r/bold (str "There are no leavers from AY " a)))
-            (repl-warn (str "There are no leavers from AY " a)))))))
+    (into (->> ages
+               (drop-last 1)
+               (filter (fn [a] (empty? (filter #(joiner? a %) transitions))))
+               (map #(str "There are no joiners to AY " %)))
+          (->> ages
+               (drop 1)
+               (filter (fn [a] (empty? (filter #(leaver? a %) transitions))))
+               (map #(str "There are no leavers from AY " %))))))
 
 (defn check-ages-go-up-one-year [transitions]
   "Checks academic year 2 is always academic year 1 + 1"
-  (doseq [t transitions]
-    (when-not (= (+ 1 (:academic-year-1 t)) (:academic-year-2 t))
-      (do (r/info (r/bold (str "Acamdeic years 1 and 2 are not incremental for " t)))
-          (repl-warn (str "Acamdeic years 1 and 2 are not incremental for " t))))))
+  (->> transitions
+       (remove (fn [t] (= (+ 1 (:academic-year-1 t)) (:academic-year-2 t))))
+       (map #(str "Academic years 1 and 2 are not incremental for " %))))
 
 (defn check-missing-costs [transitions setting-cost]
   "Produces warnings for states without costs via REPL and SEND_report.md"
@@ -101,8 +105,8 @@
 
 (defn run-input-checks [transitions setting-cost valid-setting-academic-years]
   "Takes row-maps of input CSVs and runs checks"
-  (check-joiner-leaver-gaps transitions)
-  (check-all-ages-present transitions)
-  (check-ages-go-up-one-year transitions)
+  (log-warnings (check-joiner-leaver-gaps transitions))
+  (log-warnings (check-all-ages-present transitions))
+  (log-warnings (check-ages-go-up-one-year transitions))
   (check-missing-costs transitions setting-cost)
   (check-states-in-valid-ays transitions valid-setting-academic-years))
