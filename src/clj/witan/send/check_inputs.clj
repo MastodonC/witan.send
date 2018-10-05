@@ -7,12 +7,6 @@
   (println (str "\u001B[1;31m" (apply str args) "\u001B[m")))
 
 
-(defn cost-for-state? [state setting-cost]
-  "Takes map containing state and returns true for match in setting-cost"
-  (some? (some true? (map #(and (= (:need state) (:need %))
-                                (= (:setting state) (:setting %))) setting-cost))))
-
-
 (defn find-states [need setting academic-year transition]
   "Takes :need and :setting key and returns map containing values from transition data"
   (if (= :NONSEND (need transition))
@@ -73,15 +67,17 @@
        (remove (fn [t] (= (+ 1 (:academic-year-1 t)) (:academic-year-2 t))))
        (map #(str "Academic years 1 and 2 are not incremental for " %))))
 
+(defn cost-for-state? [state setting-cost]
+  "Takes map containing state and returns true for match in setting-cost"
+  (some? (some true? (map #(and (= (:need state) (:need %))
+                                (= (:setting state) (:setting %))) setting-cost))))
+
 (defn check-missing-costs [transitions setting-cost]
   "Produces warnings for states without costs via REPL and SEND_report.md"
   (let [states (set-of-input-states transitions false)]
-    (doseq [s states]
-      (when-not (cost-for-state? s setting-cost)
-        (do (r/info (r/bold "Inconsistent inputs!")
-                    " Missing cost for state in transitions.csv: "
-                    (str (:need s) (:setting s)))
-            (repl-warn "Entry in transitions without cost: "(:need s) (:setting s)))))))
+    (->> states
+         (remove #(cost-for-state? % setting-cost))
+         (map #(str "Missing cost for state in transitions.csv: " (:need %) " " (:setting %))))))
 
 
 (defn valid-ay-for-state? [state valid-ays]
@@ -95,12 +91,10 @@
 (defn check-states-in-valid-ays [transitions valid-setting-academic-years]
   "Produces warnings for states that are outside valid academic years via REPL and SEND_report.md"
   (let [states (set-of-input-states transitions true)]
-    (doseq [s states]
-      (if-not (valid-ay-for-state? s valid-setting-academic-years)
-        (do (r/info (r/bold "Inconsistent inputs!")
-                    " Invalid setting for academic year in transitions.csv: "
-                    (str (:need s) (:setting s) " academic-year:" (:academic-year s)))
-            (repl-warn "Invalid academic year in transitions: "  (str (:need s) (:setting s) " academic-year:" (:academic-year s))))))))
+    (->> states
+         (remove #(valid-ay-for-state? % valid-setting-academic-years))
+         (map #(str "Invalid setting for academic year in transitions.csv: "
+                    (:need %) " " (:setting %) " academic-year: " (:academic-year %))))))
 
 
 (defn run-input-checks [transitions setting-cost valid-setting-academic-years]
@@ -108,5 +102,5 @@
   (log-warnings (check-joiner-leaver-gaps transitions))
   (log-warnings (check-all-ages-present transitions))
   (log-warnings (check-ages-go-up-one-year transitions))
-  (check-missing-costs transitions setting-cost)
-  (check-states-in-valid-ays transitions valid-setting-academic-years))
+  (log-warnings (check-missing-costs transitions setting-cost))
+  (log-warnings (check-states-in-valid-ays transitions valid-setting-academic-years)))
