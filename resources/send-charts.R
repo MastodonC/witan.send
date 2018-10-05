@@ -145,7 +145,7 @@ for(i in 1:4) {
     scale_x_discrete(name='Calendar Year') +
     scale_y_continuous(name='SEND Population', limits=c(0,y_max)) +
     theme_bw() +
-    ggtitle(paste("SEND Trends, by Setting (",i,"/4)",sep="")) +
+    ggtitle(paste("SEND Trends, by Setting",sep="")) +
     geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
     annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
 
