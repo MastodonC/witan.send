@@ -191,7 +191,7 @@
         transition-matrix-filtered (when filter-transitions-from
                                      (mapcat (fn [year] (filter #(= (:calendar-year %) year)
                                                                 (or modified-transition-matrix transition-matrix)))
-                                             filter-transitions-from))
+                                             [filter-transitions-from]))
         max-transition-year (apply max (map :calendar-year transition-matrix))
         initial-state (->> (filter #(= (:calendar-year %) max-transition-year) transition-matrix)
                            (filter #(not= (:setting-2 %) :NONSEND))
