@@ -13,6 +13,35 @@
             )
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
 
+
+(defn apply-row-schema
+  [col-schema csv-data]
+  (let [row-schema (sc/make-row-schema col-schema)]
+    (map (coerce/coercer row-schema coerce/string-coercion-matcher)
+         (:columns csv-data))))
+
+(defn apply-col-names-schema
+  [col-schema csv-data]
+  (let [col-names-schema (sc/make-col-names-schema col-schema)]
+    ((coerce/coercer col-names-schema coerce/string-coercion-matcher)
+     (:column-names csv-data))))
+
+(defn apply-schema-coercion [data schema]
+  {:column-names (apply-col-names-schema schema data)
+   :columns (vec (apply-row-schema schema data))})
+
+(defn csv-to-dataset
+  "Takes in a file path and a schema. Creates a dataset with the file
+   data after coercing it using the schema."
+  [filepath schema]
+  (-> (load-csv filepath)
+      (apply-schema-coercion schema)
+      (as-> {:keys [column-names columns]} (ds/dataset column-names columns))))
+
+(defn read-inputs [data input _ schema]
+  (let [[data-location fileschema] (get data (:witan/name input))]
+    (csv-to-dataset data-location fileschema)))
+
 (def random-seed (atom 0))
 (defn set-seed! [n]
   (reset! random-seed n))

@@ -7,7 +7,6 @@
             [witan.send.params :as p]
             [witan.send.schemas :as sc]
             [witan.send.send :refer :all]
-            [witan.send.test-utils :as tu]
             [witan.send.utils :as u]))
 
 ;; Use real population datasets for testing
@@ -17,7 +16,7 @@
    :transition-matrix ["data/demo/data/transitions.csv" sc/TransitionCounts]})
 
 (defn get-individual-input [key-name]
-  (tu/read-inputs
+  (u/read-inputs
    test-inputs
    {:witan/name key-name}
    []
