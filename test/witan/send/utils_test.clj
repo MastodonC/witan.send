@@ -5,3 +5,7 @@
             [schema.core :as s]
             [witan.send.schemas :as sc]
             [witan.send.send-test :as st]))
+
+(deftest load-csv-test
+  (testing "Empty lines in input csv are removed"
+    (is (= (load-csv "data/demo/data/test.csv") {:column-names ["need" "setting" "cost"], :columns [["CI" "EO" "4577.3"]]}))))
