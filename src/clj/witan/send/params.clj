@@ -173,7 +173,7 @@
 (defn continue-for-latter-ays [params academic-years]
   (reduce (fn [coll ay]
             (if-let [v (or (get coll ay)
-                           nil)]
+                           nil)] ;; Replace with average of adjacent AY params
               (assoc coll ay v)
               coll))
           params (sort academic-years)))
