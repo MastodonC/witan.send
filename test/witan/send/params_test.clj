@@ -5,7 +5,7 @@
             [witan.send.params :as sut]
             [witan.send.schemas :as sc]
             [witan.send.states :as s]
-            [witan.send.test-utils :as tu]))
+            [witan.send.utils :as u]))
 
 (def valid-setting-academic-years
   [{:setting :CC, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year -4, :max-academic-year 0, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
@@ -25,10 +25,10 @@
    {:setting :PRU, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year 2, :max-academic-year 14, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}])
 
 (def population-dataset
-  (tu/csv-to-dataset "data/demo/data/population.csv" sc/PopulationDataset))
+  (u/csv-to-dataset "data/demo/data/population.csv" sc/PopulationDataset))
 
 (def transitions-matrix
-  (tu/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts))
+  (u/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts))
 
 (def valid-states
   (-> valid-setting-academic-years

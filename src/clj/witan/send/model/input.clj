@@ -1,6 +1,5 @@
 (ns witan.send.model.input
-  (:require [witan.send.test-utils :as tu]
-            [clojure.core.matrix.dataset :as ds]
+  (:require [clojure.core.matrix.dataset :as ds]
             [witan.send.states :as states]
             [witan.send.utils :as u]
             [medley.core :as medley]
@@ -16,7 +15,7 @@
   "Build a map of the datasets to use for input"
   [project-dir file-inputs schema-inputs]
   (into {} (for [[k v] file-inputs]
-             [k (tu/csv-to-dataset (str project-dir "/" v) (k schema-inputs))])))
+             [k (u/csv-to-dataset (str project-dir "/" v) (k schema-inputs))])))
 
 (defn stitch-ay-state-params
   [x a b]
