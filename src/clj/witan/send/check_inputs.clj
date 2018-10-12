@@ -109,7 +109,7 @@
                                   (filter miscoded-nonsend-state?)
                                   count)]
     (when (> count-nonsend-errors 0)
-      (str "There are " count-nonsend-errors " occurrences where Non-SEND states are miscoded"))))
+      (str "There are " count-nonsend-errors " occurrences where only one of need-1 or setting-1 are Non-SEND in transitions"))))
 
 
 
