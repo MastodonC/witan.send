@@ -10,8 +10,56 @@
             [medley.core :as medley]
             [schema.core :as s]
             [clojure.string :as str]
-            )
+            [clojure.java.io :as io]
+            [clojure.data.csv :as data-csv]
+            [schema.coerce :as coerce])
   (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
+
+(defn blank-row? [row]
+  (every? #(= "" %) row))
+
+(defn load-csv
+  "Loads csv file with each row as a vector.
+   Stored in map separating column-names from data"
+  ([filename]
+   (let [file (io/file filename)]
+     (when (.exists (io/as-file file))
+       (let [parsed-csv (with-open [in-file (io/reader file)]
+                          (doall (->> in-file
+                                      data-csv/read-csv
+                                      (remove (fn [row] (blank-row? row))))))
+             parsed-data (rest parsed-csv)
+             headers (first parsed-csv)]
+         {:column-names headers
+          :columns (vec parsed-data)})))))
+
+(defn apply-row-schema
+  [col-schema csv-data]
+  (let [row-schema (sc/make-row-schema col-schema)]
+    (map (coerce/coercer row-schema coerce/string-coercion-matcher)
+         (:columns csv-data))))
+
+(defn apply-col-names-schema
+  [col-schema csv-data]
+  (let [col-names-schema (sc/make-col-names-schema col-schema)]
+    ((coerce/coercer col-names-schema coerce/string-coercion-matcher)
+     (:column-names csv-data))))
+
+(defn apply-schema-coercion [data schema]
+  {:column-names (apply-col-names-schema schema data)
+   :columns (vec (apply-row-schema schema data))})
+
+(defn csv-to-dataset
+  "Takes in a file path and a schema. Creates a dataset with the file
+   data after coercing it using the schema."
+  [filepath schema]
+  (-> (load-csv filepath)
+      (apply-schema-coercion schema)
+      (as-> {:keys [column-names columns]} (ds/dataset column-names columns))))
+
+(defn read-inputs [data input _ schema]
+  (let [[data-location fileschema] (get data (:witan/name input))]
+    (csv-to-dataset data-location fileschema)))
 
 (def random-seed (atom 0))
 (defn set-seed! [n]
