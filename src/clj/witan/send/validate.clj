@@ -1,6 +1,5 @@
 (ns witan.send.validate
-  (:require [witan.send.test-utils :as tu]
-            [clojure.core.matrix.dataset :as ds]
+  (:require [clojure.core.matrix.dataset :as ds]
             [witan.send.params :as p]
             [witan.send.schemas :as sc]
             [witan.send.utils :as u]
@@ -28,10 +27,10 @@
 
 (defn joiner-rate
   []
-  (let [joiners (-> (tu/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts)
+  (let [joiners (-> (u/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts)
                     ds/row-maps
                     p/calculate-joiners-per-calendar-year)
-        population (-> (tu/csv-to-dataset "data/demo/data/population.csv" sc/PopulationDataset)
+        population (-> (u/csv-to-dataset "data/demo/data/population.csv" sc/PopulationDataset)
                        ds/row-maps
                        p/calculate-population-per-calendar-year)]
     (reduce (fn [coll academic-year]
@@ -46,7 +45,7 @@
 
 (defn leaver-rate
   []
-  (let [transitions (-> (tu/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts)
+  (let [transitions (-> (u/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts)
                         ds/row-maps)
         filtered (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send)) transitions)]
     (reduce (fn [coll {:keys [calendar-year academic-year-1 setting-1 setting-2]}]
@@ -59,7 +58,7 @@
 
 (defn mover-rate
   []
-  (let [transitions (-> (tu/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts)
+  (let [transitions (-> (u/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts)
                         ds/row-maps)
         filtered (remove (fn [{:keys [setting-1 setting-2]}]
                            (or (= setting-1 sc/non-send)
