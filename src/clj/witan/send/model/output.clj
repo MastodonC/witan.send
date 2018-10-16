@@ -14,7 +14,7 @@
 (defn transition-present? [transition projection]
   (some #(= % transition) projection))
 
-(defn confidence-interval
+(defn confidence-bounds
   [results calendar-year]
   (let [academic-years (keys results)]
     (->> (for [academic-year (sort academic-years)]
@@ -124,17 +124,17 @@
             ages (-> population-count first val keys)
             n-colours (take (count years) ["#1b9e77" "#d95f02" "#7570b3" "#e7298a" "#D55E00" "#CC79A7"])
             joiner-rates (joiner-rate joiners-count population-count ages years)
-            joiner-rates-CI (map #(confidence-interval joiner-rates %) years)
+            joiner-rates-CI (map #(confidence-bounds joiner-rates %) years)
             joiner-ribbon-data (prep-ribbon-plot-data joiner-rates-CI years n-colours)
             filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send)) transitions-data)
             leaver-rates (leaver-rate filter-leavers)
-            leaver-rates-CI (map #(confidence-interval leaver-rates %) years)
+            leaver-rates-CI (map #(confidence-bounds leaver-rates %) years)
             leaver-ribbon-data (prep-ribbon-plot-data leaver-rates-CI years n-colours)
             filter-movers (remove (fn [{:keys [setting-1 setting-2]}]
                                     (or (= setting-1 sc/non-send)
                                         (= setting-2 sc/non-send))) transitions-data)
             mover-rates (mover-rate filter-movers)
-            mover-rates-CI (map #(confidence-interval mover-rates %) years)
+            mover-rates-CI (map #(confidence-bounds mover-rates %) years)
             mover-ribbon-data (prep-ribbon-plot-data mover-rates-CI years n-colours)]
         ;;future-transitions (mapcat u/projection->transitions projection) ;; for projection investigation
 

@@ -17,7 +17,6 @@ x  Update existing model to be deterministic and compare 1-year & 2-year project
   Determine if population growth only applies to non-SEND
 >>>>>>> Stashed changes
 
-  Calulate confidence intervals based on n simulations
   Adjust transition multiplier based on age
 
   Validate transition matrix contains all state transitions exactly once
