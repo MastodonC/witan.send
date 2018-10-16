@@ -66,7 +66,7 @@ The adjusted transition matrix is then used within the loop.
 
 ![Steps after the loop](images/steps-after-the-loop.png)
 
-* **Group individuals (by age, need and placement type)** and calculate averages and confidence intervals over simulations.
+* **Group individuals (by age, need and placement type)** and calculate summary statistics over simulations.
 
 * In parallel upload the cost profile (cost per SEND need/placement combination, per individual).
 
