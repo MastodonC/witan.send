@@ -80,6 +80,7 @@ ggsave(paste0(output_dir, "/NCY_Population_Trends.pdf"))
 
 df_projected_set <- read.csv(paste0(output_dir, "/Output_Setting.csv")) %>%
   select(calendar.year, setting, mean) %>%
+  mutate(setting = gsub("_", " ", setting)) %>%
   rename(Setting = setting)
 
 df_historical_set <- df_historical %>%
