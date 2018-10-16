@@ -335,8 +335,8 @@
       :max (dec (.getValueAtPercentile hist 100.0))
       :q1 (dec (.getValueAtPercentile hist 25.0))
       :q3 (dec (.getValueAtPercentile hist 75.0))
-      :low-ci (dec (.getValueAtPercentile hist 2.5))
-      :high-ci (dec (.getValueAtPercentile hist 97.5))})))
+      :low-95pc-bound (dec (.getValueAtPercentile hist 2.5))
+      :high-95pc-bound (dec (.getValueAtPercentile hist 97.5))})))
 
 (defn merge-with-rf
   "Like (apply merge-with f) but for reducing functions"
