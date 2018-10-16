@@ -7,14 +7,14 @@
             [clojure.string :refer [join]]))
 
 (deftest expected-results
-  (let [expected-md5s {"Output_AY.csv" "87a50609a022e34478d17deed082ad7f"
-                       "Output_AY_Group.csv" "51e18eafb686ce388c25a46a23a0d29a"
-                       "Output_AY_State.csv" "70fd124bb0f7b5093e800bc63ce1c991"
-                       "Output_Cost.csv" "1d7556cc3189491bf824a9785bddfb2c"
-                       "Output_Count.csv" "1f84ff94394046f8d37da8bfa4834a0b"
-                       "Output_Need.csv" "023b0a445d338f55dcfeee3a3a3677c6"
-                       "Output_Setting.csv" "4f0d1e51a49f678df5637c33c604bbe1"
-                       "transitions.edn" "4ea4b6076e4fed0ce36cfeeece5aa901"}
+  (let [expected-md5s {"Output_AY.csv" "d87dd99f4910c7958240bea30bf2e021"
+                       "Output_AY_Group.csv" "748ac7cc64e72da81b14b74a6820a7c5"
+                       "Output_AY_State.csv" "7c4a6c769aacbb91e6554f777701f414"
+                       "Output_Cost.csv" "01f1da9dcdb093ac821f58ea40f3dc2a"
+                       "Output_Count.csv" "4648435ea177ffcfc9605c03e9fe0031"
+                       "Output_Need.csv" "338edcad0f4545c4462bd037a28a9734"
+                       "Output_Setting.csv" "d78969fd629ec5e56b48eff31092fc7c"
+                       "transitions.edn" "27ca57ba18f6024d335fd57722ef1cbf"}
         files (keys expected-md5s)
         config (m/config "data/demo/config.edn")
         output-dir (m/get-output-dir config)]
