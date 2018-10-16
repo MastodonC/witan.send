@@ -6,8 +6,8 @@
             [witan.send.validate-model :as vm]))
 
 (deftest expected-validation-results
-  (let [expected-md5s {"validation_results_count.csv" "93a940a94f260393f80d7c3bd4b0eb81"
-                       "validation_results_state.csv" "211d4f28d67d0a4c927f55d2aa90a8f3"}
+  (let [expected-md5s {"validation_results_count.csv" "cfc62e0798f99607a6957d25a864e23d",
+                       "validation_results_state.csv" "f27d6e55ad4eaf764bd16e683635a7ae"}
         files (keys expected-md5s)
         config (m/config "data/demo/config.edn")
         validation-dir (join "/" [(:project-dir config) "validation"])]
