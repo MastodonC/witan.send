@@ -4,6 +4,8 @@
 
 (def some+ (fnil + 0))
 
+
+
 (def natural-prior 1/3)
 
 (defn multimerge-alphas [total & weight-alphas]
@@ -171,7 +173,7 @@
 (defn continue-for-latter-ays [params academic-years]
   (reduce (fn [coll ay]
             (if-let [v (or (get coll ay)
-                           (get coll (dec ay)))]
+                           nil)] ;; Replace with average of adjacent AY params
               (assoc coll ay v)
               coll))
           params (sort academic-years)))
@@ -243,10 +245,10 @@
             {} valid-states)))
 
 (defn beta-params-movers [valid-states transitions]
-    (weighted-beta-params valid-states transitions (some-fn joiner? leaver?) mover?))
+  (weighted-beta-params valid-states transitions (some-fn joiner? leaver?) mover?))
 
 (defn alpha-params-movers [valid-states valid-year-settings transitions]
-    (weighted-alpha-params valid-states valid-year-settings transitions mover?))
+  (weighted-alpha-params valid-states valid-year-settings transitions mover?))
 
 (defn alpha-params-joiner-states [valid-states transitions]
   (weighted-joiner-state-alpha-params valid-states transitions))
