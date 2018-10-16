@@ -177,9 +177,9 @@
     (testing "output is not empty"
       (is (not= empty? result)))))
 
-(deftest confidence-interval-test
+(deftest confidence-bounds-test
   (let [leaver-rates (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send))) so/leaver-rate)
-        result (so/confidence-interval leaver-rates 2014)]
+        result (so/confidence-bounds leaver-rates 2014)]
     (testing "output is not empty"
       (is (not= empty? result) ))
     (testing "all intervals are between 0 and 1"
