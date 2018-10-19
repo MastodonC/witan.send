@@ -38,14 +38,6 @@
   (->> (filter (fn [[ay' state]] (= ay ay')) valid-states)
        (map (fn [[ay' state]] state))))
 
-;; We ought to paramaterise this with need, since that may affect the result
-(defn valid-settings-for-ay [valid-states ay]
-  (->> (filter (fn [[ay' state]] (= ay ay')) valid-states)
-       (map (fn [[ay' state]]
-              (let [[need setting] (need-setting state)]
-                setting)))
-       (into #{})))
-
 (defn calculate-valid-settings-for-need-ay [valid-states]
   (reduce (fn [coll [ay state]]
             (let [[need setting] (need-setting state)]
@@ -58,24 +50,6 @@
 (defn calculate-valid-mover-transitions [valid-setting-academic-years]
   (reduce into {} (map (fn [row] (aggregate-setting->setting (:setting row) (:setting->setting row)))
                        valid-setting-academic-years)))
-
-(defn transitions->initial-state
-  [transitions]
-  (reduce (fn [coll [[ay state-1 state-2] n]]
-            (cond-> coll
-              (not= state-1 non-send)
-              (update [ay state-1] (fnil + 0) n)))
-          {}
-          transitions))
-
-(defn transitions->state
-  [transitions]
-  (reduce (fn [coll [[ay state-1 state-2] n]]
-            (cond-> coll
-              (not= state-2 non-send)
-              (update [ay state-2] (fnil + 0) n)))
-          {}
-          transitions))
 
 (defn calculate-academic-year-range
   [setting-academic-years]

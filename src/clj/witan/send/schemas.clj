@@ -20,7 +20,6 @@
                       fieldname (:name s)]
                   (s/one datatype fieldname)))
         (:column-names col-schema)))
-
 (def CalendarYear
   (s/constrained s/Int #(<= 1900 % 2100)))
 
@@ -42,19 +41,8 @@
 (def AcademicYear
   (s/constrained s/Int #(<= min-academic-year % max-academic-year)))
 
-(def YearSchema
-  (s/constrained s/Int #(<= 2000 % 2100)))
-
-(defn Need [needs]
-  (apply s/enum (conj needs non-send)))
-
-(defn Setting [settings]
-  (apply s/enum (conj settings non-send)))
-
 (def N
   (s/constrained s/Int (complement neg?)))
-
-(def R s/Num)
 
 (def PopulationDataset
   (make-ordered-ds-schema [[:calendar-year CalendarYear]
@@ -70,12 +58,6 @@
                            [:need-2 s/Keyword]
                            [:academic-year-2 AcademicYear]]))
 
-(def Projection
-  {[(s/one CalendarYear :calendar-year)
-    (s/one AcademicYear :academic-year)
-    (s/one s/Keyword :state-1)
-    (s/one s/Keyword :state-2)]
-   N})
 
 (defn TransitionsMap+
   [needs settings]
@@ -84,11 +66,6 @@
       (s/one State :state-1)
       (s/one State :state-2)]
      N}))
-
-(def TransitionAlphas
-  {[(s/one AcademicYear :academic-year)
-    (s/one s/Keyword :state)]
-   {s/Keyword R}})
 
 (def SettingsToChange
   (make-ordered-ds-schema [[:setting-1 s/Keyword]
@@ -101,13 +78,6 @@
                            [:setting s/Keyword]
                            [:population N]]))
 
-(defn SENDPopulation+ [settings]
-  (make-ordered-ds-schema [[:calendar-year CalendarYear]
-                           [:academic-year AcademicYear]
-                           [:need s/Keyword]
-                           [:setting (Setting settings)]
-                           [:population N]]))
-
 (def ValidSettingAcademicYears
   (make-ordered-ds-schema [[:setting s/Keyword]
                            [:setting-group s/Str]
@@ -116,67 +86,9 @@
                            [:needs s/Str]
                            [:setting->setting s/Str]]))
 
-(def PopulationByCalendarAndAcademicYear
-  {CalendarYear {AcademicYear N}})
-
-(def ModelState
-  {[(s/one AcademicYear :academic-year)
-    (s/one s/Keyword :state)]
-   N})
-
-(def StatisticsSchema
-  {:mean s/Num
-   :median s/Num
-   :low-ci s/Num
-   :high-ci s/Num
-   :min s/Num
-   :max s/Num
-   :std-dev s/Num
-   :iqr s/Num
-   :q1 s/Num
-   :q3 s/Num})
-
-(def Results
-  [{:by-state {[(s/one AcademicYear :academic-year)
-                (s/one s/Keyword :state)]
-               StatisticsSchema}
-    :total-in-send-by-ay {AcademicYear StatisticsSchema}
-    :total-in-send StatisticsSchema
-    :total-in-send-by-need {s/Keyword StatisticsSchema}
-    :total-in-send-by-setting {s/Keyword StatisticsSchema}
-    :total-cost StatisticsSchema
-    :total-in-send-by-ay-group {s/Str StatisticsSchema}}])
-
-(def StateAlphas
-  {s/Keyword s/Num})
-
-(def AcademicYearStateAlphas
-  {AcademicYear StateAlphas})
-
-(def BetaParams
-  {:alpha s/Num :beta s/Num})
-
-(def JoinerBetaParams
-  {AcademicYear BetaParams})
-
-(def YearStateBetaParams
-  {[(s/one AcademicYear :academic-year)
-    (s/one s/Keyword :state)]
-   BetaParams})
-
-(def SettingCost
-  (make-ordered-ds-schema [[:setting s/Keyword]
-                           [:cost s/Num]]))
-
 (def NeedSettingCost
   (make-ordered-ds-schema [[:need s/Keyword]
                            [:setting s/Keyword]
-                           [:cost s/Num]]))
-
-(defn SettingCost+
-  [settings]
-  (prn settings)
-  (make-ordered-ds-schema [[:setting (apply s/enum settings)]
                            [:cost s/Num]]))
 
 (defn NeedSettingCost+
@@ -184,24 +96,3 @@
   (make-ordered-ds-schema [[:need (apply s/enum needs)]
                            [:setting (apply s/enum settings)]
                            [:cost s/Num]]))
-
-(def SettingCostLookup
-  {[(s/one s/Keyword :need)
-    (s/one s/Keyword :setting)]
-   s/Num})
-
-(def projection-map
-  {:population PopulationDataset
-   :population-by-age-state ModelState
-   :projected-population PopulationByCalendarAndAcademicYear
-   :joiner-beta-params JoinerBetaParams
-   :leaver-beta-params YearStateBetaParams
-   :joiner-state-alphas AcademicYearStateAlphas
-   :mover-beta-params YearStateBetaParams
-   :mover-state-alphas TransitionAlphas
-   :setting-cost-lookup SettingCostLookup
-   :valid-setting-academic-years ValidSettingAcademicYears
-   :transition-matrix TransitionCounts})
-
-(def transition-type
-  (s/maybe [s/Str]))
