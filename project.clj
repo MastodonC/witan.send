@@ -21,7 +21,6 @@
   :plugins [[lein-cloverage "1.0.13"]]
   :main witan.send.main
   :aot [witan.send.main]
-
   :source-paths ["src/clj"]
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[criterium "0.4.4"]
@@ -29,7 +28,5 @@
                    :plugins [[lein-binplus "0.6.2"]]}
              :uberjar {:aot :all}}
   :jvm-opts ["-Xmx8g"]
-
   :bin {:name "send"
-        :bin-path "~/bin"}
-  )
+        :bin-path "~/bin"})
