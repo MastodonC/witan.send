@@ -4,9 +4,6 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript  "1.9.229"]
-                 [reagent "0.6.0"]
-                 [re-frame "0.9.4"]
                  [org.hdrhistogram/HdrHistogram "2.1.9"]
                  [net.mikera/core.matrix "0.55.0" :exclusions [org.clojure/clojure]]
                  [org.clojure/test.check "0.9.0"]
