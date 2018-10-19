@@ -11,6 +11,7 @@
                  [prismatic/schema "1.1.3"]
                  [schema-contrib "0.1.3"]
                  [kixi/stats "0.3.9"]
+                 [org.clojure/math.combinatorics "0.1.4"]
                  [instaparse "1.4.3"]
                  [medley "1.0.0"]
                  [org.apache.commons/commons-math3 "3.6.1"]
