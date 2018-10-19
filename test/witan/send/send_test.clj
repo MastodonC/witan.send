@@ -1,7 +1,6 @@
 (ns witan.send.send-test
   (:require [clojure.core.matrix.dataset :as ds]
             [clojure.test :refer :all]
-            [incanter.core :as i]
             [witan.send.model.input :as si]
             [witan.send.model.output :as so]
             [witan.send.params :as p]
@@ -25,22 +24,6 @@
    {:witan/name key-name}
    []
    (get test-inputs key-name)))
-
-(defn select-from-ds
-  "Takes in a dataset and where clauses as a map
-   like `{:col1 {:gte 4} :col2 {:gt 5}}` or as a predicate function.
-   Returns a result dataset from selecting the where clauses. It uses
-   :eq -> `=`
-   :gt -> `>` or :gte -> `>=`
-   :lt -> `<` or :lte -> `<=`
-   :in or :nin for element in r not in a set."
-  [from-dataset where-clauses]
-  (i/query-dataset from-dataset where-clauses))
-
-(defn reduce-input [key-name column value]
-  (-> key-name
-      get-individual-input
-      (select-from-ds {column {:lte value}})))
 
 ;; Use fake population datasets for testing
 (def grouped-data
