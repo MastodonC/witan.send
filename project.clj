@@ -10,7 +10,6 @@
                  [org.hdrhistogram/HdrHistogram "2.1.9"]
                  [net.mikera/core.matrix "0.55.0" :exclusions [org.clojure/clojure]]
                  [org.clojure/test.check "0.9.0"]
-                 [org.clojure/data.avl "0.0.17"]
                  [org.clojure/data.csv "0.1.3"]
                  [prismatic/schema "1.1.3"]
                  [schema-contrib "0.1.3"]
