@@ -70,20 +70,6 @@
   "x + y. Returns y if x is nil and x if y is nil."
   (fnil + 0))
 
-(defn multimerge-alphas [total & weight-alphas]
-  (let [weight-alpha-sums (->> (partition 2 weight-alphas)
-                               (map (fn [[w as]]
-                                      [w as (->> as vals (apply +))])))
-        m (/ total (apply + (map first (remove (comp zero? last) weight-alpha-sums))))]
-    (->> (remove (fn [[_ _ s]]
-                   (zero? s)) weight-alpha-sums)
-         (reduce (fn [coll [w as s]]
-                   (reduce (fn [coll [x a]]
-                             (update coll x some+ (* m w (/ a s))))
-                           coll
-                           as))
-                 {}))))
-
 (defn transitions-map
   [dataset]
   (->> dataset
@@ -121,53 +107,6 @@
                                       (split-need-state state-2 first)
                                       (split-need-state state-2 second))))))
 
-(defn sq [x] (* x x))
-(defn abs [x] (if (< x 0)
-                (- x)
-                x))
-
-(defn adjust-beta-mean [mean n {:keys [alpha beta]}]
-  (let [t (+ alpha beta)
-        alpha (* (/ mean n) t)]
-    {:alpha alpha
-     :beta (- t alpha)}))
-
-(defn adjust-beta-variance [v n {:keys [alpha beta] :as params}]
-  (if (or (zero? alpha) (zero? beta))
-    params
-    (let [r (/ beta alpha)
-          alpha (/ (- (* n n r)
-                      (* (sq (inc r)) v))
-                   (* (inc r)
-                      (- (* (sq (inc r)) v)
-                         (* n r))))]
-      {:alpha alpha
-       :beta (* r alpha)})))
-
-(defn beta-binomial-variance [n {:keys [alpha beta]}]
-  (/ (* n alpha beta (+ n alpha beta))
-     (* (sq (+ alpha beta)) (+ alpha beta 1))))
-
-
-(defn beta-binomial-mean [n {:keys [alpha beta]}]
-  (/ (* n alpha) (+ alpha beta)))
-
-(defn balance-joiners [joiners leavers]
-  (let [join (->> (vals joiners)
-                  (map :alpha)
-                  (reduce +))
-        leave (->> (vals leavers)
-                   (map :alpha)
-                   (reduce +))
-        r (/ leave join) ;; Steady state
-        ;; r (* r 1.3) ;; 30% growth
-        ]
-    ;; Adjust join rates to equal leave
-    (reduce (fn [coll [academic-year params]]
-              (update-in coll [academic-year :alpha] * r))
-            joiners
-            joiners)))
-
 (defn sample-dirichlet-multinomial
   [n alphas]
   (try
@@ -186,12 +125,6 @@
     (draw (beta-binomial n params) {:seed (get-seed!)})
     0))
 
-(defn sample-binomial
-  [n p]
-  (if (pos? n)
-    (draw (binomial {:n n :p p}) {:seed (get-seed!)})
-    0))
-
 (defn sample-send-transitions
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
@@ -206,18 +139,6 @@
     (catch Exception e
       (do (println state n probs mover-beta)
           nil))))
-
-(defn probability [p]
-  (case (< p 0) 0.0
-        (> p 1) 1.0
-        :else p))
-
-(def total-by-age
-  "Given a sequence of {:age age :population population}
-  sums the total population for each age"
-  (partial reduce (fn [coll {:keys [age population]}]
-                    (update coll age some+ population))
-           {}))
 
 (def total-by-academic-year
   "Given a sequence of {:academic-year year :population population}
@@ -278,13 +199,6 @@
                 (update ay-group some+ population))))
           {} model))
 
-(defn total-setting-cost
-  [setting-lookup population-by-setting]
-  (-> (reduce (fn [cost [setting population]]
-                (+ cost (* population (get setting-lookup setting 0))))
-              0 population-by-setting)
-      round))
-
 (defn total-need-setting-cost
   [need-setting-lookup population-by-need-setting]
   (-> (reduce (fn [cost [need-setting population]]
@@ -301,12 +215,6 @@
           0 model))
 
 ;;;; Reducing functions for use with transduce
-
-(def mean-or-zero-rf
-  (r/post-complete
-   kixi/mean
-   (fn [mean]
-     (or mean 0.0))))
 
 (defn histogram-rf
   [number-of-significant-digits]
@@ -394,20 +302,6 @@
 
 (defn int-ceil [n]
   (int (Math/ceil n)))
-
-(defn projection-state-to-map [[calendar-year-2 ay-2 state-1 state-2]]
-  (let [[need-1 setting-1] (states/need-setting state-1)
-        [need-2 setting-2] (states/need-setting state-2)]
-    (hash-map :calendar-year calendar-year-2
-              :setting-1 setting-1
-              :need-1 need-1
-              :academic-year-1 (dec ay-2)
-              :setting-2 setting-2
-              :need-2 need-2
-              :academic-year-2 ay-2)))
-
-(defn projection->transitions [[state sum]]
-  (repeat sum (projection-state-to-map state)))
 
 (defn keep-duplicates [seq]
   (for [[id freq] (frequencies seq)
