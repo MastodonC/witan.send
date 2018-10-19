@@ -31,7 +31,8 @@
                  [org.clojure/math.combinatorics "0.1.4"]]
   :plugins [[lein-gorilla "0.4.0"]
             [lein-cljsbuild "1.1.4"]
-            [cider/cider-nrepl "0.18.0-SNAPSHOT"]]
+            [cider/cider-nrepl "0.18.0-SNAPSHOT"]
+            [lein-cloverage "1.0.13"]]
   :main witan.send.main
   :aot [witan.send.main]
 
