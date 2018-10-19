@@ -1,6 +1,5 @@
 (ns witan.send.utils
   (:require [clojure.core.matrix.dataset :as ds]
-            [clojure.data.avl :as avl]
             [clojure.set :refer [union]]
             [witan.send.schemas :as sc]
             [witan.send.states :as states]
