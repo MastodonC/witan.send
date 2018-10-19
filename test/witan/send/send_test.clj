@@ -15,8 +15,12 @@
    :initial-send-population ["data/demo/data/send-population.csv" sc/SENDPopulation]
    :transition-matrix ["data/demo/data/transitions.csv" sc/TransitionCounts]})
 
+(defn read-inputs [data input _ schema]
+  (let [[data-location fileschema] (get data (:witan/name input))]
+    (u/csv-to-dataset data-location fileschema)))
+
 (defn get-individual-input [key-name]
-  (u/read-inputs
+  (read-inputs
    test-inputs
    {:witan/name key-name}
    []

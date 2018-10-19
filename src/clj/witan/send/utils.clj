@@ -57,10 +57,6 @@
       (apply-schema-coercion schema)
       (as-> {:keys [column-names columns]} (ds/dataset column-names columns))))
 
-(defn read-inputs [data input _ schema]
-  (let [[data-location fileschema] (get data (:witan/name input))]
-    (csv-to-dataset data-location fileschema)))
-
 (def random-seed (atom 0))
 (defn set-seed! [n]
   (reset! random-seed n))
