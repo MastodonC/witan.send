@@ -4,24 +4,7 @@
 
 (def some+ (fnil + 0))
 
-
-
 (def natural-prior 1/3)
-
-(defn multimerge-alphas [total & weight-alphas]
-
-  (let [weight-alpha-sums (->> (partition 2 weight-alphas)
-                               (map (fn [[w as]]
-                                      [w as (->> as vals (apply +))])))
-        m (/ total (apply + (map first (remove (comp zero? last) weight-alpha-sums))))]
-    (->> (remove (fn [[_ _ s]]
-                   (zero? s)) weight-alpha-sums)
-         (reduce (fn [coll [w as s]]
-                   (reduce (fn [coll [x a]]
-                             (update coll x some+ (* m w (/ a s))))
-                           coll
-                           as))
-                 {}))))
 
 (defn weighted-alphas [n coll]
   (let [d (->> coll vals (apply +))
@@ -68,14 +51,6 @@
               (assoc transition n)))
           {}
           transitions))
-
-(defn beta-params-overall
-  [transitions f]
-  (reduce (fn [coll [transition n]]
-            (if (f transition)
-              (update coll :alpha some+ n)
-              (update coll :beta some+ n)))
-          {} transitions))
 
 (defn alpha-params [transitions f]
   (reduce (fn [coll [transition n]]

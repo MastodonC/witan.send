@@ -7,17 +7,8 @@
 
 (def send-report-file "target/SEND_Log.md")
 
-(defn italic [string]
-  (str "_" string "_"))
-
 (defn bold [string]
   (str "__" string "__"))
-
-(defn heading [string]
-  (str "## " string))
-
-(defn link [string url]
-  (str "[" string "](" url ")"))
 
 (defn info [& messages]
   (swap! send-report conj (apply str messages)))
