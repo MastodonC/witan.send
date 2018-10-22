@@ -24,11 +24,12 @@
                               "Special_Setting_Counts.pdf" "Total_Cost.pdf" "Total_Population.pdf"]
                              (map #(str "Historic_Transitions_" % ".pdf") historic-years))
         files (keys expected-md5s)
+        files-and-plots (into expected-plots files)
         config (assoc-in (m/config "data/demo/config.edn") [:output-parameters :run-charts] true)
         output-dir (m/get-output-dir config)]
     (run! #(let [file (join "/" [output-dir %])]
              (when (.exists (io/file file))
-               (io/delete-file file))) files)
+               (io/delete-file file))) files-and-plots)
     (->(send/run-send-workflow config)
        (so/output-send-results (:output-parameters config)))
     (testing "checksums are unchanged"
