@@ -18,7 +18,8 @@
                      :run-outputs true
                      :run-charts false
                      :output-dir "results"
-                     :settings-to-exclude-in-charts ""}
+                     :settings-to-exclude-in-charts ""
+                     :keep-temp-files? false}
 
  :validation-parameters {:keep-temp-files? false
                          :run-as-default false}

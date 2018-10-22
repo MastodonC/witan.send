@@ -94,7 +94,7 @@
    to get the total cost."
   [{:keys [projection send-output transition-matrix valid-setting-academic-years
            population modify-transition-by settings-to-change]}
-   {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts]}]
+   {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts keep-temp-files?]}]
   (let [transitions-data (ds/row-maps transition-matrix)
         transform-transitions (->> transitions-data
                                    (map #(vector
@@ -236,7 +236,8 @@
           (with-open [in (io/input-stream (io/resource "send-charts.R"))]
             (io/copy in (io/file "/tmp/send-charts.R")))
           (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir settings-to-exclude-in-charts)
-          (run! #(io/delete-file (str dir "/" %) :quiet)
-                ["historic-data.csv" "valid-settings.csv" "joiner-rates.csv"
-                 "leaver-rates.csv" "mover-rates.csv"]))))
+          (when-not keep-temp-files?
+            (run! #(io/delete-file (str dir "/" %) :quiet)
+                  ["historic-data.csv" "valid-settings.csv" "joiner-rates.csv"
+                   "leaver-rates.csv" "mover-rates.csv"])))))
     (report/write-send-report (str dir "/SEND_Log.md"))))
