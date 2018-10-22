@@ -143,7 +143,7 @@
         (report/info "Final year of projection: " (report/bold (+ (last years) (count (map :total-in-send send-output)))))
         (output-transitions (str dir "/transitions.edn") projection)
         (with-open [writer (io/writer (io/file (str dir "/Output_AY_State.csv")))]
-          (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[[academic-year state] stats]]
                                   (-> (medley/map-vals round stats)
@@ -152,7 +152,7 @@
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file (str dir "/Output_AY.csv")))]
-          (let [columns [:calendar-year :academic-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (let [columns [:calendar-year :academic-year :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[academic-year stats]]
                                   (-> (medley/map-vals round stats)
@@ -162,7 +162,7 @@
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file (str dir "/Output_Need.csv")))]
-          (let [columns [:calendar-year :need :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (let [columns [:calendar-year :need :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[need stats]]
                                   (-> (medley/map-vals round stats)
@@ -172,7 +172,7 @@
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file (str dir "/Output_Setting.csv")))]
-          (let [columns [:calendar-year :setting :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (let [columns [:calendar-year :setting :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[setting stats]]
                                   (-> (medley/map-vals round stats)
@@ -182,7 +182,7 @@
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file (str dir "/Output_Count.csv")))]
-          (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (let [columns [:calendar-year :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max]]
             (->> (map (fn [stats year]
                         (-> (medley/map-vals round stats)
                             (assoc :calendar-year year)))
@@ -191,7 +191,7 @@
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file (str dir "/Output_Cost.csv")))]
-          (let [columns [:calendar-year :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (let [columns [:calendar-year :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max]]
             (->> (map (fn [stats year]
                         (-> (medley/map-vals round stats)
                             (assoc :calendar-year year)))
@@ -200,7 +200,7 @@
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file (str dir "/Output_AY_Group.csv")))]
-          (let [columns [:calendar-year :ay-group :mean :std-dev :iqr :min :low-ci :q1 :median :q3 :high-ci :max]]
+          (let [columns [:calendar-year :ay-group :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max]]
             (->> (mapcat (fn [output year]
                            (map (fn [[ay-group stats]]
                                   (-> (medley/map-vals round stats)
