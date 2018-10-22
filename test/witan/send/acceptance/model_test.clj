@@ -30,8 +30,8 @@
     (run! #(let [file (join "/" [output-dir %])]
              (when (.exists (io/file file))
                (io/delete-file file))) files-and-plots)
-    (->(send/run-send-workflow config)
-       (so/output-send-results (:output-parameters config)))
+    (-> (send/run-send-workflow config)
+        (so/output-send-results (:output-parameters config)))
     (testing "checksums are unchanged"
       (is (= expected-md5s
              (into {} (for [f files]
