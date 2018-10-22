@@ -25,6 +25,7 @@ loginfo(output_dir)
 ### Variables for all charts ###
 
 remove_colons <-  function(x) {str_replace(x, ':', '')}
+
 df_historical <- read.csv(paste0(output_dir, "/historic-data.csv")) %>%
   mutate_all(funs(remove_colons)) %>%
   mutate(setting.2 = gsub("_", " ", setting.2)) %>%
@@ -265,10 +266,10 @@ count_data <- bind_rows(count_data_projected, count_data_historic)
 ggplot(count_data, aes(x=calendar.year, y=mean)) +
   geom_line(aes(colour='mean', linetype='mean')) +
   geom_point(colour='darkcyan') +
-  geom_line(aes(y=low.ci, colour='conf', linetype='conf')) +
-  geom_line(aes(y=high.ci, colour='conf', linetype='conf')) +
+  geom_line(aes(y=low.95pc.bound, colour='conf', linetype='conf')) +
+  geom_line(aes(y=high.95pc.bound, colour='conf', linetype='conf')) +
   scale_y_continuous(name = "Total SEND Population",
-                     limits = c(0, max(count_data$high.ci))) +
+                     limits = c(0, max(count_data$high.95pc.bound))) +
   scale_x_continuous(name="Year",
                      breaks = seq(min(count_data$calendar.year), max(count_data$calendar.year)),
                      limits = c(min(count_data$calendar.year), max(count_data$calendar.year))) +
@@ -296,11 +297,11 @@ max_x = max(cost_projected$calendar.year)
 
 ggplot(cost_projected, aes(x=calendar.year)) +
   geom_boxplot(aes(lower = q1, upper = q3, middle = median,
-                   ymin = low.ci, ymax = high.ci), fill='snow', colour='darkcyan', stat = "identity") +
+                   ymin = low.95pc.bound, ymax = high.95pc.bound), fill='snow', colour='darkcyan', stat = "identity") +
   ggtitle("SEND Cost Projection") +
   scale_x_continuous(name='Calendar Year', breaks=seq(min_x, max_x, by=1), limits=c(min_x-0.5, max_x+0.5)) +
   scale_y_continuous(name = "Total projected SEND cost / £ million",
-                     limits = c(0, max(cost_projected$high.ci))) +
+                     limits = c(0, max(cost_projected$high.95pc.bound))) +
   theme_bw()
 
 ggsave(paste0(output_dir, "/Total_Cost.pdf"))
