@@ -8,13 +8,13 @@
             [witan.send.validate-model :as v]))
 
 (deftest expected-results
-  (let [expected-md5s {"Output_AY.csv" "9e94286fd0bd9c5f11f6a05fdc059a22",
-                       "Output_AY_Group.csv" "19885902c4d32da3200413f3fd561eec",
-                       "Output_AY_State.csv" "e6d0f26a8256bc8fbf8909446241d247",
-                       "Output_Cost.csv" "472c408577aee6634b17aa7065cba7ae",
-                       "Output_Count.csv" "5b12125c72c03f1df18cf28f4d88991f",
-                       "Output_Need.csv" "f51084834e693186668087d26278b322",
-                       "Output_Setting.csv" "4e0665ddab7c45e966ca9df2d089f42c",
+  (let [expected-md5s {"Output_AY.csv" "848944192402c899e9891453e91287b4",
+                       "Output_AY_Group.csv" "d742c2727c455e3d8b65f42c58d00048",
+                       "Output_AY_State.csv" "d793f42ea3d9ef7a43513709e58d7a0a",
+                       "Output_Cost.csv" "7d6bffb95741ccb333d9b5dc90e24c4d",
+                       "Output_Count.csv" "e9f93ac2c13a41f5536e2bfb97daadd5",
+                       "Output_Need.csv" "460b794ff7bfdecc7c7c04657c2db585",
+                       "Output_Setting.csv" "2e89259376e530ed84439da0eb32027a",
                        "transitions.edn" "27ca57ba18f6024d335fd57722ef1cbf"}
         historic-years (distinct (map :calendar-year (v/load-csv-as-maps "data/demo/data/transitions.csv")))
         expected-plots (into ["Joiner_Probability.pdf" "Joiner_Transitions.pdf" "Leaver_Probability.pdf"
