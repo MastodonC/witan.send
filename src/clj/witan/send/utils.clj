@@ -3,7 +3,7 @@
             [clojure.set :refer [union]]
             [witan.send.schemas :as sc]
             [witan.send.states :as states]
-            [kixi.stats.core :as kixi]
+            [kixi.stats.math :as math]
             [kixi.stats.random :refer [multinomial binomial beta-binomial dirichlet-multinomial draw]]
             [redux.core :as r]
             [medley.core :as medley]
@@ -223,23 +223,31 @@
      (doto hist (.recordValue (inc x))))
     ([hist] hist)))
 
+(defn confidence-intervals [m sims]
+  (let [z-value 1.96 ;; this is for a 95% confidence value assuming normal distribution
+        std-err (/ (:std-dev m) (math/sqrt sims))
+        margin-of-error (* z-value std-err)]
+    (merge m {:low-ci (- (:mean m) margin-of-error)
+              :high-ci (+ (:mean m) margin-of-error)})))
+
 (defn histogram-combiner-rf
-  [number-of-significant-digits]
+  [simulations number-of-significant-digits]
   (fn
     ([] (IntCountsHistogram. number-of-significant-digits))
     ([acc hist]
      (doto acc (.add hist)))
     ([hist]
-     {:median (dec (.getValueAtPercentile hist 50.0))
-      :mean (dec (.getMean hist))
-      :std-dev (.getStdDeviation hist)
-      :iqr (- (.getValueAtPercentile hist 75.0) (.getValueAtPercentile hist 25.0))
-      :min (dec (.getValueAtPercentile hist 0.0))
-      :max (dec (.getValueAtPercentile hist 100.0))
-      :q1 (dec (.getValueAtPercentile hist 25.0))
-      :q3 (dec (.getValueAtPercentile hist 75.0))
-      :low-95pc-bound (dec (.getValueAtPercentile hist 2.5))
-      :high-95pc-bound (dec (.getValueAtPercentile hist 97.5))})))
+     (let [result {:median (dec (.getValueAtPercentile hist 50.0))
+                   :mean (dec (.getMean hist))
+                   :std-dev (.getStdDeviation hist)
+                   :iqr (- (.getValueAtPercentile hist 75.0) (.getValueAtPercentile hist 25.0))
+                   :min (dec (.getValueAtPercentile hist 0.0))
+                   :max (dec (.getValueAtPercentile hist 100.0))
+                   :q1 (dec (.getValueAtPercentile hist 25.0))
+                   :q3 (dec (.getValueAtPercentile hist 75.0))
+                   :low-95pc-bound (dec (.getValueAtPercentile hist 2.5))
+                   :high-95pc-bound (dec (.getValueAtPercentile hist 97.5))}]
+       (confidence-intervals result simulations)))))
 
 (defn merge-with-rf
   "Like (apply merge-with f) but for reducing functions"
