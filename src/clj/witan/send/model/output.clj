@@ -89,12 +89,22 @@
 (defn ribbon-data-rows [ribbon-data]
   (mapv (fn [x] (mapv #(nth % x) (map val ribbon-data))) (range (count (val (last ribbon-data))))))
 
+(defn bound-or-interval? [string]
+  "default behaviour is to use bounds rather than CI"
+  (= string "interval"))
+
+(defn r-plots [dir settings-to-exclude use-confidence-bound-or-interval]
+  (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir
+         (if (nil? settings-to-exclude) "" settings-to-exclude)
+         (if (bound-or-interval? use-confidence-bound-or-interval) ".ci" ".95pc.bound")))
+
 (defn output-send-results
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
    to get the total cost."
   [{:keys [projection send-output transition-matrix valid-setting-academic-years
            population modify-transition-by settings-to-change]}
-   {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts keep-temp-files?]}]
+   {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts
+           keep-temp-files? use-confidence-bound-or-interval]}]
   (let [transitions-data (ds/row-maps transition-matrix)
         transform-transitions (->> transitions-data
                                    (map #(vector
@@ -235,7 +245,7 @@
           (println "Producing charts...")
           (with-open [in (io/input-stream (io/resource "send-charts.R"))]
             (io/copy in (io/file "/tmp/send-charts.R")))
-          (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir settings-to-exclude-in-charts)
+          (r-plots dir settings-to-exclude-in-charts use-confidence-bound-or-interval)
           (when-not keep-temp-files?
             (run! #(io/delete-file (str dir "/" %) :quiet)
                   ["historic-data.csv" "valid-settings.csv" "joiner-rates.csv"
