@@ -2,6 +2,9 @@ args = commandArgs(trailingOnly=TRUE)
 output_dir = args[1]
 settings_to_remove <- strsplit(args[2], split=",")[[1]]
 
+low_bound <- paste0("low", args[3])
+high_bound <- paste0("high", args[3])
+
 install_missing_packages <- function(package_name) {
   if(!require(package_name, character.only = TRUE)) {
     install.packages(package_name, repos='http://cran.us.r-project.org') } }
@@ -21,6 +24,10 @@ library(logging)
 
 basicConfig()
 loginfo(output_dir)
+
+evaluate_string <- function(string) {
+  eval(parse(text=string))
+}
 
 ### Variables for all charts ###
 
@@ -140,7 +147,7 @@ chart_4_settings <- df_set_counts[df_set_counts$mean > split_3,]$Setting
 
 
 for(i in 1:4) {
-  df_i <- subset(df_set, Setting %in% eval(parse(text = paste("chart_",i,"_settings", sep=""))))
+  df_i <- subset(df_set, Setting %in% evaluate_string(paste("chart_",i,"_settings", sep="")))
   y_max <- max(df_i$mean)
 
   ggplot(df_i, aes(x=calendar.year, y=mean, group=Setting)) +
@@ -263,27 +270,26 @@ count_data_projected <- read.csv(paste0(output_dir, "/Output_Count.csv"))
 
 count_data <- bind_rows(count_data_projected, count_data_historic)
 
-ggplot(count_data, aes(x=calendar.year, y=mean)) +
-  geom_line(aes(colour='mean', linetype='mean')) +
-  geom_point(colour='darkcyan') +
-  geom_line(aes(y=low.95pc.bound, colour='conf', linetype='conf')) +
-  geom_line(aes(y=high.95pc.bound, colour='conf', linetype='conf')) +
-  scale_y_continuous(name = "Total SEND Population",
-                     limits = c(0, max(count_data$high.95pc.bound))) +
-  scale_x_continuous(name="Year",
-                     breaks = seq(min(count_data$calendar.year), max(count_data$calendar.year)),
-                     limits = c(min(count_data$calendar.year), max(count_data$calendar.year))) +
-  scale_linetype_manual(name="", values=c(mean='solid', conf='dashed'), labels=c(mean='Mean', conf="Confidence Bounds")) +
-  scale_color_manual(name="", values=c(mean='darkcyan', conf="grey38"), labels=c(mean='Mean', conf="Confidence Bounds")) +
-  theme_bw() +
-  theme(axis.text.x = element_text(size=8)) +
-  ggtitle("SEND Population Projection") +
-  geom_vline(xintercept = max(count_data_historic$calendar.year) + 1.0,
-             color = "dodgerblue",
-             linetype = "dashed")  +
-  annotate("text",label = "<-- Historical      Projected -->",
-           x=max(count_data_historic$calendar.year) + 1.0,
-           y=max(count_data_projected$max), color = "dodgerblue")
+geom_bound <- function(bound) {
+  paste0("geom_line(aes(y=", bound, ", colour='conf', linetype='conf')) +")
+}
+
+total_pop_text <- paste0("ggplot(count_data, aes(x=calendar.year, y=mean)) +
+                          geom_line(aes(colour='mean', linetype='mean')) +
+                          geom_point(colour='darkcyan') +",
+                         geom_bound(as.name(low_bound)),
+                         geom_bound(as.name(high_bound)),
+                          "scale_y_continuous(name = \"Total SEND Population\", limits = c(0, max(count_data$max))) +
+                          scale_x_continuous(name=\"Year\", breaks = seq(min(count_data$calendar.year), max(count_data$calendar.year)), limits = c(min(count_data$calendar.year), max(count_data$calendar.year))) +
+                          scale_linetype_manual(name=\"\", values=c(mean='solid', conf='dashed'), labels=c(mean='Mean', conf=\"Confidence Bounds\")) +
+                          scale_color_manual(name=\"\", values=c(mean='darkcyan', conf=\"grey38\"), labels=c(mean='Mean', conf=\"Confidence Bounds\")) +
+                          theme_bw() +
+                          theme(axis.text.x = element_text(size=8)) +
+                          ggtitle(\"SEND Population Projection\") +
+                          geom_vline(xintercept = max(count_data_historic$calendar.year) + 1.0, color = \"dodgerblue\", linetype = \"dashed\")  +
+                          annotate(\"text\",label = \"<-- Historical      Projected -->\", x=max(count_data_historic$calendar.year) + 1.0, y=max(count_data_projected$max), color = \"dodgerblue\")")
+
+evaluate_string(total_pop_text)
 
 ggsave(paste0(output_dir, "/Total_Population.pdf"))
 
@@ -295,14 +301,19 @@ cost_projected[,-1] <-  cost_projected[,-1] / 1000000
 min_x = min(cost_projected$calendar.year)
 max_x = max(cost_projected$calendar.year)
 
-ggplot(cost_projected, aes(x=calendar.year)) +
-  geom_boxplot(aes(lower = q1, upper = q3, middle = median,
-                   ymin = low.95pc.bound, ymax = high.95pc.bound), fill='snow', colour='darkcyan', stat = "identity") +
-  ggtitle("SEND Cost Projection") +
-  scale_x_continuous(name='Calendar Year', breaks=seq(min_x, max_x, by=1), limits=c(min_x-0.5, max_x+0.5)) +
-  scale_y_continuous(name = "Total projected SEND cost / £ million",
-                     limits = c(0, max(cost_projected$high.95pc.bound))) +
-  theme_bw()
+boxplot <- function(lb, hb) {
+  paste0("ggplot(cost_projected, aes(x=calendar.year)) +",
+         "geom_boxplot(aes(lower = q1, upper = q3, middle = median, ymin = ", as.name(lb),
+         ", ymax = ", as.name(hb), "), fill='snow', colour='darkcyan', stat = \"identity\") +",
+         "ggtitle(\"SEND Cost Projection\") +",
+         "scale_x_continuous(name='Calendar Year', breaks=seq(min_x, max_x, by=1), limits=c(min_x-0.5, max_x+0.5)) +",
+         "scale_y_continuous(name = \"Total projected SEND cost / £ million\", limits = c(0, max(cost_projected$",
+         as.name(hb),
+         "))) +",
+         "theme_bw()")
+}
+
+evaluate_string(boxplot(low_bound, high_bound))
 
 ggsave(paste0(output_dir, "/Total_Cost.pdf"))
 
@@ -390,10 +401,6 @@ ggsave(paste0(output_dir, "/Joiner_Transitions.pdf"))
 
 
 ### Ribbon plot ###
-
-evaluate_string <- function(string) {
-  eval(parse(text=string))
-}
 
 colour_palette = c("#1b9e77", "#d95f02", "#7570b3", "#e7298a")
 
