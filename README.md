@@ -121,7 +121,7 @@ For Ubuntu, get enough of an env that will allow compilation of R
 packages.
 
 ``` bash
-sudo apt install r-base r-cra-ggplot2 libudunits2-dev libcairo2-dev \
+sudo apt install r-base r-cran-ggplot2 libudunits2-dev libcairo2-dev \
                  libcurl4-openssl-dev libv8-3.14-dev libgdal-dev
 ```
 
