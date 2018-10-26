@@ -1,5 +1,5 @@
 (ns witan.send.distributions
-  (:require [kixi.stats.random :as d]))
+  (:require [kixi.stats.distribution :as d]))
 
 (def random-seed (atom 0))
 (defn set-seed! [n]
