@@ -4,7 +4,6 @@
             [witan.send.schemas :as sc]
             [witan.send.states :as states]
             [kixi.stats.math :as math]
-            [kixi.stats.random :refer [multinomial binomial beta-binomial dirichlet-multinomial draw]]
             [redux.core :as r]
             [medley.core :as medley]
             [schema.core :as s]
@@ -56,12 +55,6 @@
       (apply-schema-coercion schema)
       (as-> {:keys [column-names columns]} (ds/dataset column-names columns))))
 
-(def random-seed (atom 0))
-(defn set-seed! [n]
-  (reset! random-seed n))
-(defn get-seed! []
-  (swap! random-seed inc))
-
 (defn round [x]
   (Double/parseDouble (format "%.02f" (double x))))
 
@@ -105,39 +98,6 @@
                          :setting-2 (if (nil? (split-need-state state-2 second))
                                       (split-need-state state-2 first)
                                       (split-need-state state-2 second))))))
-
-(defn sample-dirichlet-multinomial
-  [n alphas]
-  (try
-    (let [[ks as] (apply mapv vector alphas)]
-      (let [xs (if (pos? n)
-                 (draw (dirichlet-multinomial n as) {:seed (get-seed!)})
-                 (repeat 0))]
-        (zipmap ks xs)))
-    (catch Exception e
-      (do (println n alphas)
-          nil))))
-
-(defn sample-beta-binomial
-  [n params]
-  (if (pos? n)
-    (draw (beta-binomial n params) {:seed (get-seed!)})
-    0))
-
-(defn sample-send-transitions
-  "Takes a total count and map of categories to probabilities and
-  returns the count in each category at the next step."
-  [state n probs mover-beta]
-  (try
-    (if (pos? n)
-      (let [movers (sample-beta-binomial n mover-beta)
-            non-movers (- n movers)]
-        (-> (sample-dirichlet-multinomial movers probs)
-            (assoc state non-movers)))
-      {})
-    (catch Exception e
-      (do (println state n probs mover-beta)
-          nil))))
 
 (def total-by-academic-year
   "Given a sequence of {:academic-year year :population population}
@@ -306,9 +266,6 @@
     ([acc]
      (println "Complete rf...")
      (mapv #(rf %1) acc))))
-
-(defn int-ceil [n]
-  (int (Math/ceil n)))
 
 (defn keep-duplicates [seq]
   (for [[id freq] (frequencies seq)
