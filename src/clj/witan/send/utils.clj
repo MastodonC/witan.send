@@ -1,17 +1,14 @@
 (ns witan.send.utils
   (:require [clojure.core.matrix.dataset :as ds]
-            [clojure.set :refer [union]]
-            [witan.send.schemas :as sc]
-            [witan.send.states :as states]
-            [kixi.stats.math :as math]
-            [redux.core :as r]
-            [medley.core :as medley]
-            [schema.core :as s]
-            [clojure.string :as str]
-            [clojure.java.io :as io]
             [clojure.data.csv :as data-csv]
-            [schema.coerce :as coerce])
-  (:import [org.HdrHistogram IntCountsHistogram DoubleHistogram]))
+            [clojure.java.io :as io]
+            [clojure.string :as str]
+            [medley.core :as medley]
+            [kixi.stats.math :as math]
+            [schema.coerce :as coerce]
+            [witan.send.schemas :as sc]
+            [witan.send.states :as states])
+  (:import org.HdrHistogram.IntCountsHistogram))
 
 (defn blank-row? [row]
   (every? #(= "" %) row))
