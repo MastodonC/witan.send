@@ -125,15 +125,15 @@
                            :total-in-send-by-ay-group (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits))
                                                                   u/model-population-by-ay-group)})))
 
-(defn combine-rf [iterations]
+(defn combine-rf [simulations iterations]
   (u/partition-rf iterations
-                  (values-rf {:by-state (u/merge-with-rf (u/histogram-combiner-rf number-of-significant-digits))
-                              :total-in-send-by-ay (u/merge-with-rf (u/histogram-combiner-rf number-of-significant-digits))
-                              :total-in-send (u/histogram-combiner-rf number-of-significant-digits)
-                              :total-in-send-by-need (u/merge-with-rf (u/histogram-combiner-rf number-of-significant-digits))
-                              :total-in-send-by-setting (u/merge-with-rf (u/histogram-combiner-rf number-of-significant-digits))
-                              :total-cost (u/histogram-combiner-rf number-of-significant-digits)
-                              :total-in-send-by-ay-group (u/merge-with-rf (u/histogram-combiner-rf number-of-significant-digits))})))
+                  (values-rf {:by-state (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
+                              :total-in-send-by-ay (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
+                              :total-in-send (u/histogram-combiner-rf simulations number-of-significant-digits)
+                              :total-in-send-by-need (u/merge-with-rf (u/histogram-combiner-rf simulations  number-of-significant-digits))
+                              :total-in-send-by-setting (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
+                              :total-cost (u/histogram-combiner-rf simulations number-of-significant-digits)
+                              :total-in-send-by-ay-group (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))})))
 
 (defn run-send-model
   "Outputs the population for the last year of historic data, with one
@@ -174,7 +174,7 @@
         projection (apply concat projections)]
     (println "Combining...")
     {:projection (projection->transitions projection)
-     :send-output (transduce identity (combine-rf iterations) reduced)
+     :send-output (transduce identity (combine-rf simulations iterations) reduced)
      :transition-matrix transition-matrix
      :valid-setting-academic-years valid-setting-academic-years
      :population population
