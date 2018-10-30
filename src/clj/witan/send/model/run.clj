@@ -5,7 +5,8 @@
             [witan.send.states :as states]
             [witan.send.utils :as u :refer [round]]
             [redux.core :as r]
-            [witan.send.report :refer [reset-send-report]]))
+            [witan.send.report :refer [reset-send-report]]
+            [witan.send.distributions :as d]))
 
 (defn incorporate-new-states-for-academic-year-state
   "Take a model + transitions tuple as its first argument.
@@ -23,6 +24,21 @@
                (update [calendar-year academic-year state next-state] u/some+ n)))
            transitions next-states-sample)))
 
+(defn sample-send-transitions
+  "Takes a total count and map of categories to probabilities and
+  returns the count in each category at the next step."
+  [state n probs mover-beta]
+  (try
+    (if (pos? n)
+      (let [movers (d/sample-beta-binomial n mover-beta)
+            non-movers (- n movers)]
+        (-> (d/sample-dirichlet-multinomial movers probs)
+            (assoc state non-movers)))
+      {})
+    (catch Exception e
+      (do (println state n probs mover-beta)
+          nil))))
+
 (defn apply-leavers-movers-for-cohort-unsafe
   "We're calling this function 'unsafe' because it doesn't check whether the state or
   or academic year range is valid."
@@ -32,10 +48,10 @@
    calendar-year]
   (if-let [probs (get mover-state-alphas [(dec year) state])]
     (let [leaver-params (get leaver-beta-params [(dec year) state])
-          l (u/sample-beta-binomial population leaver-params)
+          l (d/sample-beta-binomial population leaver-params)
           next-states-sample (if (states/can-move? valid-year-settings year state)
                                (let [mover-params (get mover-beta-params [(dec year) state])]
-                                 (u/sample-send-transitions state (- population l) probs mover-params))
+                                 (sample-send-transitions state (- population l) probs mover-params))
                                {state (- population l)})
           [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year state next-states-sample calendar-year)]
       [model
@@ -67,10 +83,10 @@
         alphas (get joiner-state-alphas academic-year)
         pop (get population academic-year)]
     (if (and alphas betas pop (every? pos? (vals betas)))
-      (let [joiners (u/sample-beta-binomial pop betas)]
+      (let [joiners (d/sample-beta-binomial pop betas)]
         (if (zero? joiners)
           [model transitions]
-          (let [joiner-states (u/sample-dirichlet-multinomial joiners alphas)]
+          (let [joiner-states (d/sample-dirichlet-multinomial joiners alphas)]
             (incorporate-new-states-for-academic-year-state [model transitions] academic-year sc/non-send joiner-states calendar-year))))
       [model transitions])))
 
@@ -140,7 +156,7 @@
    row for each individual/year/simulation. Also includes age & state columns"
   [{:keys [standard-projection scenario-projection modify-transition-by settings-to-change]}
    {:keys [seed-year random-seed simulations modify-transitions-from]}]
-  (u/set-seed! random-seed)
+  (d/set-seed! random-seed)
   (println "Preparing" simulations "simulations...")
   (let [{:keys [population population-by-age-state
                 projected-population setting-cost-lookup
