@@ -18,8 +18,9 @@
                      :run-outputs true
                      :run-charts false
                      :output-dir "results"
-                     :settings-to-exclude-in-charts ""
-                     :keep-temp-files? false}
+                     :settings-to-exclude-in-charts nil
+                     :keep-temp-files? false
+                     :use-confidence-bound-or-interval nil}
 
  :validation-parameters {:keep-temp-files? false
                          :run-as-default false}
