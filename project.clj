@@ -11,7 +11,7 @@
                  [clj-time "0.13.0"]
                  [digest "1.4.8"]
                  [instaparse "1.4.3"]
-                 [kixi/stats "0.3.9"]
+                 [kixi/stats "0.4.3"]
                  [me.raynes/fs "1.4.6"]
                  [medley "1.0.0"]
                  [net.mikera/core.matrix "0.55.0" :exclusions [org.clojure/clojure]]

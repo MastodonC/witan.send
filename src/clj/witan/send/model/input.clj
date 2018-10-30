@@ -11,6 +11,9 @@
             [schema.core :as s]
             [witan.send.schemas :as sc]))
 
+(defn int-ceil [n]
+  (int (Math/ceil n)))
+
 (defn build-input-datasets
   "Build a map of the datasets to use for input"
   [project-dir file-inputs schema-inputs]
@@ -135,7 +138,7 @@
 (defn modify-transitions [transitions [first-state second-state] arithmetic-fn v]
   (if (contains? transitions first-state)
     (let [pop (get transitions first-state)
-          mod-pop (u/int-ceil (arithmetic-fn pop v))
+          mod-pop (int-ceil (arithmetic-fn pop v))
           diff (- pop mod-pop)
           assoc-first-state (assoc transitions first-state mod-pop)]
       (if (nil? second-state)
