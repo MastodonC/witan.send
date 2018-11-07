@@ -57,8 +57,9 @@
 
 (defn run-recorded-send [config]
   (let [metadata (md/metadata config)]
-    (-> (send/run-send-workflow config)
-        (so/output-send-results (:output-parameters config)))
+    (so/output-send-results
+     (send/run-send-workflow config)
+     (:output-parameters config))
     (when (get-in config [:validation-parameters :run-as-default])
       (vm/run-send-validation config))
     (save-runtime-config config)
