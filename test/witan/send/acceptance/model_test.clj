@@ -1,10 +1,11 @@
 (ns witan.send.acceptance.model-test
-  (:require [clojure.test :refer :all]
-            [witan.send.send :as send]
-            [witan.send.model.output :as so]
-            [witan.send.main :as m]
-            [clojure.java.io :as io]
+  (:require [clojure.java.io :as io]
             [clojure.string :refer [join]]
+            [clojure.test :refer [deftest is testing]]
+            digest
+            [witan.send.main :as m]
+            [witan.send.model.output :as so]
+            [witan.send.send :as send]
             [witan.send.validate-model :as v]))
 
 (deftest expected-results
@@ -25,7 +26,7 @@
                              (map #(str "Historic_Transitions_" % ".pdf") historic-years))
         files (keys expected-md5s)
         files-and-plots (into expected-plots files)
-        config (m/config "data/demo/config.edn")
+        config (m/read-config "data/demo/config.edn")
         output-dir (m/get-output-dir config)]
     (run! #(let [file (join "/" [output-dir %])]
              (when (.exists (io/file file))
