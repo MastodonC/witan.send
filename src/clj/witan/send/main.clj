@@ -9,18 +9,22 @@
             [witan.send.send :as send]
             [witan.send.validate-model :as vm]))
 
-(defn config [config-path]
+(def default-schemas
+  {:schema-inputs {:settings-to-change sc/SettingsToChange
+                   :transition-matrix sc/TransitionCounts
+                   :population sc/PopulationDataset
+                   :setting-cost sc/NeedSettingCost
+                   :valid-setting-academic-years sc/ValidSettingAcademicYears}})
+
+(defn read-config
   "Read a config file and merge it with schema inputs"
+  [config-path]
   (let [project-dir (.getParent(java.io.File. config-path))]
     (merge-with merge
-              (read-config config-path)
-              {:schema-inputs {:settings-to-change sc/SettingsToChange
-                               :transition-matrix sc/TransitionCounts
-                               :population sc/PopulationDataset
-                               :setting-cost sc/NeedSettingCost
-                               :valid-setting-academic-years sc/ValidSettingAcademicYears}}
-              {:project-dir project-dir}
-              {:output-parameters {:project-dir project-dir}})))
+                (aero/read-config config-path)
+                default-schemas
+                {:project-dir project-dir}
+                {:output-parameters {:project-dir project-dir}})))
 
 (defn get-output-dir [config]
   (string/join "/" [(:project-dir config)
@@ -42,14 +46,23 @@
 
 ;; The run-* fns are just handy repl shortcuts from the main ns.
 (defn run-send
-  ([] (run-send (config "data/demo/config.edn")))
+  ([] (run-send (read-config "data/demo/config.edn")))
   ([config]
    (send/run-send-workflow config)))
 
 (defn run-validation
-  ([] (run-validation (config "data/demo/config.edn")))
+  ([] (run-validation (read-config "data/demo/config.edn")))
   ([config]
    (vm/run-send-validation config)))
+
+(defn run-recorded-send [config]
+  (let [metadata (md/metadata config)]
+    (-> (send/run-send-workflow config)
+        (so/output-send-results (:output-parameters config)))
+    (when (get-in config [:validation-parameters :run-as-default])
+      (vm/run-send-validation config))
+    (save-runtime-config config)
+    (save-runtime-metadata config metadata)))
 
 (defn -main
   "Run the send model producing outputs, defaulting to the inbuilt demo
@@ -57,11 +70,6 @@
   do that as well.  Save the config and metadata also re the run also."
   ([] (-main "data/demo/config.edn"))
   ([config-path]
-   (let [config (config config-path)
-         metadata (md/metadata config)]
-     (-> (send/run-send-workflow config)
-         (so/output-send-results (:output-parameters config)))
-     (when (get-in config [:validation-parameters :run-as-default])
-       (vm/run-send-validation config))
-     (save-runtime-config config)
-     (save-runtime-metadata config metadata))))
+   (-> config-path
+       read-config
+       run-recorded-send)))
