@@ -1,14 +1,13 @@
 (ns witan.send.main
-  (:require [schema.core :as s]
-            [witan.send.send :as send]
+  (:gen-class)
+  (:require [aero.core :as aero]
+            [clojure.pprint :refer [pprint]]
+            [clojure.string :as string]
+            [witan.send.metadata :as md]
             [witan.send.model.output :as so]
             [witan.send.schemas :as sc]
-            [aero.core :refer [read-config]]
-            [clojure.string :refer [join]]
-            [clojure.pprint :refer [pprint]]
-            [witan.send.metadata :as md]
-            [witan.send.validate-model :as vm])
-  (:gen-class))
+            [witan.send.send :as send]
+            [witan.send.validate-model :as vm]))
 
 (defn config [config-path]
   "Read a config file and merge it with schema inputs"
@@ -24,12 +23,12 @@
               {:output-parameters {:project-dir project-dir}})))
 
 (defn get-output-dir [config]
-  (join "/" [(config :project-dir)
-             (get-in config [:output-parameters :output-dir])]))
+  (string/join "/" [(:project-dir config)
+                    (get-in config [:output-parameters :output-dir])]))
 
 (defn save-runtime-config
   [config]
-  (spit (join "/" [(get-output-dir config) "runtime-config.edn"])
+  (spit (string/join "/" [(get-output-dir config) "runtime-config.edn"])
         (with-out-str
           (pprint (-> config
                       (dissoc :schema-inputs)
@@ -37,7 +36,7 @@
 
 (defn save-runtime-metadata
   [config metadata]
-  (spit (join "/" [(get-output-dir config) "runtime-metadata.edn"])
+  (spit (string/join "/" [(get-output-dir config) "runtime-metadata.edn"])
         (with-out-str
           (pprint (md/merge-end-time metadata)))))
 
