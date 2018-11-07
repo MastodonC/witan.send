@@ -1,5 +1,6 @@
 (ns witan.send.multi-config
   (:require [clojure.math.combinatorics :as combo]
+            [clojure.string :as string]
             [witan.send.main :as main]))
 
 (def default-config
@@ -37,7 +38,7 @@
   [combo]
   (conj [:output-parameters :output-dir]
         (-> (apply str (doall (map #(take-last 2 %) combo)))
-            (clojure.string/replace #"[(): ]" ""))))
+            (string/replace #"[(): ]" ""))))
 
 (defn generate-params
   "Generates combinations of input parameters based on input vectors"
