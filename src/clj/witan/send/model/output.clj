@@ -4,10 +4,10 @@
             [clojure.java.io :as io]
             [clojure.java.shell :as sh]
             [medley.core :as medley]
+            [witan.send.constants :as c]
             [witan.send.maths :as m]
             [witan.send.params :as p]
             [witan.send.report :as report]
-            [witan.send.schemas :as sc]
             [witan.send.states :as states])
   (:import org.apache.commons.math3.distribution.BetaDistribution))
 
@@ -17,14 +17,14 @@
 (defn confidence-bounds
   [results calendar-year]
   (let [academic-years (keys results)]
-    (->> (for [academic-year (sort academic-years)]
-           (let [alpha (get-in results [academic-year calendar-year :alpha] 0)
-                 beta (get-in results [academic-year calendar-year :beta])]
-             (apply vector academic-year
-                    (if (and (pos? alpha) (pos? beta))
-                      [(.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.025)
-                       (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.975)]
-                      [0 0])))))))
+    (for [academic-year (sort academic-years)]
+      (let [alpha (get-in results [academic-year calendar-year :alpha] 0)
+            beta (get-in results [academic-year calendar-year :beta])]
+        (apply vector academic-year
+               (if (and (pos? alpha) (pos? beta))
+                 [(.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.025)
+                  (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.975)]
+                 [0 0]))))))
 
 (defn create-keys [string year-count]
   (map (fn [n] (keyword (str string n))) (range year-count)))
@@ -59,7 +59,7 @@
 
 (defn leaver-rate [transitions-filtered]
   (reduce (fn [coll {:keys [calendar-year academic-year-1 setting-1 setting-2]}]
-            (let [leaver? (= setting-2 sc/non-send)]
+            (let [leaver? (= setting-2 c/non-send)]
               (-> coll
                   (update-in [academic-year-1 calendar-year :alpha] m/some+ (if leaver? 1 0))
                   (update-in [academic-year-1 calendar-year :beta] m/some+ (if leaver? 0 1)))))
@@ -136,13 +136,13 @@
             joiner-rates (joiner-rate joiners-count population-count ages years)
             joiner-rates-CI (map #(confidence-bounds joiner-rates %) years)
             joiner-ribbon-data (prep-ribbon-plot-data joiner-rates-CI years n-colours)
-            filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send)) transitions-data)
+            filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send)) transitions-data)
             leaver-rates (leaver-rate filter-leavers)
             leaver-rates-CI (map #(confidence-bounds leaver-rates %) years)
             leaver-ribbon-data (prep-ribbon-plot-data leaver-rates-CI years n-colours)
             filter-movers (remove (fn [{:keys [setting-1 setting-2]}]
-                                    (or (= setting-1 sc/non-send)
-                                        (= setting-2 sc/non-send))) transitions-data)
+                                    (or (= setting-1 c/non-send)
+                                        (= setting-2 c/non-send))) transitions-data)
             mover-rates (mover-rate filter-movers)
             mover-rates-CI (map #(confidence-bounds mover-rates %) years)
             mover-ribbon-data (prep-ribbon-plot-data mover-rates-CI years n-colours)]

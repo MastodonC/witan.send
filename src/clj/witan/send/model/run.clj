@@ -1,6 +1,7 @@
 (ns witan.send.model.run
   (:require [clojure.core.matrix.dataset :as ds]
             [redux.core :as r]
+            [witan.send.constants :as c]
             [witan.send.distributions :as d]
             [witan.send.maths :as m]
             [witan.send.schemas :as sc]
@@ -55,7 +56,7 @@
                                {state (- population l)})
           [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year state next-states-sample calendar-year)]
       [model
-       (update transitions [calendar-year year state sc/non-send] m/some+ l)])
+       (update transitions [calendar-year year state c/non-send] m/some+ l)])
     [model transitions]))
 
 (defn apply-leavers-movers-for-cohort
@@ -66,14 +67,14 @@
    [[year state] population :as cohort]
    params calendar-year]
   (cond
-    (= state sc/non-send)
+    (= state c/non-send)
     model-state
     (or (<= year sc/min-academic-year)
         (> year sc/max-academic-year))
     [model
      (cond-> transitions
        (pos? population)
-       (update [calendar-year year state sc/non-send] m/some+ population))]
+       (update [calendar-year year state c/non-send] m/some+ population))]
     :else
     (apply-leavers-movers-for-cohort-unsafe model-state cohort params calendar-year)))
 
@@ -87,7 +88,7 @@
         (if (zero? joiners)
           [model transitions]
           (let [joiner-states (d/sample-dirichlet-multinomial joiners alphas)]
-            (incorporate-new-states-for-academic-year-state [model transitions] academic-year sc/non-send joiner-states calendar-year))))
+            (incorporate-new-states-for-academic-year-state [model transitions] academic-year c/non-send joiner-states calendar-year))))
       [model transitions])))
 
 (defn run-model-iteration
