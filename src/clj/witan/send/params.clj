@@ -1,5 +1,6 @@
 (ns witan.send.params
-  (:require [witan.send.maths :as m]
+  (:require [witan.send.constants :as c]
+            [witan.send.maths :as m]
             [witan.send.states :as s]
             [witan.send.utils :as u]))
 
@@ -15,22 +16,22 @@
 
 (defn joiner?
   [[ay state-1 state-2]]
-  (and (= state-1 s/non-send)
-       (not= state-2 s/non-send)))
+  (and (= state-1 c/non-send)
+       (not= state-2 c/non-send)))
 
 (defn transitions-matrix-joiner?
   [{:keys [need-1]}]
-  (= need-1 s/non-send))
+  (= need-1 c/non-send))
 
 (defn leaver?
   [[ay state-1 state-2]]
-  (and (not= state-1 s/non-send)
-       (= state-2 s/non-send)))
+  (and (not= state-1 c/non-send)
+       (= state-2 c/non-send)))
 
 (defn mover?
   [[ay state-1 state-2]]
-  (and (not= state-1 s/non-send)
-       (not= state-2 s/non-send)
+  (and (not= state-1 c/non-send)
+       (not= state-2 c/non-send)
        (not= state-1 state-2)))
 
 (defn remove-transitions
@@ -195,9 +196,9 @@
                             (distinct)
                             (sort))
         observations (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2 :as row]}]
-                               (if (= setting-1 s/non-send)
+                               (if (= setting-1 c/non-send)
                                  coll
-                                 (if (= setting-2 s/non-send)
+                                 (if (= setting-2 c/non-send)
                                    (update-in coll [academic-year-1 (s/state need-1 setting-1) :alpha] m/some+ 1)
                                    (update-in coll [academic-year-1 (s/state need-1 setting-1) :beta] m/some+ 1))))
                              {} transitions)
@@ -257,8 +258,8 @@
                             (distinct)
                             (sort))
         observations (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
-                               (if (or (= setting-1 s/non-send)
-                                       (= setting-2 s/non-send))
+                               (if (or (= setting-1 c/non-send)
+                                       (= setting-2 c/non-send))
                                  coll
                                  (if (not= setting-1 setting-2)
                                    (update-in coll [academic-year-1 (s/state need-1 setting-1) :alpha] m/some+ 1)
@@ -291,8 +292,8 @@
                             (distinct)
                             (sort))
         observations (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
-                               (if (or (= setting-1 s/non-send)
-                                       (= setting-2 s/non-send)
+                               (if (or (= setting-1 c/non-send)
+                                       (= setting-2 c/non-send)
                                        (= setting-1 setting-2))
                                  coll
                                  (update-in coll [academic-year-1
@@ -301,8 +302,8 @@
                              {} transitions)
 
         observations-per-ay (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
-                                      (if (or (= setting-1 s/non-send)
-                                              (= setting-2 s/non-send)
+                                      (if (or (= setting-1 c/non-send)
+                                              (= setting-2 c/non-send)
                                               (= setting-1 setting-2))
                                         coll
                                         (update-in coll [academic-year-1 setting-2] m/some+ 1)))

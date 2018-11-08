@@ -6,6 +6,7 @@
             [kixi.stats.math :as math]
             [medley.core :as medley]
             [schema.coerce :as coerce]
+            [witan.send.constants :as c]
             [witan.send.maths :as m]
             [witan.send.schemas :as sc]
             [witan.send.states :as states])
@@ -101,7 +102,7 @@
   [model]
   (reduce (fn [coll [[ay state] population]]
             (cond-> coll
-              (not= state sc/non-send)
+              (not= state c/non-send)
               (update ay m/some+ population)))
           {} model))
 
@@ -110,7 +111,7 @@
   (reduce (fn [coll [[ay state] population]]
             (let [[need setting] (states/need-setting state)]
               (cond-> coll
-                (not= state sc/non-send)
+                (not= state c/non-send)
                 (update need m/some+ population))))
           {} model))
 
@@ -119,7 +120,7 @@
   (reduce (fn [coll [[ay state] population]]
             (let [[need setting] (states/need-setting state)]
               (cond-> coll
-                (not= state sc/non-send)
+                (not= state c/non-send)
                 (update setting m/some+ population))))
           {} model))
 
@@ -128,7 +129,7 @@
   (reduce (fn [coll [[ay state] population]]
             (let [[need setting] (states/need-setting state)]
               (cond-> coll
-                (not= state sc/non-send)
+                (not= state c/non-send)
                 (update [need setting] m/some+ population))))
           {} model))
 
@@ -145,7 +146,7 @@
   (reduce (fn [coll [[ay state] population]]
             (let [ay-group (ay-groups ay)]
               (cond-> coll
-                (not= state sc/non-send)
+                (not= state c/non-send)
                 (update ay-group m/some+ population))))
           {} model))
 
@@ -160,7 +161,7 @@
   [model]
   (reduce (fn [n [[ay state] population]]
             (cond-> n
-              (not= state sc/non-send)
+              (not= state c/non-send)
               (+ population)))
           0 model))
 
