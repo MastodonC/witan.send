@@ -1,10 +1,10 @@
 (ns witan.send.metadata
-  (:require [clj-time.format :as f]
-            [clj-time.core :as t]
+  (:require [clj-time.core :as t]
+            [clj-time.format :as f]
+            [clojure.java.io :as io]
             [clojure.java.shell :as sh]
             [clojure.string :as str]
-            [digest]
-            [clojure.java.io :as io]))
+            digest))
 
 (defn environment-metadata
   []
