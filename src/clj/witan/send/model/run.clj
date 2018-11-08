@@ -1,12 +1,12 @@
 (ns witan.send.model.run
-  (:require [witan.send.schemas :as sc]
-            [clojure.core.matrix.dataset :as ds]
-            [witan.send.step :as step]
-            [witan.send.states :as states]
-            [witan.send.utils :as u :refer [round]]
+  (:require [clojure.core.matrix.dataset :as ds]
             [redux.core :as r]
-            [witan.send.report :refer [reset-send-report]]
-            [witan.send.distributions :as d]))
+            [witan.send.distributions :as d]
+            [witan.send.maths :as m]
+            [witan.send.schemas :as sc]
+            [witan.send.states :as states]
+            [witan.send.step :as step]
+            [witan.send.utils :as u]))
 
 (defn incorporate-new-states-for-academic-year-state
   "Take a model + transitions tuple as its first argument.
@@ -16,12 +16,12 @@
    (reduce (fn [coll [next-state n]]
              (cond-> coll
                (pos? n)
-               (update [academic-year next-state] u/some+ n)))
+               (update [academic-year next-state] m/some+ n)))
            model next-states-sample)
    (reduce (fn [coll [next-state n]]
              (cond-> coll
                (pos? n)
-               (update [calendar-year academic-year state next-state] u/some+ n)))
+               (update [calendar-year academic-year state next-state] m/some+ n)))
            transitions next-states-sample)))
 
 (defn sample-send-transitions
@@ -55,7 +55,7 @@
                                {state (- population l)})
           [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year state next-states-sample calendar-year)]
       [model
-       (update transitions [calendar-year year state sc/non-send] u/some+ l)])
+       (update transitions [calendar-year year state sc/non-send] m/some+ l)])
     [model transitions]))
 
 (defn apply-leavers-movers-for-cohort
@@ -73,7 +73,7 @@
     [model
      (cond-> transitions
        (pos? population)
-       (update [calendar-year year state sc/non-send] u/some+ population))]
+       (update [calendar-year year state sc/non-send] m/some+ population))]
     :else
     (apply-leavers-movers-for-cohort-unsafe model-state cohort params calendar-year)))
 
