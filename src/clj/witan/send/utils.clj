@@ -166,8 +166,3 @@
     ([acc]
      (println "Complete rf...")
      (mapv #(rf %1) acc))))
-
-(defn keep-duplicates [seq]
-  (for [[id freq] (frequencies seq)
-        :when (> freq 1)]
-    id))

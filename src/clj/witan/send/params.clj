@@ -4,6 +4,11 @@
             [witan.send.states :as s]
             [witan.send.utils :as u]))
 
+(defn keep-duplicates [seq]
+  (for [[id freq] (frequencies seq)
+        :when (> freq 1)]
+    id))
+
 (def natural-prior 1/3)
 
 (defn weighted-alphas [n coll]
@@ -324,7 +329,7 @@
                     settings (->> (get valid-settings [ay need])
                                   vec
                                   (into valid-trans)
-                                  u/keep-duplicates
+                                  keep-duplicates
                                   vec)
                     prior (->> (zipmap settings (repeat (/ 1.0 (count settings))))
                                (merge-with + ay-obs))
