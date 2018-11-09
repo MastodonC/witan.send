@@ -1,5 +1,7 @@
 (ns witan.send.constants)
 
+(def non-send :NONSEND)
+
 (def academic-years
   (range -4 (inc 21)))
 

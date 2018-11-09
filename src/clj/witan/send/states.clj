@@ -1,18 +1,16 @@
 (ns witan.send.states
   (:require [clojure.string :as str]
-            [witan.send.constants :as const]))
-
-(def non-send :NONSEND)
+            [witan.send.constants :as c]))
 
 (defn need-setting [state]
-  (if (= state non-send)
-    (vector non-send non-send)
+  (if (= state c/non-send)
+    (vector c/non-send c/non-send)
     (mapv keyword (str/split (name state) #"-"))))
 
 (defn state [need setting]
-  (if (or (= setting non-send)
-          (= need non-send))
-    non-send
+  (if (or (= setting c/non-send)
+          (= need c/non-send))
+    c/non-send
     (keyword (str (name need) "-" (name setting)))))
 
 (defn calculate-valid-settings-from-setting-academic-years
