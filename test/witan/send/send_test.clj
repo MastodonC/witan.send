@@ -4,9 +4,9 @@
             [witan.send.constants :as c]
             [witan.send.model.input :as si]
             [witan.send.model.output :as so]
+            [witan.send.model.prepare :as mp]
             [witan.send.params :as p]
-            [witan.send.schemas :as sc]
-            [witan.send.utils :as u]))
+            [witan.send.schemas :as sc]))
 
 ;; Use real population datasets for testing
 (def test-inputs
@@ -16,7 +16,7 @@
 
 (defn read-inputs [data input _ schema]
   (let [[data-location fileschema] (get data (:witan/name input))]
-    (u/csv-to-dataset data-location fileschema)))
+    (si/csv-to-dataset data-location fileschema)))
 
 (defn get-individual-input [key-name]
   (read-inputs
@@ -180,14 +180,14 @@
         state-change1 [[2014 1 :SP-MU :SP-MU] [2014 1 :NONSEND :SEMH-MMSIB]]
         state-change2 [[2014 1 :NONSEND :SP-MMSIB] [2014 1 :NONSEND :SEMH-MMSIB]]]
     (testing "modifies transitions"
-      (is (not= transitions (si/modify-transitions transitions state-change1 * 0.5))))
+      (is (not= transitions (mp/modify-transitions transitions state-change1 * 0.5))))
     (testing "state [2014 8 :SP-MU :SP-MU] is divided by two"
-      (is (= 1 (get (si/modify-transitions transitions state-change1 * 0.5) [2014 1 :SP-MU :SP-MU]))))
+      (is (= 1 (get (mp/modify-transitions transitions state-change1 * 0.5) [2014 1 :SP-MU :SP-MU]))))
     (testing "state [2014 0 :NONSEND :SP-MMSIB] takes the joiners of state [2014 8 :SP-MU :SP-MU]"
-      (is (= 3 (get (si/modify-transitions transitions state-change1 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB]))))
+      (is (= 3 (get (mp/modify-transitions transitions state-change1 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB]))))
     (testing "odd values are rounded and exchanged correctly"
-      (is (= 3 (get (si/modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB])))
-      (is (= 2 (get (si/modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SP-MMSIB]))))))
+      (is (= 3 (get (mp/modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB])))
+      (is (= 2 (get (mp/modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SP-MMSIB]))))))
 
 (deftest transition-present?-test
   (testing "transition state is present in coll"
@@ -195,46 +195,46 @@
 
 (deftest update-ifelse-assoc-test
   (testing "if key present +1 to val"
-    (is (= 2 (:foo (si/update-ifelse-assoc {:foo 1 :bar 2} :foo + 1)))))
+    (is (= 2 (:foo (mp/update-ifelse-assoc {:foo 1 :bar 2} :foo + 1)))))
   (testing "if key not present, insert key with val"
-    (is (= 1 (:foo (si/update-ifelse-assoc {:baz 1 :bar 2} :foo + 1))))))
+    (is (= 1 (:foo (mp/update-ifelse-assoc {:baz 1 :bar 2} :foo + 1))))))
 
 (deftest generate-transition-key-test
   (testing "generate joiner state transition"
     (is (= [2013 5 :NONSEND :CI-MSSOB]
-           (si/generate-transition-key {:transition-type "joiners" :cy 2013 :ay 5
-                                     :need :CI :move-state :CI-MSSIB
-                                     :setting :MSSOB}))))
+           (mp/generate-transition-key {:transition-type "joiners" :cy 2013 :ay 5
+                                        :need :CI :move-state :CI-MSSIB
+                                        :setting :MSSOB}))))
   (testing "generate leaver state transition"
     (is (= [2013 5 :CI-MSSOB :NONSEND]
-           (si/generate-transition-key {:transition-type "leavers" :cy 2013 :ay 5
-                                     :need :CI :move-state :CI-MSSIB
-                                     :setting :MSSOB}))))
+           (mp/generate-transition-key {:transition-type "leavers" :cy 2013 :ay 5
+                                        :need :CI :move-state :CI-MSSIB
+                                        :setting :MSSOB}))))
   (testing "generate joiner state transition"
     (is (= [2013 5 :CI-MSSIB :CI-MSSOB]
-           (si/generate-transition-key {:transition-type "movers-to" :cy 2013 :ay 5
-                                     :need :CI :move-state :CI-MSSIB
-                                     :setting :MSSOB}))))
+           (mp/generate-transition-key {:transition-type "movers-to" :cy 2013 :ay 5
+                                        :need :CI :move-state :CI-MSSIB
+                                        :setting :MSSOB}))))
   (testing "generate joiner state transition"
     (is (= [2013 5 :CI-MSSOB :CI-MSSIB]
-           (si/generate-transition-key {:transition-type "movers-from" :cy 2013 :ay 5
-                                     :need :CI :move-state :CI-MSSIB
-                                     :setting :MSSOB})))))
+           (mp/generate-transition-key {:transition-type "movers-from" :cy 2013 :ay 5
+                                        :need :CI :move-state :CI-MSSIB
+                                        :setting :MSSOB})))))
 
 (deftest build-states-to-change-test
   (let [input (ds/dataset [{:setting-1 :MMSOB :setting-2 :MMSIB}])]
     (testing "move MSSOB joiners to MSSIB"
       (is (= [[2013 5 :NONSEND :CI-MMSOB] [2013 5 :NONSEND :CI-MMSIB]]
-             (first (si/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "joiners")))))
+             (first (mp/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "joiners")))))
     (testing "move MSSOB leavers to MSSIB"
       (is (= [[2013 5 :CI-MMSOB :NONSEND] [2013 5 :CI-MMSIB :NONSEND]]
-             (first (si/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "leavers")))))
+             (first (mp/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "leavers")))))
     (testing "move MSSOB movers-to to MSSIB"
       (is (= [[2013 5 :CI-MSSOB :CI-MMSOB] [2013 5 :CI-MSSOB :CI-MMSIB]]
-             (first (si/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "movers-to")))))
+             (first (mp/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "movers-to")))))
     (testing "move MSSOB movers-from to MSSIB"
       (is (= [[2013 5 :CI-MMSOB :CI-MSSOB] [2013 5 :CI-MMSIB :CI-MSSOB]]
-             (first (si/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "movers-from")))))
+             (first (mp/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "movers-from")))))
     (testing "return nil when move to and from state the same"
       (is (= nil
-             (first (si/build-states-to-change input [:CI] [:MMSOB] [5] [2013] "movers-to")))))))
+             (first (mp/build-states-to-change input [:CI] [:MMSOB] [5] [2013] "movers-to")))))))
