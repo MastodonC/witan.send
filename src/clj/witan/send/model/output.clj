@@ -1,15 +1,15 @@
 (ns witan.send.model.output
   (:require [clojure.core.matrix.dataset :as ds]
+            [clojure.data.csv :as csv]
             [clojure.java.io :as io]
-            [witan.send.states :as states]
-            [witan.send.report :as report]
-            [witan.send.params :as p]
-            [witan.send.schemas :as sc]
-            [medley.core :as medley]
             [clojure.java.shell :as sh]
-            [witan.send.utils :as u :refer [round]]
-            [clojure.data.csv :as csv])
-  (:import [org.apache.commons.math3.distribution BetaDistribution]))
+            [medley.core :as medley]
+            [witan.send.constants :as c]
+            [witan.send.maths :as m]
+            [witan.send.params :as p]
+            [witan.send.report :as report]
+            [witan.send.states :as states])
+  (:import org.apache.commons.math3.distribution.BetaDistribution))
 
 (defn transition-present? [transition projection]
   (some #(= % transition) projection))
@@ -17,14 +17,14 @@
 (defn confidence-bounds
   [results calendar-year]
   (let [academic-years (keys results)]
-    (->> (for [academic-year (sort academic-years)]
-           (let [alpha (get-in results [academic-year calendar-year :alpha] 0)
-                 beta (get-in results [academic-year calendar-year :beta])]
-             (apply vector academic-year
-                    (if (and (pos? alpha) (pos? beta))
-                      [(.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.025)
-                       (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.975)]
-                      [0 0])))))))
+    (for [academic-year (sort academic-years)]
+      (let [alpha (get-in results [academic-year calendar-year :alpha] 0)
+            beta (get-in results [academic-year calendar-year :beta])]
+        (apply vector academic-year
+               (if (and (pos? alpha) (pos? beta))
+                 [(.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.025)
+                  (.inverseCumulativeProbability (BetaDistribution. alpha beta) 0.975)]
+                 [0 0]))))))
 
 (defn create-keys [string year-count]
   (map (fn [n] (keyword (str string n))) (range year-count)))
@@ -59,18 +59,18 @@
 
 (defn leaver-rate [transitions-filtered]
   (reduce (fn [coll {:keys [calendar-year academic-year-1 setting-1 setting-2]}]
-            (let [leaver? (= setting-2 sc/non-send)]
+            (let [leaver? (= setting-2 c/non-send)]
               (-> coll
-                  (update-in [academic-year-1 calendar-year :alpha] u/some+ (if leaver? 1 0))
-                  (update-in [academic-year-1 calendar-year :beta] u/some+ (if leaver? 0 1)))))
+                  (update-in [academic-year-1 calendar-year :alpha] m/some+ (if leaver? 1 0))
+                  (update-in [academic-year-1 calendar-year :beta] m/some+ (if leaver? 0 1)))))
           {} transitions-filtered))
 
 (defn mover-rate [transitions-filtered]
   (reduce (fn [coll {:keys [calendar-year academic-year-1 setting-1 setting-2]}]
             (let [mover? (not= setting-1 setting-2)]
               (-> coll
-                  (update-in [academic-year-1 calendar-year :alpha] u/some+ (if mover? 1 0))
-                  (update-in [academic-year-1 calendar-year :beta] u/some+ (if mover? 0 1)))))
+                  (update-in [academic-year-1 calendar-year :alpha] m/some+ (if mover? 1 0))
+                  (update-in [academic-year-1 calendar-year :beta] m/some+ (if mover? 0 1)))))
           {}
           transitions-filtered))
 
@@ -136,13 +136,13 @@
             joiner-rates (joiner-rate joiners-count population-count ages years)
             joiner-rates-CI (map #(confidence-bounds joiner-rates %) years)
             joiner-ribbon-data (prep-ribbon-plot-data joiner-rates-CI years n-colours)
-            filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send)) transitions-data)
+            filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send)) transitions-data)
             leaver-rates (leaver-rate filter-leavers)
             leaver-rates-CI (map #(confidence-bounds leaver-rates %) years)
             leaver-ribbon-data (prep-ribbon-plot-data leaver-rates-CI years n-colours)
             filter-movers (remove (fn [{:keys [setting-1 setting-2]}]
-                                    (or (= setting-1 sc/non-send)
-                                        (= setting-2 sc/non-send))) transitions-data)
+                                    (or (= setting-1 c/non-send)
+                                        (= setting-2 c/non-send))) transitions-data)
             mover-rates (mover-rate filter-movers)
             mover-rates-CI (map #(confidence-bounds mover-rates %) years)
             mover-ribbon-data (prep-ribbon-plot-data mover-rates-CI years n-colours)]
@@ -156,7 +156,7 @@
           (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
                            (map (fn [[[academic-year state] stats]]
-                                  (-> (medley/map-vals round stats)
+                                  (-> (medley/map-vals m/round stats)
                                       (assoc :academic-year academic-year :state state :calendar-year year))) (:by-state output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
                  (concat [(map name columns)])
@@ -165,7 +165,7 @@
           (let [columns [:calendar-year :academic-year :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
                            (map (fn [[academic-year stats]]
-                                  (-> (medley/map-vals round stats)
+                                  (-> (medley/map-vals m/round stats)
                                       (assoc :academic-year academic-year :calendar-year year)))
                                 (:total-in-send-by-ay output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
@@ -175,7 +175,7 @@
           (let [columns [:calendar-year :need :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
                            (map (fn [[need stats]]
-                                  (-> (medley/map-vals round stats)
+                                  (-> (medley/map-vals m/round stats)
                                       (assoc :need (name need) :calendar-year year)))
                                 (:total-in-send-by-need output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
@@ -185,7 +185,7 @@
           (let [columns [:calendar-year :setting :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
                            (map (fn [[setting stats]]
-                                  (-> (medley/map-vals round stats)
+                                  (-> (medley/map-vals m/round stats)
                                       (assoc :setting (name setting) :calendar-year year)))
                                 (:total-in-send-by-setting output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
@@ -194,7 +194,7 @@
         (with-open [writer (io/writer (io/file (str dir "/Output_Count.csv")))]
           (let [columns [:calendar-year :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (map (fn [stats year]
-                        (-> (medley/map-vals round stats)
+                        (-> (medley/map-vals m/round stats)
                             (assoc :calendar-year year)))
                       (map :total-in-send send-output) (range initial-projection-year 3000))
                  (map (apply juxt columns))
@@ -203,7 +203,7 @@
         (with-open [writer (io/writer (io/file (str dir "/Output_Cost.csv")))]
           (let [columns [:calendar-year :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (map (fn [stats year]
-                        (-> (medley/map-vals round stats)
+                        (-> (medley/map-vals m/round stats)
                             (assoc :calendar-year year)))
                       (map :total-cost send-output) (range initial-projection-year 3000))
                  (map (apply juxt columns))
@@ -213,7 +213,7 @@
           (let [columns [:calendar-year :ay-group :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
                            (map (fn [[ay-group stats]]
-                                  (-> (medley/map-vals round stats)
+                                  (-> (medley/map-vals m/round stats)
                                       (assoc :ay-group ay-group :calendar-year year)))
                                 (:total-in-send-by-ay-group output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))

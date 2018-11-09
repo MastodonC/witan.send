@@ -1,13 +1,12 @@
 (ns witan.send.step
-  (:require [witan.send.constants :as const]
-            [witan.send.states :as s]))
+  (:require [witan.send.constants :as c]))
 
 (defn age-population
   [projection model-state]
   (-> (reduce (fn [coll [[year state] population]]
                 (cond-> coll
-                  (< year const/max-academic-year)
+                  (< year c/max-academic-year)
                   (assoc [(inc year) state] population)))
               {}
               model-state)
-      (assoc [const/min-academic-year s/non-send] (get projection const/min-academic-year))))
+      (assoc [c/min-academic-year c/non-send] (get projection c/min-academic-year))))

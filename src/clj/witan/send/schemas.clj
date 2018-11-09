@@ -1,6 +1,6 @@
 (ns witan.send.schemas
   (:require [schema.core :as s]
-            [schema-contrib.core :as sc]))
+            [witan.send.constants :as c]))
 
 (defn make-ordered-ds-schema [col-vec]
   {:column-names (mapv #(s/one (s/eq (first %)) (str (first %))) col-vec)
@@ -23,13 +23,11 @@
 (def CalendarYear
   (s/constrained s/Int #(<= 1900 % 2100)))
 
-(def non-send :NONSEND)
-
 (defn State
   [needs settings]
   (->> (-> (for [need needs setting settings]
              (keyword (str (name need) "-" (name setting))))
-           (conj non-send))
+           (conj c/non-send))
        (apply s/enum)))
 
 (def academic-years
