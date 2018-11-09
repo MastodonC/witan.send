@@ -1,55 +1,10 @@
 (ns witan.send.utils
-  (:require [clojure.string :as str]
-            [kixi.stats.math :as math]
+  (:require [kixi.stats.math :as math]
             [medley.core :as medley]
             [witan.send.constants :as c]
             [witan.send.maths :as m]
             [witan.send.states :as states])
   (:import org.HdrHistogram.IntCountsHistogram))
-
-(defn transitions-map
-  [dataset]
-  (->> dataset
-       (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-2]}]
-                 (let [state-1 (states/state need-1 setting-1)
-                       state-2 (states/state need-2 setting-2)]
-                   (update coll [academic-year-2 state-1 state-2] m/some+ 1)))
-               {})))
-
-(defn full-transitions-map
-  [dataset]
-  (->> dataset
-       (reduce (fn [coll {:keys [calendar-year setting-1 need-1 setting-2 need-2 academic-year-2]}]
-                 (let [state-1 (states/state need-1 setting-1)
-                       state-2 (states/state need-2 setting-2)]
-                   (update coll [calendar-year academic-year-2 state-1 state-2] m/some+ 1)))
-               {})))
-
-(defn split-need-state [state pos]
-  (keyword (pos (str/split (name state) #"-"))))
-
-(defn back-to-transitions-matrix [k v]
-  (let [[calendar-year academic-year-2 state-1 state-2] k
-        total v]
-    (repeat total (assoc {}
-                         :calendar-year calendar-year
-                         :academic-year-1 (- academic-year-2 1)
-                         :academic-year-2 academic-year-2
-                         :need-1 (split-need-state state-1 first)
-                         :setting-1 (if (nil? (split-need-state state-1 second))
-                                      (split-need-state state-1 first)
-                                      (split-need-state state-1 second))
-                         :need-2 (split-need-state state-2 first)
-                         :setting-2 (if (nil? (split-need-state state-2 second))
-                                      (split-need-state state-2 first)
-                                      (split-need-state state-2 second))))))
-
-(def total-by-academic-year
-  "Given a sequence of {:academic-year year :population population}
-  sums the total population for each year"
-  (partial reduce (fn [coll {:keys [academic-year population]}]
-                    (update coll academic-year m/some+ population))
-           {}))
 
 (defn model-population-by-ay
   [model]
@@ -211,8 +166,3 @@
     ([acc]
      (println "Complete rf...")
      (mapv #(rf %1) acc))))
-
-(defn keep-duplicates [seq]
-  (for [[id freq] (frequencies seq)
-        :when (> freq 1)]
-    id))
