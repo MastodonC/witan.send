@@ -1,11 +1,11 @@
 (ns witan.send.params-test
   (:require [clojure.core.matrix.dataset :as ds]
-            [clojure.test :refer :all]
+            [clojure.test :refer [deftest testing is]]
             [witan.send.constants :as c]
+            [witan.send.model.input :as i]
             [witan.send.params :as sut]
             [witan.send.schemas :as sc]
-            [witan.send.states :as s]
-            [witan.send.utils :as u]))
+            [witan.send.states :as s]))
 
 (def valid-setting-academic-years
   [{:setting :CC, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year -4, :max-academic-year 0, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
@@ -25,10 +25,10 @@
    {:setting :PRU, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year 2, :max-academic-year 14, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}])
 
 (def population-dataset
-  (u/csv-to-dataset "data/demo/data/population.csv" sc/PopulationDataset))
+  (i/csv-to-dataset "data/demo/data/population.csv" sc/PopulationDataset))
 
 (def transitions-matrix
-  (u/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts))
+  (i/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts))
 
 (def valid-states
   (-> valid-setting-academic-years
