@@ -1,5 +1,6 @@
 (ns witan.send.send
   (:require [witan.send.model.input :as i]
+            [witan.send.model.prepare :as p]
             [witan.send.model.run :as r]
             [witan.send.report :refer [reset-send-report]]))
 
@@ -10,5 +11,5 @@
   ([config]
    (reset-send-report)
    (-> (i/build-input-datasets (:project-dir config) (:file-inputs config) (:schema-inputs config))
-       (i/prepare-send-inputs (:transition-parameters config))
+       (p/prepare-send-inputs (:transition-parameters config))
        (r/run-send-model (:run-parameters config)))))
