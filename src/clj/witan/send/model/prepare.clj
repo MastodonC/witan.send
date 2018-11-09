@@ -1,7 +1,8 @@
 (ns witan.send.model.prepare
   (:require [clojure.core.matrix.dataset :as ds]
+            [clojure.string :as str]
+            [witan.send.maths :as m]
             [witan.send.states :as states]
-            [witan.send.utils :as u]
             [medley.core :as medley]
             [witan.send.params :as p]
             [witan.send.check-inputs :refer [run-input-checks]]
@@ -10,6 +11,50 @@
             [witan.send.report :as report]
             [schema.core :as s]
             [witan.send.schemas :as sc]))
+
+(defn transitions-map
+  [dataset]
+  (->> dataset
+       (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-2]}]
+                 (let [state-1 (states/state need-1 setting-1)
+                       state-2 (states/state need-2 setting-2)]
+                   (update coll [academic-year-2 state-1 state-2] m/some+ 1)))
+               {})))
+
+(defn full-transitions-map
+  [dataset]
+  (->> dataset
+       (reduce (fn [coll {:keys [calendar-year setting-1 need-1 setting-2 need-2 academic-year-2]}]
+                 (let [state-1 (states/state need-1 setting-1)
+                       state-2 (states/state need-2 setting-2)]
+                   (update coll [calendar-year academic-year-2 state-1 state-2] m/some+ 1)))
+               {})))
+
+(defn split-need-state [state pos]
+  (keyword (pos (str/split (name state) #"-"))))
+
+(defn back-to-transitions-matrix [k v]
+  (let [[calendar-year academic-year-2 state-1 state-2] k
+        total v]
+    (repeat total (assoc {}
+                         :calendar-year calendar-year
+                         :academic-year-1 (- academic-year-2 1)
+                         :academic-year-2 academic-year-2
+                         :need-1 (split-need-state state-1 first)
+                         :setting-1 (if (nil? (split-need-state state-1 second))
+                                      (split-need-state state-1 first)
+                                      (split-need-state state-1 second))
+                         :need-2 (split-need-state state-2 first)
+                         :setting-2 (if (nil? (split-need-state state-2 second))
+                                      (split-need-state state-2 first)
+                                      (split-need-state state-2 second))))))
+
+(def total-by-academic-year
+  "Given a sequence of {:academic-year year :population population}
+  sums the total population for each year"
+  (partial reduce (fn [coll {:keys [academic-year population]}]
+                    (update coll academic-year m/some+ population))
+           {}))
 
 (defn int-ceil [n]
   (int (Math/ceil n)))
@@ -54,7 +99,7 @@
                                              (into {}))
                    :projected-population (->> (ds/row-maps population)
                                               (group-by :calendar-year)
-                                              (medley/map-vals #(u/total-by-academic-year %)))}]
+                                              (medley/map-vals #(total-by-academic-year %)))}]
     (if transition-matrix-filtered
       (merge start-map
              {:joiner-beta-params (stitch-ay-params splice-ncy
@@ -68,8 +113,8 @@
                                                           (p/beta-params-leavers valid-states transition-matrix)
                                                           (p/beta-params-leavers valid-states transition-matrix-filtered))
               :joiner-state-alphas (stitch-ay-params splice-ncy
-                                                     (p/alpha-params-joiner-states valid-states (u/transitions-map transition-matrix))
-                                                     (p/alpha-params-joiner-states valid-states (u/transitions-map transition-matrix-filtered)))
+                                                     (p/alpha-params-joiner-states valid-states (transitions-map transition-matrix))
+                                                     (p/alpha-params-joiner-states valid-states (transitions-map transition-matrix-filtered)))
 
               :mover-beta-params (stitch-ay-state-params splice-ncy
                                                          (p/beta-params-movers valid-states valid-transitions transition-matrix)
@@ -82,7 +127,7 @@
                                                          transition-matrix
                                                          (ds/row-maps population))
               :leaver-beta-params (p/beta-params-leavers valid-states transition-matrix)
-              :joiner-state-alphas (p/alpha-params-joiner-states valid-states (u/transitions-map transition-matrix))
+              :joiner-state-alphas (p/alpha-params-joiner-states valid-states (transitions-map transition-matrix))
               :mover-beta-params (p/beta-params-movers valid-states valid-transitions transition-matrix)
               :mover-state-alphas  (p/alpha-params-movers valid-states valid-transitions transition-matrix)}))))
 
@@ -177,13 +222,13 @@
         transition-matrix (ds/row-maps transition-matrix)
         modified-transition-matrix (when (not= 1 modify-transition-by)
                                      (let [convert (-> transition-matrix
-                                                       u/full-transitions-map)
+                                                       full-transitions-map)
                                            result (reduce (fn [m k] (modify-transitions m k * modify-transition-by))
                                                           convert states-to-change)]
-                                       (mapcat (fn [[k v]] (u/back-to-transitions-matrix k v)) result)))
+                                       (mapcat (fn [[k v]] (back-to-transitions-matrix k v)) result)))
         transitions (if modified-transition-matrix
-                      (u/transitions-map modified-transition-matrix)
-                      (u/transitions-map transition-matrix))
+                      (transitions-map modified-transition-matrix)
+                      (transitions-map transition-matrix))
         transition-matrix-filtered (when filter-transitions-from
                                      (mapcat (fn [year] (filter #(= (:calendar-year %) year)
                                                                 (or modified-transition-matrix transition-matrix)))
