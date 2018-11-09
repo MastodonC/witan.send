@@ -3,9 +3,11 @@
             [clojure.data.csv :as data-csv]
             [clojure.java.io :as io]
             [clojure.string :as str]
-            [medley.core :as medley]
             [kixi.stats.math :as math]
+            [medley.core :as medley]
             [schema.coerce :as coerce]
+            [witan.send.constants :as c]
+            [witan.send.maths :as m]
             [witan.send.schemas :as sc]
             [witan.send.states :as states])
   (:import org.HdrHistogram.IntCountsHistogram))
@@ -52,20 +54,13 @@
       (apply-schema-coercion schema)
       (as-> {:keys [column-names columns]} (ds/dataset column-names columns))))
 
-(defn round [x]
-  (Double/parseDouble (format "%.02f" (double x))))
-
-(def some+
-  "x + y. Returns y if x is nil and x if y is nil."
-  (fnil + 0))
-
 (defn transitions-map
   [dataset]
   (->> dataset
        (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-2]}]
                  (let [state-1 (states/state need-1 setting-1)
                        state-2 (states/state need-2 setting-2)]
-                   (update coll [academic-year-2 state-1 state-2] some+ 1)))
+                   (update coll [academic-year-2 state-1 state-2] m/some+ 1)))
                {})))
 
 (defn full-transitions-map
@@ -74,7 +69,7 @@
        (reduce (fn [coll {:keys [calendar-year setting-1 need-1 setting-2 need-2 academic-year-2]}]
                  (let [state-1 (states/state need-1 setting-1)
                        state-2 (states/state need-2 setting-2)]
-                   (update coll [calendar-year academic-year-2 state-1 state-2] some+ 1)))
+                   (update coll [calendar-year academic-year-2 state-1 state-2] m/some+ 1)))
                {})))
 
 (defn split-need-state [state pos]
@@ -100,15 +95,15 @@
   "Given a sequence of {:academic-year year :population population}
   sums the total population for each year"
   (partial reduce (fn [coll {:keys [academic-year population]}]
-                    (update coll academic-year some+ population))
+                    (update coll academic-year m/some+ population))
            {}))
 
 (defn model-population-by-ay
   [model]
   (reduce (fn [coll [[ay state] population]]
             (cond-> coll
-              (not= state sc/non-send)
-              (update ay some+ population)))
+              (not= state c/non-send)
+              (update ay m/some+ population)))
           {} model))
 
 (defn model-population-by-need
@@ -116,8 +111,8 @@
   (reduce (fn [coll [[ay state] population]]
             (let [[need setting] (states/need-setting state)]
               (cond-> coll
-                (not= state sc/non-send)
-                (update need some+ population))))
+                (not= state c/non-send)
+                (update need m/some+ population))))
           {} model))
 
 (defn model-population-by-setting
@@ -125,8 +120,8 @@
   (reduce (fn [coll [[ay state] population]]
             (let [[need setting] (states/need-setting state)]
               (cond-> coll
-                (not= state sc/non-send)
-                (update setting some+ population))))
+                (not= state c/non-send)
+                (update setting m/some+ population))))
           {} model))
 
 (defn model-population-by-need-setting
@@ -134,8 +129,8 @@
   (reduce (fn [coll [[ay state] population]]
             (let [[need setting] (states/need-setting state)]
               (cond-> coll
-                (not= state sc/non-send)
-                (update [need setting] some+ population))))
+                (not= state c/non-send)
+                (update [need setting] m/some+ population))))
           {} model))
 
 (defn ay-groups [ay]
@@ -151,8 +146,8 @@
   (reduce (fn [coll [[ay state] population]]
             (let [ay-group (ay-groups ay)]
               (cond-> coll
-                (not= state sc/non-send)
-                (update ay-group some+ population))))
+                (not= state c/non-send)
+                (update ay-group m/some+ population))))
           {} model))
 
 (defn total-need-setting-cost
@@ -160,13 +155,13 @@
   (-> (reduce (fn [cost [need-setting population]]
                 (+ cost (* population (get need-setting-lookup need-setting 0))))
               0 population-by-need-setting)
-      round))
+      m/round))
 
 (defn model-send-population
   [model]
   (reduce (fn [n [[ay state] population]]
             (cond-> n
-              (not= state sc/non-send)
+              (not= state c/non-send)
               (+ population)))
           0 model))
 

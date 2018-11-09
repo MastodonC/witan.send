@@ -1,11 +1,11 @@
 (ns witan.send.send-test
   (:require [clojure.core.matrix.dataset :as ds]
-            [clojure.test :refer :all]
+            [clojure.test :refer [deftest is testing]]
+            [witan.send.constants :as c]
             [witan.send.model.input :as si]
             [witan.send.model.output :as so]
             [witan.send.params :as p]
             [witan.send.schemas :as sc]
-            [witan.send.send :refer :all]
             [witan.send.utils :as u]))
 
 ;; Use real population datasets for testing
@@ -152,20 +152,20 @@
 
 (deftest mover-rate-test
   (let [mover-count (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1 setting-2]}]
-                                                                                       (or (= setting-1 sc/non-send)
-                                                                                           (= setting-2 sc/non-send)))))
+                                                                                       (or (= setting-1 c/non-send)
+                                                                                           (= setting-2 c/non-send)))))
         result (so/mover-rate mover-count)]
     (testing "output is not empty"
       (is (not= empty? result)))))
 
 (deftest leaver-rate-test
-  (let [leaver-count (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send))))
+  (let [leaver-count (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send))))
         result (so/leaver-rate leaver-count)]
     (testing "output is not empty"
       (is (not= empty? result)))))
 
 (deftest confidence-bounds-test
-  (let [leaver-rates (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 sc/non-send))) so/leaver-rate)
+  (let [leaver-rates (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send))) so/leaver-rate)
         result (so/confidence-bounds leaver-rates 2014)]
     (testing "output is not empty"
       (is (not= empty? result) ))
