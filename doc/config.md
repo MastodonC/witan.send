@@ -44,6 +44,26 @@ Expects an integer to multiply a list of settings by (provided with `:settings-t
 
 ### `:run-parameters`
 
+Contains three required and one optional key.
+
+The three required keys define how the model will be run.
+
+##### `:random-seed`
+
+Expects and integer with which to randomly seed the model with and enable repeatability.
+
+##### `:simulations`
+
+Expects an integer corresponding to a number with which to repeat the model over _n_ number of times. Due to parallelisation, the minimum number of simulations is eight. In tests 1000 simulations typically provides sufficient depth to normalise the results.
+
+##### `:seed-year`
+
+Expects a calendar year, provided as an integer with which to project the model from.
+
+##### `:modify-transitions-from`
+
+Expects a calendar year, provided as an integer, to start modifying transitions from, when `:modify-transition-by` & `:which-transitions?` are defined for either a [“Modify setting(s) transitions rates”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-settings-transitions-rates), [“Modify setting(s) transitions rates and transfer individuals to alternative setting(s)”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-settings-transitions-rates-and-transfer-individuals-to-alternative-settings) or [“Modify transitions from a specific future calendar year”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-transitions-from-a-specific-future-calendar-year) scenario.
+
 ### `:output-parameters`
 
 ### `:validation-parameters`
