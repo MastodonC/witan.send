@@ -46,7 +46,7 @@ Expects an integer to multiply a list of settings by (provided with `:settings-t
 
 Contains three required and one optional key.
 
-The three required keys define how the model will be run.
+The three required keys, `:random-seed`, `:simulations` and `:seed-year` define how the model will be run. `:modify-transitions-from` is optional and used in conjunction with `:transitions-parameters`.
 
 ##### `:random-seed`
 
@@ -65,5 +65,35 @@ Expects a calendar year, provided as an integer with which to project the model 
 Expects a calendar year, provided as an integer, to start modifying transitions from, when `:modify-transition-by` & `:which-transitions?` are defined for either a [“Modify setting(s) transitions rates”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-settings-transitions-rates), [“Modify setting(s) transitions rates and transfer individuals to alternative setting(s)”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-settings-transitions-rates-and-transfer-individuals-to-alternative-settings) or [“Modify transitions from a specific future calendar year”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-transitions-from-a-specific-future-calendar-year) scenario.
 
 ### `:output-parameters`
+
+Contains five required and two additional optional keys pertainting to what should the model output.
+
+##### `:run-report-header`
+
+???? WIP - possibly not in use
+
+##### `:run-outputs`
+
+Required key, expects a boolean where `true` will output the results of the model as csv files.
+
+##### `:run-charts`
+
+Required key, expects a boolean where `true` will output plots of the output. Requires `:run-outputs` to also equal `true`.
+
+##### `:output-dir`
+
+Required key, expects a path as a string where all outputs will be stored if `:run-outputs` and `:run-charts` are `true`. A new directory will be created within the the directoy where the config file is stored.
+
+##### `:keep-temp-files?`
+
+Required key, expects a boolean where `true` will keep temporary data files used for plotting results in R. Can be used when debugging or writing bespoke R plots.
+
+##### `:settings-to-exclude-in-charts`
+
+Optional key, expects a string of comma-delimited settings to exclude from all plotting associated with SEND settings.
+
+##### `:use-confidence-bound-or-interval`
+
+Optional key, expects the string "interval", to use confidence interval in total population plotting, otherwise will use simple bounds.
 
 ### `:validation-parameters`
