@@ -174,6 +174,8 @@
     (continue-for-latter-ays params academic-years)))
 
 (defn weighted-joiner-beta-params
+  "Returns beta dist parameters for each academic year by apportioning
+  its data equally across calendar years"
   [valid-states joiners population]
   (let [academic-years (->> (map first valid-states) distinct sort)
         joiner-calendar-years (keys joiners)
@@ -196,7 +198,7 @@
     (continue-for-latter-ays params academic-years)))
 
 (defn beta-params-leavers [valid-states transitions]
-  #_(weighted-beta-params valid-states transitions joiner? leaver?)
+  ;; (weighted-beta-params valid-states transitions joiner? leaver?)
   (let [academic-years (->> (map first valid-states)
                             (distinct)
                             (sort))
