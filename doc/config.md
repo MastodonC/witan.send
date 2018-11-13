@@ -66,11 +66,7 @@ Expects a calendar year, provided as an integer, to start modifying transitions 
 
 ### `:output-parameters`
 
-Contains five required and two additional optional keys pertainting to what the model should output.
-
-##### `:run-report-header`
-
-???? WIP - possibly not in use
+Contains four required and two additional optional keys pertainting to what the model should output.
 
 ##### `:run-outputs`
 
