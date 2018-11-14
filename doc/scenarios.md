@@ -1,12 +1,12 @@
-# Alternative Scenarios
+# Scenarios Projections
 
-This is a short primer for how to use some of the parameters available in the witan.send model in order to run _"alternative scenarios"_.
+This is a short primer for how to use some of the parameters available in the witan.send model in order to run scenarios projections.
 
-Each of the paramater keys (e.g. `:splice-ncy`) can be found, and their values defined, in the [config.edn](https://github.com/MastodonC/witan.send/blob/master/data/demo/config.edn).
+Each of the paramater keys (e.g. `:splice-ncy`) can be found, and their values defined, in the [config.edn](https://github.com/MastodonC/witan.send/blob/master/data/demo/config.edn) file.
 
-More information on how to define a scenario can be found [here](https://docs.google.com/document/d/1lQ2RrESpiyU5x2YUY8YvT287K4iq6NJw4jqHUIqC2VM/edit?ts=5b7d6444#heading=h.ebeiyry5kb3k). 
+More information on how to define a scenario projection can be found [here](https://docs.google.com/document/d/1lQ2RrESpiyU5x2YUY8YvT287K4iq6NJw4jqHUIqC2VM/edit?ts=5b7d6444#heading=h.ebeiyry5kb3k). 
 
-Here each scenario is simply defined in terms of the collection of parameters to use together, what arguments are expected and what the expected behaviuor is.
+Here each scenario projection is simply defined in terms of the collection of parameters to use together, what arguments are expected and what the expected behaviuor is.
 
 ### _“Ignore historic data before a specific calendar year for an age group”_
 
