@@ -12,7 +12,7 @@
    :transition-parameters {:filter-transitions-from nil
                            :which-transitions? nil
                            :splice-ncy nil
-                           :modify-transition-by 1}
+                           :modify-transition-by nil}
    :projection-parameters {:modify-transitions-from nil
                            :random-seed 50
                            :simulations 1000
