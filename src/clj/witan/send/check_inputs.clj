@@ -67,16 +67,16 @@
        (remove (fn [t] (= (+ 1 (:academic-year-1 t)) (:academic-year-2 t))))
        (map #(str "Academic years 1 and 2 are not incremental for " %))))
 
-(defn cost-for-state? [state setting-cost]
-  "Takes map containing state and returns true for match in setting-cost"
+(defn cost-for-state? [state costs]
+  "Takes map containing state and returns true for match in costs"
   (some? (some true? (map #(and (= (:need state) (:need %))
-                                (= (:setting state) (:setting %))) setting-cost))))
+                                (= (:setting state) (:setting %))) costs))))
 
-(defn check-missing-costs [transitions setting-cost]
+(defn check-missing-costs [transitions costs]
   "Produces warnings for states without costs via REPL and SEND_report.md"
   (let [states (set-of-input-states transitions false)]
     (->> states
-         (remove #(cost-for-state? % setting-cost))
+         (remove #(cost-for-state? % costs))
          (map #(str "Missing cost for state in transitions.csv: " (:need %) " " (:setting %))))))
 
 
@@ -113,11 +113,11 @@
 
 
 
-(defn run-input-checks [transitions setting-cost valid-setting-academic-years]
+(defn run-input-checks [transitions costs valid-setting-academic-years]
   "Takes row-maps of input CSVs and runs checks"
   (log-warnings (check-joiner-leaver-gaps transitions))
   (log-warnings (check-all-ages-present transitions))
   (log-warnings (check-ages-go-up-one-year transitions))
-  (log-warnings (check-missing-costs transitions setting-cost))
+  (log-warnings (check-missing-costs transitions costs))
   (log-warnings (check-states-in-valid-ays transitions valid-setting-academic-years))
   (log-warnings (check-nonsend-states-valid transitions)))

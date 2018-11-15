@@ -130,14 +130,14 @@
 
 (def number-of-significant-digits 3)
 
-(defn reduce-rf [iterations valid-states setting-cost-lookup]
+(defn reduce-rf [iterations valid-states cost-lookup]
   (u/partition-rf iterations
                   (r/fuse {:by-state (u/model-states-rf valid-states (u/histogram-rf number-of-significant-digits))
                            :total-in-send-by-ay (r/pre-step (u/with-keys-rf (u/histogram-rf number-of-significant-digits) sc/academic-years) u/model-population-by-ay)
                            :total-in-send (r/pre-step (u/histogram-rf number-of-significant-digits) u/model-send-population)
                            :total-in-send-by-need (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits)) u/model-population-by-need)
                            :total-in-send-by-setting (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits)) u/model-population-by-setting)
-                           :total-cost (r/pre-step (u/histogram-rf number-of-significant-digits) (comp (partial u/total-need-setting-cost setting-cost-lookup)
+                           :total-cost (r/pre-step (u/histogram-rf number-of-significant-digits) (comp (partial u/total-need-setting-cost cost-lookup)
                                                                                                        u/model-population-by-need-setting))
                            :total-in-send-by-ay-group (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits))
                                                                   u/model-population-by-ay-group)})))
@@ -160,7 +160,7 @@
   (d/set-seed! random-seed)
   (println "Preparing" simulations "simulations...")
   (let [{:keys [population population-by-age-state
-                projected-population setting-cost-lookup
+                projected-population cost-lookup
                 valid-setting-academic-years transitions] :as inputs} standard-projection
         modified-inputs (when ((complement nil?) scenario-projection)
                           (assoc scenario-projection :valid-year-settings
@@ -187,7 +187,7 @@
         reduced (doall
                  (for [projection projections]
                    (do (println "Reducing...")
-                       (transduce (map #(map :model %)) (reduce-rf iterations valid-states setting-cost-lookup) projection))))
+                       (transduce (map #(map :model %)) (reduce-rf iterations valid-states cost-lookup) projection))))
         projection (apply concat projections)]
     (println "Combining...")
     {:projection (projection->transitions projection)
