@@ -195,7 +195,8 @@
    row for each individual/year/simulation. Also includes age & state columns"
   [{:keys [settings-to-change transitions population
            costs valid-states]}
-   {:keys [which-transitions? modify-transition-by splice-ncy filter-transitions-from]}]
+   {:keys [which-transitions? modify-transition-by splice-ncy
+           filter-transitions-from modify-transitions-from]}]
   (run-input-checks (ds/row-maps transitions)
                     (ds/row-maps costs)
                     (ds/row-maps valid-states))
@@ -259,4 +260,5 @@
                                          transitions-filtered population valid-states
                                          original-transitions costs filter-transitions-from))
      :modify-transition-by modify-transition-by
-     :settings-to-change settings-to-change}))
+     :settings-to-change settings-to-change
+     :modify-transitions-from  modify-transitions-from}))
