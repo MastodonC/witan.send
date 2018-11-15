@@ -111,29 +111,6 @@
           (empty coll)
           coll))
 
-(defn weighted-alpha-params
-  [valid-states valid-year-settings transitions select]
-  (let [transitions (select-transitions transitions select)
-        by-ay (alpha-params transitions (juxt academic-year state-2-setting))
-        by-ay-setting (alpha-params transitions (juxt (juxt academic-year state-1-setting) state-2-setting))]
-    (reduce (fn [coll [ay state]]
-              (let [[need setting] (s/need-setting state)
-                    valid-settings (-> (get valid-year-settings (inc ay))
-                                       (disj setting))
-
-                    prior-alphas (reduce (fn [coll state]
-                                           (assoc coll state natural-prior))
-                                         {} valid-settings)
-                    observed (-> (get by-ay-setting [ay setting])
-                                 (select-keys valid-settings))
-                    by-ay (->> (select-keys (get by-ay ay) valid-settings)
-                               (weighted-alphas natural-prior))]
-                (assoc coll [ay state] (->> (merge-with + prior-alphas by-ay observed)
-                                            (map-keys #(s/state need %))
-                                            (filter-vals pos?)))))
-            {}
-            valid-states)))
-
 (defn continue-for-latter-ays [params academic-years]
   (reduce (fn [coll ay]
             (if-let [v (or (get coll ay)
@@ -208,9 +185,6 @@
                 (assoc coll [ay state] beta-params)
                 coll))
             {} valid-states)))
-
-(defn alpha-params-movers [valid-states valid-year-settings transitions]
-  (weighted-alpha-params valid-states valid-year-settings transitions mover?))
 
 (defn alpha-params-joiner-states [valid-states transitions]
   (weighted-joiner-state-alpha-params valid-states transitions))
