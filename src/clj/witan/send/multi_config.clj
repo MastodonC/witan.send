@@ -5,7 +5,7 @@
 
 (def default-config
   "Static settings for all runs with different configs (settings in inputs will be overwritten)"
-  {:file-inputs {:transition-matrix "data/transitions.csv"
+  {:file-inputs {:transitions "data/transitions.csv"
                  :population "data/population.csv"
                  :setting-cost "data/need-setting-costs.csv"
                  :valid-setting-academic-years "data/valid-setting-academic-years.csv"}

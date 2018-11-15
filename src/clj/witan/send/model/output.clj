@@ -101,11 +101,11 @@
 (defn output-send-results
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
    to get the total cost."
-  [{:keys [projection send-output transition-matrix valid-setting-academic-years
+  [{:keys [projection send-output transitions valid-setting-academic-years
            population modify-transition-by settings-to-change]}
    {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts
            keep-temp-files? use-confidence-bound-or-interval]}]
-  (let [transitions-data (ds/row-maps transition-matrix)
+  (let [transitions-data (ds/row-maps transitions)
         transform-transitions (->> transitions-data
                                    (map #(vector
                                           (:academic-year-2 %)

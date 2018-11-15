@@ -87,13 +87,13 @@
   Returns map containing results of comparing model predictions with test data for total count and individual states"
 
   (let [project-dir (:project-dir config)
-        transitions (load-csv-as-maps (io/file project-dir (:transition-matrix (:file-inputs config))))
+        transitions (load-csv-as-maps (io/file project-dir (:transitions (:file-inputs config))))
         train-data (return-fold <= year transitions)
         n-transitions (count (distinct (map :calendar-year train-data)))
         test-data (return-fold > year transitions)
         fold-train-path (str "data/temp/" year "/transitions.csv")
         fold-config (-> config
-                        (assoc-in [:file-inputs :transition-matrix] fold-train-path)
+                        (assoc-in [:file-inputs :transitions] fold-train-path)
                         (assoc-in [:projection-parameters :seed-year] (inc year))
                         (assoc-in [:output-parameters :run-charts] false)
                         (assoc-in [:output-parameters :output-dir] (str "data/temp/" year "/")))]
@@ -138,7 +138,7 @@
          keep-temp-files? (or (get-in config [:validation-parameters :keep-temp-files?])
                               false)]
      (setup-validation-dirs project-dir)
-     (let [years-to-validate (-> (io/file project-dir (:transition-matrix (:file-inputs config)))
+     (let [years-to-validate (-> (io/file project-dir (:transitions (:file-inputs config)))
                                  load-csv-as-maps
                                  get-validation-years)
            results (doall (map #(validate-fold config %) years-to-validate))]
