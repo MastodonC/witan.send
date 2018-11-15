@@ -33,29 +33,13 @@
             (update-in coll (f transition) m/some+ n))
           {} transitions))
 
-(defn state-1-setting
-  [[_ state-1 _]]
-  (let [[_ setting] (s/need-setting state-1)]
-    setting))
-
 (defn state-2
   [[_ _ state-2]]
   state-2)
 
-(defn state-2-setting
-  [[_ _ state-2]]
-  (let [[_ setting] (s/need-setting state-2)]
-    setting))
-
 (defn academic-year
   [[ay _ _]]
   ay)
-
-(defn map-keys [f coll]
-  (reduce (fn [coll [k v]]
-            (assoc coll (f k) v))
-          (empty coll)
-          coll))
 
 (defn continue-for-latter-ays [params academic-years]
   (reduce (fn [coll ay]
