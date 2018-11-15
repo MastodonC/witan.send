@@ -89,12 +89,12 @@
 
 (defn prep-inputs [initial-state splice-ncy valid-states valid-transitions transitions
                    transitions-filtered population valid-setting-academic-years
-                   original-transitions setting-cost filter-transitions-from]
+                   original-transitions costs filter-transitions-from]
   (let [start-map {:population-by-age-state initial-state
                    :valid-setting-academic-years valid-setting-academic-years
                    :transitions original-transitions
                    :population population
-                   :setting-cost-lookup (->> (ds/row-maps setting-cost)
+                   :cost-lookup (->> (ds/row-maps costs)
                                              (map (juxt (juxt :need :setting) :cost))
                                              (into {}))
                    :projected-population (->> (ds/row-maps population)
@@ -194,10 +194,10 @@
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
   [{:keys [settings-to-change transitions population
-           setting-cost valid-setting-academic-years]}
+           costs valid-setting-academic-years]}
    {:keys [which-transitions? modify-transition-by splice-ncy filter-transitions-from]}]
   (run-input-checks (ds/row-maps transitions)
-                    (ds/row-maps setting-cost)
+                    (ds/row-maps costs)
                     (ds/row-maps valid-setting-academic-years))
   (let [original-transitions transitions
         ages (distinct (map :academic-year (ds/row-maps population)))
@@ -247,16 +247,16 @@
       (report/info "\nUsed " (report/bold "modified") " transitions matrix\n")
       (report/info "\nUsed " (report/bold "input") " transitions matrix\n"))
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) map-of-transitions)
-    (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) setting-cost)
+    (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) costs)
     {:standard-projection (prep-inputs initial-state splice-ncy
                                        valid-states valid-transitions transitions
                                        transitions-filtered
-                                       population valid-setting-academic-years original-transitions setting-cost
+                                       population valid-setting-academic-years original-transitions costs
                                        filter-transitions-from)
      :scenario-projection (when modified-transitions
                             (prep-inputs initial-state splice-ncy valid-states
                                          valid-transitions modified-transitions
                                          transitions-filtered population valid-setting-academic-years
-                                         original-transitions setting-cost filter-transitions-from))
+                                         original-transitions costs filter-transitions-from))
      :modify-transition-by modify-transition-by
      :settings-to-change settings-to-change}))
