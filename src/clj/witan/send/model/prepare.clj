@@ -210,17 +210,17 @@
         valid-settings (states/calculate-valid-settings-from-setting-academic-years
                         initialise-validation)
         validate-valid-states (states/calculate-valid-states-from-setting-academic-years
-                      initialise-validation)
+                               initialise-validation)
         valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years
                              initialise-validation)
-        states-to-change (when (not= 1 modify-transition-by)
+        states-to-change (when modify-transition-by
                            (mapcat (fn [transition-type]
                                      (build-states-to-change settings-to-change
                                                              valid-needs valid-settings
                                                              ages years transition-type))
                                    which-transitions?))
         transitions (ds/row-maps transitions)
-        modified-transitions (when (not= 1 modify-transition-by)
+        modified-transitions (when modify-transition-by
                                (let [convert (-> transitions
                                                  full-transitions-map)
                                      result (reduce (fn [m k] (modify-transitions m k * modify-transition-by))
@@ -241,7 +241,7 @@
                            (map #(assoc (first %) :population (last %) :calendar-year (inc max-transition-year)))
                            (map #(rename-keys % {:setting-2 :setting, :need-2 :need :academic-year-2 :academic-year}))
                            (initialise-model))]
-    (when (not= 1 modify-transition-by)
+    (when modify-transition-by
       (report/info "\nModified transitions by " (report/bold modify-transition-by)))
     (if modified-transitions
       (report/info "\nUsed " (report/bold "modified") " transitions matrix\n")
