@@ -13,7 +13,7 @@
   {:schema-inputs {:settings-to-change sc/SettingsToChange
                    :transitions sc/TransitionCounts
                    :population sc/PopulationDataset
-                   :setting-cost sc/NeedSettingCost
+                   :costs sc/NeedSettingCost
                    :valid-setting-academic-years sc/ValidSettingAcademicYears}})
 
 (defn read-config
