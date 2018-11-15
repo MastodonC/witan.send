@@ -93,10 +93,10 @@
         test-data (return-fold > year transitions)
         fold-train-path (str "data/temp/" year "/transitions.csv")
         fold-config (-> config
-                      (assoc-in [:file-inputs :transition-matrix] fold-train-path)
-                      (assoc-in [:run-parameters :seed-year] (inc year))
-                      (assoc-in [:output-parameters :run-charts] false)
-                      (assoc-in [:output-parameters :output-dir] (str "data/temp/" year "/")))]
+                        (assoc-in [:file-inputs :transition-matrix] fold-train-path)
+                        (assoc-in [:projection-parameters :seed-year] (inc year))
+                        (assoc-in [:output-parameters :run-charts] false)
+                        (assoc-in [:output-parameters :output-dir] (str "data/temp/" year "/")))]
     (.mkdir (io/file project-dir (str "data/temp/" year)))
     (write-csv (io/file project-dir fold-train-path) train-data)
     (write-csv (io/file (temp-dir project-dir) (str year "/test.csv")) test-data)
