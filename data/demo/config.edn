@@ -1,5 +1,4 @@
-{:file-inputs {:settings-to-change "data/modify-settings1.csv"
-               :transition-matrix "data/transitions.csv"
+{:file-inputs {:transition-matrix "data/transitions.csv"
                :population "data/population.csv"
                :setting-cost "data/need-setting-costs.csv"
                :valid-setting-academic-years "data/valid-setting-academic-years.csv"}
@@ -9,10 +8,10 @@
                          :splice-ncy nil
                          :modify-transition-by 1}
 
- :run-parameters {:modify-transitions-from nil
-                  :random-seed 50
-                  :simulations 10
-                  :seed-year 2017}
+ :projection-parameters {:modify-transitions-from nil
+                         :random-seed 50
+                         :simulations 10
+                         :seed-year 2017}
 
  :output-parameters {:run-outputs true
                      :run-charts false

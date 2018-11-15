@@ -13,10 +13,10 @@
                            :which-transitions? nil
                            :splice-ncy nil
                            :modify-transition-by 1}
-   :run-parameters {:modify-transitions-from nil
-                    :random-seed 50
-                    :simulations 1000
-                    :seed-year 2017}
+   :projection-parameters {:modify-transitions-from nil
+                           :random-seed 50
+                           :simulations 1000
+                           :seed-year 2017}
    :output-parameters {:run-outputs true
                        :run-charts true
                        :output-dir "results"}})
@@ -24,8 +24,8 @@
 (def example-params-inputs
   "Inputs for run-multi-configs should take this nested vec form, with a vec containing the path to
   the config parameter followed by a vec containing the possible values to take."
-  [[[:run-parameters :random-seed] [1 42]]
-   [[:run-parameters :simulations] [10 20 30]]])
+  [[[:projection-parameters :random-seed] [1 42]]
+   [[:projection-parameters :simulations] [10 20 30]]])
 
 (defn generate-param-options
   "Takes two vecs and returns form required for combo/cartesian-product"
