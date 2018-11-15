@@ -27,7 +27,7 @@
 (def population-dataset
   (i/csv-to-dataset "data/demo/data/population.csv" sc/PopulationDataset))
 
-(def transitions-matrix
+(def transitions
   (i/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts))
 
 (def valid-states
@@ -106,13 +106,13 @@
   []
   (let [population-row-maps (->> population-dataset
                                  ds/row-maps)
-        transitions-matrix (->> transitions-matrix
-                                ds/row-maps)
+        transitions (->> transitions
+                         ds/row-maps)
         expected-academic-years (->> population-row-maps
                                      (map :academic-year)
                                      (into #{}))
         result (sut/beta-params-joiners valid-states
-                                        transitions-matrix
+                                        transitions
                                         population-row-maps)]
     (testing "each val is a valid beta param"
       (is (every? (every-pred :alpha :beta) (vals result)))
