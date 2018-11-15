@@ -12,7 +12,7 @@
 (def test-inputs
   {:initial-population ["data/demo/data/population.csv" sc/PopulationDataset]
    :initial-send-population ["data/demo/data/send-population.csv" sc/SENDPopulation]
-   :transition-matrix ["data/demo/data/transitions.csv" sc/TransitionCounts]})
+   :transitions ["data/demo/data/transitions.csv" sc/TransitionCounts]})
 
 (defn read-inputs [data input _ schema]
   (let [[data-location fileschema] (get data (:witan/name input))]
@@ -140,7 +140,7 @@
 ;; Tests
 
 (deftest joiner-rate-test
-  (let [joiner-count (-> :transition-matrix get-individual-input ds/row-maps p/calculate-joiners-per-calendar-year)
+  (let [joiner-count (-> :transitions get-individual-input ds/row-maps p/calculate-joiners-per-calendar-year)
         population-count (-> :initial-population get-individual-input ds/row-maps p/calculate-population-per-calendar-year)
         ages (-> population-count first val keys)
         years [2013 2014 2015 2016]
@@ -151,21 +151,21 @@
       (is (= (keys result) ages)))))
 
 (deftest mover-rate-test
-  (let [mover-count (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1 setting-2]}]
-                                                                                       (or (= setting-1 c/non-send)
-                                                                                           (= setting-2 c/non-send)))))
+  (let [mover-count (->> :transitions get-individual-input ds/row-maps (remove (fn [{:keys [setting-1 setting-2]}]
+                                                                                 (or (= setting-1 c/non-send)
+                                                                                     (= setting-2 c/non-send)))))
         result (so/mover-rate mover-count)]
     (testing "output is not empty"
       (is (not= empty? result)))))
 
 (deftest leaver-rate-test
-  (let [leaver-count (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send))))
+  (let [leaver-count (->> :transitions get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send))))
         result (so/leaver-rate leaver-count)]
     (testing "output is not empty"
       (is (not= empty? result)))))
 
 (deftest confidence-bounds-test
-  (let [leaver-rates (->> :transition-matrix get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send))) so/leaver-rate)
+  (let [leaver-rates (->> :transitions get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send))) so/leaver-rate)
         result (so/confidence-bounds leaver-rates 2014)]
     (testing "output is not empty"
       (is (not= empty? result) ))
