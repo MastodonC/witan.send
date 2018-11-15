@@ -6,10 +6,10 @@
  :scenario-parameters {:filter-transitions-from nil
                        :which-transitions? nil
                        :splice-ncy nil
-                       :modify-transition-by nil}
+                       :modify-transition-by nil
+                       :modify-transitions-from nil}
 
- :projection-parameters {:modify-transitions-from nil
-                         :random-seed 50
+ :projection-parameters {:random-seed 50
                          :simulations 10
                          :seed-year 2017}
 

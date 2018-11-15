@@ -155,8 +155,9 @@
 (defn run-send-model
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
-  [{:keys [standard-projection scenario-projection modify-transition-by settings-to-change]}
-   {:keys [seed-year random-seed simulations modify-transitions-from]}]
+  [{:keys [standard-projection scenario-projection modify-transition-by
+           settings-to-change modify-transitions-from]}
+   {:keys [seed-year random-seed simulations]}]
   (d/set-seed! random-seed)
   (println "Preparing" simulations "simulations...")
   (let [{:keys [population population-by-age-state
