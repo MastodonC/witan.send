@@ -75,45 +75,6 @@
               coll))
           params (sort academic-years)))
 
-(defn weighted-joiner-state-alpha-params
-  [valid-states transitions]
-  (let [transitions (select-transitions transitions joiner?)
-        by-ay (alpha-params transitions (juxt academic-year state-2))
-        academic-years (->> (map first valid-states) distinct sort)
-        params (reduce (fn [coll ay]
-                         (let [valid-states (s/valid-states-for-ay valid-states ay)
-                               prior-alphas (zipmap valid-states (repeat (/ 1.0 (count valid-states))))]
-                           (if-let [v (get by-ay ay)]
-                             (assoc coll ay (merge-with + prior-alphas v))
-                             coll)))
-                       {}
-                       academic-years)]
-    (continue-for-latter-ays params academic-years)))
-
-(defn weighted-joiner-beta-params
-  "Returns beta dist parameters for each academic year by apportioning
-  its data equally across calendar years"
-  [valid-states joiners population]
-  (let [academic-years (->> (map first valid-states) distinct sort)
-        joiner-calendar-years (keys joiners)
-        n (count joiner-calendar-years)
-        params (reduce
-                (fn [coll ay]
-                  (reduce
-                   (fn [coll cy]
-                     (let [j (get-in joiners [cy ay])
-                           p (get-in population [cy ay])]
-                       (if j
-                         (-> coll
-                             (update-in [ay :alpha] m/some+ (/ j n))
-                             (update-in [ay :beta] m/some+ (/ (- p j) n)))
-                         coll)))
-                   coll
-                   joiner-calendar-years))
-                {}
-                academic-years)]
-    (continue-for-latter-ays params academic-years)))
-
 (defn beta-params-leavers [valid-states transitions]
   (let [academic-years (->> (map first valid-states)
                             (distinct)
@@ -142,8 +103,19 @@
                 coll))
             {} valid-states)))
 
-(defn alpha-params-joiner-states [valid-states transitions]
-  (weighted-joiner-state-alpha-params valid-states transitions))
+(defn alpha-params-joiners [valid-states transitions]
+  (let [transitions (select-transitions transitions joiner?)
+        by-ay (alpha-params transitions (juxt academic-year state-2))
+        academic-years (->> (map first valid-states) distinct sort)
+        params (reduce (fn [coll ay]
+                         (let [valid-states (s/valid-states-for-ay valid-states ay)
+                               prior-alphas (zipmap valid-states (repeat (/ 1.0 (count valid-states))))]
+                           (if-let [v (get by-ay ay)]
+                             (assoc coll ay (merge-with + prior-alphas v))
+                             coll)))
+                       {}
+                       academic-years)]
+    (continue-for-latter-ays params academic-years)))
 
 (defn calculate-joiners-per-calendar-year
   [transitions-matrix]
@@ -160,10 +132,31 @@
             {}
             population)))
 
-(defn beta-params-joiners [valid-states transitions-matrix population]
-  (let [joiners-per-calendar-year (calculate-joiners-per-calendar-year transitions-matrix)
-        population-per-calendar-year (calculate-population-per-calendar-year population)]
-    (weighted-joiner-beta-params valid-states joiners-per-calendar-year population-per-calendar-year)))
+(defn beta-params-joiners
+  "Returns beta dist parameters for each academic year by apportioning
+  its data equally across calendar years"
+  [valid-states transitions-matrix population]
+  (let [joiners (calculate-joiners-per-calendar-year transitions-matrix)
+        joiner-calendar-years (keys joiners)
+        population (calculate-population-per-calendar-year population)
+        academic-years (->> (map first valid-states) distinct sort)
+        n (count joiner-calendar-years)
+        params (reduce
+                (fn [coll ay]
+                  (reduce
+                   (fn [coll cy]
+                     (let [j (get-in joiners [cy ay])
+                           p (get-in population [cy ay])]
+                       (if j
+                         (-> coll
+                             (update-in [ay :alpha] m/some+ (/ j n))
+                             (update-in [ay :beta] m/some+ (/ (- p j) n)))
+                         coll)))
+                   coll
+                   joiner-calendar-years))
+                {}
+                academic-years)]
+    (continue-for-latter-ays params academic-years)))
 
 (defn any-valid-transitions? [state valid-transitions]
   (< 1 (count (get valid-transitions (second (s/need-setting state))))))
