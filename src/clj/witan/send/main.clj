@@ -14,7 +14,7 @@
                    :transitions sc/TransitionCounts
                    :population sc/PopulationDataset
                    :costs sc/NeedSettingCost
-                   :valid-setting-academic-years sc/ValidSettingAcademicYears}})
+                   :valid-states sc/ValidSettingAcademicYears}})
 
 (defn read-config
   "Read a config file and merge it with schema inputs"

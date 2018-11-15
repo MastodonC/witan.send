@@ -88,11 +88,11 @@
                           valid-ays))))
 
 
-(defn check-states-in-valid-ays [transitions valid-setting-academic-years]
+(defn check-states-in-valid-ays [transitions valid-states]
   "Produces warnings for states that are outside valid academic years via REPL and SEND_report.md"
   (let [states (set-of-input-states transitions true)]
     (->> states
-         (remove #(valid-ay-for-state? % valid-setting-academic-years))
+         (remove #(valid-ay-for-state? % valid-states))
          (map #(str "Invalid setting for academic year in transitions.csv: "
                     (:need %) " " (:setting %) " academic-year: " (:academic-year %))))))
 
@@ -113,11 +113,11 @@
 
 
 
-(defn run-input-checks [transitions costs valid-setting-academic-years]
+(defn run-input-checks [transitions costs valid-states]
   "Takes row-maps of input CSVs and runs checks"
   (log-warnings (check-joiner-leaver-gaps transitions))
   (log-warnings (check-all-ages-present transitions))
   (log-warnings (check-ages-go-up-one-year transitions))
   (log-warnings (check-missing-costs transitions costs))
-  (log-warnings (check-states-in-valid-ays transitions valid-setting-academic-years))
+  (log-warnings (check-states-in-valid-ays transitions valid-states))
   (log-warnings (check-nonsend-states-valid transitions)))
