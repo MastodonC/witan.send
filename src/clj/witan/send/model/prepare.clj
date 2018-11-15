@@ -261,4 +261,5 @@
                                          original-transitions costs filter-transitions-from))
      :modify-transition-by modify-transition-by
      :settings-to-change settings-to-change
-     :modify-transitions-from  modify-transitions-from}))
+     :modify-transitions-from  modify-transitions-from
+     :seed-year (inc max-transition-year)}))
