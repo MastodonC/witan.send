@@ -97,22 +97,6 @@
                 (update-in coll [[ay setting] :beta] m/some+ n))))
           {} transitions))
 
-(defn weighted-beta-params
-  [valid-states transitions filter select]
-  (let [transitions (remove-transitions transitions filter)
-        academic-year (->> (beta-params-academic-year transitions select)
-                           (reduce (fn [coll [ay alphas]]
-                                     (assoc coll ay (weighted-alphas (* 2 natural-prior) alphas)))
-                                   {}))
-        academic-year-setting (beta-params-academic-year-setting transitions select)]
-    (reduce (fn [coll [ay state]]
-              (let [[_ setting] (s/need-setting state)
-                    observed (get academic-year-setting [ay setting] {})
-                    by-ay (get academic-year ay {})]
-                (assoc coll [ay state] (merge-with + {:alpha natural-prior :beta natural-prior} by-ay observed))))
-            {}
-            valid-states)))
-
 (defn map-keys [f coll]
   (reduce (fn [coll [k v]]
             (assoc coll (f k) v))
@@ -198,7 +182,6 @@
     (continue-for-latter-ays params academic-years)))
 
 (defn beta-params-leavers [valid-states transitions]
-  ;; (weighted-beta-params valid-states transitions joiner? leaver?)
   (let [academic-years (->> (map first valid-states)
                             (distinct)
                             (sort))
@@ -225,9 +208,6 @@
                 (assoc coll [ay state] beta-params)
                 coll))
             {} valid-states)))
-
-(defn beta-params-movers [valid-states transitions]
-  (weighted-beta-params valid-states transitions (some-fn joiner? leaver?) mover?))
 
 (defn alpha-params-movers [valid-states valid-year-settings transitions]
   (weighted-alpha-params valid-states valid-year-settings transitions mover?))
