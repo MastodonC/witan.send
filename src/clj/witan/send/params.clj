@@ -18,16 +18,6 @@
   [{:keys [need-1]}]
   (= need-1 c/non-send))
 
-(defn leaver?
-  [[ay state-1 state-2]]
-  (and (not= state-1 c/non-send)
-       (= state-2 c/non-send)))
-
-(defn mover?
-  [[ay state-1 state-2]]
-  (and (not= state-1 c/non-send)
-       (not= state-2 c/non-send)
-       (not= state-1 state-2)))
 
 (defn select-transitions
   [transitions pred]
@@ -75,6 +65,24 @@
               coll))
           params (sort academic-years)))
 
+(defn calculate-joiners-per-calendar-year
+  [transitions-matrix]
+  (->> (filter transitions-matrix-joiner? transitions-matrix)
+       (reduce (fn [coll {:keys [calendar-year academic-year-2]}]
+                 (update-in coll [calendar-year academic-year-2] m/some+ 1))
+               {})))
+
+(defn calculate-population-per-calendar-year
+  [population]
+  (let [ay-population #(hash-map (:academic-year %) (:population %))]
+    (reduce (fn [coll {:keys [calendar-year] :as row}]
+              (update coll calendar-year merge (ay-population row)))
+            {}
+            population)))
+
+(defn any-valid-transitions? [state valid-transitions]
+  (< 1 (count (get valid-transitions (second (s/need-setting state))))))
+;; informal api
 (defn beta-params-leavers [valid-states transitions]
   (let [academic-years (->> (map first valid-states)
                             (distinct)
@@ -103,34 +111,6 @@
                 coll))
             {} valid-states)))
 
-(defn alpha-params-joiners [valid-states transitions]
-  (let [transitions (select-transitions transitions joiner?)
-        by-ay (alpha-params transitions (juxt academic-year state-2))
-        academic-years (->> (map first valid-states) distinct sort)
-        params (reduce (fn [coll ay]
-                         (let [valid-states (s/valid-states-for-ay valid-states ay)
-                               prior-alphas (zipmap valid-states (repeat (/ 1.0 (count valid-states))))]
-                           (if-let [v (get by-ay ay)]
-                             (assoc coll ay (merge-with + prior-alphas v))
-                             coll)))
-                       {}
-                       academic-years)]
-    (continue-for-latter-ays params academic-years)))
-
-(defn calculate-joiners-per-calendar-year
-  [transitions-matrix]
-  (->> (filter transitions-matrix-joiner? transitions-matrix)
-       (reduce (fn [coll {:keys [calendar-year academic-year-2]}]
-                 (update-in coll [calendar-year academic-year-2] m/some+ 1))
-               {})))
-
-(defn calculate-population-per-calendar-year
-  [population]
-  (let [ay-population #(hash-map (:academic-year %) (:population %))]
-    (reduce (fn [coll {:keys [calendar-year] :as row}]
-              (update coll calendar-year merge (ay-population row)))
-            {}
-            population)))
 
 (defn beta-params-joiners
   "Returns beta dist parameters for each academic year by apportioning
@@ -157,9 +137,6 @@
                 {}
                 academic-years)]
     (continue-for-latter-ays params academic-years)))
-
-(defn any-valid-transitions? [state valid-transitions]
-  (< 1 (count (get valid-transitions (second (s/need-setting state))))))
 
 (defn beta-params-movers
   "calculates the rate of the likelihood of a state transitioning for an academic year"
@@ -194,6 +171,21 @@
                   coll)
                 coll))
             {} valid-states)))
+
+(defn alpha-params-joiners [valid-states transitions]
+  (let [transitions (select-transitions transitions joiner?)
+        by-ay (alpha-params transitions (juxt academic-year state-2))
+        academic-years (->> (map first valid-states) distinct sort)
+        params (reduce (fn [coll ay]
+                         (let [valid-states (s/valid-states-for-ay valid-states ay)
+                               prior-alphas (zipmap valid-states (repeat (/ 1.0 (count valid-states))))]
+                           (if-let [v (get by-ay ay)]
+                             (assoc coll ay (merge-with + prior-alphas v))
+                             coll)))
+                       {}
+                       academic-years)]
+    (continue-for-latter-ays params academic-years)))
+
 
 (defn alpha-params-movers
   "calculates the rate of transitions to a new state at academic year X for state Y"
