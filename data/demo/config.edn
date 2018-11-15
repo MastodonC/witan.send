@@ -20,6 +20,5 @@
                      :keep-temp-files? false
                      :use-confidence-bound-or-interval nil}
 
- :validation-parameters {:keep-temp-files? false
-                         :run-as-default false}
- }
+ :validation-parameters {:run-validation false
+                         :keep-temp-files? false}}
