@@ -10,8 +10,7 @@
                        :modify-transitions-from nil}
 
  :projection-parameters {:random-seed 50
-                         :simulations 10
-                         :seed-year 2017}
+                         :simulations 10}
 
  :output-parameters {:run-outputs true
                      :run-charts false
