@@ -11,14 +11,6 @@
 
 (def natural-prior 1/3)
 
-(defn weighted-alphas [n coll]
-  (let [d (->> coll vals (apply +))
-        f (if (zero? d) 0 (/ n d))]
-    (reduce (fn [coll [k v]]
-              (assoc coll k (* f v)))
-            {}
-            coll)))
-
 (defn joiner?
   [[ay state-1 state-2]]
   (and (= state-1 c/non-send)
