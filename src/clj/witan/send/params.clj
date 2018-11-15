@@ -9,8 +9,6 @@
         :when (> freq 1)]
     id))
 
-(def natural-prior 1/3)
-
 (defn joiner?
   [[ay state-1 state-2]]
   (and (= state-1 c/non-send)
@@ -30,15 +28,6 @@
   (and (not= state-1 c/non-send)
        (not= state-2 c/non-send)
        (not= state-1 state-2)))
-
-(defn remove-transitions
-  [transitions pred]
-  (reduce (fn [coll [transition n]]
-            (cond-> coll
-              (not (pred transition))
-              (assoc transition n)))
-          {}
-          transitions))
 
 (defn select-transitions
   [transitions pred]
@@ -72,34 +61,9 @@
   [[ay _ _]]
   ay)
 
-(defn beta-params-academic-year
-  [transitions f]
-  (reduce (fn [coll [[ay _ _ :as transition] n]]
-            (if (f transition)
-              (update-in coll [ay :alpha] m/some+ n)
-              (update-in coll [ay :beta] m/some+ n)))
-          {} transitions))
-
-(defn beta-params-academic-year-setting
-  [transitions f]
-  (reduce (fn [coll [[ay state-1 :as transition] n]]
-            (let [[_ setting] (s/need-setting state-1)]
-              (if (f transition)
-                (update-in coll [[ay setting] :alpha] m/some+ n)
-                (update-in coll [[ay setting] :beta] m/some+ n))))
-          {} transitions))
-
 (defn map-keys [f coll]
   (reduce (fn [coll [k v]]
             (assoc coll (f k) v))
-          (empty coll)
-          coll))
-
-(defn filter-vals [pred coll]
-  (reduce (fn [coll [k v]]
-            (cond-> coll
-              (pred v)
-              (assoc k v)))
           (empty coll)
           coll))
 
