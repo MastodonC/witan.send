@@ -33,7 +33,7 @@
 (defn split-need-state [state pos]
   (keyword (pos (str/split (name state) #"-"))))
 
-(defn back-to-transitions-matrix [k v]
+(defn back-to-transitions [k v]
   (let [[calendar-year academic-year-2 state-1 state-2] k
         total v]
     (repeat total (assoc {}
@@ -87,12 +87,12 @@
            {} a)
    b))
 
-(defn prep-inputs [initial-state splice-ncy valid-states valid-transitions transition-matrix
-                   transition-matrix-filtered population valid-setting-academic-years
+(defn prep-inputs [initial-state splice-ncy valid-states valid-transitions transitions
+                   transitions-filtered population valid-setting-academic-years
                    original-transitions setting-cost filter-transitions-from]
   (let [start-map {:population-by-age-state initial-state
                    :valid-setting-academic-years valid-setting-academic-years
-                   :transition-matrix original-transitions
+                   :transitions original-transitions
                    :population population
                    :setting-cost-lookup (->> (ds/row-maps setting-cost)
                                              (map (juxt (juxt :need :setting) :cost))
@@ -100,36 +100,36 @@
                    :projected-population (->> (ds/row-maps population)
                                               (group-by :calendar-year)
                                               (medley/map-vals #(total-by-academic-year %)))}]
-    (if transition-matrix-filtered
+    (if transitions-filtered
       (merge start-map
              {:joiner-beta-params (stitch-ay-params splice-ncy
                                                     (p/beta-params-joiners valid-states
-                                                                           transition-matrix
+                                                                           transitions
                                                                            (ds/row-maps population))
                                                     (p/beta-params-joiners valid-states
-                                                                           transition-matrix-filtered
+                                                                           transitions-filtered
                                                                            (ds/row-maps population)))
               :leaver-beta-params (stitch-ay-state-params splice-ncy
-                                                          (p/beta-params-leavers valid-states transition-matrix)
-                                                          (p/beta-params-leavers valid-states transition-matrix-filtered))
+                                                          (p/beta-params-leavers valid-states transitions)
+                                                          (p/beta-params-leavers valid-states transitions-filtered))
               :joiner-state-alphas (stitch-ay-params splice-ncy
-                                                     (p/alpha-params-joiners valid-states (transitions-map transition-matrix))
-                                                     (p/alpha-params-joiners valid-states (transitions-map transition-matrix-filtered)))
+                                                     (p/alpha-params-joiners valid-states (transitions-map transitions))
+                                                     (p/alpha-params-joiners valid-states (transitions-map transitions-filtered)))
 
               :mover-beta-params (stitch-ay-state-params splice-ncy
-                                                         (p/beta-params-movers valid-states valid-transitions transition-matrix)
-                                                         (p/beta-params-movers valid-states valid-transitions transition-matrix-filtered))
+                                                         (p/beta-params-movers valid-states valid-transitions transitions)
+                                                         (p/beta-params-movers valid-states valid-transitions transitions-filtered))
               :mover-state-alphas (stitch-ay-state-params splice-ncy
-                                                          (p/alpha-params-movers valid-states valid-transitions transition-matrix)
-                                                          (p/alpha-params-movers valid-states valid-transitions transition-matrix-filtered))})
+                                                          (p/alpha-params-movers valid-states valid-transitions transitions)
+                                                          (p/alpha-params-movers valid-states valid-transitions transitions-filtered))})
       (merge start-map
              {:joiner-beta-params (p/beta-params-joiners valid-states
-                                                         transition-matrix
+                                                         transitions
                                                          (ds/row-maps population))
-              :leaver-beta-params (p/beta-params-leavers valid-states transition-matrix)
-              :joiner-state-alphas (p/alpha-params-joiners valid-states (transitions-map transition-matrix))
-              :mover-beta-params (p/beta-params-movers valid-states valid-transitions transition-matrix)
-              :mover-state-alphas  (p/alpha-params-movers valid-states valid-transitions transition-matrix)}))))
+              :leaver-beta-params (p/beta-params-leavers valid-states transitions)
+              :joiner-state-alphas (p/alpha-params-joiners valid-states (transitions-map transitions))
+              :mover-beta-params (p/beta-params-movers valid-states valid-transitions transitions)
+              :mover-state-alphas  (p/alpha-params-movers valid-states valid-transitions transitions)}))))
 
 (defn generate-transition-key [{:keys [transition-type cy ay need setting move-state]}]
   (when (not= move-state (states/state need setting))
@@ -193,13 +193,13 @@
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
-  [{:keys [settings-to-change transition-matrix population
+  [{:keys [settings-to-change transitions population
            setting-cost valid-setting-academic-years]}
    {:keys [which-transitions? modify-transition-by splice-ncy filter-transitions-from]}]
-  (run-input-checks (ds/row-maps transition-matrix)
+  (run-input-checks (ds/row-maps transitions)
                     (ds/row-maps setting-cost)
                     (ds/row-maps valid-setting-academic-years))
-  (let [original-transitions transition-matrix
+  (let [original-transitions transitions
         ages (distinct (map :academic-year (ds/row-maps population)))
         years (distinct (map :calendar-year (ds/row-maps population)))
         initialise-validation (ds/row-maps valid-setting-academic-years)
@@ -219,22 +219,22 @@
                                                              valid-needs valid-settings
                                                              ages years transition-type))
                                    which-transitions?))
-        transition-matrix (ds/row-maps transition-matrix)
-        modified-transition-matrix (when (not= 1 modify-transition-by)
-                                     (let [convert (-> transition-matrix
-                                                       full-transitions-map)
-                                           result (reduce (fn [m k] (modify-transitions m k * modify-transition-by))
-                                                          convert states-to-change)]
-                                       (mapcat (fn [[k v]] (back-to-transitions-matrix k v)) result)))
-        transitions (if modified-transition-matrix
-                      (transitions-map modified-transition-matrix)
-                      (transitions-map transition-matrix))
-        transition-matrix-filtered (when filter-transitions-from
-                                     (mapcat (fn [year] (filter #(= (:calendar-year %) year)
-                                                                (or modified-transition-matrix transition-matrix)))
-                                             [filter-transitions-from]))
-        max-transition-year (apply max (map :calendar-year transition-matrix))
-        initial-state (->> (filter #(= (:calendar-year %) max-transition-year) transition-matrix)
+        transitions (ds/row-maps transitions)
+        modified-transitions (when (not= 1 modify-transition-by)
+                               (let [convert (-> transitions
+                                                 full-transitions-map)
+                                     result (reduce (fn [m k] (modify-transitions m k * modify-transition-by))
+                                                    convert states-to-change)]
+                                 (mapcat (fn [[k v]] (back-to-transitions k v)) result)))
+        map-of-transitions (if modified-transitions
+                             (transitions-map modified-transitions)
+                             (transitions-map transitions))
+        transitions-filtered (when filter-transitions-from
+                               (mapcat (fn [year] (filter #(= (:calendar-year %) year)
+                                                          (or modified-transitions transitions)))
+                                       [filter-transitions-from]))
+        max-transition-year (apply max (map :calendar-year transitions))
+        initial-state (->> (filter #(= (:calendar-year %) max-transition-year) transitions)
                            (filter #(not= (:setting-2 %) :NONSEND))
                            (postwalk #(if (map? %) (dissoc % :calendar-year :setting-1 :need-1 :academic-year-1) %))
                            (frequencies)
@@ -243,20 +243,20 @@
                            (initialise-model))]
     (when (not= 1 modify-transition-by)
       (report/info "\nModified transitions by " (report/bold modify-transition-by)))
-    (if modified-transition-matrix
+    (if modified-transitions
       (report/info "\nUsed " (report/bold "modified") " transitions matrix\n")
       (report/info "\nUsed " (report/bold "input") " transitions matrix\n"))
-    (s/validate (sc/TransitionsMap+ valid-needs valid-settings) transitions)
+    (s/validate (sc/TransitionsMap+ valid-needs valid-settings) map-of-transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) setting-cost)
     {:standard-projection (prep-inputs initial-state splice-ncy
-                                       valid-states valid-transitions transition-matrix
-                                       transition-matrix-filtered
+                                       valid-states valid-transitions transitions
+                                       transitions-filtered
                                        population valid-setting-academic-years original-transitions setting-cost
                                        filter-transitions-from)
-     :scenario-projection (when modified-transition-matrix
+     :scenario-projection (when modified-transitions
                             (prep-inputs initial-state splice-ncy valid-states
-                                         valid-transitions modified-transition-matrix
-                                         transition-matrix-filtered population valid-setting-academic-years
+                                         valid-transitions modified-transitions
+                                         transitions-filtered population valid-setting-academic-years
                                          original-transitions setting-cost filter-transitions-from))
      :modify-transition-by modify-transition-by
      :settings-to-change settings-to-change}))
