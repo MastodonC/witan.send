@@ -6,16 +6,16 @@
             [witan.send.states :refer :all]))
 
 (defn test-inputs []
-  {:valid-setting-academic-years ["data/demo/data/valid-setting-academic-years.csv" sc/ValidSettingAcademicYears]})
+  {:valid-states ["data/demo/data/valid-states.csv" sc/ValidSettingAcademicYears]})
 
 (deftest calculate-valid-year-settings-from-setting-academic-years-test
-  (let [[path schema] (:valid-setting-academic-years (test-inputs))
+  (let [[path schema] (:valid-states (test-inputs))
         data (ds/row-maps (i/csv-to-dataset path schema))]
     (testing ""
       (is (calculate-valid-year-settings-from-setting-academic-years data)))))
 
 (deftest can-move-test
-  (let [[path schema] (:valid-setting-academic-years (test-inputs))
+  (let [[path schema] (:valid-states (test-inputs))
         data (ds/row-maps (i/csv-to-dataset path schema))
         valid-year-settings (calculate-valid-year-settings-from-setting-academic-years data)]
     (testing ""
