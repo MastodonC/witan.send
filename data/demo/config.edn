@@ -1,18 +1,16 @@
-{:file-inputs {:settings-to-change "data/modify-settings1.csv"
-               :transition-matrix "data/transitions.csv"
+{:file-inputs {:transitions "data/transitions.csv"
                :population "data/population.csv"
-               :setting-cost "data/need-setting-costs.csv"
-               :valid-setting-academic-years "data/valid-setting-academic-years.csv"}
+               :costs "data/costs.csv"
+               :valid-states "data/valid-states.csv"}
 
- :transition-parameters {:filter-transitions-from nil
-                         :which-transitions? nil
-                         :splice-ncy nil
-                         :modify-transition-by 1}
+ :scenario-parameters {:filter-transitions-from nil
+                       :which-transitions? nil
+                       :splice-ncy nil
+                       :modify-transition-by nil
+                       :modify-transitions-from nil}
 
- :run-parameters {:modify-transitions-from nil
-                  :random-seed 50
-                  :simulations 10
-                  :seed-year 2017}
+ :projection-parameters {:random-seed 50
+                         :simulations 10}
 
  :output-parameters {:run-outputs true
                      :run-charts false
@@ -21,6 +19,5 @@
                      :keep-temp-files? false
                      :use-confidence-bound-or-interval nil}
 
- :validation-parameters {:keep-temp-files? false
-                         :run-as-default false}
- }
+ :validation-parameters {:run-validation false
+                         :keep-temp-files? false}}

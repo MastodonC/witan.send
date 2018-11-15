@@ -11,10 +11,10 @@
 
 (def default-schemas
   {:schema-inputs {:settings-to-change sc/SettingsToChange
-                   :transition-matrix sc/TransitionCounts
+                   :transitions sc/TransitionCounts
                    :population sc/PopulationDataset
-                   :setting-cost sc/NeedSettingCost
-                   :valid-setting-academic-years sc/ValidSettingAcademicYears}})
+                   :costs sc/NeedSettingCost
+                   :valid-states sc/ValidSettingAcademicYears}})
 
 (defn read-config
   "Read a config file and merge it with schema inputs"

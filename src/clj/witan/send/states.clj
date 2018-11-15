@@ -14,20 +14,20 @@
     (keyword (str (name need) "-" (name setting)))))
 
 (defn calculate-valid-settings-from-setting-academic-years
-  [valid-setting-academic-years]
-  (->> (map :setting valid-setting-academic-years)
+  [valid-states]
+  (->> (map :setting valid-states)
        (into #{})))
 
 (defn calculate-valid-needs-from-setting-academic-years
-  [valid-setting-academic-years]
-  (->> valid-setting-academic-years
+  [valid-states]
+  (->> valid-states
        (mapcat (comp #(str/split % #",") :needs))
        (distinct)
        (map keyword)))
 
 (defn calculate-valid-states-from-setting-academic-years
-  [valid-setting-academic-years]
-  (for [{:keys [setting setting->group min-academic-year max-academic-year needs]} valid-setting-academic-years
+  [valid-states]
+  (for [{:keys [setting setting->group min-academic-year max-academic-year needs]} valid-states
         need (map keyword (str/split needs #","))
         academic-year (range min-academic-year (inc max-academic-year))]
     [academic-year (state need setting)]))
@@ -45,9 +45,9 @@
 (defn aggregate-setting->setting [setting setting->setting]
   (hash-map setting (mapv keyword (str/split setting->setting #","))))
 
-(defn calculate-valid-mover-transitions [valid-setting-academic-years]
+(defn calculate-valid-mover-transitions [valid-states]
   (reduce into {} (map (fn [row] (aggregate-setting->setting (:setting row) (:setting->setting row)))
-                       valid-setting-academic-years)))
+                       valid-states)))
 
 (defn calculate-academic-year-range
   [setting-academic-years]

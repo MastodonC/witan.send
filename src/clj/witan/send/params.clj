@@ -14,10 +14,9 @@
   (and (= state-1 c/non-send)
        (not= state-2 c/non-send)))
 
-(defn transitions-matrix-joiner?
+(defn transitions-joiner?
   [{:keys [need-1]}]
   (= need-1 c/non-send))
-
 
 (defn select-transitions
   [transitions pred]
@@ -50,8 +49,8 @@
           params (sort academic-years)))
 
 (defn calculate-joiners-per-calendar-year
-  [transitions-matrix]
-  (->> (filter transitions-matrix-joiner? transitions-matrix)
+  [transitions]
+  (->> (filter transitions-joiner? transitions)
        (reduce (fn [coll {:keys [calendar-year academic-year-2]}]
                  (update-in coll [calendar-year academic-year-2] m/some+ 1))
                {})))
@@ -99,8 +98,8 @@
 (defn beta-params-joiners
   "Returns beta dist parameters for each academic year by apportioning
   its data equally across calendar years"
-  [valid-states transitions-matrix population]
-  (let [joiners (calculate-joiners-per-calendar-year transitions-matrix)
+  [valid-states transitions population]
+  (let [joiners (calculate-joiners-per-calendar-year transitions)
         joiner-calendar-years (keys joiners)
         population (calculate-population-per-calendar-year population)
         academic-years (->> (map first valid-states) distinct sort)
