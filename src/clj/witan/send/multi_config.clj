@@ -9,10 +9,10 @@
                  :population "data/population.csv"
                  :costs "data/need-setting-costs.csv"
                  :valid-states "data/valid-setting-academic-years.csv"}
-   :transition-parameters {:filter-transitions-from nil
-                           :which-transitions? nil
-                           :splice-ncy nil
-                           :modify-transition-by nil}
+   :scenario-parameters {:filter-transitions-from nil
+                         :which-transitions? nil
+                         :splice-ncy nil
+                         :modify-transition-by nil}
    :projection-parameters {:modify-transitions-from nil
                            :random-seed 50
                            :simulations 1000
