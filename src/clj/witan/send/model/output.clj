@@ -101,7 +101,7 @@
 (defn output-send-results
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
    to get the total cost."
-  [{:keys [projection send-output transitions valid-setting-academic-years
+  [{:keys [projection send-output transitions valid-states
            population modify-transition-by settings-to-change]}
    {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts
            keep-temp-files? use-confidence-bound-or-interval]}]
@@ -122,7 +122,7 @@
     (when (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
       (report/info (report/bold "Not every historic transition present in projection!") "Consider checking valid state input.\n"))
     (when run-outputs
-      (let [valid-settings (assoc (->> (ds/row-maps valid-setting-academic-years)
+      (let [valid-settings (assoc (->> (ds/row-maps valid-states)
                                        (reduce #(assoc %1 (:setting %2) (:setting-group %2)) {}))
                                   :NON-SEND "Other")
             years (sort (distinct (map :calendar-year transitions-data)))

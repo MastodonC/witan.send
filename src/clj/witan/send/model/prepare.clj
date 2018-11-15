@@ -87,49 +87,49 @@
            {} a)
    b))
 
-(defn prep-inputs [initial-state splice-ncy valid-states valid-transitions transitions
-                   transitions-filtered population valid-setting-academic-years
+(defn prep-inputs [initial-state splice-ncy validate-valid-states valid-transitions transitions
+                   transitions-filtered population valid-states
                    original-transitions costs filter-transitions-from]
   (let [start-map {:population-by-age-state initial-state
-                   :valid-setting-academic-years valid-setting-academic-years
+                   :valid-states valid-states
                    :transitions original-transitions
                    :population population
                    :cost-lookup (->> (ds/row-maps costs)
-                                             (map (juxt (juxt :need :setting) :cost))
-                                             (into {}))
+                                     (map (juxt (juxt :need :setting) :cost))
+                                     (into {}))
                    :projected-population (->> (ds/row-maps population)
                                               (group-by :calendar-year)
                                               (medley/map-vals #(total-by-academic-year %)))}]
     (if transitions-filtered
       (merge start-map
              {:joiner-beta-params (stitch-ay-params splice-ncy
-                                                    (p/beta-params-joiners valid-states
+                                                    (p/beta-params-joiners validate-valid-states
                                                                            transitions
                                                                            (ds/row-maps population))
-                                                    (p/beta-params-joiners valid-states
+                                                    (p/beta-params-joiners validate-valid-states
                                                                            transitions-filtered
                                                                            (ds/row-maps population)))
               :leaver-beta-params (stitch-ay-state-params splice-ncy
-                                                          (p/beta-params-leavers valid-states transitions)
-                                                          (p/beta-params-leavers valid-states transitions-filtered))
+                                                          (p/beta-params-leavers validate-valid-states transitions)
+                                                          (p/beta-params-leavers validate-valid-states transitions-filtered))
               :joiner-state-alphas (stitch-ay-params splice-ncy
-                                                     (p/alpha-params-joiners valid-states (transitions-map transitions))
-                                                     (p/alpha-params-joiners valid-states (transitions-map transitions-filtered)))
+                                                     (p/alpha-params-joiners validate-valid-states (transitions-map transitions))
+                                                     (p/alpha-params-joiners validate-valid-states (transitions-map transitions-filtered)))
 
               :mover-beta-params (stitch-ay-state-params splice-ncy
-                                                         (p/beta-params-movers valid-states valid-transitions transitions)
-                                                         (p/beta-params-movers valid-states valid-transitions transitions-filtered))
+                                                         (p/beta-params-movers validate-valid-states valid-transitions transitions)
+                                                         (p/beta-params-movers validate-valid-states valid-transitions transitions-filtered))
               :mover-state-alphas (stitch-ay-state-params splice-ncy
-                                                          (p/alpha-params-movers valid-states valid-transitions transitions)
-                                                          (p/alpha-params-movers valid-states valid-transitions transitions-filtered))})
+                                                          (p/alpha-params-movers validate-valid-states valid-transitions transitions)
+                                                          (p/alpha-params-movers validate-valid-states valid-transitions transitions-filtered))})
       (merge start-map
-             {:joiner-beta-params (p/beta-params-joiners valid-states
+             {:joiner-beta-params (p/beta-params-joiners validate-valid-states
                                                          transitions
                                                          (ds/row-maps population))
-              :leaver-beta-params (p/beta-params-leavers valid-states transitions)
-              :joiner-state-alphas (p/alpha-params-joiners valid-states (transitions-map transitions))
-              :mover-beta-params (p/beta-params-movers valid-states valid-transitions transitions)
-              :mover-state-alphas  (p/alpha-params-movers valid-states valid-transitions transitions)}))))
+              :leaver-beta-params (p/beta-params-leavers validate-valid-states transitions)
+              :joiner-state-alphas (p/alpha-params-joiners validate-valid-states (transitions-map transitions))
+              :mover-beta-params (p/beta-params-movers validate-valid-states valid-transitions transitions)
+              :mover-state-alphas  (p/alpha-params-movers validate-valid-states valid-transitions transitions)}))))
 
 (defn generate-transition-key [{:keys [transition-type cy ay need setting move-state]}]
   (when (not= move-state (states/state need setting))
@@ -194,22 +194,22 @@
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
   [{:keys [settings-to-change transitions population
-           costs valid-setting-academic-years]}
+           costs valid-states]}
    {:keys [which-transitions? modify-transition-by splice-ncy filter-transitions-from]}]
   (run-input-checks (ds/row-maps transitions)
                     (ds/row-maps costs)
-                    (ds/row-maps valid-setting-academic-years))
+                    (ds/row-maps valid-states))
   (let [original-transitions transitions
         ages (distinct (map :academic-year (ds/row-maps population)))
         years (distinct (map :calendar-year (ds/row-maps population)))
-        initialise-validation (ds/row-maps valid-setting-academic-years)
+        initialise-validation (ds/row-maps valid-states)
         valid-transitions (states/calculate-valid-mover-transitions
                            initialise-validation)
         valid-needs (states/calculate-valid-needs-from-setting-academic-years
                      initialise-validation)
         valid-settings (states/calculate-valid-settings-from-setting-academic-years
                         initialise-validation)
-        valid-states (states/calculate-valid-states-from-setting-academic-years
+        validate-valid-states (states/calculate-valid-states-from-setting-academic-years
                       initialise-validation)
         valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years
                              initialise-validation)
@@ -249,14 +249,14 @@
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) map-of-transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) costs)
     {:standard-projection (prep-inputs initial-state splice-ncy
-                                       valid-states valid-transitions transitions
+                                       validate-valid-states valid-transitions transitions
                                        transitions-filtered
-                                       population valid-setting-academic-years original-transitions costs
+                                       population valid-states original-transitions costs
                                        filter-transitions-from)
      :scenario-projection (when modified-transitions
-                            (prep-inputs initial-state splice-ncy valid-states
+                            (prep-inputs initial-state splice-ncy validate-valid-states
                                          valid-transitions modified-transitions
-                                         transitions-filtered population valid-setting-academic-years
+                                         transitions-filtered population valid-states
                                          original-transitions costs filter-transitions-from))
      :modify-transition-by modify-transition-by
      :settings-to-change settings-to-change}))
