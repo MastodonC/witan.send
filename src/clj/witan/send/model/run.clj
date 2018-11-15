@@ -161,7 +161,7 @@
   (println "Preparing" simulations "simulations...")
   (let [{:keys [population population-by-age-state
                 projected-population setting-cost-lookup
-                valid-setting-academic-years transition-matrix] :as inputs} standard-projection
+                valid-setting-academic-years transitions] :as inputs} standard-projection
         modified-inputs (when ((complement nil?) scenario-projection)
                           (assoc scenario-projection :valid-year-settings
                                  (->> (ds/row-maps valid-setting-academic-years)
@@ -192,7 +192,7 @@
     (println "Combining...")
     {:projection (projection->transitions projection)
      :send-output (transduce identity (combine-rf simulations iterations) reduced)
-     :transition-matrix transition-matrix
+     :transitions transitions
      :valid-setting-academic-years valid-setting-academic-years
      :population population
      :modify-transition-by modify-transition-by

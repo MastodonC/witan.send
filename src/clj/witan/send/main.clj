@@ -11,7 +11,7 @@
 
 (def default-schemas
   {:schema-inputs {:settings-to-change sc/SettingsToChange
-                   :transition-matrix sc/TransitionCounts
+                   :transitions sc/TransitionCounts
                    :population sc/PopulationDataset
                    :setting-cost sc/NeedSettingCost
                    :valid-setting-academic-years sc/ValidSettingAcademicYears}})
