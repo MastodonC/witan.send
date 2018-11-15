@@ -113,8 +113,8 @@
                                                           (p/beta-params-leavers valid-states transition-matrix)
                                                           (p/beta-params-leavers valid-states transition-matrix-filtered))
               :joiner-state-alphas (stitch-ay-params splice-ncy
-                                                     (p/alpha-params-joiner-states valid-states (transitions-map transition-matrix))
-                                                     (p/alpha-params-joiner-states valid-states (transitions-map transition-matrix-filtered)))
+                                                     (p/alpha-params-joiners valid-states (transitions-map transition-matrix))
+                                                     (p/alpha-params-joiners valid-states (transitions-map transition-matrix-filtered)))
 
               :mover-beta-params (stitch-ay-state-params splice-ncy
                                                          (p/beta-params-movers valid-states valid-transitions transition-matrix)
@@ -127,7 +127,7 @@
                                                          transition-matrix
                                                          (ds/row-maps population))
               :leaver-beta-params (p/beta-params-leavers valid-states transition-matrix)
-              :joiner-state-alphas (p/alpha-params-joiner-states valid-states (transitions-map transition-matrix))
+              :joiner-state-alphas (p/alpha-params-joiners valid-states (transitions-map transition-matrix))
               :mover-beta-params (p/beta-params-movers valid-states valid-transitions transition-matrix)
               :mover-state-alphas  (p/alpha-params-movers valid-states valid-transitions transition-matrix)}))))
 

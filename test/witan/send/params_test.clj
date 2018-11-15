@@ -46,7 +46,7 @@
 (deftest validate-params
   (testing "Positive joiner state alphas for every valid academic year"
     (let [transitions {}
-          params (sut/alpha-params-joiner-states valid-states transitions)]
+          params (sut/alpha-params-joiners valid-states transitions)]
       (is (every? (fn [[academic-year alphas]]
                     (and (pos? (count alphas))
                          (->> alphas vals (every? pos?))))
