@@ -67,7 +67,7 @@
        (remove (fn [t] (= (+ 1 (:academic-year-1 t)) (:academic-year-2 t))))
        (map #(str "Academic years 1 and 2 are not incremental for " %))))
 
-(defn cost-for-state? [state costs]
+(defn cost-for-need-setting? [state costs]
   "Takes map containing state and returns true for match in costs"
   (some? (some true? (map #(and (= (:need state) (:need %))
                                 (= (:setting state) (:setting %))) costs))))
@@ -76,7 +76,7 @@
   "Produces warnings for states without costs via REPL and SEND_report.md"
   (let [states (set-of-input-states transitions false)]
     (->> states
-         (remove #(cost-for-state? % costs))
+         (remove #(cost-for-need-setting? % costs))
          (map #(str "Missing cost for state in transitions.csv: " (:need %) " " (:setting %))))))
 
 
@@ -96,7 +96,7 @@
          (map #(str "Invalid setting for academic year in transitions.csv: "
                     (:need %) " " (:setting %) " academic-year: " (:academic-year %))))))
 
-(defn miscoded-nonsend-state? [transition]
+(defn miscoded-nonsend? [transition]
   "Checks setting-n and need-n are both NONSEND"
   (or (and (not= (:setting-1 transition) :NONSEND) (= (:need-1 transition) :NONSEND))
       (and (= (:setting-1 transition) :NONSEND) (not= (:need-1 transition) :NONSEND))
@@ -106,7 +106,7 @@
 (defn check-nonsend-states-valid [transitions]
   "Checks setting-n and need-n are both NONSEND"
   (let [count-nonsend-errors (->> transitions
-                                  (filter miscoded-nonsend-state?)
+                                  (filter miscoded-nonsend?)
                                   count)]
     (when (> count-nonsend-errors 0)
       (str "There are " count-nonsend-errors " occurrences where only one of need-1 or setting-1 are Non-SEND in transitions"))))
