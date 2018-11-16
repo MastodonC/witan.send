@@ -2,12 +2,12 @@
   (:require [clojure.string :as str]
             [witan.send.constants :as c]))
 
-(defn need-setting [state]
+(defn split-need-setting [state]
   (if (= state c/non-send)
     (vector c/non-send c/non-send)
     (mapv keyword (str/split (name state) #"-"))))
 
-(defn state [need setting]
+(defn join-need-setting [need setting]
   (if (or (= setting c/non-send)
           (= need c/non-send))
     c/non-send
@@ -30,15 +30,15 @@
   (for [{:keys [setting setting->group min-academic-year max-academic-year needs]} valid-states
         need (map keyword (str/split needs #","))
         academic-year (range min-academic-year (inc max-academic-year))]
-    [academic-year (state need setting)]))
+    [academic-year (join-need-setting need setting)]))
 
-(defn valid-states-for-ay [valid-states ay]
+(defn validate-states-for-ay [valid-states ay]
   (->> (filter (fn [[ay' state]] (= ay ay')) valid-states)
        (map (fn [[ay' state]] state))))
 
 (defn calculate-valid-settings-for-need-ay [valid-states]
   (reduce (fn [coll [ay state]]
-            (let [[need setting] (need-setting state)]
+            (let [[need setting] (split-need-setting state)]
               (update coll [ay need] (fnil conj #{}) setting)))
           {} valid-states))
 
@@ -70,5 +70,5 @@
             (range minimum-academic-year (inc maximum-academic-year)))))
 
 (defn can-move? [valid-year-settings academic-year state]
-  (let [[need setting] (need-setting state)]
+  (let [[need setting] (split-need-setting state)]
     (pos? (count (disj (get valid-year-settings (inc academic-year)) setting)))))

@@ -41,34 +41,34 @@
           nil))))
 
 (defn apply-leavers-movers-for-cohort-unsafe
-  "We're calling this function 'unsafe' because it doesn't check whether the state or
+  "We're calling this function 'unsafe' because it doesn't check whether the need-setting or
   or academic year range is valid."
-  [[model transitions] [[year state] population]
+  [[model transitions] [[year need-setting] population]
    {:keys [leaver-beta-params mover-beta-params
            mover-state-alphas valid-year-settings]}
    calendar-year]
-  (if-let [probs (get mover-state-alphas [(dec year) state])]
-    (let [leaver-params (get leaver-beta-params [(dec year) state])
+  (if-let [probs (get mover-state-alphas [(dec year) need-setting])]
+    (let [leaver-params (get leaver-beta-params [(dec year) need-setting])
           l (d/sample-beta-binomial population leaver-params)
-          next-states-sample (if (states/can-move? valid-year-settings year state)
-                               (let [mover-params (get mover-beta-params [(dec year) state])]
-                                 (sample-send-transitions state (- population l) probs mover-params))
-                               {state (- population l)})
-          [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year state next-states-sample calendar-year)]
+          next-states-sample (if (states/can-move? valid-year-settings year need-setting)
+                               (let [mover-params (get mover-beta-params [(dec year) need-setting])]
+                                 (sample-send-transitions need-setting (- population l) probs mover-params))
+                               {need-setting (- population l)})
+          [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year need-setting next-states-sample calendar-year)]
       [model
-       (update transitions [calendar-year year state c/non-send] m/some+ l)])
+       (update transitions [calendar-year year need-setting c/non-send] m/some+ l)])
     [model transitions]))
 
 (defn apply-leavers-movers-for-cohort
-  "Take single cohort of users and process them into the model state.
+  "Take single cohort of users and process them.
   Calls 'unsafe' equivalent once we've removed non-send and children outside
   valid academic year range."
-  [[model transitions :as model-state]
+  [[model transitions :as population-by-state]
    [[year state] population :as cohort]
    params calendar-year]
   (cond
     (= state c/non-send)
-    model-state
+    population-by-state
     (or (<= year sc/min-academic-year)
         (> year sc/max-academic-year))
     [model
@@ -76,7 +76,7 @@
        (pos? population)
        (update [calendar-year year state c/non-send] m/some+ population))]
     :else
-    (apply-leavers-movers-for-cohort-unsafe model-state cohort params calendar-year)))
+    (apply-leavers-movers-for-cohort-unsafe population-by-state cohort params calendar-year)))
 
 (defn apply-joiners-for-academic-year
   [[model transitions] academic-year population {:keys [joiner-beta-params joiner-state-alphas]} calendar-year]
@@ -96,7 +96,7 @@
   [modify-transitions-from
    standard-projection
    scenario-projection
-   {model-state :model}
+   {population-by-state :model}
    [calendar-year projected-population]]
   (let [params (if (nil? modify-transitions-from)
                  (if ((complement nil?) scenario-projection)
@@ -105,16 +105,16 @@
                  (if (>= calendar-year modify-transitions-from)
                    scenario-projection
                    standard-projection))
-        cohorts (step/age-population projected-population model-state)
-        [model transitions] (reduce (fn [model-state cohort]
-                                      (apply-leavers-movers-for-cohort model-state cohort params calendar-year))
-                                    [{} {}]
-                                    cohorts)
-        [model transitions] (reduce (fn [model-state academic-year]
-                                      (apply-joiners-for-academic-year model-state academic-year projected-population params calendar-year))
-                                    [model transitions]
-                                    sc/academic-years)]
-    {:model model :transitions transitions}))
+        cohorts (step/age-population projected-population population-by-state)
+        [population-by-state transitions] (reduce (fn [pop cohort]
+                                                    (apply-leavers-movers-for-cohort pop cohort params calendar-year))
+                                                  [{} {}]
+                                                  cohorts)
+        [population-by-state transitions] (reduce (fn [pop academic-year]
+                                                    (apply-joiners-for-academic-year pop academic-year projected-population params calendar-year))
+                                                  [population-by-state transitions]
+                                                  sc/academic-years)]
+    {:model population-by-state :transitions transitions}))
 
 (defn projection->transitions
   [projections]
@@ -160,7 +160,7 @@
    {:keys [random-seed simulations]}]
   (d/set-seed! random-seed)
   (println "Preparing" simulations "simulations...")
-  (let [{:keys [population population-by-age-state
+  (let [{:keys [population population-by-state
                 projected-population cost-lookup
                 valid-states transitions] :as inputs} standard-projection
         modified-inputs (when ((complement nil?) scenario-projection)
@@ -180,7 +180,7 @@
                          (pmap (fn [simulations]
                                  (->> (for [_ simulations]
                                         (let [projection (reductions (partial run-model-iteration modify-transitions-from inputs modified-inputs)
-                                                                     {:model population-by-age-state}
+                                                                     {:model population-by-state}
                                                                      projected-future-pop-by-year)]
                                           projection))
                                       (doall))))
