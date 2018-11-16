@@ -156,7 +156,22 @@
                 coll))
             {} valid-states)))
 
-(defn alpha-params-joiners [valid-states transitions]
+(defn alpha-params-joiners
+  "The transition structure at this point is of the form:
+
+  {[1 :NONSEND :SEMH-MSSIB] 1,
+  [12 :NONSEND :SEMH-MMSIB] 1,
+  [1 :SP-MSSOB :SP-MSSOB] 2,
+  [14 :SP-NMSS :SP-NMSS]
+
+  This structure has implict rules for interpretation.
+  For understanding we can use the general form.
+
+  [ay_n :need-setting ay_n+1 :new_need-new_setting]
+
+  An :NONSEND-NONSEND can be shorted to :NONSEND
+  The ay_n+1 can be ommitted and assumed."
+  [valid-states transitions] 
   (let [transitions (select-transitions transitions joiner?)
         by-ay (alpha-params transitions (juxt academic-year state-2))
         academic-years (->> (map first valid-states) distinct sort)
