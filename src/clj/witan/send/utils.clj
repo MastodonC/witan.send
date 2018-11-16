@@ -17,7 +17,7 @@
 (defn model-population-by-need
   [model]
   (reduce (fn [coll [[ay state] population]]
-            (let [[need setting] (states/need-setting state)]
+            (let [[need setting] (states/split-need-setting state)]
               (cond-> coll
                 (not= state c/non-send)
                 (update need m/some+ population))))
@@ -26,7 +26,7 @@
 (defn model-population-by-setting
   [model]
   (reduce (fn [coll [[ay state] population]]
-            (let [[need setting] (states/need-setting state)]
+            (let [[need setting] (states/split-need-setting state)]
               (cond-> coll
                 (not= state c/non-send)
                 (update setting m/some+ population))))
@@ -35,7 +35,7 @@
 (defn model-population-by-need-setting
   [model]
   (reduce (fn [coll [[ay state] population]]
-            (let [[need setting] (states/need-setting state)]
+            (let [[need setting] (states/split-need-setting state)]
               (cond-> coll
                 (not= state c/non-send)
                 (update [need setting] m/some+ population))))
@@ -60,8 +60,8 @@
 
 (defn total-need-setting-cost
   [need-setting-lookup population-by-need-setting]
-  (-> (reduce (fn [cost [need-setting population]]
-                (+ cost (* population (get need-setting-lookup need-setting 0))))
+  (-> (reduce (fn [cost [split-need-setting population]]
+                (+ cost (* population (get need-setting-lookup split-need-setting 0))))
               0 population-by-need-setting)
       m/round))
 
