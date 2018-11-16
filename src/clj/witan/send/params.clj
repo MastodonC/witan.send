@@ -96,7 +96,6 @@
                 coll))
             {} valid-states)))
 
-
 (defn beta-params-joiners
   "Returns beta dist parameters for each academic year by apportioning
   its data equally across calendar years"
@@ -170,7 +169,6 @@
                        {}
                        academic-years)]
     (continue-for-latter-ays params academic-years)))
-
 
 (defn alpha-params-movers
   "calculates the rate of transitions to a new state at academic year X for state Y"
