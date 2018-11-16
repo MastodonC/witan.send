@@ -156,7 +156,7 @@
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
   [{:keys [standard-projection scenario-projection modify-transition-by
-           settings-to-change modify-transitions-from seed-year]}
+           modify-transitions-from seed-year]}
    {:keys [random-seed simulations]}]
   (d/set-seed! random-seed)
   (println "Preparing" simulations "simulations...")
@@ -196,5 +196,4 @@
      :transitions transitions
      :valid-states valid-states
      :population population
-     :modify-transition-by modify-transition-by
-     :settings-to-change settings-to-change}))
+     :modify-transition-by modify-transition-by}))
