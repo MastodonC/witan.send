@@ -4,7 +4,9 @@
             [witan.send.states :as s]
             [witan.send.utils :as u]))
 
-(defn keep-duplicates [seq]
+(defn- find-duplicates
+  "Finds values that are duplicated in the seq"
+  [seq]
   (for [[id freq] (frequencies seq)
         :when (> freq 1)]
     id))
@@ -209,7 +211,7 @@
                     settings (->> (get valid-settings [ay need])
                                   vec
                                   (into valid-trans)
-                                  keep-duplicates
+                                  find-duplicates
                                   vec)
                     prior (->> (zipmap settings (repeat (/ 1.0 (count settings))))
                                (merge-with + ay-obs))
