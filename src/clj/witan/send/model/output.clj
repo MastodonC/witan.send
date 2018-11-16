@@ -102,7 +102,7 @@
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
    to get the total cost."
   [{:keys [projection send-output transitions valid-states
-           population modify-transition-by settings-to-change]}
+           population modify-transition-by]}
    {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts
            keep-temp-files? use-confidence-bound-or-interval]}]
   (let [transitions-data (ds/row-maps transitions)
