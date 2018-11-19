@@ -60,7 +60,7 @@
                               (and (pos? (count alphas))
                                    (->> alphas vals (every? pos?)))))
                           (for [academic-year c/academic-years
-                                state (s/valid-states-for-ay valid-states academic-year)
+                                state (s/validate-states-for-ay valid-states academic-year)
                                 :when (s/can-move? valid-year-settings academic-year state)]
                             [academic-year state]))))))
 
