@@ -102,15 +102,15 @@
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
    to get the total cost."
   [{:keys [projection send-output transitions valid-states
-           population modify-transition-by settings-to-change]}
+           population modify-transition-by]}
    {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts
            keep-temp-files? use-confidence-bound-or-interval]}]
   (let [transitions-data (ds/row-maps transitions)
         transform-transitions (->> transitions-data
                                    (map #(vector
                                           (:academic-year-2 %)
-                                          (states/state (:need-1 %) (:setting-1 %))
-                                          (states/state (:need-2 %) (:setting-2 %))))
+                                          (states/join-need-setting (:need-1 %) (:setting-1 %))
+                                          (states/join-need-setting (:need-2 %) (:setting-2 %))))
                                    distinct)
         transform-projection (->> projection
                                   keys
@@ -152,12 +152,13 @@
         (report/info "Final year of input data: " (report/bold (inc (last years))))
         (report/info "Final year of projection: " (report/bold (+ (last years) (count (map :total-in-send send-output)))))
         (output-transitions (str dir "/transitions.edn") projection)
-        (with-open [writer (io/writer (io/file (str dir "/Output_AY_State.csv")))]
-          (let [columns [:calendar-year :academic-year :state :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
+        (with-open [writer (io/writer (io/file (str dir "/Output_State.csv")))]
+          (let [columns [:calendar-year :academic-year :need-setting :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
-                           (map (fn [[[academic-year state] stats]]
+                           (map (fn [[[academic-year need-setting] stats]]
                                   (-> (medley/map-vals m/round stats)
-                                      (assoc :academic-year academic-year :state state :calendar-year year))) (:by-state output))) send-output (range initial-projection-year 3000))
+                                      (assoc :academic-year academic-year :need-setting need-setting :calendar-year year)))
+                                (:by-state output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))

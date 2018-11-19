@@ -4,7 +4,9 @@
             [witan.send.states :as s]
             [witan.send.utils :as u]))
 
-(defn keep-duplicates [seq]
+(defn- find-duplicates
+  "Finds values that are duplicated in the seq"
+  [seq]
   (for [[id freq] (frequencies seq)
         :when (> freq 1)]
     id))
@@ -64,7 +66,7 @@
             population)))
 
 (defn any-valid-transitions? [state valid-transitions]
-  (< 1 (count (get valid-transitions (second (s/need-setting state))))))
+  (< 1 (count (get valid-transitions (second (s/split-need-setting state))))))
 ;; informal api
 (defn beta-params-leavers [valid-states transitions]
   (let [academic-years (->> (map first valid-states)
@@ -74,8 +76,8 @@
                                (if (= setting-1 c/non-send)
                                  coll
                                  (if (= setting-2 c/non-send)
-                                   (update-in coll [academic-year-1 (s/state need-1 setting-1) :alpha] m/some+ 1)
-                                   (update-in coll [academic-year-1 (s/state need-1 setting-1) :beta] m/some+ 1))))
+                                   (update-in coll [academic-year-1 (s/join-need-setting need-1 setting-1) :alpha] m/some+ 1)
+                                   (update-in coll [academic-year-1 (s/join-need-setting need-1 setting-1) :beta] m/some+ 1))))
                              {} transitions)
         prior-per-year (reduce (fn [coll [ay state-betas]]
                                  (let [betas (apply merge-with + (vals state-betas))
@@ -93,7 +95,6 @@
                 (assoc coll [ay state] beta-params)
                 coll))
             {} valid-states)))
-
 
 (defn beta-params-joiners
   "Returns beta dist parameters for each academic year by apportioning
@@ -132,8 +133,8 @@
                                        (= setting-2 c/non-send))
                                  coll
                                  (if (not= setting-1 setting-2)
-                                   (update-in coll [academic-year-1 (s/state need-1 setting-1) :alpha] m/some+ 1)
-                                   (update-in coll [academic-year-1 (s/state need-1 setting-1) :beta] m/some+ 1))))
+                                   (update-in coll [academic-year-1 (s/join-need-setting need-1 setting-1) :alpha] m/some+ 1)
+                                   (update-in coll [academic-year-1 (s/join-need-setting need-1 setting-1) :beta] m/some+ 1))))
                              {} transitions)
 
         prior-per-year (reduce (fn [coll [ay state-betas]]
@@ -155,12 +156,27 @@
                 coll))
             {} valid-states)))
 
-(defn alpha-params-joiners [valid-states transitions]
+(defn alpha-params-joiners
+  "The transition structure at this point is of the form:
+
+  {[1 :NONSEND :SEMH-MSSIB] 1,
+  [12 :NONSEND :SEMH-MMSIB] 1,
+  [1 :SP-MSSOB :SP-MSSOB] 2,
+  [14 :SP-NMSS :SP-NMSS]
+
+  This structure has implict rules for interpretation.
+  For understanding we can use the general form.
+
+  [ay_n :need-setting ay_n+1 :new_need-new_setting]
+
+  An :NONSEND-NONSEND can be shorted to :NONSEND
+  The ay_n+1 can be ommitted and assumed."
+  [valid-states transitions]
   (let [transitions (select-transitions transitions joiner?)
         by-ay (alpha-params transitions (juxt academic-year state-2))
         academic-years (->> (map first valid-states) distinct sort)
         params (reduce (fn [coll ay]
-                         (let [valid-states (s/valid-states-for-ay valid-states ay)
+                         (let [valid-states (s/validate-states-for-ay valid-states ay)
                                prior-alphas (zipmap valid-states (repeat (/ 1.0 (count valid-states))))]
                            (if-let [v (get by-ay ay)]
                              (assoc coll ay (merge-with + prior-alphas v))
@@ -168,7 +184,6 @@
                        {}
                        academic-years)]
     (continue-for-latter-ays params academic-years)))
-
 
 (defn alpha-params-movers
   "calculates the rate of transitions to a new state at academic year X for state Y"
@@ -182,8 +197,8 @@
                                        (= setting-1 setting-2))
                                  coll
                                  (update-in coll [academic-year-1
-                                                  (s/state need-1 setting-1)
-                                                  (s/state need-2 setting-2)] m/some+ 1)))
+                                                  (s/join-need-setting need-1 setting-1)
+                                                  (s/join-need-setting need-2 setting-2)] m/some+ 1)))
                              {} transitions)
 
         observations-per-ay (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
@@ -202,21 +217,21 @@
                                     academic-years)
         valid-settings (s/calculate-valid-settings-for-need-ay valid-states)]
     (reduce (fn [coll [ay state]]
-              (let [[need setting] (s/need-setting state)
+              (let [[need setting] (s/split-need-setting state)
                     valid-trans (get valid-transitions setting)
                     obs (get-in observations [ay state])
                     ay-obs (get observations-per-ay ay)
                     settings (->> (get valid-settings [ay need])
                                   vec
                                   (into valid-trans)
-                                  keep-duplicates
+                                  find-duplicates
                                   vec)
                     prior (->> (zipmap settings (repeat (/ 1.0 (count settings))))
                                (merge-with + ay-obs))
                     prior (dissoc prior setting)
                     total (->> (vals prior) (apply +))
                     prior (reduce (fn [coll [setting v]]
-                                    (assoc coll (s/state need setting) (double (/ v total))))
+                                    (assoc coll (s/join-need-setting need setting) (double (/ v total))))
                                   {}
                                   prior)]
                 (assoc coll [ay state] (merge-with + prior obs))))

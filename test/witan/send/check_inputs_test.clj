@@ -7,9 +7,9 @@
 (def test-valid-setting-ay [{:setting :X, :min-academic-year -4 :max-academic-year 20}])
 
 
-(deftest cost-for-state?-tests
-  (is (= true (cost-for-state? {:need :X, :setting :Y} test-setting-costs)))
-  (is (= false (cost-for-state? {:need :X, :setting :Z} test-setting-costs))))
+(deftest cost-for-need-setting?-tests
+  (is (= true (cost-for-need-setting? {:need :X, :setting :Y} test-setting-costs)))
+  (is (= false (cost-for-need-setting? {:need :X, :setting :Z} test-setting-costs))))
 
 
 (deftest valid-ay-for-state?-tests

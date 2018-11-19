@@ -221,20 +221,20 @@
                                         :need :CI :move-state :CI-MSSIB
                                         :setting :MSSOB})))))
 
-(deftest build-states-to-change-test
+(deftest build-transitions-to-change-test
   (let [input (ds/dataset [{:setting-1 :MMSOB :setting-2 :MMSIB}])]
     (testing "move MSSOB joiners to MSSIB"
       (is (= [[2013 5 :NONSEND :CI-MMSOB] [2013 5 :NONSEND :CI-MMSIB]]
-             (first (mp/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "joiners")))))
+             (first (mp/build-transitions-to-change input [:CI] [:MSSOB] [5] [2013] "joiners")))))
     (testing "move MSSOB leavers to MSSIB"
       (is (= [[2013 5 :CI-MMSOB :NONSEND] [2013 5 :CI-MMSIB :NONSEND]]
-             (first (mp/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "leavers")))))
+             (first (mp/build-transitions-to-change input [:CI] [:MSSOB] [5] [2013] "leavers")))))
     (testing "move MSSOB movers-to to MSSIB"
       (is (= [[2013 5 :CI-MSSOB :CI-MMSOB] [2013 5 :CI-MSSOB :CI-MMSIB]]
-             (first (mp/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "movers-to")))))
+             (first (mp/build-transitions-to-change input [:CI] [:MSSOB] [5] [2013] "movers-to")))))
     (testing "move MSSOB movers-from to MSSIB"
       (is (= [[2013 5 :CI-MMSOB :CI-MSSOB] [2013 5 :CI-MMSIB :CI-MSSOB]]
-             (first (mp/build-states-to-change input [:CI] [:MSSOB] [5] [2013] "movers-from")))))
+             (first (mp/build-transitions-to-change input [:CI] [:MSSOB] [5] [2013] "movers-from")))))
     (testing "return nil when move to and from state the same"
       (is (= nil
-             (first (mp/build-states-to-change input [:CI] [:MMSOB] [5] [2013] "movers-to")))))))
+             (first (mp/build-transitions-to-change input [:CI] [:MMSOB] [5] [2013] "movers-to")))))))
