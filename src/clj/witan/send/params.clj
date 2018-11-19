@@ -172,9 +172,10 @@
   An :NONSEND-NONSEND can be shorted to :NONSEND
   The ay_n+1 can be ommitted and assumed."
   [valid-states transitions]
-  (let [transitions (select-transitions transitions joiner?)
-        by-ay (alpha-params transitions (juxt academic-year state-2))
-        academic-years (->> (map first valid-states) distinct sort)
+  (let [by-ay (-> transitions
+                  (select-transitions joiner?)
+                  (alpha-params (juxt academic-year state-2)))
+        academic-years (->> valid-states (map first) distinct sort)
         params (reduce (fn [coll ay]
                          (let [valid-states (s/validate-states-for-ay valid-states ay)
                                prior-alphas (zipmap valid-states (repeat (/ 1.0 (count valid-states))))]
