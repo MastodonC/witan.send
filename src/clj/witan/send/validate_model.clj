@@ -58,27 +58,27 @@
         ground-truth-count (count send-test-data-for-year)]
     (assoc model-count :ground-truth (str ground-truth-count) :n-transition n-transitions)))
 
-(defn append-state-with-test [model-state test-data n-transitions]
+(defn append-state-with-test [model-states test-data n-transitions]
   "Adds states ground truth from test-data to model output"
-  (let [test-year (str (dec (Integer/parseInt (:calendar-year model-state))))
-        [need setting] (str/split (str/replace (:state model-state) ":" "") #"-")
-        academic-year (:academic-year model-state)
+  (let [test-year (str (dec (Integer/parseInt (:calendar-year model-states))))
+        [need setting] (str/split (str/replace (:need-setting model-states) ":" "") #"-")
+        academic-year (:academic-year model-states)
         test-data-for-state (filter #(and (= test-year (:calendar-year %))
                                           (= need (:need-2 %))
                                           (= setting (:setting-2 %))
                                           (= academic-year (:academic-year-2 %))) test-data)
         ground-truth-count (count test-data-for-state)]
-    (assoc model-state :ground-truth (str ground-truth-count) :n-transitions (str n-transitions))))
+    (assoc model-states :ground-truth (str ground-truth-count) :n-transitions (str n-transitions))))
 
 (defn collate-fold [project-dir test-data year n-transitions]
   (let [test-years (->> (map :calendar-year test-data)
                         (distinct)
                         (map #(inc (Integer/parseInt %)))
                         (map str))
-        model-state (return-testable-data (str (temp-dir project-dir) year "/Output_AY_State.csv") test-years)
+        model-states (return-testable-data (str (temp-dir project-dir) year "/Output_State.csv") test-years)
         model-count (return-testable-data (str (temp-dir project-dir) year "/Output_Count.csv") test-years)
         count-results (map #(append-count-with-test % test-data n-transitions) model-count)
-        state-results (map #(append-state-with-test % test-data n-transitions) model-state)]
+        state-results (map #(append-state-with-test % test-data n-transitions) model-states)]
     {:count count-results :state state-results}))
 
 (defn validate-fold [config year]
