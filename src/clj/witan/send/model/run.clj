@@ -29,16 +29,13 @@
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
   [state n probs mover-beta]
-  (try
-    (if (pos? n)
-      (let [movers (d/sample-beta-binomial n mover-beta)
-            non-movers (- n movers)]
-        (-> (d/sample-dirichlet-multinomial movers probs)
-            (assoc state non-movers)))
-      {})
-    (catch Exception e
-      (do (println state n probs mover-beta)
-          nil))))
+  (if (pos? n)
+    (let [movers (d/sample-beta-binomial n mover-beta)
+          non-movers (- n movers)]
+      (-> (d/sample-dirichlet-multinomial movers probs)
+          (assoc state non-movers)))
+    {})
+  )
 
 (defn apply-leavers-movers-for-cohort-unsafe
   "We're calling this function 'unsafe' because it doesn't check whether the need-setting or
