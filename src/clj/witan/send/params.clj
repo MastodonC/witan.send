@@ -186,29 +186,28 @@
                        academic-years)]
     (continue-for-latter-ays params academic-years)))
 
+
+
 (defn alpha-params-movers
   "calculates the rate of transitions to a new state at academic year X for state Y"
   [valid-states valid-transitions transitions]
   (let [academic-years (->> (map first valid-states)
                             (distinct)
                             (sort))
+        mover-transitions (remove (fn [{:keys [setting-1 setting-2]}]
+                                    (or (= setting-1 c/non-send)
+                                        (= setting-2 c/non-send)
+                                        (= setting-1 setting-2)))
+                                  transitions)
         observations (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
-                               (if (or (= setting-1 c/non-send)
-                                       (= setting-2 c/non-send)
-                                       (= setting-1 setting-2))
-                                 coll
-                                 (update-in coll [academic-year-1
-                                                  (s/join-need-setting need-1 setting-1)
-                                                  (s/join-need-setting need-2 setting-2)] m/some+ 1)))
-                             {} transitions)
+                               (update-in coll [academic-year-1
+                                                (s/join-need-setting need-1 setting-1)
+                                                (s/join-need-setting need-2 setting-2)] m/some+ 1))
+                             {} mover-transitions)
 
         observations-per-ay (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
-                                      (if (or (= setting-1 c/non-send)
-                                              (= setting-2 c/non-send)
-                                              (= setting-1 setting-2))
-                                        coll
-                                        (update-in coll [academic-year-1 setting-2] m/some+ 1)))
-                                    {} transitions)
+                                      (update-in coll [academic-year-1 setting-2] m/some+ 1))
+                                    {} mover-transitions)
         observations-per-ay (reduce (fn [coll ay]
                                       (if-let [v (or (get coll ay)
                                                      (get coll (dec ay)))]
