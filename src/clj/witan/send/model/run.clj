@@ -44,12 +44,12 @@
    {:keys [leaver-beta-params mover-beta-params
            mover-state-alphas valid-year-settings]}
    calendar-year]
-  (if-let [probs (get mover-state-alphas [(dec year) need-setting])]
+  (if-let [mover-dirichlet-params (get mover-state-alphas [(dec year) need-setting])]
     (let [leaver-params (get leaver-beta-params [(dec year) need-setting])
           l (d/sample-beta-binomial population leaver-params)
           next-states-sample (if (states/can-move? valid-year-settings year need-setting)
                                (let [mover-params (get mover-beta-params [(dec year) need-setting])]
-                                 (sample-send-transitions need-setting (- population l) probs mover-params))
+                                 (sample-send-transitions need-setting (- population l) mover-dirichlet-params mover-params))
                                {need-setting (- population l)})
           [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year need-setting next-states-sample calendar-year)]
       [model
