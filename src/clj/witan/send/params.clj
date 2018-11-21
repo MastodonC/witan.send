@@ -1,15 +1,7 @@
 (ns witan.send.params
   (:require [witan.send.constants :as c]
             [witan.send.maths :as m]
-            [witan.send.states :as s]
-            [witan.send.utils :as u]))
-
-(defn- find-duplicates
-  "Finds values that are duplicated in the seq"
-  [seq]
-  (for [[id freq] (frequencies seq)
-        :when (> freq 1)]
-    id))
+            [witan.send.states :as s]))
 
 (defn joiner?
   [[ay state-1 state-2]]
@@ -187,6 +179,33 @@
     (continue-for-latter-ays params academic-years)))
 
 
+(defn mover-alpha-priors
+  "Calculate uniform prior across all valid transitions from state"
+  [need-setting valid-transitions valid-settings observations-per-ay ay]
+  (let [[need setting] (s/split-need-setting need-setting)
+        allowed-settings (clojure.set/intersection (set (get valid-settings [ay need]))
+                                                   (set (get valid-transitions setting))
+                              ;(remove #{setting})
+                          )
+        prior (->> (zipmap allowed-settings (repeat (/ 1.0 (count allowed-settings))))
+                   (merge-with + (get observations-per-ay ay))
+                   (#(dissoc % setting)))
+        total (->> (vals prior) (apply +))
+        _ (println "new total" total)]
+    (reduce (fn [coll [setting v]]
+              (assoc coll (s/join-need-setting need setting) (double (/ v total))))
+            {}
+            prior)
+    #_(zipmap (map #(s/join-need-setting need %) (keys prior)) (vals prior))))
+
+
+
+(defn- find-duplicates
+  "Finds values that are duplicated in the seq"
+  [seq]
+  (for [[id freq] (frequencies seq)
+        :when (> freq 1)]
+    id))
 
 (defn alpha-params-movers
   "calculates the rate of transitions to a new state at academic year X for state Y"
@@ -205,7 +224,7 @@
                                                 (s/join-need-setting need-2 setting-2)] m/some+ 1))
                              {} mover-transitions)
 
-        observations-per-ay (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
+        observations-per-ay (reduce (fn [coll {:keys [academic-year-1 _ _ _ setting-2]}]
                                       (update-in coll [academic-year-1 setting-2] m/some+ 1))
                                     {} mover-transitions)
         observations-per-ay (reduce (fn [coll ay]
@@ -216,8 +235,10 @@
                                     observations-per-ay
                                     academic-years)
         valid-settings (s/calculate-valid-settings-for-need-ay valid-states)]
-    (reduce (fn [coll [ay state]]
-              (let [[need setting] (s/split-need-setting state)
+    (reduce (fn [coll [ay need-setting]]
+              (let [obs (get-in observations [ay need-setting])
+                    state need-setting
+                    [need setting] (s/split-need-setting state)
                     valid-trans (get valid-transitions setting)
                     obs (get-in observations [ay state])
                     ay-obs (get observations-per-ay ay)
@@ -230,10 +251,16 @@
                                (merge-with + ay-obs))
                     prior (dissoc prior setting)
                     total (->> (vals prior) (apply +))
+                    _ (println "old total:" total)
                     prior (reduce (fn [coll [setting v]]
                                     (assoc coll (s/join-need-setting need setting) (double (/ v total))))
                                   {}
-                                  prior)]
-                (assoc coll [ay state] (merge-with + prior obs))))
+                                  prior)
+                    new-prior (mover-alpha-priors need-setting valid-transitions
+                                                  valid-settings observations-per-ay ay)
+                    _ (def op prior)
+                    _ (def np new-prior)
+                    _ (assert (= prior new-prior))]
+                (assoc coll [ay need-setting] (merge-with + new-prior obs))))
             {}
             valid-states)))
