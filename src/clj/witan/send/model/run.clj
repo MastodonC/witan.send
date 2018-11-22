@@ -9,21 +9,23 @@
             [witan.send.step :as step]
             [witan.send.utils :as u]))
 
-(defn incorporate-new-states-for-academic-year-state
+(defn incorporate-new-ay-need-setting-populations
   "Take a model + transitions tuple as its first argument.
-  Returns a model + transitions tuple with `next-states-sample` incorporated."
-  [[model transitions] academic-year state next-states-sample calendar-year]
+  Returns a model + transitions tuple with `predicted-populations`
+  incorporated."
+  [{:keys [model transitions academic-year need-setting
+           predicted-populations calendar-year]}]
   (vector
-   (reduce (fn [coll [next-state n]]
+   (reduce (fn [coll [next-need-setting n]]
              (cond-> coll
                (pos? n)
-               (update [academic-year next-state] m/some+ n)))
-           model next-states-sample)
-   (reduce (fn [coll [next-state n]]
+               (update [academic-year next-need-setting] m/some+ n)))
+           model predicted-populations)
+   (reduce (fn [coll [next-need-setting n]]
              (cond-> coll
                (pos? n)
-               (update [calendar-year academic-year state next-state] m/some+ n)))
-           transitions next-states-sample)))
+               (update [calendar-year academic-year need-setting next-need-setting] m/some+ n)))
+           transitions predicted-populations)))
 
 (defn predict-movers
   "Returns a map of predicted need-setting counts for movers for a given
@@ -46,6 +48,16 @@
           (assoc need-setting non-movers)))
     {}))
 
+;; (defn predict-joiners
+;;   "Returns a map of predicted need-setting counts for joiners for a
+;;   given population n` with the provided probability distribution
+;;   parameters."
+;;   [{:keys [n dirichlet-params beta-params]}]
+;;   (if (pos? n)
+;;     (let [joiners (d/sample-beta-binomial n beta-params)]
+;;       (if (pos? joiners)
+;;         (d/sample-dirichlet-multinomial dirichlet-params)))))
+
 (defn predict-leavers
   [{:keys [need-setting n beta-params]}]
   (d/sample-beta-binomial n beta-params))
@@ -61,13 +73,16 @@
     (let [leavers (predict-leavers {:need-setting need-setting
                                     :n population
                                     :beta-params (get leaver-beta-params [(dec year) need-setting])})
-          next-states-sample (if (states/can-move? valid-year-settings year need-setting)
+          movers (if (states/can-move? valid-year-settings year need-setting)
                                (predict-movers {:need-setting need-setting
                                                 :n (- population leavers)
                                                 :beta-params (get mover-beta-params [(dec year) need-setting])
                                                 :dirichlet-params mover-dirichlet-params})
                                {need-setting (- population leavers)})
-          [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year need-setting next-states-sample calendar-year)]
+          [model transitions] (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
+                                                                            :academic-year year :need-setting need-setting
+                                                                            :predicted-populations movers
+                                                                            :calendar-year calendar-year})]
       [model
        (update transitions [calendar-year year need-setting c/non-send] m/some+ leavers)])
     [model transitions]))
@@ -91,6 +106,7 @@
     :else
     (apply-leavers-movers-for-cohort-unsafe population-by-state cohort params calendar-year)))
 
+
 (defn apply-joiners-for-academic-year
   [[model transitions] academic-year population {:keys [joiner-beta-params joiner-state-alphas]} calendar-year]
   (let [betas (get joiner-beta-params academic-year)
@@ -101,8 +117,28 @@
         (if (zero? joiners)
           [model transitions]
           (let [joiner-states (d/sample-dirichlet-multinomial joiners alphas)]
-            (incorporate-new-states-for-academic-year-state [model transitions] academic-year c/non-send joiner-states calendar-year))))
+            (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
+                                                          :academic-year academic-year :need-setting c/non-send
+                                                          :predicted-populations joiner-states
+                                                          :calendar-year calendar-year}))))
       [model transitions])))
+
+;; Rework doesn't pass tests
+;; (defn apply-joiners-for-academic-year
+;;   [[model transitions] academic-year population {:keys [joiner-beta-params joiner-state-alphas]} calendar-year]
+;;   (let [betas (get joiner-beta-params academic-year)
+;;         alphas (get joiner-state-alphas academic-year)
+;;         pop (get population academic-year)]
+;;     (if (and alphas betas pop (every? pos? (vals betas)))
+;;       (let [joiners (predict-joiners {:n pop
+;;                                       :beta-params betas
+;;                                       :dirichlet-params alphas})]
+;;         (if joiners
+;;           (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
+;;                                                         :academic-year academic-year :need-setting c/non-send
+;;                                                         :predicted-populations joiners
+;;                                                         :calendar-year calendar-year})
+;;           [model transitions])))))
 
 (defn run-model-iteration
   "Takes the model & transitions, transition params, and the projected population and produce the next state of the model & transitions"
