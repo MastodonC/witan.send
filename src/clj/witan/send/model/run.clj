@@ -28,12 +28,12 @@
 (defn sample-send-transitions
   "Takes a total count and map of categories to probabilities and
   returns the count in each category at the next step."
-  [state n mover-dirichlet-params mover-beta]
+  [need-setting n mover-dirichlet-params mover-beta-params]
   (if (pos? n)
-    (let [movers (d/sample-beta-binomial n mover-beta)
+    (let [movers (d/sample-beta-binomial n mover-beta-params)
           non-movers (- n movers)]
       (-> (d/sample-dirichlet-multinomial movers mover-dirichlet-params)
-          (assoc state non-movers)))
+          (assoc need-setting non-movers)))
     {})
   )
 
