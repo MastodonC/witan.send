@@ -25,35 +25,51 @@
                (update [calendar-year academic-year state next-state] m/some+ n)))
            transitions next-states-sample)))
 
-(defn sample-send-transitions
-  "Takes a total count and map of categories to probabilities and
-  returns the count in each category at the next step."
-  [need-setting n mover-dirichlet-params mover-beta-params]
+(defn predict-movers
+  "Returns a map of predicted need-setting counts for movers for a given
+  `need-setting` and a population `n` with the provided probability
+  distribution parameters.
+
+  Also work out how much of the population remains (non-movers) and
+  add to the results.
+  
+  Note: the actual results are the combination of chaining the beta
+  and binomial distributions or the Dirichlet and multinomial
+  distribution.  Beta and Dirichlet are used to sample a distribution
+  and the outcome is selected by the respective binomial or
+  multinomial."
+  [{:keys [need-setting n dirichlet-params beta-params]}]
   (if (pos? n)
-    (let [movers (d/sample-beta-binomial n mover-beta-params)
+    (let [movers (d/sample-beta-binomial n beta-params)
           non-movers (- n movers)]
-      (-> (d/sample-dirichlet-multinomial movers mover-dirichlet-params)
+      (-> (d/sample-dirichlet-multinomial movers dirichlet-params)
           (assoc need-setting non-movers)))
-    {})
-  )
+    {}))
+
+(defn predict-leavers
+  [{:keys [need-setting n beta-params]}]
+  (d/sample-beta-binomial n beta-params))
 
 (defn apply-leavers-movers-for-cohort-unsafe
   "We're calling this function 'unsafe' because it doesn't check whether the need-setting or
   or academic year range is valid."
   [[model transitions] [[year need-setting] population]
-   {:keys [leaver-beta-params mover-beta-params
-           mover-state-alphas valid-year-settings]}
+   {:keys [mover-state-alphas mover-beta-params leaver-beta-params
+           valid-year-settings] :as params}
    calendar-year]
   (if-let [mover-dirichlet-params (get mover-state-alphas [(dec year) need-setting])]
-    (let [leaver-params (get leaver-beta-params [(dec year) need-setting])
-          l (d/sample-beta-binomial population leaver-params)
+    (let [leavers (predict-leavers {:need-setting need-setting
+                                    :n population
+                                    :beta-params (get leaver-beta-params [(dec year) need-setting])})
           next-states-sample (if (states/can-move? valid-year-settings year need-setting)
-                               (let [mover-params (get mover-beta-params [(dec year) need-setting])]
-                                 (sample-send-transitions need-setting (- population l) mover-dirichlet-params mover-params))
-                               {need-setting (- population l)})
+                               (predict-movers {:need-setting need-setting
+                                                :n (- population leavers)
+                                                :beta-params (get mover-beta-params [(dec year) need-setting])
+                                                :dirichlet-params mover-dirichlet-params})
+                               {need-setting (- population leavers)})
           [model transitions] (incorporate-new-states-for-academic-year-state [model transitions] year need-setting next-states-sample calendar-year)]
       [model
-       (update transitions [calendar-year year need-setting c/non-send] m/some+ l)])
+       (update transitions [calendar-year year need-setting c/non-send] m/some+ leavers)])
     [model transitions]))
 
 (defn apply-leavers-movers-for-cohort
