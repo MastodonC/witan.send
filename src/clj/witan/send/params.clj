@@ -179,41 +179,41 @@
     (continue-for-latter-ays params academic-years)))
 
 
-(defn mover-alpha-priors
-  "Calculate uniform prior across all valid transitions from state"
+(defn- mover-alpha-prior
+  "Calculate prior by adding uniform distribution across allowed settings to observations and normalising."
   [need-setting valid-transitions valid-settings observations-per-ay ay]
   (let [[need setting] (s/split-need-setting need-setting)
         allowed-settings (clojure.set/intersection (set (get valid-settings [ay need]))
-                                                   (set (get valid-transitions setting))
-                              ;(remove #{setting})
-                          )
+                                                   (set (get valid-transitions setting)))
         prior (->> (zipmap allowed-settings (repeat (/ 1.0 (count allowed-settings))))
                    (merge-with + (get observations-per-ay ay))
                    (#(dissoc % setting)))
-        total (->> (vals prior) (apply +))
-        _ (println "new total" total)]
+        total (reduce + (vals prior))]
     (reduce (fn [coll [setting v]]
               (assoc coll (s/join-need-setting need setting) (double (/ v total))))
             {}
-            prior)
-    #_(zipmap (map #(s/join-need-setting need %) (keys prior)) (vals prior))))
+            prior)))
 
-
-
-(defn- find-duplicates
-  "Finds values that are duplicated in the seq"
-  [seq]
-  (for [[id freq] (frequencies seq)
-        :when (> freq 1)]
-    id))
+(defn- mover-observations-per-ay
+  [valid-states mover-transitions]
+  (let [academic-years (->> (map first valid-states)
+                            (distinct)
+                            (sort))
+        observations-per-ay (reduce (fn [coll {:keys [academic-year-1 setting-2]}]
+                                      (update-in coll [academic-year-1 setting-2] m/some+ 1))
+                                    {} mover-transitions)]
+    (reduce (fn [coll ay]
+              (if-let [v (or (get coll ay)
+                             (get coll (dec ay)))]
+                (assoc coll ay v)
+                coll))
+            observations-per-ay
+            academic-years)))
 
 (defn alpha-params-movers
   "calculates the rate of transitions to a new state at academic year X for state Y"
   [valid-states valid-transitions transitions]
-  (let [academic-years (->> (map first valid-states)
-                            (distinct)
-                            (sort))
-        mover-transitions (remove (fn [{:keys [setting-1 setting-2]}]
+  (let [mover-transitions (remove (fn [{:keys [setting-1 setting-2]}]
                                     (or (= setting-1 c/non-send)
                                         (= setting-2 c/non-send)
                                         (= setting-1 setting-2)))
@@ -223,44 +223,14 @@
                                                 (s/join-need-setting need-1 setting-1)
                                                 (s/join-need-setting need-2 setting-2)] m/some+ 1))
                              {} mover-transitions)
-
-        observations-per-ay (reduce (fn [coll {:keys [academic-year-1 _ _ _ setting-2]}]
-                                      (update-in coll [academic-year-1 setting-2] m/some+ 1))
-                                    {} mover-transitions)
-        observations-per-ay (reduce (fn [coll ay]
-                                      (if-let [v (or (get coll ay)
-                                                     (get coll (dec ay)))]
-                                        (assoc coll ay v)
-                                        coll))
-                                    observations-per-ay
-                                    academic-years)
         valid-settings (s/calculate-valid-settings-for-need-ay valid-states)]
     (reduce (fn [coll [ay need-setting]]
-              (let [obs (get-in observations [ay need-setting])
-                    state need-setting
-                    [need setting] (s/split-need-setting state)
-                    valid-trans (get valid-transitions setting)
-                    obs (get-in observations [ay state])
-                    ay-obs (get observations-per-ay ay)
-                    settings (->> (get valid-settings [ay need])
-                                  vec
-                                  (into valid-trans)
-                                  find-duplicates
-                                  vec)
-                    prior (->> (zipmap settings (repeat (/ 1.0 (count settings))))
-                               (merge-with + ay-obs))
-                    prior (dissoc prior setting)
-                    total (->> (vals prior) (apply +))
-                    _ (println "old total:" total)
-                    prior (reduce (fn [coll [setting v]]
-                                    (assoc coll (s/join-need-setting need setting) (double (/ v total))))
-                                  {}
-                                  prior)
-                    new-prior (mover-alpha-priors need-setting valid-transitions
-                                                  valid-settings observations-per-ay ay)
-                    _ (def op prior)
-                    _ (def np new-prior)
-                    _ (assert (= prior new-prior))]
-                (assoc coll [ay need-setting] (merge-with + new-prior obs))))
+              (let [obs-for-ay (get-in observations [ay need-setting])
+                    prior (mover-alpha-prior need-setting
+                                             valid-transitions
+                                             valid-settings
+                                             (mover-observations-per-ay valid-states mover-transitions)
+                                             ay)]
+                (assoc coll [ay need-setting] (merge-with + prior obs-for-ay))))
             {}
             valid-states)))
