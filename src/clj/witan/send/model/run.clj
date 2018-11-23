@@ -42,10 +42,10 @@
   multinomial."
   [{:keys [need-setting n dirichlet-params beta-params]}]
   (if (pos? n)
-    (let [movers (d/sample-beta-binomial n beta-params)
-          non-movers (- n movers)]
-      (-> (d/sample-dirichlet-multinomial movers dirichlet-params)
-          (assoc need-setting non-movers)))
+    (let [mover-n (d/sample-beta-binomial n beta-params)
+          non-mover-n (- n mover-n)]
+      (-> (d/sample-dirichlet-multinomial mover-n dirichlet-params)
+          (assoc need-setting non-mover-n)))
     {}))
 
 ;; (defn predict-joiners
