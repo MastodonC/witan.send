@@ -185,9 +185,10 @@
   (let [[need setting] (s/split-need-setting need-setting)
         allowed-settings (clojure.set/intersection (set (get valid-settings [ay need]))
                                                    (set (get valid-transitions setting)))
-        prior (->> (zipmap allowed-settings (repeat (/ 1.0 (count allowed-settings))))
-                   (merge-with + (get observations-per-ay ay))
-                   (#(dissoc % setting)))
+        prior (as-> allowed-settings s
+                (zipmap s (repeat (/ 1.0 (count allowed-settings))))
+                (merge-with + (get observations-per-ay ay) s)
+                (dissoc s setting))
         total (reduce + (vals prior))]
     (reduce (fn [coll [setting v]]
               (assoc coll (s/join-need-setting need setting) (double (/ v total))))
