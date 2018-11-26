@@ -1,5 +1,6 @@
 (ns witan.send.params
-  (:require [witan.send.constants :as c]
+  (:require [clojure.set :as set]
+            [witan.send.constants :as c]
             [witan.send.maths :as m]
             [witan.send.states :as s]))
 
@@ -64,7 +65,7 @@
   (let [academic-years (->> (map first valid-states)
                             (distinct)
                             (sort))
-        observations (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2 :as row]}]
+        observations (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 setting-2]}]
                                (if (= setting-1 c/non-send)
                                  coll
                                  (if (= setting-2 c/non-send)
@@ -120,7 +121,7 @@
   (let [academic-years (->> (map first valid-states)
                             (distinct)
                             (sort))
-        observations (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 need-2 setting-2]}]
+        observations (reduce (fn [coll {:keys [academic-year-1 need-1 setting-1 setting-2]}]
                                (if (or (= setting-1 c/non-send)
                                        (= setting-2 c/non-send))
                                  coll
@@ -183,8 +184,8 @@
   "Calculate prior by adding uniform distribution across allowed settings to observations and normalising."
   [need-setting valid-transitions valid-settings observations-per-ay ay]
   (let [[need setting] (s/split-need-setting need-setting)
-        allowed-settings (clojure.set/intersection (set (get valid-settings [ay need]))
-                                                   (set (get valid-transitions setting)))
+        allowed-settings (set/intersection (set (get valid-settings [ay need]))
+                                           (set (get valid-transitions setting)))
         prior (as-> allowed-settings s
                 (zipmap s (repeat (/ 1.0 (count allowed-settings))))
                 (merge-with + (get observations-per-ay ay) s)
