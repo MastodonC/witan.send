@@ -34,7 +34,7 @@
 
   Also work out how much of the population remains (non-movers) and
   add to the results.
-  
+
   Note: the actual results are the combination of chaining the beta
   and binomial distributions or the Dirichlet and multinomial
   distribution.  Beta and Dirichlet are used to sample a distribution
@@ -47,16 +47,6 @@
       (-> (d/sample-dirichlet-multinomial mover-n dirichlet-params)
           (assoc need-setting non-mover-n)))
     {}))
-
-;; (defn predict-joiners
-;;   "Returns a map of predicted need-setting counts for joiners for a
-;;   given population n` with the provided probability distribution
-;;   parameters."
-;;   [{:keys [n dirichlet-params beta-params]}]
-;;   (if (pos? n)
-;;     (let [joiners (d/sample-beta-binomial n beta-params)]
-;;       (if (pos? joiners)
-;;         (d/sample-dirichlet-multinomial dirichlet-params)))))
 
 (defn predict-leavers
   [{:keys [need-setting n beta-params]}]
@@ -106,39 +96,29 @@
     :else
     (apply-leavers-movers-for-cohort-unsafe population-by-state cohort params calendar-year)))
 
+(defn predict-joiners
+  "Returns a map of predicted need-setting counts for joiners for a
+  given population n` with the provided probability distribution
+  parameters."
+  [{:keys [n dirichlet-params beta-params]}]
+  (when (and n dirichlet-params beta-params (pos? n))
+    (let [joiners (d/sample-beta-binomial n beta-params)]
+      (when (pos? joiners)
+        (d/sample-dirichlet-multinomial joiners dirichlet-params)))))
 
 (defn apply-joiners-for-academic-year
   [[model transitions] academic-year population {:keys [joiner-beta-params joiner-state-alphas]} calendar-year]
   (let [betas (get joiner-beta-params academic-year)
         alphas (get joiner-state-alphas academic-year)
         pop (get population academic-year)]
-    (if (and alphas betas pop (every? pos? (vals betas)))
-      (let [joiners (d/sample-beta-binomial pop betas)]
-        (if (zero? joiners)
-          [model transitions]
-          (let [joiner-states (d/sample-dirichlet-multinomial joiners alphas)]
-            (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
-                                                          :academic-year academic-year :need-setting c/non-send
-                                                          :predicted-populations joiner-states
-                                                          :calendar-year calendar-year}))))
+    (if-let [joiners (predict-joiners {:n pop
+                                       :beta-params betas
+                                       :dirichlet-params alphas})]
+      (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
+                                                    :academic-year academic-year :need-setting c/non-send
+                                                    :predicted-populations joiners
+                                                    :calendar-year calendar-year})
       [model transitions])))
-
-;; Rework doesn't pass tests
-;; (defn apply-joiners-for-academic-year
-;;   [[model transitions] academic-year population {:keys [joiner-beta-params joiner-state-alphas]} calendar-year]
-;;   (let [betas (get joiner-beta-params academic-year)
-;;         alphas (get joiner-state-alphas academic-year)
-;;         pop (get population academic-year)]
-;;     (if (and alphas betas pop (every? pos? (vals betas)))
-;;       (let [joiners (predict-joiners {:n pop
-;;                                       :beta-params betas
-;;                                       :dirichlet-params alphas})]
-;;         (if joiners
-;;           (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
-;;                                                         :academic-year academic-year :need-setting c/non-send
-;;                                                         :predicted-populations joiners
-;;                                                         :calendar-year calendar-year})
-;;           [model transitions])))))
 
 (defn run-model-iteration
   "Takes the model & transitions, transition params, and the projected population and produce the next state of the model & transitions"
