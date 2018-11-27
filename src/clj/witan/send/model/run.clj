@@ -111,7 +111,7 @@
   (let [betas (get joiner-beta-params academic-year)
         alphas (get joiner-state-alphas academic-year)
         pop (get population academic-year)]
-    (if (and alphas betas pop (every? pos? (vals betas)))
+    (if (and alphas betas pop)
       (let [joiners (predict-joiners {:n pop
                                       :beta-params betas
                                       :dirichlet-params alphas})]
