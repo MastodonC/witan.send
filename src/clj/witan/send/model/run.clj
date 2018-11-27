@@ -96,24 +96,6 @@
     :else
     (apply-leavers-movers-for-cohort-unsafe population-by-state cohort params calendar-year)))
 
-
-;; (defn apply-joiners-for-academic-year
-;;   [[model transitions] academic-year population {:keys [joiner-beta-params joiner-state-alphas]} calendar-year]
-;;   (let [betas (get joiner-beta-params academic-year)
-;;         alphas (get joiner-state-alphas academic-year)
-;;         pop (get population academic-year)]
-;;     (if (and alphas betas pop (every? pos? (vals betas)))
-;;       (let [joiners (d/sample-beta-binomial pop betas)]
-;;         (if (zero? joiners)
-;;           [model transitions]
-;;           (let [joiner-states (d/sample-dirichlet-multinomial joiners alphas)]
-;;             (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
-;;                                                           :academic-year academic-year :need-setting c/non-send
-;;                                                           :predicted-populations joiner-states
-;;                                                           :calendar-year calendar-year}))))
-;;       [model transitions])))
-
-;; Rework doesn't pass tests
 (defn predict-joiners
   "Returns a map of predicted need-setting counts for joiners for a
   given population n` with the provided probability distribution
