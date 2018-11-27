@@ -101,7 +101,7 @@
   given population n` with the provided probability distribution
   parameters."
   [{:keys [n dirichlet-params beta-params]}]
-  (when (pos? n)
+  (when (and n dirichlet-params beta-params (pos? n))
     (let [joiners (d/sample-beta-binomial n beta-params)]
       (when (pos? joiners)
         (d/sample-dirichlet-multinomial joiners dirichlet-params)))))
@@ -111,16 +111,13 @@
   (let [betas (get joiner-beta-params academic-year)
         alphas (get joiner-state-alphas academic-year)
         pop (get population academic-year)]
-    (if (and alphas betas pop)
-      (let [joiners (predict-joiners {:n pop
-                                      :beta-params betas
-                                      :dirichlet-params alphas})]
-        (if joiners
-          (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
-                                                        :academic-year academic-year :need-setting c/non-send
-                                                        :predicted-populations joiners
-                                                        :calendar-year calendar-year})
-          [model transitions]))
+    (if-let [joiners (predict-joiners {:n pop
+                                       :beta-params betas
+                                       :dirichlet-params alphas})]
+      (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
+                                                    :academic-year academic-year :need-setting c/non-send
+                                                    :predicted-populations joiners
+                                                    :calendar-year calendar-year})
       [model transitions])))
 
 (defn run-model-iteration
