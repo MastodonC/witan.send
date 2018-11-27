@@ -60,7 +60,7 @@
     (so/output-send-results
      (send/run-send-workflow config)
      (:output-parameters config))
-    (when (get-in config [:validation-parameters :run-as-default])
+    (when (get-in config [:validation-parameters :run-validation])
       (vm/run-send-validation config))
     (save-runtime-config config)
     (save-runtime-metadata config metadata)))
