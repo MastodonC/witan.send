@@ -205,6 +205,10 @@ ggsave(paste0(output_dir, "/Need_Trends.pdf"))
 
 ### Projected special setting count ###
 
+df_valid_settings <- read.csv(paste0(output_dir, "/valid-settings.csv"), header = FALSE) %>%
+  mutate_all(funs(remove_colons)) %>%
+  rename(Setting = V1, Type = V2)
+
 df_projected_set <- read.csv(paste0(output_dir, "/Output_Setting.csv")) %>%
   select(calendar.year, setting, mean) %>%
   rename(Setting = setting)
@@ -217,8 +221,10 @@ df_historical_set <- df_historical %>%
 
 df_set <- rbind(df_historical_set[,c(2,1,3)], df_projected_set)
 
-df_set_ss <- df_set %>%
-  filter(str_detect(Setting, 'SS'))
+df_set_type <- merge(df_set,  df_valid_settings, by="Setting")
+
+df_set_ss <- df_set_type %>%
+  filter(str_detect(Type, 'Special'))
 
 y_max <- df_set_ss %>%
   summarise(max = sum(mean[calendar.year == max(df_projected_set$calendar.year)]))
@@ -236,12 +242,6 @@ ggsave(paste0(output_dir, "/Special_Setting_Counts.pdf"))
 
 
 ### Projected aggregate setting count ###
-
-df_valid_settings <- read.csv(paste0(output_dir, "/valid-settings.csv"), header = FALSE) %>%
-  mutate_all(funs(remove_colons)) %>%
-  rename(Setting = V1, Type = V2)
-
-df_set_type <- merge(df_set,  df_valid_settings, by="Setting")
 
 df_type <- df_set_type %>%
   filter(Setting != "NONSEND") %>%
@@ -334,7 +334,7 @@ sankey <- function(data, title) {
     theme(axis.title.x = element_blank(), axis.text.y = element_blank())
 }
 
-### SEND Primary to Secondary Transitions ###
+### Historic Primary to Secondary Transitions ###
 
 df_prim_sec_trans <- df_historical %>%
   filter(setting.1 != "NONSEND" & academic.year.1 == 6) %>%
@@ -430,7 +430,7 @@ ribbon_plot <- function(data, title) {
                         cum_ribbon_text,
                         "ggtitle(paste(title, \"probability by academic year\")) +",
                         "xlab(\"NCY\") + ",
-                        "ylab(\"95% probability interval\") +",
+                        "ylab(\"Probability of transition\") +",
                         "scale_fill_manual(name = \"Years\", labels = years, values = colour_palette) +",
                         "scale_x_continuous(breaks = c(-2, 0, 2, 4, 6, 8, 10, 12), limit = c(-3, 12))"
                         )
