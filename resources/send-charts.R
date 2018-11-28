@@ -29,9 +29,15 @@ evaluate_string <- function(string) {
   eval(parse(text=string))
 }
 
-### Variables for all charts ###
+remove_colons <- function(x) {str_replace(x, ':', '')}
 
-remove_colons <-  function(x) {str_replace(x, ':', '')}
+if_acronym <- function(string) {
+  ifelse(string == toupper(string),
+         return(string),
+         return(str_to_title(string)))
+}
+
+### Variables for all charts ###
 
 df_historical <- read.csv(paste0(output_dir, "/historic-data.csv")) %>%
   mutate_all(funs(remove_colons)) %>%
@@ -168,14 +174,14 @@ for(i in 1:4) {
 
 df_projected_need <- read.csv(paste0(output_dir, "/Output_Need.csv")) %>%
   mutate(need = gsub("_", " ", need)) %>%
-  mutate(need = str_to_title(need)) %>%
+  mutate(need = if_acronym(need)) %>%
   select(calendar.year, need, mean) %>%
   rename(Need = need)
 
 df_historical_need <- df_historical %>%
   filter(need.1 != "NONSEND" | setting.1 != "NONSEND") %>%
   mutate(need.1 = gsub("_", " ", need.1)) %>%
-  mutate(need.1 = str_to_title(need.1)) %>%
+  mutate(need.1 = if_acronym(need.1)) %>%
   group_by(need.1, calendar.year) %>%
   count() %>%
   rename(Need = need.1, mean = n) %>%
