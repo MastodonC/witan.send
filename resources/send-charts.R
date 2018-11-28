@@ -430,7 +430,7 @@ ribbon_plot <- function(data, title) {
                         cum_ribbon_text,
                         "ggtitle(paste(title, \"probability by academic year\")) +",
                         "xlab(\"NCY\") + ",
-                        "ylab(\"95% probability interval\") +",
+                        "ylab(\"Probability of transition\") +",
                         "scale_fill_manual(name = \"Years\", labels = years, values = colour_palette) +",
                         "scale_x_continuous(breaks = c(-2, 0, 2, 4, 6, 8, 10, 12), limit = c(-3, 12))"
                         )
