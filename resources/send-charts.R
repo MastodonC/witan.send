@@ -60,21 +60,23 @@ df_historical_ay <- df_historical %>%
   rename(mean = n) %>%
   as.data.frame()
 
-df_ay <- rbind(df_historical_ay[,c(2,1,3)], df_projected_ay) %>%
-    transform(academic.year = as.numeric(academic.year))
+prep_ay_groups <- function(data) {
+  data %>%
+    group_by(calendar.year) %>%
+    summarise(NCY_0_under = sum(mean[academic.year <= 0]),
+              NCY_1_6 =  sum(mean[academic.year >= 1 & academic.year <= 6]),
+              NCY_7_11 = sum(mean[academic.year >= 7 & academic.year <= 11]),
+              NCY_12_13 = sum(mean[academic.year >= 12 & academic.year <= 13]),
+              NCY_14_up = sum(mean[academic.year >= 14])) %>%
+    melt("calendar.year")
+}
 
-plot_ay <- df_ay %>%
-  group_by(calendar.year) %>%
-  summarise(NCY_0_under = sum(mean[academic.year <= 0]),
-            NCY_1_6 =  sum(mean[academic.year >= 1 & academic.year <= 6]),
-            NCY_7_11 = sum(mean[academic.year >= 7 & academic.year <= 11]),
-            NCY_12_13 = sum(mean[academic.year >= 12 & academic.year <= 13]),
-            NCY_14_up = sum(mean[academic.year >= 14])) %>%
-  melt("calendar.year")
+df_ay <- prep_ay_groups(rbind(df_historical_ay[,c(2,1,3)], df_projected_ay) %>%
+  transform(academic.year = as.numeric(academic.year)))
 
-y_max <- max(plot_ay$value)
+y_max <- max(df_ay$value)
 
-ggplot(plot_ay, aes(x=calendar.year, y=value, group=variable)) +
+ggplot(df_ay, aes(x=calendar.year, y=value, group=variable)) +
   geom_line(aes(color=variable)) +
   geom_point(aes(color=variable)) +
   scale_x_discrete(name='Calendar Year') +
