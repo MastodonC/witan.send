@@ -443,9 +443,9 @@ df_joiner_ribbon_data <- read.csv(paste0(output_dir, "/joiner-rates.csv"), na.st
 df_leaver_ribbon_data <- read.csv(paste0(output_dir, "/leaver-rates.csv"), na.strings=":NA")
 df_mover_ribbon_data <- read.csv(paste0(output_dir, "/mover-rates.csv"), na.strings=":NA")
 
-ribbon_plot(df_joiner_ribbon_data, "Joiner")
-ribbon_plot(df_leaver_ribbon_data, "Leaver")
-ribbon_plot(df_mover_ribbon_data, "Mover")
+#ribbon_plot(df_joiner_ribbon_data, "Joiner")
+#ribbon_plot(df_leaver_ribbon_data, "Leaver")
+#ribbon_plot(df_mover_ribbon_data, "Mover")
 
 ### Delete automatically produced Rplots.pdf file ###
 
