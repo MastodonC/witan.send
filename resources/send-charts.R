@@ -60,21 +60,23 @@ df_historical_ay <- df_historical %>%
   rename(mean = n) %>%
   as.data.frame()
 
-df_ay <- rbind(df_historical_ay[,c(2,1,3)], df_projected_ay) %>%
-    transform(academic.year = as.numeric(academic.year))
+prep_ay_groups <- function(data) {
+  data %>%
+    group_by(calendar.year) %>%
+    summarise(NCY_0_under = sum(mean[academic.year <= 0]),
+              NCY_1_6 =  sum(mean[academic.year >= 1 & academic.year <= 6]),
+              NCY_7_11 = sum(mean[academic.year >= 7 & academic.year <= 11]),
+              NCY_12_13 = sum(mean[academic.year >= 12 & academic.year <= 13]),
+              NCY_14_up = sum(mean[academic.year >= 14])) %>%
+    melt("calendar.year")
+}
 
-plot_ay <- df_ay %>%
-  group_by(calendar.year) %>%
-  summarise(NCY_0_under = sum(mean[academic.year <= 0]),
-            NCY_1_6 =  sum(mean[academic.year >= 1 & academic.year <= 6]),
-            NCY_7_11 = sum(mean[academic.year >= 7 & academic.year <= 11]),
-            NCY_12_13 = sum(mean[academic.year >= 12 & academic.year <= 13]),
-            NCY_14_up = sum(mean[academic.year >= 14])) %>%
-  melt("calendar.year")
+df_ay <- prep_ay_groups(rbind(df_historical_ay[,c(2,1,3)], df_projected_ay) %>%
+  transform(academic.year = as.numeric(academic.year)))
 
-y_max <- max(plot_ay$value)
+y_max <- max(df_ay$value)
 
-ggplot(plot_ay, aes(x=calendar.year, y=value, group=variable)) +
+ggplot(df_ay, aes(x=calendar.year, y=value, group=variable)) +
   geom_line(aes(color=variable)) +
   geom_point(aes(color=variable)) +
   scale_x_discrete(name='Calendar Year') +
@@ -89,6 +91,73 @@ ggplot(plot_ay, aes(x=calendar.year, y=value, group=variable)) +
 
 ggsave(paste0(output_dir, "/NCY_Population_Trends.pdf"))
 
+### Project count by need and AY ###
+
+df_projected_state <- read.csv(paste0(output_dir, "/Output_State.csv")) %>%
+  select(calendar.year, academic.year, mean, need.setting) %>%
+  mutate(need.setting = gsub(":", "", need.setting)) %>%
+  mutate(need = gsub("-.*$", "", df_projected_state$need.setting)) %>%
+  mutate(setting =gsub("^.*-", "", df_projected_state$need.setting))
+
+df_projected_need_ay_counts <- df_projected_state %>%
+  group_by(need, calendar.year, academic.year) %>%
+  summarise(mean = sum(mean)) %>%
+  as.data.frame()
+
+dir.create(paste0(output_dir, "/needs"))
+
+plot_need_ay <- function(data, need_str) {
+  need_data <- prep_ay_groups(data %>% filter(need == need_str))
+  ggplot(need_data, aes(x=calendar.year, y=value, group=variable)) +
+    geom_line(aes(color=variable)) +
+    geom_point(aes(color=variable)) +
+    scale_x_continuous(name="Calendar Year", breaks=need_data$calendar.year) +
+    scale_y_continuous(name='SEND Population') +
+    scale_color_manual(name = "NCY",
+                       values = c("cyan", "coral", "dodgerblue", "hotpink", "green4"),
+                       labels = c("0 and under", "1 to 6", "7 to 11", "12 to 13", "14 and up")) +
+    theme_bw() +
+    ggtitle(paste(need_str, "Trends, grouped by National Curriculum Years")) #+
+  #geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") #+ ## Add back in for historical data
+  #annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
+  ggsave(paste(output_dir, "/needs/", need_str, "_Trends.pdf",sep=""))
+}
+
+for (n in unique(df_projected_need_ay_counts$need)){
+  plot_need_ay(df_projected_need_ay_counts, n)
+}
+
+### Project count by setting and AY ###
+
+df_projected_setting_ay_counts <- df_projected_state %>%
+  group_by(setting, calendar.year, academic.year) %>%
+  summarise(mean = sum(mean)) %>%
+  as.data.frame()
+
+dir.create(paste0(output_dir, "/settings"))
+
+plot_setting_ay <- function(data, setting_str) {
+  setting_data <- prep_ay_groups(data %>% filter(setting == setting_str))
+  ggplot(setting_data, aes(x=calendar.year, y=value, group=variable)) +
+    geom_line(aes(color=variable)) +
+    geom_point(aes(color=variable)) +
+    scale_x_continuous(name="Calendar Year", breaks=setting_data$calendar.year) +
+    scale_y_continuous(name='SEND Population') +
+    scale_color_manual(name = "NCY",
+                       values = c("cyan", "coral", "dodgerblue", "hotpink", "green4"),
+                       labels = c("0 and under", "1 to 6", "7 to 11", "12 to 13", "14 and up")) +
+    theme_bw() +
+    ggtitle(paste(setting_str, "Trends, grouped by National Curriculum Years")) #+
+  #geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") #+ ## Add back in for historical data
+  #annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
+  ggsave(paste(output_dir, "/settings/", setting_str, "_Trends.pdf",sep=""))
+}
+
+plot_setting_ay(df_projected_setting_ay_counts, "MU")
+
+for (s in unique(df_projected_setting_ay_counts$setting)){
+  plot_setting_ay(df_projected_setting_ay_counts, s)
+}
 
 ### Projected count by setting ###
 
