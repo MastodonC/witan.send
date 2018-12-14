@@ -131,43 +131,141 @@
               :mover-beta-params (p/beta-params-movers validate-valid-states valid-transitions transitions)
               :mover-state-alphas  (p/alpha-params-movers validate-valid-states valid-transitions transitions)}))))
 
-(defn generate-transition-key [{:keys [transition-type cy ay need setting move-state]}]
-  (when (not= move-state (states/join-need-setting need setting))
-    (case transition-type
-      "joiners"
-      (vector cy ay :NONSEND (states/join-need-setting need setting))
+(defn generate-transition-key [{:keys [transition-type cy ay need setting]}]
+  (case transition-type
+    "joiners"
+    (vector cy ay :NONSEND (states/join-need-setting need setting))
 
-      "leavers"
-      (vector cy ay (states/join-need-setting need setting) :NONSEND)
+    "leavers"
+    (vector cy ay (states/join-need-setting need setting) :NONSEND)
 
-      "movers-to"
-      (vector cy ay move-state (states/join-need-setting need setting))
+    "movers-to"
+    ;;(vector cy ay (second %) (states/join-need-setting need setting))
 
-      "movers-from"
-      (vector cy ay (states/join-need-setting need setting) move-state))))
+    "movers-from"
+    ;;(vector cy ay (states/join-need-setting need setting) (second %))
+    ))
 
-(defn build-transitions-to-change [input valid-needs valid-settings ages years transition-type]
-  (let [to-maps (ds/row-maps input)
-        settings-to-change (if (= :nil (-> to-maps
-                                           first
-                                           :setting-2))
-                             (map #(vector (:setting-1 %)) to-maps)
-                             (map #(vector (:setting-1 %) (:setting-2 %)) to-maps))]
-    (->> (for [year years
-               age ages
-               need valid-needs
-               setting valid-settings
-               setting-to-change settings-to-change]
-           (let [keys {:transition-type transition-type :cy year :ay age
-                       :need need :move-state (states/join-need-setting need setting)}]
-             (if (= :nil (-> to-maps
-                             first
-                             :setting-2))
-               (vector (generate-transition-key (merge keys {:setting (first setting-to-change)})))
-               (vector (generate-transition-key (merge keys {:setting (first setting-to-change)}))
-                       (generate-transition-key (merge keys {:setting (second setting-to-change)}))))))
-         (remove #(nil? (first %)))
-         distinct)))
+
+(defn build-states [input valid-states]
+  (let [valid-states-1 (cond (contains? input :setting-1)
+                             (filter (fn [state]
+                                       (= (second (states/split-need-setting (second state)))
+                                          (:setting-1 input))) valid-states)
+                             (contains? input :need-1)
+                             (filter (fn [state]
+                                       (= (first (states/split-need-setting (second state)))
+                                          (:need-1 input))) valid-states)
+                             (contains? input :academic-year-1)
+                             (filter (fn [state]
+                                       (= (first state)
+                                          (:academic-year-1 input))) valid-states))
+
+        valid-states-2 (cond (contains? input :setting-2)
+                             (filter (fn [state]
+                                       (= (second (states/split-need-setting (second state)))
+                                          (:setting-2 input))) valid-states)
+
+                             (contains? input :need-2)
+                             (filter (fn [state]
+                                       (= (first (states/split-need-setting (second state)))
+                                          (:need-2 input))) valid-states)
+
+                             (contains? input :academic-year-2)
+                             (filter (fn [state]
+                                       (= (first state)
+                                          (:academic-year-2 input))) valid-states))
+
+        min-ay (max (apply min (map first valid-states-2)) (apply min (map first valid-states-1)))
+        max-ay (min (apply max (map first valid-states-2)) (apply max (map first valid-states-1)))
+
+        valid-states-1 (filter #(and (<= min-ay (first %)) (>= max-ay (first %))) valid-states-1)
+        valid-states-2 (filter #(and (<= min-ay (first %)) (>= max-ay (first %))) valid-states-2)]
+    (map #(into [%1 %2]) valid-states-1 valid-states-2)))
+
+(defn build-transitions-to-change [input valid-needs valid-settings validate-valid-states years transition-type]
+  (let [entity-1 (-> input :column-names first) ;; entity types
+        entity-2 (-> input :column-names second)
+        to-maps (ds/row-maps input)
+
+        states (if (= :nil (-> to-maps first :setting-2))
+                 (mapcat vector (map (fn [input]
+                                       (filter (fn [state]
+                                                 (= (second (states/split-need-setting (second state)))
+                                                    (:setting-1 input))) validate-valid-states)) to-maps))
+                 (mapcat #(build-states % validate-valid-states) to-maps))
+
+        _ (print "here")]
+    (map (fn [[[ay ns]]] (generate-transition-key ;;; needs testing, also need to get this to work across two states
+                          {:transition-type transition-type
+                           :cy 2015
+                           :ay ay
+                           :need-1 (first (states/split-need-setting ns))
+                           :setting-1 (second (states/split-need-setting ns))
+                           :need-2 nil
+                           :setting-2 nil})) states)
+    #_ (map (fn [cal-year] (map (fn [state-1] [(generate-transition-key
+                                                {:transition-type transition-type
+                                                 :cy cal-year
+                                                 :ay (first state-1)
+                                                 :need (first (states/split-need-setting (second state-1)))
+                                                 :setting (second (states/split-need-setting (second state-1)))
+                                                 :states validate-valid-states})]) build-states-1)) years)
+    #_(map (fn [state-1 state-2] (map #(into [%1 %2])
+                                      (when (= (first state-1) (first state-2))
+                                        (do (generate-transition-key
+                                             {:transition-type transition-type
+                                              :cy 2015
+                                              :ay (first state-1)
+                                              :need (first (states/split-need-setting (second state-1)))
+                                              :setting (second (states/split-need-setting (second state-1)))
+                                              :states validate-valid-states})
+                                            (generate-transition-key
+                                             {:transition-type transition-type
+                                              :cy 2015
+                                              :ay (first state-2)
+                                              :need (first (states/split-need-setting (second state-2)))
+                                              :setting (second (states/split-need-setting (second state-2)))
+                                              :states validate-valid-states}))))) build-states-1 build-states-2)
+    #_(mapcat (fn [year] (if entity-2
+                           (map (fn [state-1 state-2] [(generate-transition-key
+                                                        {:transition-type transition-type
+                                                         :cy year
+                                                         :ay (first state-1)
+                                                         :need (first (states/split-need-setting (second state-1)))
+                                                         :setting (second (states/split-need-setting (second state-1)))
+                                                         :states validate-valid-states})
+                                                       (generate-transition-key
+                                                        {:transition-type transition-type
+                                                         :cy year
+                                                         :AY (first state-2)
+                                                         :need (first (states/split-need-setting (second state-2)))
+                                                         :setting (second (states/split-need-setting (second state-2)))
+                                                         :states validate-valid-states})]) build-states-1 build-states-2)
+                           (map (fn [state] [(generate-transition-key
+                                              {:transition-type transition-type
+                                               :cy year
+                                               :ay (first state)
+                                               :need (first (states/split-need-setting (second state)))
+                                               :setting (second (states/split-need-setting (second state)))
+                                               :states validate-valid-states})
+                                             ]) build-states-1))) years)
+    #_(->> (for [year years
+                 ay ays
+                 need valid-needs
+                 setting valid-settings
+                 entity-to-change entities-to-change]
+             (let [keys {:transition-type transition-type :cy year :ay ay
+                         :need need :move-state (states/join-need-setting need setting)}]
+               (if (= :nil (-> to-maps
+                               first
+                               :setting-2))
+                 (vector (generate-transition-key (merge keys {:setting (first entity-to-change)})))
+                 (vector (generate-transition-key (merge keys {:setting (first entity-to-change)}))
+                         (generate-transition-key (merge keys {:setting (second entity-to-change)}))))))
+           (remove #(nil? (first %)))
+           distinct)
+    ))
 
 (defn update-ifelse-assoc [m k arithmetic-fn v]
   (if (contains? m k)
@@ -202,7 +300,7 @@
                     (ds/row-maps valid-states))
   (let  [original-transitions transitions
          ages (distinct (map :academic-year (ds/row-maps population)))
-         years (distinct (map :calendar-year (ds/row-maps population)))
+         years (distinct (map :calendar-year (ds/row-maps transitions)))
          initialise-validation (ds/row-maps valid-states)
          valid-transitions (states/calculate-valid-mover-transitions
                             initialise-validation)
@@ -218,7 +316,8 @@
                                  (mapcat (fn [transition-type]
                                            (build-transitions-to-change settings-to-change
                                                                         valid-needs valid-settings
-                                                                        ages years transition-type))
+                                                                        validate-valid-states
+                                                                        years transition-type))
                                          which-transitions?))
          transitions (ds/row-maps transitions)
          modified-transitions (when modify-transition-by

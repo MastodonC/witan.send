@@ -1,12 +1,13 @@
 {:file-inputs {:transitions "data/transitions.csv"
                :population "data/population.csv"
                :costs "data/costs.csv"
-               :valid-states "data/valid-states.csv"}
+               :valid-states "data/valid-states.csv"
+               :settings-to-change "data/modify-settings3.csv"}
 
  :scenario-parameters {:filter-transitions-from nil
-                       :which-transitions? nil
+                       :which-transitions? ["movers-to"]
                        :splice-ncy nil
-                       :modify-transition-by nil
+                       :modify-transition-by 0.5
                        :modify-transitions-from nil}
 
  :projection-parameters {:random-seed 50
