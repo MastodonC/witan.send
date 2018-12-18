@@ -170,7 +170,7 @@ In Fig.\ref{state} $Y_{n+1}$ is the next state of our Markov Chain.
 
 How we transition from $Y_{n}$ to $Y_{n+1}$ is the subject of the next
 section.  However, it's worth noting now that the dotted arrows on the
-diagram represent how the $T$'s of one academic year transition into
+diagram represent how the $t$'s of one academic year transition into
 the next academic year, in the following calendar year.
 
 The complete state of the model is represented as $S = \{Y_0, \dots,
@@ -258,8 +258,9 @@ populations in year $n$ by
 
 $Y_n = Y_0 \cdot P^n$
 
-Of note is that this equation requires no tracking of $T's$ we can simply
-use the above formula to work out $Y_n$. BUT we don't do this!  Why?
+Of note is that this equation requires no tracking of $t$'s we can
+simply use the above formula to work out $Y_n$. BUT we don't do this!
+Why?
 
 \subsubsection{Send is not MC}
 
@@ -275,9 +276,10 @@ Further, we also use more than the just the initial state, in our
 algorithmic predictions.  The model incorporates external population
 data for each predicted calendar year.
 
-As we will come to see the algorithmic approach to working out the $T$
-in $Y_n$ introduces stochastic processes. Thus we introduce the need
-to use Monte Carlo methods to ensure confidence in our calculations.
+As we will come to see the algorithmic approach to working out the
+$t$'s in $Y_n$ introduces stochastic processes. Thus we introduce the
+need to use Monte Carlo methods to ensure confidence in our
+calculations.
 
 The model can be thought of as a simulation in with a simulation clock
 that ticks once a calendar year. On clock tick all the entities have
@@ -605,9 +607,9 @@ into our entity from all the other entities.
 
 \subsection{A Case Study}
 
-We go through the calculation of an entity's next state to show how
-the algorithm works and to embed the meaning of the myriad of
-parameters.
+We go through the calculation of an entity's next state (via the
+leaver and joiner calculations) to show how the algorithm works and to
+embed the meaning of the myriad of parameters.
 
 Let's us consider need a, setting b, in academic year 1, the calendar
 year of 2018 - this entity at this time has a population of 100.  The
@@ -670,7 +672,92 @@ j_{s_a,n_b,ay_1} = \bigg[\text{Multinomial}( & \text{Binomial}(p_{ay_1},
 Let's assume our external population $p_{ay_1}$ is predicted to be a
 1000 for $ay_1$ in 2019.
 
-For our two years of historic data let's assume it's 
+For our two years of historic data let's assume the predicted
+populations are 900 and 1100.
+
+Let's also say that the number of joiners in our historic data is 30
+and 20 over all needs and settings for $ay_1$.
+
+A first pass at expectation based on this data is:
+
+$\frac{30+20}{900 + 1100} = 0.025$
+
+Like before we need would like some variance in this value, so we use
+the beta distribution again.
+
+\begin{equation*}
+  \begin{split}
+\text{Beta}(\frac{\alpha^j_{ay_1}}{cy_{obs}},\frac{p_{ay_1}
+  -\alpha^j_{ay_1}}{cy_{obs}}) = \text{Beta}(\frac{20+30}{2},\frac{900
+  + 1100 - 20 - 30}{2}) = \text{Beta}(25,975) = 0.02501
+  \end{split}
+\end{equation*}
+
+note: ignore the division through by calendar years for now (it
+doesn't effect expectation only the variance)
+
+We once more use the binomial to get a varied value from the
+population and the expectation.
+
+$\text{Binomial}(p_{ay_1}, 0.02501) = \text{Binomial}(1000, 0.02501) = 25$
+
+Armed with the fact we have 25 joiners for academic
+year 1 in 2019 our equation reduces to:
+
+\begin{equation*}
+  \begin{split}
+j_{s_a,n_b,ay_1} = \bigg[\text{Multinomial}(25, \text{Dirichlet}(\alpha^{j}_{s_a,n_b,ay_1}, \dots
+, \alpha^{j''}_{s_{x''},n_{y''},ay_{1}}))\bigg]_{s_a,n_b,ay_1}
+  \end{split}
+\end{equation*}
+
+This part deals with assigning those 25 pupils to specific entities.
+Assuming our historic data for academic year one has one other valid
+setting need c and setting d - what are the proportions of the
+population between the two entities?
+
+Let's say ab1 has populations of 20 and 40 over the two years and cd1
+has populations of 60 an 80.  Then we can say 30\% of the population
+is in ab1 and 70\% of the population is in cd1.
+
+We can use these percentages to distribute the 25 joiners
+appropriately.  Like before we'd like to vary this and the dirichlet
+performs the same job as the beta in this regard. So,
+
+\begin{equation*}
+  \begin{split}
+\text{Dirichlet}(\alpha^{j}_{s_a,n_b,ay_1}, \dots,
+\alpha^{j''}_{s_{x''},n_{y''},ay_{1}}) & =  \text{Dirichlet}(20 +
+40_{s_a,n_b,ay_1}, 60 + 80_{s_c,n_d,ay_1}) \\
+& = \text{Dirichlet}(60_{s_a,n_b,ay_1}, 140_{s_c,n_d,ay_1}) \\
+& = [0.29_{s_a,n_b,ay_1}, 0.71_{s_c,n_d,ay_1}]
+  \end{split}
+\end{equation*}
+
+Again rather than simply calculate the distribution based on these
+percentages we introduce variance by using the multinomial to vary the
+results (this plays the same role as the binomial from before).  Thus
+
+\begin{equation*}
+  \begin{split}
+\text{Multinomial}(25, [0.29_{s_a,n_b,ay_1}, 0.71_{s_c,n_d,ay_1}]) = [
+7_{s_a,n_b,ay_1}, 17_{s_c,n_d,ay_1}]
+  \end{split}
+\end{equation*}
+
+The result is a vector and as we calculating for only ${s_a,n_b,ay_1}$
+the last thing we do is pull it's index out (the square brackets in
+the algorithm and it's index represent that).  Thus we have 7 joiners
+in this case.
+
+These two walk-throughs should provide enough to understand the
+mechanism for the movers and non-movers.  The only real difference is
+that the mover multinomial results have to be calculated for every
+single entity and from each resulting vector you need to take
+population prediction for the entity we are interested in and sum.
+This is left to the reader.
+
+
 \section{Other Things To Do}
 
 \begin{itemize}
