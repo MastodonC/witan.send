@@ -94,9 +94,11 @@
   (= string "interval"))
 
 (defn r-plots [dir settings-to-exclude use-confidence-bound-or-interval]
-  (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir
-         (if (nil? settings-to-exclude) "" settings-to-exclude)
-         (if (bound-or-interval? use-confidence-bound-or-interval) ".ci" ".95pc.bound")))
+  (let [response (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir
+                        (if (nil? settings-to-exclude) "" settings-to-exclude)
+                        (if (bound-or-interval? use-confidence-bound-or-interval) ".ci" ".95pc.bound"))]
+  (if-not (zero? (:exit response))
+    (throw (Exception. (:err response))))))
 
 (defn output-send-results
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
