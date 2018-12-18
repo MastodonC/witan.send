@@ -261,26 +261,41 @@ $Y_n = Y_0 \cdot P^n$
 Of note is that this equation requires no tracking of $T's$ we can simply
 use the above formula to work out $Y_n$. BUT we don't do this!  Why?
 
+\subsubsection{Send is not MC}
+
 The send model actually sides step the creation of a Markov Transition
 Matrix and takes an algorithmic approach to calculating $Y_{n+1}$'s
-population.  This is done as some of the data is perhaps too sparse,
-but also the algorithmic approach allows us to introduce population
-increase, priors and scenarios rather more easily than modifying $P$
-directly.
+population.
+
+This is done as some of the data is perhaps too sparse, but also the
+algorithmic approach allows us to introduce priors and scenarios
+rather more easily than modifying $P$ directly.
+
+Further, we also use more than the just the initial state, in our
+algorithmic predictions.  The model incorporates external population
+data for each predicted calendar year.
 
 As we will come to see the algorithmic approach to working out the $T$
-in $Y_n$ introduces stochastic processes. Thus we introduce the need to use
-Monte Carlo methods to ensure confidence in our calculations.
+in $Y_n$ introduces stochastic processes. Thus we introduce the need
+to use Monte Carlo methods to ensure confidence in our calculations.
+
+The model can be thought of as a simulation in with a simulation clock
+that ticks once a calendar year. On clock tick all the entities have
+there new population calculated: based on there existing state,
+pre-calculated historic probability distributions and projected
+population.
 
 \subsection{Send Model's Population Prediction Algorithm}
 
-The algorithm can be simply expressed as:
+The algorithm can be simplified to:
 
 $Y_{n+1} = T(Y_n)$
 
 $Y_n$ represents calendar year n's population state, $T$ the function
-that calculates the next years population state from it.  Thus the
-inner working of T is the algorithm.
+that calculates the next years population state from it.  The
+simplification of $T$ means that some things that are variable are
+closed over i.e, the external ONS population data is not a variable,
+nor are the pre-calculated probability distributions.
 
 Let us consider first a single entity's population $t_{s_x,n_y,ay_z}$.
 How will $T$ operate on this?
@@ -367,7 +382,7 @@ Thus we can write:
 
 \begin{equation*}
 l_{s_x,n_y,ay_z} = \text{Binomial}(t_{s_x,n_y,ay_z},
-\text{Beta}(\alpha^l_{s_x,n_y,ay_z}, \beta^l_{s_x,n_y,ay_z})
+\text{Beta}(\alpha^l_{s_x,n_y,ay_z}, \beta^l_{s_x,n_y,ay_z}))
 \end{equation*}
 
 where $\alpha^l_{s_x,n_y,ay_z}$ represents the count of leavers over
@@ -386,35 +401,36 @@ parts: first the expected rate of joiners is calculated per academic
 year, then this additional population is assigned a need and setting.
 
 The sum of the joiners for a single academic year over all historic
-calendar years is first calculated.  Dividing through by the number of
-calendar years gives the average joiners for this particular academic
-year (whether this is a sensible thing to do is up for debate: if we
-assume that the underlying process is independently and identically
-distributed then there is no reason to divide other than to increase
-our variance by lowering our observations).
+calendar years is first calculated.
 
-Similarly we work out the number of non-joiners by taking the
-joiners away from the total population for an academic year.  Again we
-divide through by the calendar years to provide the average
-non-joiners for an academic year.
+We work out the number of non-joiners by taking the joiners away from
+the predicted number of pupils for an AY (e.g from ONS data).  This
+additional population data source (in addition to the entity state
+that is) is typically only available at an AY level.  Our desire to
+use it means that we can't work at the normal ${s_x,n_y,ay_z}$
+level.
 
-If we take the average joiners per academic year and divide by the
-average population we get the expected percentage of joiners per
-academic year.  However, like for the leavers we wish to have a
-variance in this value based on our confidence of the data.  Like
-before, we can apply the beta distribution to do this.
+Like for the leavers we wish to have a variance in this value based on
+our confidence of the data.  Like before, we can apply the beta
+distribution to do this.  However, in our code base we divide through
+the sum of the joiners and non-joiners by observed calendar years.
+This has the effect of increasing variance.  It is in direct contrast
+to the other probability distribution calculations that assume iid and
+simply sum these values.
 
-Also we once more use the binomial distribution to provide variance in
+We once more use the binomial distribution to provide variance in
 our population values once we have an expected probability from the
-beta distribution.
+beta distribution.  Thus:
 
 \begin{equation*}
-j_{ay_z} = \text{Binomial}(t_{ay_z}, \text{Beta}(\alpha^j_{ay_z},\beta^j_{ay_z})
+j_{ay_z} = \text{Binomial}(p_{ay_z},
+\text{Beta}(\frac{\alpha^j_{ay_z}}{cy_{obs}},\frac{p_{ay_z} -\alpha^j_{ay_z}}{cy_{obs}})
 \end{equation*}
 
-where $\alpha^j_{ay_z}$ is the average joiners for $ay_z$ (from the
-historic calendar years) and $\beta^j_{ay_z}$ is the average
-non-joiners for $ay_z$.
+where $\alpha^j_{ay_z}$ are the joiners for $ay_z$ (from the
+historic calendar years), $cy_{obs}$ is the number of observed
+calendar years, and $p_{ay_z}$ is the projected population from our
+additional population source.
 
 The second part of the calculation is to distribute the new joiners to
 appropriate needs and settings.  We count for each academic year
@@ -464,8 +480,8 @@ $j_{ay_z}$.
 
 \begin{equation*}
   \begin{split}
-j_{s_x,n_y,ay_z} = \bigg[\text{Multinomial}( & \text{Binomial}( t_{ay_z},
-\text{Beta}(\alpha^j_{ay_z},\beta^j_{ay_z})), \\
+j_{s_x,n_y,ay_z} = \bigg[\text{Multinomial}( & \text{Binomial}(p_{ay_z},
+\text{Beta}(\frac{\alpha^j_{ay_z}}{cy_{obs}},\frac{p_{ay_z} -\alpha^j_{ay_z}}{cy_{obs}}), \\
 & \text{Dirichlet}(\alpha^{j}_{s_x,n_y,ay_z}, \dots
 , \alpha^{j''}_{s_{x''},n_{y''},ay_{z''}}))\bigg]_{s_x,n_y,ay_z}
   \end{split}
@@ -473,15 +489,8 @@ j_{s_x,n_y,ay_z} = \bigg[\text{Multinomial}( & \text{Binomial}( t_{ay_z},
 
 Interestingly, we can immediately see that the number of joiners to an
 entity is not directly related to that entity's population state,
-rather it's relation is to the total population of an academic year
+rather it's relation is to the projected population for an academic year
 and the non-send to entity transitions in the observed data.
-
-Contrast this to the leaver calculation, which is directly related to
-the entity's population size - why is the academic year population
-choice a better one than an entity's population?  Perhaps it's because
-it incorporates any trend in leavers across all entities in an
-academic year?  If so, why wouldn't we do the same for leavers?  Are
-there other reasons?
 
 \subsubsection{Movers and Non Movers}
 
@@ -501,11 +510,10 @@ m^{partial}_{s_x,n_y,ay_z} =
 The first thing to note is that this a partial result - which we will
 come to later.
 
-Unlike joiners, but like leavers the relationship is based on the
-current entity's population count (not the academic year's population
-count).  However it is slightly modified in that we take the
-previously calculated leavers away for this entity (as we know they
-move to non-send).
+Like leavers the relationship is based on the current entity's
+population count (not the academic year's population count).  However
+it is slightly modified in that we take the previously calculated
+leavers away for this entity (as we know they move to non-send).
 
 The Beta params $\alpha^m$ and $\beta^m$ are the counts of the
 transitions out-of-${s_x,n_y,ay_z}$-and-into-some-other-setting and the
@@ -549,7 +557,7 @@ For consistency of the model that Bionomial component of the above
 equation should be the same result as when it was used to calculate
 the movers.
 
-\subsubsection{The Full Equation}
+\subsubsection{The Full Algorithm}
 
 Calculate next years population T for an entity given the current
 years state.
@@ -575,11 +583,11 @@ Where
 & \begin{split}
   l_{s_x,n_y,ay_z} =
   \text{Binomial}(t_{s_x,n_y,ay_z},\text{Beta}(\alpha^l_{s_x,n_y,ay_z},
-  \beta^l_{s_x,n_y,ay_z})
+  \beta^l_{s_x,n_y,ay_z}))
 \end{split}\\
 & \begin{split}
-j_{s_x,n_y,ay_z} = \bigg[\text{Multinomial}( & \text{Binomial}( t_{ay_z},
-\text{Beta}(\alpha^j_{ay_z},\beta^j_{ay_z})), \\
+j_{s_x,n_y,ay_z} = \bigg[\text{Multinomial}( & \text{Binomial}(p_{ay_z},
+\text{Beta}(\frac{\alpha^j_{ay_z}}{cy_{obs}},\frac{p_{ay_z} -\alpha^j_{ay_z}}{cy_{obs}}), \\
 & \text{Dirichlet}(\alpha^{j}_{s_x,n_y,ay_z}, \dots
 , \alpha^{j''}_{s_{x''},n_{y''},ay_{z''}}))\bigg]_{s_x,n_y,ay_z}
 \end{split}\\
