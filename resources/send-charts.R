@@ -96,8 +96,8 @@ ggsave(paste0(output_dir, "/NCY_Population_Trends.pdf"))
 df_projected_state <- read.csv(paste0(output_dir, "/Output_State.csv")) %>%
   select(calendar.year, academic.year, mean, need.setting) %>%
   mutate(need.setting = gsub(":", "", need.setting)) %>%
-  mutate(need = gsub("-.*$", "", df_projected_state$need.setting)) %>%
-  mutate(setting =gsub("^.*-", "", df_projected_state$need.setting))
+  mutate(need = gsub("-.*$", "", need.setting)) %>%
+  mutate(setting = gsub("^.*-", "", need.setting))
 
 df_projected_need_ay_counts <- df_projected_state %>%
   group_by(need, calendar.year, academic.year) %>%
