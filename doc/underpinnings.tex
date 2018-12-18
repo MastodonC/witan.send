@@ -63,7 +63,7 @@ In the Send Model the collection of entities that make up the system
 are drawn from $S \times N \times AY$ where $S = \{MMSIB, ISS, ISSR, \dots, MU\}$,
 $N = \{CL, \dots, NONSEND\}$, $AY = \{4, \dots, 24\}$.
 
-Each entity has a single state variable $T$ which represents its total
+Each entity has a single state variable $t$ which represents its total
 population.
 
 The points in time for which we can examine an entity's state is per
@@ -76,7 +76,7 @@ population state of the next calendar year.
 By visualising the mathematical structures that govern population
 state we can gain an intuitive understanding of how the model works.
 
-In Fig.\ref{state} below $T_{s_x,n_y,ay_z}$ represents the total
+In Fig.\ref{state} below $t_{s_x,n_y,ay_z}$ represents the total
 population of some setting $s_x$, need $n_y$ and academic year
 $ay_z$.Where $x$, $y$, $z$ are any integer index into the respective
 ordered sets: $S$, $N$, $AY$.
@@ -87,26 +87,26 @@ ordered sets: $S$, $N$, $AY$.
 
     \matrix (mA) [draw,matrix of math nodes]
     {
-      T_{s_1,n_1,ay_k} & T_{s_2,n_1,ay_k} & \dots & T_{s_i,n_1,ay_k} \\
-      T_{s_1,n_2,ay_k} & T_{s_2,n_2,ay_k} & \dots & T_{s_i,n_2,ay_k} \\
+      t_{s_1,n_1,ay_k} & t_{s_2,n_1,ay_k} & \dots & t_{s_i,n_1,ay_k} \\
+      t_{s_1,n_2,ay_k} & t_{s_2,n_2,ay_k} & \dots & t_{s_i,n_2,ay_k} \\
       \vdots & \vdots & \ddots & \vdots \\
-      T_{s_1,n_j,ay_k} & T_{s_2,n_n,ay_k} & \dots & T_{s_i,n_j,ay_k} \\
+      t_{s_1,n_j,ay_k} & t_{s_2,n_n,ay_k} & \dots & t_{s_i,n_j,ay_k} \\
     };
 
     \matrix (mB) [draw,matrix of math nodes] at ($(mA.south west)+(1.5,0.7)$)
     {
-      T_{s_1,n_1,ay_2} & T_{s_2,n_1,ay_2} & \dots & T_{s_i,n_1,ay_2} \\
-      T_{s_1,n_2,ay_2} & T_{s_2,n_2,ay_2} & \dots & T_{s_i,n_2,ay_2} \\
+      t_{s_1,n_1,ay_2} & t_{s_2,n_1,ay_2} & \dots & t_{s_i,n_1,ay_2} \\
+      t_{s_1,n_2,ay_2} & t_{s_2,n_2,ay_2} & \dots & t_{s_i,n_2,ay_2} \\
       \vdots & \vdots & \ddots & \vdots \\
-      T_{s_1,n_j,ay_2} & T_{s_2,n_n,ay_2} & \dots & T_{s_i,n_j,ay_2} \\
+      t_{s_1,n_j,ay_2} & t_{s_2,n_n,ay_2} & \dots & t_{s_i,n_j,ay_2} \\
     };
 
     \matrix (mC) [draw,matrix of math nodes] at ($(mB.south west)+(1.5,0.7)$)
     {
-      T_{s_1,n_1,ay_1} & T_{s_2,n_1,ay_1} & \dots & T_{s_i,n_1,ay_1} \\
-      T_{s_1,n_2,ay_1} & T_{s_2,n_2,ay_1} & \dots & T_{s_i,n_2,ay_1} \\
+      t_{s_1,n_1,ay_1} & t_{s_2,n_1,ay_1} & \dots & t_{s_i,n_1,ay_1} \\
+      t_{s_1,n_2,ay_1} & t_{s_2,n_2,ay_1} & \dots & t_{s_i,n_2,ay_1} \\
       \vdots & \vdots & \ddots & \vdots \\
-      T_{s_1,n_j,ay_1} & T_{s_2,n_n,ay_1} & \dots & T_{s_i,n_j,ay_1} \\
+      t_{s_1,n_j,ay_1} & t_{s_2,n_n,ay_1} & \dots & t_{s_i,n_j,ay_1} \\
     };
 
     \draw[dashed](mA.north east)--(mC.north east);
@@ -119,26 +119,26 @@ ordered sets: $S$, $N$, $AY$.
 
     \matrix (mD) [draw,matrix of math nodes] at ($(mA.south east)+(0,-3.5)$)
     {
-      T_{s_1,n_1,ay_k} & T_{s_2,n_1,ay_k} & \dots & T_{s_i,n_1,ay_k} \\
-      T_{s_1,n_2,ay_k} & T_{s_2,n_2,ay_k} & \dots & T_{s_i,n_2,ay_k} \\
+      t_{s_1,n_1,ay_k} & t_{s_2,n_1,ay_k} & \dots & t_{s_i,n_1,ay_k} \\
+      t_{s_1,n_2,ay_k} & t_{s_2,n_2,ay_k} & \dots & t_{s_i,n_2,ay_k} \\
       \vdots & \vdots & \ddots & \vdots \\
-      T_{s_1,n_j,ay_k} & T_{s_2,n_n,ay_k} & \dots & T_{s_i,n_j,ay_k} \\
+      t_{s_1,n_j,ay_k} & t_{s_2,n_n,ay_k} & \dots & t_{s_i,n_j,ay_k} \\
     };
 
     \matrix (mE) [draw,matrix of math nodes] at ($(mB.south east)+(0,-3.5)$)
     {
-      T_{s_1,n_1,ay_2} & T_{s_2,n_1,ay_2} & \dots & T_{s_i,n_1,ay_2} \\
-      T_{s_1,n_2,ay_2} & T_{s_2,n_2,ay_2} & \dots & T_{s_i,n_2,ay_2} \\
+      t_{s_1,n_1,ay_2} & t_{s_2,n_1,ay_2} & \dots & t_{s_i,n_1,ay_2} \\
+      t_{s_1,n_2,ay_2} & t_{s_2,n_2,ay_2} & \dots & t_{s_i,n_2,ay_2} \\
       \vdots & \vdots & \ddots & \vdots \\
-      T_{s_1,n_j,ay_2} & T_{s_2,n_n,ay_2} & \dots & T_{s_i,n_j,ay_2} \\
+      t_{s_1,n_j,ay_2} & t_{s_2,n_n,ay_2} & \dots & t_{s_i,n_j,ay_2} \\
     };
 
     \matrix (mF) [draw,matrix of math nodes] at ($(mC.south east) + (0,-3.5)$)
     {
-      T_{s_1,n_1,ay_1} & T_{s_2,n_1,ay_1} & \dots & T_{s_i,n_1,ay_1} \\
-      T_{s_1,n_2,ay_1} & T_{s_2,n_2,ay_1} & \dots & T_{s_i,n_2,ay_1} \\
+      t_{s_1,n_1,ay_1} & t_{s_2,n_1,ay_1} & \dots & t_{s_i,n_1,ay_1} \\
+      t_{s_1,n_2,ay_1} & t_{s_2,n_2,ay_1} & \dots & t_{s_i,n_2,ay_1} \\
       \vdots & \vdots & \ddots & \vdots \\
-      T_{s_1,n_j,ay_1} & T_{s_2,n_n,ay_1} & \dots & T_{s_i,n_j,ay_1} \\
+      t_{s_1,n_j,ay_1} & t_{s_2,n_n,ay_1} & \dots & t_{s_i,n_j,ay_1} \\
     };
 
     \draw[dashed](mD.north east)--(mF.north east);
@@ -186,8 +186,8 @@ containing the probability of transitioning between Markov
 states. \textit{Do not confuse the Markov Transition (Probability)
   Matrix with the Send Model's Transitions data file.}  Conceptually,
 for the Send Model, it can be thought of as telling us what percentage
-of $T_{s_x,n_y,ay_z}$ will move to another state \- for each of the
-valid (allowed) states that $T_{s_x,n_y,ay_z}$ can move to.  Sometimes
+of $t_{s_x,n_y,ay_z}$ will move to another state \- for each of the
+valid (allowed) states that $t_{s_x,n_y,ay_z}$ can move to.  Sometimes
 this is referred to as \textit{rates}.
 
 By looking at the historic data we could work out the expectation of
@@ -532,7 +532,7 @@ entity.
 
 \begin{equation*}
   \begin{split}
-    m_{s_x,n_y,ay_z} = \sum_{j \neq x, k \neq y , l \neq ay }\bigg[
+    m_{s_x,n_y,ay_z} = \sum_{j \neq x, k \neq y , l \neq z }\bigg[
         \text{Multinomial}( & \text{Binomial}(t_{s_j,n_k,ay_l} - l_{s_j,n_k,ay_l}, 
         \text{Beta}(\alpha^m_{s_j,n_k,ay_l},\beta^m_{s_j,n_k,ay_l})),
         \\ &  \text{Dirichlet}(\alpha^{m'}_{s_j',n_k',ay_l'}, \dots,
@@ -570,7 +570,7 @@ Where
 \begin{equation*}
 \begin{aligned}
 & \begin{split}
-    m_{s_x,n_y,ay_z} = \sum_{j \neq x, k \neq y , l \neq ay }\bigg[
+    m_{s_x,n_y,ay_z} = \sum_{j \neq x, k \neq y , l \neq z }\bigg[
         \text{Multinomial}( & \text{Binomial}(t_{s_j,n_k,ay_l} - l_{s_j,n_k,ay_l}, 
         \text{Beta}(\alpha^m_{s_j,n_k,ay_l},\beta^m_{s_j,n_k,ay_l})),
         \\ &  \text{Dirichlet}(\alpha^{m'}_{s_j',n_k',ay_l'}, \dots,
@@ -603,6 +603,74 @@ entity's future population: this is because we use the entire AY
 population in the joiner calculation and we need to sum all movers
 into our entity from all the other entities.
 
+\subsection{A Case Study}
+
+We go through the calculation of an entity's next state to show how
+the algorithm works and to embed the meaning of the myriad of
+parameters.
+
+Let's us consider need a, setting b, in academic year 1, the calendar
+year of 2018 - this entity at this time has a population of 100.  The
+algorithm will give us this entity's population for the next calendar
+year 2019.
+
+$Y_{2019 for s_a,n_b,ay_1} = T(Y_{2018})_{s_a,n_b,ay_1} = m_{s_a,n_b,ay_1} + n_{s_a,n_b,ay_1} -
+l_{s_a,n_b,ay_1} + j_{s_a,n_b,ay_1} $
+
+and
+
+$t_{s_a,n_b,ay_1} = 100$
+
+First-off the leavers as it's the simplest:
+
+\begin{equation*}
+l_{s_a,n_b,ay_1} =
+  \text{Binomial}(t_{s_a,n_b,ay_1},\text{Beta}(\alpha^l_{s_a,n_b,ay_1},
+  \beta^l_{s_a,n_b,ay_1}))
+\end{equation*}
+
+Let's say we already know the expected rate of leavers is $40\%$ then
+
+$t_{s_a,n_b,ay_1} \times 40\% = 100 \times 40 = 40 pupils$
+
+We want variance in that so we use the binomial distribution to draw
+some samples
+
+\begin{equation*}
+  \text{Binomial}(t_{s_a,n_b,ay_1}, 0.4) = \text{Binomial}(100, 0.4) = 38
+\end{equation*}
+
+Now we also want variance in the 0.4 value, so we use the Beta
+distribution.  Assume that we have historic data for last 2 years that
+has 60 and 20 leavers, and 110 and 90 non-leavers respectively.
+
+\begin{equation*}
+\text{Beta}(\alpha^l_{s_a,n_b,ay_1}, \beta^l_{s_a,n_b,ay_1}) =
+\text{Beta}(60+20,110+90) = \text{Beta}(80,200) = 0.38
+\end{equation*}
+
+Combining this all together
+
+\begin{equation*}
+l_{s_a,n_b,ay_1} =
+  \text{Binomial}(100,\text{Beta}(80,200)) = 43
+\end{equation*}
+
+Next let's look at joiners.
+
+\begin{equation*}
+  \begin{split}
+j_{s_a,n_b,ay_1} = \bigg[\text{Multinomial}( & \text{Binomial}(p_{ay_1},
+\text{Beta}(\frac{\alpha^j_{ay_1}}{cy_{obs}},\frac{p_{ay_1} -\alpha^j_{ay_1}}{cy_{obs}}), \\
+& \text{Dirichlet}(\alpha^{j}_{s_x,n_y,ay_z}, \dots
+, \alpha^{j''}_{s_{x''},n_{y''},ay_{z''}}))\bigg]_{s_a,n_b,ay_1}
+  \end{split}
+\end{equation*}
+
+Let's assume our external population $p_{ay_1}$ is predicted to be a
+1000 for $ay_1$ in 2019.
+
+For our two years of historic data let's assume it's 
 \section{Other Things To Do}
 
 \begin{itemize}
