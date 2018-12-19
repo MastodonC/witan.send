@@ -108,7 +108,7 @@
                          (if (> ay 12)
                            (-> coll
                                (update-in [ay :alpha] m/some+ (/ (/ j 2) n))
-                               (update-in [ay :beta] m/some+ (/ (- p j) n)))
+                               (update-in [ay :beta] m/some+ (/ (- p (/ j 2 )) n)))
                            (-> coll
                                (update-in [ay :alpha] m/some+ (/ j n))
                                (update-in [ay :beta] m/some+ (/ (- p j) n))))
