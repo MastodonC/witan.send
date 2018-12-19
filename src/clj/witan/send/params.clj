@@ -105,10 +105,10 @@
                      (let [j (get-in joiners [cy ay])
                            p (get-in population [cy ay])]
                        (if j
-                         (if (> ay 12)
+                         (if (> ay 11)
                            (-> coll
-                               (update-in [ay :alpha] m/some+ (/ (/ j 2) n))
-                               (update-in [ay :beta] m/some+ (/ (- p (/ j 2 )) n)))
+                               (update-in [ay :alpha] m/some+ (/ (/ j 100) n))
+                               (update-in [ay :beta] m/some+ (/ (- p (/ j 100 )) n)))
                            (-> coll
                                (update-in [ay :alpha] m/some+ (/ j n))
                                (update-in [ay :beta] m/some+ (/ (- p j) n))))
