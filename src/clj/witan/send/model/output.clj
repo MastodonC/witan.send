@@ -159,7 +159,7 @@
             (->> (mapcat (fn [output year]
                            (map (fn [[[academic-year need-setting] stats]]
                                   (-> (medley/map-vals m/round stats)
-                                      (assoc :academic-year academic-year :need-setting need-setting :calendar-year year)))
+                                      (assoc :academic-year academic-year :need-setting (name need-setting) :calendar-year year)))
                                 (:by-state output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
                  (concat [(map name columns)])
