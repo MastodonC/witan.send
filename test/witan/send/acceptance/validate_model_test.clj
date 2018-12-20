@@ -8,7 +8,7 @@
 
 (deftest expected-validation-results
   (let [expected-md5s {"validation_results_count.csv" "0c23282d207431a438fd1a5a94049d9c",
-                       "validation_results_state.csv" "4ffe98fc891c1cc5e7e2de1d439f0de2"}
+                       "validation_results_state.csv" "d7874e9361ad99d28eb69bac60762459"}
         files (keys expected-md5s)
         config (m/read-config "data/demo/config.edn")
         validation-dir (join "/" [(:project-dir config) "validation"])]
