@@ -93,8 +93,8 @@
   "default behaviour is to use bounds rather than CI"
   (= string "interval"))
 
-(defn r-plots [dir settings-to-exclude use-confidence-bound-or-interval]
-  (let [response (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir
+(defn r-plots [dir pop-path settings-to-exclude use-confidence-bound-or-interval]
+  (let [response (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir pop-path
                         (if (nil? settings-to-exclude) "" settings-to-exclude)
                         (if (bound-or-interval? use-confidence-bound-or-interval) ".ci" ".95pc.bound"))]
   (if-not (zero? (:exit response))
@@ -106,7 +106,7 @@
   [{:keys [projection send-output transitions valid-states
            population modify-transition-by]}
    {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts
-           keep-temp-files? use-confidence-bound-or-interval]}]
+           keep-temp-files? use-confidence-bound-or-interval population-file]}]
   (let [transitions-data (ds/row-maps transitions)
         transform-transitions (->> transitions-data
                                    (map #(vector
@@ -248,7 +248,9 @@
           (println "Producing charts...")
           (with-open [in (io/input-stream (io/resource "send-charts.R"))]
             (io/copy in (io/file "/tmp/send-charts.R")))
-          (r-plots dir settings-to-exclude-in-charts use-confidence-bound-or-interval)
+          (r-plots dir (str project-dir "/" population-file)
+                   settings-to-exclude-in-charts
+                   use-confidence-bound-or-interval)
           (when-not keep-temp-files?
             (run! #(io/delete-file (str dir "/" %) :quiet)
                   ["historic-data.csv" "valid-settings.csv" "joiner-rates.csv"
