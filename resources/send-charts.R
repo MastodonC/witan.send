@@ -1,9 +1,10 @@
 args = commandArgs(trailingOnly=TRUE)
 output_dir = args[1]
-settings_to_remove <- strsplit(args[2], split=",")[[1]]
+pop_path = args[2]
+settings_to_remove <- strsplit(args[3], split=",")[[1]]
 
-low_bound <- paste0("low", args[3])
-high_bound <- paste0("high", args[3])
+low_bound <- paste0("low", args[4])
+high_bound <- paste0("high", args[4])
 
 install_missing_packages <- function(package_name) {
   if(!require(package_name, character.only = TRUE)) {
@@ -515,6 +516,32 @@ df_mover_ribbon_data <- read.csv(paste0(output_dir, "/mover-rates.csv"), na.stri
 #ribbon_plot(df_joiner_ribbon_data, "Joiner")
 #ribbon_plot(df_leaver_ribbon_data, "Leaver")
 #ribbon_plot(df_mover_ribbon_data, "Mover")
+
+
+### ONS Population Chart ###
+
+if(file_test("-f", pop_path)){
+  ons <- read.csv(pop_path)
+  ons <- ons[!ons$academic.year>20,]
+  ons$NCY <- ifelse(ons$academic.year <= 0, "NCY_00_under", 
+                     ifelse(ons$academic.year <= 6, "NCY_01_06",
+                            ifelse(ons$academic.year <= 11, "NCY_07_11",
+                                   ifelse(ons$academic.year <= 13, "NCY_12_13", "NCY_14_up"))))
+  ons <- aggregate(ons$population, by=list(Year=ons$calendar.year, NCY=ons$NCY), FUN=sum)
+  
+  ggplot(ons, aes(x=Year, y=x, group=NCY)) +
+    geom_line(aes(color=NCY)) +
+    geom_point(aes(color=NCY)) +
+    scale_x_continuous(breaks = round(seq(min(ons$Year), max(ons$Year), by = 1))) +
+    scale_y_continuous(name='Population') +
+    scale_color_manual(name = "NCY",
+                       values = c("cyan", "coral", "dodgerblue", "hotpink", "green4"),
+                       labels = c("0 and under", "1 to 6", "7 to 11", "12 to 13", "14 and up")) +
+    theme_bw() +
+    ggtitle("General Population, grouped by National Curriculum Years")
+  
+  ggsave(paste0(output_dir, "/General_Population.pdf"))
+}
 
 ### Delete automatically produced Rplots.pdf file ###
 
