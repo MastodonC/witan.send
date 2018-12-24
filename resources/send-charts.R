@@ -399,11 +399,16 @@ save_plot("Total_Cost.pdf")
 
 ### Sankey plot ###
 
-sankey <- function(data, title) {
+colour_list <- c("#3cb44b", "#ffe119", "#4363d8", "#f58231", "#aaffc3", "#42d4f4", 
+                 "#f032e6", "#bfef45", "#fabebe", "#469990", "#e6beff", "#9A6324", "#fffac8",
+                 "#800000", "#808000", "#ffd8b1", "#000075", "#a9a9a9")
+
+sankey <- function(data, title, colour_map) {
   ggplot(data, aes(x, id = id, split = factor(y), value = value)) +
     ggtitle(title) +
     geom_parallel_sets_axes(axis.width = 0.2, fill = "#F6F6F6", color = "#DDDDDD") +
-    geom_parallel_sets(aes(fill = Setting), alpha = 0.5, axis.width = 0.1) +
+    geom_parallel_sets(aes(fill = Setting), alpha = 0.7, axis.width = 0.1) +
+    scale_fill_manual(values = colour_map) +
     geom_parallel_sets_labels(color = "#444444", angle = 0, size = 2.5) +
     theme(axis.title.x = element_blank(), axis.text.y = element_blank())
 }
@@ -422,7 +427,7 @@ get_transition <- function(data, setting1, setting2) {
   table((data$setting.1 == setting1) & (data$setting.2 == setting2))[[2]]
 }
 
-sankey_prim_sec_trans <- function(data, calendar_year) {
+sankey_prim_sec_trans <- function(data, calendar_year, colour_map) {
   result<-data.frame()
   v = -1
   filtered_data<-filter(data, calendar.year == calendar_year)
@@ -445,13 +450,17 @@ sankey_prim_sec_trans <- function(data, calendar_year) {
     merge(df_valid_settings, by="Setting") %>%
     subset(select = -c(Setting)) %>%
     rename(Setting = temp) %>%
-    rename(y = Type)
+    rename(y = Type) %>%
+    arrange(Setting)
 
-  sankey(result, paste0("Aggregate Settings Transitions ", calendar_year, "/", (calendar_year + 1)))
+  sankey(result, paste0("Aggregate Settings Transitions ", calendar_year, "/", (calendar_year + 1)), colour_map)
 }
 
+transition_colours <- colour_list
+names(transition_colours) <- unique(df_valid_settings$Type)
+
 for (f in years) {
-  sankey_prim_sec_trans(df_prim_sec_trans, f)
+  sankey_prim_sec_trans(df_prim_sec_trans, f, transition_colours)
   save_plot(paste0("Historic_Transitions_",f,".pdf"))
 }
 
@@ -476,7 +485,10 @@ for (s2 in settings) {
 df_joiners_trans$y <- as.character(df_joiners_trans$y)
 df_joiners_trans$Setting <- as.character(df_joiners_trans$Setting)
 
-sankey(df_joiners_trans, "Joiner Transitions")
+joiner_colours <- colour_list
+names(joiner_colours) <- unique(df_joiners_trans$Setting)
+
+sankey(df_joiners_trans, "Joiner Transitions", joiner_colours)
 save_plot("Joiner_Transitions.pdf")
 
 
