@@ -38,6 +38,10 @@ if_acronym <- function(string) {
          return(str_to_title(string)))
 }
 
+save_plot <- function(file_name) {
+  ggsave(paste0(output_dir, "/", file_name), width = 8, height = 6, dpi = 400)
+}
+
 ### Variables for all charts ###
 
 df_historical <- read.csv(paste0(output_dir, "/historic-data.csv")) %>%
@@ -90,7 +94,7 @@ ggplot(df_ay, aes(x=calendar.year, y=value, group=variable)) +
   geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
   annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
 
-ggsave(paste0(output_dir, "/NCY_Population_Trends.pdf"))
+save_plot("NCY_Population_Trends.pdf")
 
 ### Project count by need and AY ###
 
@@ -121,7 +125,7 @@ plot_need_ay <- function(data, need_str) {
     ggtitle(paste(need_str, "Trends, grouped by National Curriculum Years")) #+
   #geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") #+ ## Add back in for historical data
   #annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
-  ggsave(paste(output_dir, "/needs/", need_str, "_Trends.pdf",sep=""))
+  save_plot(paste("/needs/", need_str, "_Trends.pdf",sep=""))
 }
 
 for (n in unique(df_projected_need_ay_counts$need)){
@@ -151,7 +155,7 @@ plot_setting_ay <- function(data, setting_str) {
     ggtitle(paste(setting_str, "Trends, grouped by National Curriculum Years")) #+
   #geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") #+ ## Add back in for historical data
   #annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
-  ggsave(paste(output_dir, "/settings/", setting_str, "_Trends.pdf",sep=""))
+  save_plot(paste("settings/", setting_str, "_Trends.pdf",sep=""))
 }
 
 plot_setting_ay(df_projected_setting_ay_counts, "MU")
@@ -236,7 +240,7 @@ for(i in 1:4) {
     geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
     annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
 
-  ggsave(paste(output_dir, "/Settings_Trends_",i,".pdf",sep=""))
+  save_plot(paste0("Settings_Trends_",i,".pdf"))
 }
 
 
@@ -270,7 +274,7 @@ ggplot(df_need, aes(x=calendar.year, y=mean, group=Need)) +
   geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
   annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
 
-ggsave(paste0(output_dir, "/Need_Trends.pdf"))
+save_plot("Need_Trends.pdf")
 
 
 ### Projected special setting count ###
@@ -308,7 +312,7 @@ ggplot(df_set_ss, aes(x = calendar.year, y = mean)) +
   geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
   annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max$max, color = "dodgerblue")
 
-ggsave(paste0(output_dir, "/Special_Setting_Counts.pdf"))
+save_plot("Special_Setting_Counts.pdf")
 
 
 ### Projected aggregate setting count ###
@@ -330,7 +334,7 @@ ggplot(df_type, aes(x=calendar.year, y=mean, group=Type)) +
   geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
   annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
 
-ggsave(paste0(output_dir, "/Setting_Type_Counts.pdf"))
+save_plot("Setting_Type_Counts.pdf")
 
 
 ### SEND population Projection ###
@@ -367,7 +371,7 @@ total_pop_text <- paste0("ggplot(count_data, aes(x=calendar.year, y=mean)) +
 
 evaluate_string(total_pop_text)
 
-ggsave(paste0(output_dir, "/Total_Population.pdf"))
+save_plot("Total_Population.pdf")
 
 
 ### SEND cost projection ####
@@ -391,7 +395,7 @@ boxplot <- function(lb, hb) {
 
 evaluate_string(boxplot(low_bound, high_bound))
 
-ggsave(paste0(output_dir, "/Total_Cost.pdf"))
+save_plot("Total_Cost.pdf")
 
 ### Sankey plot ###
 
@@ -448,7 +452,7 @@ sankey_prim_sec_trans <- function(data, calendar_year) {
 
 for (f in years) {
   sankey_prim_sec_trans(df_prim_sec_trans, f)
-  ggsave(paste0(output_dir, "/Historic_Transitions_",f,".pdf"))
+  save_plot(paste0("Historic_Transitions_",f,".pdf"))
 }
 
 ### SEND Joiner Transitions ###
@@ -473,7 +477,7 @@ df_joiners_trans$y <- as.character(df_joiners_trans$y)
 df_joiners_trans$Setting <- as.character(df_joiners_trans$Setting)
 
 sankey(df_joiners_trans, "Joiner Transitions")
-ggsave(paste0(output_dir, "/Joiner_Transitions.pdf"))
+save_plot("Joiner_Transitions.pdf")
 
 
 ### Ribbon plot ###
@@ -505,7 +509,7 @@ ribbon_plot <- function(data, title) {
                         "scale_x_continuous(breaks = c(-2, 0, 2, 4, 6, 8, 10, 12), limit = c(-3, 12))"
                         )
   eval(parse(text=concat_text))
-  ggsave(filename = paste0(output_dir, "/", title, "_Probability.pdf"), width = 6.5, height = 4.017305315203955)
+  save_plot(paste0(title, "_Probability.pdf"))
 }
 
 ### Ribbon plot data ###
@@ -540,7 +544,7 @@ if(file_test("-f", pop_path)){
     theme_bw() +
     ggtitle("General Population, grouped by National Curriculum Years")
   
-  ggsave(paste0(output_dir, "/General_Population.pdf"))
+  save_plot("General_Population.pdf")
 }
 
 ### Delete automatically produced Rplots.pdf file ###
