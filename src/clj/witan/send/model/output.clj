@@ -94,7 +94,11 @@
   (= string "interval"))
 
 (defn r-plots [dir pop-path settings-to-exclude use-confidence-bound-or-interval]
-  (let [response (sh/sh "Rscript" "--vanilla" "/tmp/send-charts.R" dir pop-path
+  (let [rscript (case (System/getProperty "os.name")
+                  "Windows 10" "C:/Program Files/R/R-3.5.2/bin/x64/Rscript.exe"
+                  "Rscript")
+        send-charts (str (System/getProperty "java.io.tmpdir") "send-charts.R")
+        response (sh/sh rscript "--vanilla" send-charts dir pop-path
                         (if (nil? settings-to-exclude) "" settings-to-exclude)
                         (if (bound-or-interval? use-confidence-bound-or-interval) ".ci" ".95pc.bound"))]
   (if-not (zero? (:exit response))
@@ -247,7 +251,7 @@
               (csv/write-csv writer (into [headers] rows))))
           (println "Producing charts...")
           (with-open [in (io/input-stream (io/resource "send-charts.R"))]
-            (io/copy in (io/file "/tmp/send-charts.R")))
+            (io/copy in (io/file (System/getProperty "java.io.tmpdir") "send-charts.R")))
           (r-plots dir (str project-dir "/" population-file)
                    settings-to-exclude-in-charts
                    use-confidence-bound-or-interval)
