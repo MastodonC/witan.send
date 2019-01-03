@@ -2,10 +2,15 @@
   (:require [clojure.string :as str]
             [witan.send.constants :as c]))
 
-(defn split-need-setting [state]
-  (if (= state c/non-send)
+(defn split-need-setting [need-setting]
+  (if (= need-setting c/non-send)
     (vector c/non-send c/non-send)
-    (mapv keyword (str/split (name state) #"-"))))
+    (mapv keyword (str/split (name need-setting) #"-"))))
+
+(defn split-entity [entity]
+  (let [ay (first entity)
+        need-setting (second entity)]
+    (into [ay] (map name (split-need-setting need-setting)))))
 
 (defn join-need-setting [need setting]
   (if (or (= setting c/non-send)
