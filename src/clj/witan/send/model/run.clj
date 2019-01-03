@@ -60,20 +60,20 @@
    calendar-year]
   (if-let [mover-dirichlet-params (get mover-state-alphas [ay need-setting])]
     (let [leavers (predict-leavers {:need-setting need-setting
-                                    :n            population
-                                    :beta-params  (get leaver-beta-params [ay need-setting])})
+                                    :n population
+                                    :beta-params (get leaver-beta-params [ay need-setting])})
           movers (if (states/can-move? valid-year-settings ay need-setting)
-                   (predict-movers {:need-setting     need-setting
-                                    :n                (- population leavers)
-                                    :beta-params      (get mover-beta-params [ay need-setting])
+                   (predict-movers {:need-setting need-setting
+                                    :n (- population leavers)
+                                    :beta-params (get mover-beta-params [ay need-setting])
                                     :dirichlet-params mover-dirichlet-params})
                    {need-setting (- population leavers)})
-          [model transitions] (incorporate-new-ay-need-setting-populations {:model                 model
-                                                                            :transitions           transitions
-                                                                            :academic-year         (+ 1 ay) ;; aging on
-                                                                            :need-setting          need-setting
+          [model transitions] (incorporate-new-ay-need-setting-populations {:model model
+                                                                            :transitions transitions
+                                                                            :academic-year (+ 1 ay) ;; aging on
+                                                                            :need-setting need-setting
                                                                             :predicted-populations movers
-                                                                            :calendar-year         calendar-year})]
+                                                                            :calendar-year calendar-year})]
       [model
        (update transitions [calendar-year (+ 1 ay) need-setting c/non-send] m/some+ leavers)])
     [model transitions]))
@@ -115,13 +115,13 @@
   (let [betas (get joiner-beta-params academic-year)
         alphas (get joiner-state-alphas academic-year)
         pop (get population academic-year)]
-    (if-let [joiners (predict-joiners {:n                pop
-                                       :beta-params      betas
+    (if-let [joiners (predict-joiners {:n pop
+                                       :beta-params betas
                                        :dirichlet-params alphas})]
-      (incorporate-new-ay-need-setting-populations {:model                 model :transitions transitions
-                                                    :academic-year         academic-year :need-setting c/non-send
+      (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
+                                                    :academic-year academic-year :need-setting c/non-send
                                                     :predicted-populations joiners
-                                                    :calendar-year         calendar-year})
+                                                    :calendar-year calendar-year})
       [model transitions])))
 
 (defn run-model-iteration
@@ -164,24 +164,24 @@
 
 (defn reduce-rf [iterations validate-valid-states cost-lookup]
   (u/partition-rf iterations
-                  (r/fuse {:by-state                  (u/model-states-rf validate-valid-states (u/histogram-rf number-of-significant-digits))
-                           :total-in-send-by-ay       (r/pre-step (u/with-keys-rf (u/histogram-rf number-of-significant-digits) sc/academic-years) u/model-population-by-ay)
-                           :total-in-send             (r/pre-step (u/histogram-rf number-of-significant-digits) u/model-send-population)
-                           :total-in-send-by-need     (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits)) u/model-population-by-need)
-                           :total-in-send-by-setting  (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits)) u/model-population-by-setting)
-                           :total-cost                (r/pre-step (u/histogram-rf number-of-significant-digits) (comp (partial u/total-need-setting-cost cost-lookup)
-                                                                                                                      u/model-population-by-need-setting))
+                  (r/fuse {:by-state (u/model-states-rf validate-valid-states (u/histogram-rf number-of-significant-digits))
+                           :total-in-send-by-ay (r/pre-step (u/with-keys-rf (u/histogram-rf number-of-significant-digits) sc/academic-years) u/model-population-by-ay)
+                           :total-in-send (r/pre-step (u/histogram-rf number-of-significant-digits) u/model-send-population)
+                           :total-in-send-by-need (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits)) u/model-population-by-need)
+                           :total-in-send-by-setting (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits)) u/model-population-by-setting)
+                           :total-cost (r/pre-step (u/histogram-rf number-of-significant-digits) (comp (partial u/total-need-setting-cost cost-lookup)
+                                                                                                       u/model-population-by-need-setting))
                            :total-in-send-by-ay-group (r/pre-step (u/merge-with-rf (u/histogram-rf number-of-significant-digits))
                                                                   u/model-population-by-ay-group)})))
 
 (defn combine-rf [simulations iterations]
   (u/partition-rf iterations
-                  (values-rf {:by-state                  (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
-                              :total-in-send-by-ay       (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
-                              :total-in-send             (u/histogram-combiner-rf simulations number-of-significant-digits)
-                              :total-in-send-by-need     (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
-                              :total-in-send-by-setting  (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
-                              :total-cost                (u/histogram-combiner-rf simulations number-of-significant-digits)
+                  (values-rf {:by-state (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
+                              :total-in-send-by-ay (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
+                              :total-in-send (u/histogram-combiner-rf simulations number-of-significant-digits)
+                              :total-in-send-by-need (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
+                              :total-in-send-by-setting (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
+                              :total-cost (u/histogram-combiner-rf simulations number-of-significant-digits)
                               :total-in-send-by-ay-group (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))})))
 
 (defn run-send-model
@@ -226,9 +226,9 @@
                         (transduce (map #(map :model %)) (reduce-rf iterations validate-valid-states cost-lookup) projection))))
         projection (apply concat projections)]
     (println "Combining...")
-    {:projection           (projection->transitions projection)
-     :send-output          (transduce identity (combine-rf simulations iterations) reduced)
-     :transitions          transitions
-     :valid-states         valid-states
-     :population           population
+    {:projection (projection->transitions projection)
+     :send-output (transduce identity (combine-rf simulations iterations) reduced)
+     :transitions transitions
+     :valid-states valid-states
+     :population population
      :modify-transition-by modify-transition-by}))
