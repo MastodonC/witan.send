@@ -11,5 +11,5 @@
   ([config]
    (reset-send-report)
    (-> (i/build-input-datasets (:project-dir config) (:file-inputs config) (:schema-inputs config))
-       (p/prepare-send-inputs (:scenario-parameters config))
+       (p/prepare-send-inputs (:transition-parameters config))
        (r/run-send-model (:projection-parameters config)))))
