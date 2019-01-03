@@ -9,11 +9,11 @@
                  :population "data/population.csv"
                  :costs "data/need-setting-costs.csv"
                  :valid-states "data/valid-setting-academic-years.csv"}
-   :scenario-parameters {:filter-transitions-from nil
-                         :which-transitions? nil
-                         :splice-ncy nil
-                         :modify-transition-by nil
-                         :modify-transitions-from nil}
+   :transition-parameters {:filter-transitions-from nil
+                           :which-transitions? nil
+                           :splice-ncy nil
+                           :modify-transition-by nil
+                           :modify-transitions-from nil}
    :projection-parameters {:random-seed 50
                            :simulations 1000
                            :seed-year 2017}
