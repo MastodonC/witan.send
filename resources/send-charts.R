@@ -240,7 +240,7 @@ for(i in 1:4) {
     geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
     annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
 
-  save_plot(paste0(output_dir, "Settings_Trends_", i,".pdf"))
+  save_plot(paste0(output_dir, "/Settings_Trends_", i,".pdf"))
 }
 
 
