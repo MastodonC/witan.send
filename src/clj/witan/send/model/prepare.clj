@@ -231,7 +231,7 @@
                               (transitions-map modified-transitions)
                               (transitions-map transitions))
          transitions-filtered (when filter-transitions-from
-                                (mapcat (fn [year] (filter #(= (:calendar-year %) year)
+                                (mapcat (fn [year] (filter #(> (:calendar-year %) year)
                                                            (or modified-transitions transitions)))
                                         [filter-transitions-from]))
          max-transition-year (apply max (map :calendar-year transitions))
