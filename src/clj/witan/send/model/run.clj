@@ -225,4 +225,6 @@
      :transitions transitions
      :valid-states valid-states
      :population population
-     :modify-transition-by modify-transition-by}))
+     :modify-transition-by modify-transition-by
+     :standard-projection standard-projection
+     :scenario-projection scenario-projection}))

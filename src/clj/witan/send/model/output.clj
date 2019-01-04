@@ -101,11 +101,43 @@
   (if-not (zero? (:exit response))
     (throw (Exception. (:err response))))))
 
+; Helper Fns for outputting Beta parameters as expectations
+(defn expectation
+  "Calculate the expectation from the Beta distros alpha and beta parameters"
+  [alpha beta]
+  (/ alpha (+ alpha beta)))
+
+(defn beta-params-expectation
+  "Return alpha, beta and expectation as a vector from a hash"
+  [{:keys [:alpha :beta] :as params}]
+  (mapv float [alpha beta (expectation alpha beta)]))
+
+(defn expectations [betas]
+  "Beta disto parameters are stored in a map typically keyed by an entities index (ay, n, s).
+  Apply expectation to the values of this map"
+  (-> (for [[k params] betas]
+          (if (vector? k)                                   ; this is weak, better to use schema checking here
+            (into [] (concat (states/split-entity k) (beta-params-expectation params)))
+            (into [k] (beta-params-expectation params))))
+      (sort)))
+
+(defn output-beta-expectations
+  "Write out beta expectations to a supplied `dir` and `file` using a map of beta parameters.
+  Except an argument to overwrite the column headings when the index is not
+  entity (ay, n, s) based e.g joiner beta params are indexed by ay."
+  [dir filename betas & cols]
+  (with-open [writer (io/writer (io/file (str dir "/" filename ".csv")))]
+    (let [columns (or (first cols) [:ay :need :setting :alpha :beta :expectation])
+          headers (mapv name columns)
+          rows (expectations betas)]
+      (csv/write-csv writer (into [headers] rows)))))
+
+; Core function
 (defn output-send-results
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
    to get the total cost."
   [{:keys [projection send-output transitions valid-states
-           population modify-transition-by]}
+           population modify-transition-by standard-projection scenario-projection]}
    {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts
            keep-temp-files? use-confidence-bound-or-interval population-file]}]
   (let [transitions-data (ds/row-maps transitions)
@@ -127,7 +159,7 @@
     (when run-outputs
       (let [valid-settings (assoc (->> (ds/row-maps valid-states)
                                        (reduce #(assoc %1 (:setting %2) (:setting-group %2)) {}))
-                                  :NON-SEND "Other")
+                             :NON-SEND "Other")
             years (sort (distinct (map :calendar-year transitions-data)))
             initial-projection-year (+ 1 (last years))
             joiners-count (p/calculate-joiners-per-calendar-year transitions-data)
@@ -223,6 +255,10 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
+        (output-beta-expectations dir "joiner_beta_expectations" (standard-projection :joiner-beta-params)
+                                  [:ay :alpha :beta :expectation])
+        (output-beta-expectations dir "mover_beta_expectations" (standard-projection :mover-beta-params))
+        (output-beta-expectations dir "leaver_beta_expectations" (standard-projection :leaver-beta-params))
         (when run-charts
           (with-open [writer (io/writer (io/file (str dir "/historic-data.csv")))]
             (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
