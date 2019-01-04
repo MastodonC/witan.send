@@ -19,7 +19,7 @@
 (defn read-config
   "Read a config file and merge it with schema inputs"
   [config-path]
-  (let [project-dir (.getParent(java.io.File. config-path))]
+  (let [project-dir (.getParent (java.io.File. config-path))]
     (merge-with merge
                 (aero/read-config config-path)
                 default-schemas
@@ -58,8 +58,8 @@
 (defn run-recorded-send [config]
   (let [metadata (md/metadata config)]
     (so/output-send-results
-     (send/run-send-workflow config)
-     (:output-parameters config))
+      (send/run-send-workflow config)
+      (:output-parameters config))
     (when (get-in config [:validation-parameters :run-validation])
       (vm/run-send-validation config))
     (save-runtime-config config)
