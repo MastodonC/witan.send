@@ -62,17 +62,17 @@
     (let [leavers (predict-leavers {:need-setting need-setting
                                     :n population
                                     :beta-params (get leaver-beta-params [ay need-setting])})
-          movers (if (states/can-move? valid-year-settings ay need-setting)
-                   (predict-movers {:need-setting need-setting
-                                    :n (- population leavers)
-                                    :beta-params (get mover-beta-params [ay need-setting])
-                                    :dirichlet-params mover-dirichlet-params})
-                   {need-setting (- population leavers)})
+          movers+remainers (if (states/can-move? valid-year-settings ay need-setting)
+                             (predict-movers {:need-setting need-setting
+                                              :n (- population leavers)
+                                              :beta-params (get mover-beta-params [ay need-setting])
+                                              :dirichlet-params mover-dirichlet-params})
+                             {need-setting (- population leavers)})
           [model transitions] (incorporate-new-ay-need-setting-populations {:model model
                                                                             :transitions transitions
                                                                             :academic-year (+ 1 ay) ;; aging on
                                                                             :need-setting need-setting
-                                                                            :predicted-populations movers
+                                                                            :predicted-populations movers+remainers
                                                                             :calendar-year calendar-year})]
       [model
        (update transitions [calendar-year (+ 1 ay) need-setting c/non-send] m/some+ leavers)])
