@@ -104,16 +104,21 @@
 ; Helper Fns for outputting Beta parameters as expectations
 (defn expectation
   "Calculate the expectation from the Beta distros alpha and beta parameters"
-  [{:keys [:alpha :beta]}]
-  (float (/ alpha (+ alpha beta))))
+  [alpha beta]
+  (/ alpha (+ alpha beta)))
+
+(defn beta-params-expectation
+  "Return alpha, beta and expectation as a vector from a hash"
+  [{:keys [:alpha :beta] :as params}]
+  (mapv float [alpha beta (expectation alpha beta)]))
 
 (defn expectations [betas]
   "Beta disto parameters are stored in a map typically keyed by an entities index (ay, n, s).
   Apply expectation to the values of this map"
   (-> (for [[k params] betas]
-          (if (vector? k)                                   ; this is weak better, to use schema checking here
-            (conj (states/split-entity k) (expectation params))
-            [k (expectation params)]))
+          (if (vector? k)                                   ; this is weak, better to use schema checking here
+            (into [] (concat (states/split-entity k) (beta-params-expectation params)))
+            (into [k] (beta-params-expectation params))))
       (sort)))
 
 (defn output-beta-expectations
@@ -122,7 +127,7 @@
   entity (ay, n, s) based e.g joiner beta params are indexed by ay."
   [dir filename betas & cols]
   (with-open [writer (io/writer (io/file (str dir "/" filename ".csv")))]
-    (let [columns (or (first cols) [:ay :need :setting :expectation])
+    (let [columns (or (first cols) [:ay :need :setting :alpha :beta :expectation])
           headers (mapv name columns)
           rows (expectations betas)]
       (csv/write-csv writer (into [headers] rows)))))
@@ -251,7 +256,7 @@
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
         (output-beta-expectations dir "joiner_beta_expectations" (standard-projection :joiner-beta-params)
-                                  [:ay :expectation])
+                                  [:ay :alpha :beta :expectation])
         (output-beta-expectations dir "mover_beta_expectations" (standard-projection :mover-beta-params))
         (output-beta-expectations dir "leaver_beta_expectations" (standard-projection :leaver-beta-params))
         (when run-charts
