@@ -99,8 +99,8 @@
         response (sh/sh "Rscript" "--vanilla" send-charts dir pop-path
                         (if (nil? settings-to-exclude) "" settings-to-exclude)
                         (if (bound-or-interval? use-confidence-bound-or-interval) ".ci" ".95pc.bound"))]
-  (if-not (zero? (:exit response))
-    (throw (Exception. (:err response))))))
+    (if-not (zero? (:exit response))
+      (throw (Exception. (:err response))))))
 
 ; Helper Fns for outputting Beta parameters as expectations
 (defn expectation
@@ -113,13 +113,31 @@
   [{:keys [:alpha :beta] :as params}]
   (mapv float [alpha beta (expectation alpha beta)]))
 
-(defn expectations [betas]
+(defn beta-expectations [betas]
   "Beta disto parameters are stored in a map typically keyed by an entities index (ay, n, s).
   Apply expectation to the values of this map"
   (-> (for [[k params] betas]
-          (if (vector? k)                                   ; this is weak, better to use schema checking here
-            (into [] (concat (states/split-entity k) (beta-params-expectation params)))
-            (into [k] (beta-params-expectation params))))
+        (if (vector? k)                                     ; this is weak, better to use schema checking here
+          (into [] (concat (states/split-entity k) (beta-params-expectation params)))
+          (into [k] (beta-params-expectation params))))
+      (sort)))
+
+(defn normalize-dirichelt [params]
+  (reduce (comp + val) params)
+  )
+
+(defn dirichlet-expectations [alphas]
+  "Dirichelt disto parameters are stored in a map typically keyed by an entities index (ay, n, s).
+  The parameters are already normalized so represent expectation already. Unfortunately the normalisation
+  is not kept so our confidence in the parameter is unknown."
+  (-> (reduce (fn [acc [k params]]
+                (concat acc
+                        (let [prefix (states/split-entity k)]
+                          (map (fn [p] (into []
+                                             (concat prefix (conj (mapv name (states/split-need-setting (key p)))
+                                                                  (val p)))))
+                               params))))
+              [] alphas)
       (sort)))
 
 (defn output-beta-expectations
@@ -130,7 +148,18 @@
   (with-open [writer (io/writer (io/file (str dir "/" filename ".csv")))]
     (let [columns (or (first cols) [:ay :need :setting :alpha :beta :expectation])
           headers (mapv name columns)
-          rows (expectations betas)]
+          rows (beta-expectations betas)]
+      (csv/write-csv writer (into [headers] rows)))))
+
+(defn output-dirichlet-expectations
+  "Write out beta expectations to a supplied `dir` and `file` using a map of beta parameters.
+  Except an argument to overwrite the column headings when the index is not
+  entity (ay, n, s) based e.g joiner beta params are indexed by ay."
+  [dir filename alphas & cols]
+  (with-open [writer (io/writer (io/file (str dir "/" filename ".csv")))]
+    (let [columns (or (first cols) [:ay :need :setting :need-destination :setting-destination :expectation])
+          headers (mapv name columns)
+          rows (dirichlet-expectations alphas)]
       (csv/write-csv writer (into [headers] rows)))))
 
 ; Core function
@@ -144,9 +173,9 @@
   (let [transitions-data (ds/row-maps transitions)
         transform-transitions (->> transitions-data
                                    (map #(vector
-                                          (:academic-year-2 %)
-                                          (states/join-need-setting (:need-1 %) (:setting-1 %))
-                                          (states/join-need-setting (:need-2 %) (:setting-2 %))))
+                                           (:academic-year-2 %)
+                                           (states/join-need-setting (:need-1 %) (:setting-1 %))
+                                           (states/join-need-setting (:need-2 %) (:setting-2 %))))
                                    distinct)
         transform-projection (->> projection
                                   keys
@@ -278,6 +307,7 @@
                                   [:ay :alpha :beta :expectation])
         (output-beta-expectations dir "mover_beta_expectations" (standard-projection :mover-beta-params))
         (output-beta-expectations dir "leaver_beta_expectations" (standard-projection :leaver-beta-params))
+        (output-dirichlet-expectations dir "movers_dirichlet_expectations" (standard-projection :mover-state-alphas))
         (when run-charts
           (with-open [writer (io/writer (io/file (str dir "/historic-data.csv")))]
             (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
