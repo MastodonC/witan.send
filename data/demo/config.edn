@@ -10,13 +10,13 @@
                        :modify-transitions-from nil}
 
  :projection-parameters {:random-seed 50
-                         :simulations 10}
+                         :simulations 1000}
 
  :output-parameters {:run-outputs true
-                     :run-charts false
-                     :output-dir "results"
+                     :run-charts true
+                     :output-dir "results-nca"
                      :settings-to-exclude-in-charts nil
-                     :keep-temp-files? false
+                     :keep-temp-files? true
                      :use-confidence-bound-or-interval nil
                      :population-file #ref [:file-inputs :population]}
 
