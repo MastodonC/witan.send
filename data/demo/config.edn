@@ -10,7 +10,7 @@
                        :modify-transitions-from nil}
 
  :projection-parameters {:random-seed 50
-                         :simulations 100}
+                         :simulations 1000}
 
  :output-parameters {:run-outputs true
                      :run-charts true
