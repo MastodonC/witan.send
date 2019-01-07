@@ -8,3 +8,8 @@
   "This rounds numbers to 2 decimal places."
   [x]
   (Double/parseDouble (format "%.02f" (double x))))
+
+(defn round0
+  "This rounds numbers to 2 decimal places."
+  [x]
+  (Double/parseDouble (format "%.0f" (double x))))

@@ -31,9 +31,10 @@
 
 (defn pull-year
   [data pos]
-  (->> (nth data pos)
-       (map (fn [[a b c]] (if (zero? b) [a :NA :NA] [a b c])))
-       (apply mapv vector)))
+  (if (seq? data)
+    (->> (nth data pos)
+         (map (fn [[a b c]] (if (zero? b) [a :NA :NA] [a b c])))
+         (apply mapv vector))))
 
 (defn create-CI-map [string data pos year-count]
   (reduce into {}
@@ -173,14 +174,18 @@
             joiner-ribbon-data (prep-ribbon-plot-data joiner-rates-CI years n-colours)
             filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send)) transitions-data)
             leaver-rates (leaver-rate filter-leavers)
-            leaver-rates-CI (map #(confidence-bounds leaver-rates %) years)
-            leaver-ribbon-data (prep-ribbon-plot-data leaver-rates-CI years n-colours)
+            leaver-rates-CI (if (seq? leaver-rates)
+                              (map #(confidence-bounds leaver-rates %) years))
+            leaver-ribbon-data (if (seq? leaver-rates-CI)
+                                 (prep-ribbon-plot-data leaver-rates-CI years n-colours))
             filter-movers (remove (fn [{:keys [setting-1 setting-2]}]
                                     (or (= setting-1 c/non-send)
                                         (= setting-2 c/non-send))) transitions-data)
             mover-rates (mover-rate filter-movers)
-            mover-rates-CI (map #(confidence-bounds mover-rates %) years)
-            mover-ribbon-data (prep-ribbon-plot-data mover-rates-CI years n-colours)]
+            mover-rates-CI (if (seq? mover-rates)
+                             (map #(confidence-bounds mover-rates %) years))
+            mover-ribbon-data (if (seq? mover-rates-CI)
+                                (prep-ribbon-plot-data mover-rates-CI years n-colours))]
         ;;future-transitions (mapcat u/projection->transitions projection) ;; for projection investigation
 
         (report/info "First year of input data: " (report/bold (first years)))
@@ -197,6 +202,20 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
+        (with-open [writer (io/writer (io/file (str dir "/Output_State_pop_only.csv")))]
+          (let [columns [:calendar-year :academic-year :need-setting :mean]
+                output (->> (mapcat (fn [output year]
+                                      (map (fn [[[academic-year need-setting] stats]]
+                                             (-> (medley/map-vals m/round0 stats)
+                                                 (assoc :academic-year academic-year
+                                                        :need-setting (into [] (map name (states/split-need-setting need-setting)))
+                                                        :calendar-year year)))
+                                           (:by-state output))) send-output (range initial-projection-year 3000))
+                            (map (apply juxt columns))
+                            (sort)
+                            (concat [(map name [:calendar-year :academic-year :need :setting :population])])
+                            (mapv flatten))]
+            (csv/write-csv writer output)))
         (with-open [writer (io/writer (io/file (str dir "/Output_AY.csv")))]
           (let [columns [:calendar-year :academic-year :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
