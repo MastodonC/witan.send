@@ -122,20 +122,21 @@
           (into [k] (beta-params-expectation params))))
       (sort)))
 
-(defn normalize-dirichelt [params]
-  (reduce (comp + val) params)
-  )
+(defn normalisation-constant-dirichelt [params]
+  (reduce + (map val params)))
 
 (defn dirichlet-expectations [alphas]
-  "Dirichelt disto parameters are stored in a map typically keyed by an entities index (ay, n, s).
-  The parameters are already normalized so represent expectation already. Unfortunately the normalisation
-  is not kept so our confidence in the parameter is unknown."
+  "Dirichelt distro parameters are stored in a map typically keyed by an entities index (ay, n, s)."
   (-> (reduce (fn [acc [k params]]
                 (concat acc
-                        (let [prefix (states/split-entity k)]
+                        (let [prefix (states/split-entity k)
+                              normalisation (normalisation-constant-dirichelt params)]
                           (map (fn [p] (into []
-                                             (concat prefix (conj (mapv name (states/split-need-setting (key p)))
-                                                                  (val p)))))
+                                             (concat prefix
+                                                     (conj (mapv name (states/split-need-setting (key p)))
+                                                           (/ (val p) normalisation)
+                                                           normalisation
+                                                           (val p)))))
                                params))))
               [] alphas)
       (sort)))
@@ -157,7 +158,7 @@
   entity (ay, n, s) based e.g joiner beta params are indexed by ay."
   [dir filename alphas & cols]
   (with-open [writer (io/writer (io/file (str dir "/" filename ".csv")))]
-    (let [columns (or (first cols) [:ay :need :setting :need-destination :setting-destination :expectation])
+    (let [columns (or (first cols) [:ay :need :setting :need-destination :setting-destination :expectation :normalisation-constant :alpha])
           headers (mapv name columns)
           rows (dirichlet-expectations alphas)]
       (csv/write-csv writer (into [headers] rows)))))
