@@ -127,19 +127,23 @@
 
 (defn dirichlet-expectations [alphas]
   "Dirichelt distro parameters are stored in a map typically keyed by an entities index (ay, n, s)."
-  (-> (reduce (fn [acc [k params]]
-                (concat acc
-                        (let [prefix (states/split-entity k)
-                              normalisation (normalisation-constant-dirichelt params)]
-                          (map (fn [p] (into []
-                                             (concat prefix
-                                                     (conj (mapv name (states/split-need-setting (key p)))
-                                                           (/ (val p) normalisation)
-                                                           normalisation
-                                                           (val p)))))
-                               params))))
-              [] alphas)
-      (sort)))
+  (let [foo (doall (reduce (fn [acc [k params]]
+                             (concat acc
+                                     (let [prefix (if (vector? k)
+                                                    (let [v (states/split-entity k)
+                                                          ay+1 (inc (first v))]
+                                                      (conj v ay+1))
+                                                    [k])
+                                           normalisation (normalisation-constant-dirichelt params)]
+                                       (map (fn [p] (into []
+                                                          (concat prefix
+                                                                  (conj (mapv name (states/split-need-setting (key p)))
+                                                                        (/ (val p) normalisation)
+                                                                        normalisation
+                                                                        (val p)))))
+                                            params))))
+                           [] alphas))]
+    (sort foo)))
 
 (defn output-beta-expectations
   "Write out beta expectations to a supplied `dir` and `file` using a map of beta parameters.
@@ -158,7 +162,7 @@
   entity (ay, n, s) based e.g joiner beta params are indexed by ay."
   [dir filename alphas & cols]
   (with-open [writer (io/writer (io/file (str dir "/" filename ".csv")))]
-    (let [columns (or (first cols) [:ay :need :setting :need-destination :setting-destination :expectation :normalisation-constant :alpha])
+    (let [columns (or (first cols) [:ay :need :setting :ay-destination :need-destination :setting-destination :expectation :normalisation-constant :alpha])
           headers (mapv name columns)
           rows (dirichlet-expectations alphas)]
       (csv/write-csv writer (into [headers] rows)))))
@@ -309,6 +313,8 @@
         (output-beta-expectations dir "mover_beta_expectations" (standard-projection :mover-beta-params))
         (output-beta-expectations dir "leaver_beta_expectations" (standard-projection :leaver-beta-params))
         (output-dirichlet-expectations dir "movers_dirichlet_expectations" (standard-projection :mover-state-alphas))
+        (output-dirichlet-expectations dir "joiners_dirichlet_expectations" (standard-projection :joiner-state-alphas)
+                                       [:ay :need :setting :expectation :normalisation-constant :alpha])
         (when run-charts
           (with-open [writer (io/writer (io/file (str dir "/historic-data.csv")))]
             (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
