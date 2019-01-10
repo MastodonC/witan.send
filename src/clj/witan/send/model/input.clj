@@ -47,6 +47,32 @@
       (apply-schema-coercion schema)
       (as-> {:keys [column-names columns]} (ds/dataset column-names columns))))
 
+(defn is-dataset-erroneous? [dataset]
+  (->> dataset second :column-names first ((complement instance?) clojure.lang.Keyword)))
+
+(defn is-dataset-miscoded? [dataset]
+  (->> dataset second :column-names first first (= :error)))
+
+(defn is-dataset-empty? [dataset]
+  (->> dataset second :column-names empty?))
+
+(defn check-dataset [pred s datasets]
+  (when (some true? (map pred datasets))
+    (->> datasets
+         (filter pred)
+         (map first)
+         (clojure.string/join ", ")
+         (str s))))
+
+(defn check-if-dataset-is-valid
+  "Checks each expected dataset for errors"
+  [datasets]
+  (when (some true? (map is-dataset-erroneous? datasets))
+    (let [errors (filter is-dataset-erroneous? datasets)]
+      (map (fn [f] (f errors))
+           [(partial check-dataset is-dataset-miscoded? "The following datasets are miscoded: ")
+            (partial check-dataset is-dataset-empty? "The following datasets are empty or do not exist: ")]))))
+
 (defn build-input-datasets
   "Build a map of the datasets to use for input"
   [project-dir file-inputs schema-inputs]
