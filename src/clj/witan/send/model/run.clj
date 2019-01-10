@@ -205,7 +205,10 @@
         inputs (assoc inputs :valid-year-settings (->> (ds/row-maps valid-states)
                                                        (states/calculate-valid-year-settings-from-setting-academic-years)))
         projections (->> (range simulations)
-                         (partition-all (int (Math/ceil (/ simulations 8))))
+                         ;; The logic is for validation compatibility only, elsewise we could just use the truth expression
+                         (partition-all (if (< simulations 8)
+                                          (int (Math/ceil (/ simulations 8)))
+                                          (int (/ simulations 8))))
                          (pmap (fn [simulations]
                                  (->> (for [_ simulations]
                                         (let [projection (reductions (partial run-model-iteration modify-transitions-from inputs modified-inputs)
