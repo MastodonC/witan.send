@@ -127,23 +127,23 @@
 
 (defn dirichlet-expectations [alphas]
   "Dirichelt distro parameters are stored in a map typically keyed by an entities index (ay, n, s)."
-  (let [foo (doall (reduce (fn [acc [k params]]
-                             (concat acc
-                                     (let [prefix (if (vector? k)
-                                                    (let [v (states/split-entity k)
-                                                          ay+1 (inc (first v))]
-                                                      (conj v ay+1))
-                                                    [k])
-                                           normalisation (normalisation-constant-dirichelt params)]
-                                       (map (fn [p] (into []
-                                                          (concat prefix
-                                                                  (conj (mapv name (states/split-need-setting (key p)))
-                                                                        (/ (val p) normalisation)
-                                                                        normalisation
-                                                                        (val p)))))
-                                            params))))
-                           [] alphas))]
-    (sort foo)))
+  (-> (reduce (fn [acc [k params]]
+                 (concat acc
+                         (let [prefix (if (vector? k)
+                                        (let [v (states/split-entity k)
+                                              ay+1 (inc (first v))]
+                                          (conj v ay+1))
+                                        [k])
+                               normalisation (normalisation-constant-dirichelt params)]
+                           (map (fn [p] (into []
+                                              (concat prefix
+                                                      (conj (mapv name (states/split-need-setting (key p)))
+                                                            (/ (val p) normalisation)
+                                                            normalisation
+                                                            (val p)))))
+                                params))))
+               [] alphas)
+      (sort)))
 
 (defn output-beta-expectations
   "Write out beta expectations to a supplied `dir` and `file` using a map of beta parameters.
