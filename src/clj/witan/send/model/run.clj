@@ -56,7 +56,7 @@
   or academic year range is valid."
   [[model transitions] [[ay need-setting] population]
    {:keys [mover-state-alphas mover-beta-params leaver-beta-params
-           valid-year-settings]}
+           valid-year-settings valid-ay-need-settings]}
    calendar-year]
   (if-let [mover-dirichlet-params (get mover-state-alphas [ay need-setting])]
     (let [leavers (predict-leavers {:need-setting need-setting
@@ -67,7 +67,8 @@
                                               :n (- population leavers)
                                               :beta-params (get mover-beta-params [ay need-setting])
                                               :dirichlet-params mover-dirichlet-params})
-                             {need-setting (- population leavers)})
+                             (if (some #{[(+ 1 ay) need-setting]} valid-ay-need-settings) ; no so performant
+                               {need-setting (- population leavers)}))
           [model transitions] (incorporate-new-ay-need-setting-populations {:model model
                                                                             :transitions transitions
                                                                             :academic-year (+ 1 ay) ;; aging on
@@ -206,7 +207,8 @@
         validate-valid-states (->> (ds/row-maps valid-states)
                                    (states/calculate-valid-states-from-setting-academic-years))
         inputs (assoc inputs :valid-year-settings (->> (ds/row-maps valid-states)
-                                                       (states/calculate-valid-year-settings-from-setting-academic-years)))
+                                                       (states/calculate-valid-year-settings-from-setting-academic-years))
+                             :valid-ay-need-settings validate-valid-states)
         projections (->> (range simulations)
                          ;; The logic is for validation compatibility only, elsewise we could just use the truth expression
                          (partition-all (if (< simulations 8)
