@@ -205,7 +205,7 @@
         inputs (assoc inputs :valid-year-settings (->> (ds/row-maps valid-states)
                                                        (states/calculate-valid-year-settings-from-setting-academic-years)))
         projections (->> (range simulations)
-                         (partition-all (int (/ simulations 8)))
+                         (partition-all (int (Math/ceil (/ simulations 8))))
                          (pmap (fn [simulations]
                                  (->> (for [_ simulations]
                                         (let [projection (reductions (partial run-model-iteration modify-transitions-from inputs modified-inputs)
