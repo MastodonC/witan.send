@@ -208,17 +208,17 @@
             joiner-ribbon-data (prep-ribbon-plot-data joiner-rates-CI years n-colours)
             filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send)) transitions-data)
             leaver-rates (leaver-rate filter-leavers)
-            leaver-rates-CI (if (seq? leaver-rates)
+            leaver-rates-CI (if (seqable? leaver-rates)
                               (map #(confidence-bounds leaver-rates %) years))
-            leaver-ribbon-data (if (seq? leaver-rates-CI)
+            leaver-ribbon-data (if (seqable? leaver-rates-CI)
                                  (prep-ribbon-plot-data leaver-rates-CI years n-colours))
             filter-movers (remove (fn [{:keys [setting-1 setting-2]}]
                                     (or (= setting-1 c/non-send)
                                         (= setting-2 c/non-send))) transitions-data)
             mover-rates (mover-rate filter-movers)
-            mover-rates-CI (if (seq? mover-rates)
+            mover-rates-CI (if (seqable? mover-rates)
                              (map #(confidence-bounds mover-rates %) years))
-            mover-ribbon-data (if (seq? mover-rates-CI)
+            mover-ribbon-data (if (seqable? mover-rates-CI)
                                 (prep-ribbon-plot-data mover-rates-CI years n-colours))]
         ;;future-transitions (mapcat u/projection->transitions projection) ;; for projection investigation
 
