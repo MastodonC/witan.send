@@ -85,8 +85,24 @@
                                    :beta (- (get-in population [calendar-year academic-year]) j)})))
                     coll years)) {} ages))
 
-(defn output-transitions [file projections]
-  (binding [*print-length* nil] (spit file (pr-str projections))))
+(defn output-transitions
+  ([dir filename projections]
+   (binding [*print-length* nil] (spit (str dir "/" filename ".edn") (pr-str projections))))
+  ([dir filename projections simulations]
+   (with-open [writer (io/writer (io/file (str dir "/" filename ".csv")))]
+     (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2 :academic-year-2 :avg-number-of]
+           headers (mapv name columns)
+           parse-need-setting #(map name ((comp reverse states/split-need-setting) %))
+           rows (sort (remove empty?
+                              (for [[[cy ay need-setting-source need-setting-destination] transitions] projections]
+                                (if (> (m/round0 (/ transitions simulations)) 0)
+                                  (into [] (flatten [cy
+                                                     ay
+                                                     (parse-need-setting need-setting-source)
+                                                     (inc ay)
+                                                     (parse-need-setting need-setting-destination)
+                                                     (m/round0 (/ transitions simulations))]))))))]
+       (csv/write-csv writer (into [headers] rows))))))
 
 (defn ribbon-data-rows [ribbon-data]
   (mapv (fn [x] (mapv #(nth % x) (map val ribbon-data))) (range (count (val (last ribbon-data))))))
@@ -117,7 +133,10 @@
 (defn expectation
   "Calculate the expectation from the Beta distros alpha and beta parameters"
   [alpha beta]
-  (/ alpha (+ alpha beta)))
+  (let [total (+ alpha beta)]
+    (if (not= 0 total)
+      (/ alpha total)
+      0)))
 
 (defn beta-params-expectation
   "Return alpha, beta and expectation as a vector from a hash"
@@ -139,21 +158,21 @@
 (defn dirichlet-expectations [alphas]
   "Dirichelt distro parameters are stored in a map typically keyed by an entities index (ay, n, s)."
   (-> (reduce (fn [acc [k params]]
-                 (concat acc
-                         (let [prefix (if (vector? k)
-                                        (let [v (states/split-entity k)
-                                              ay+1 (inc (first v))]
-                                          (conj v ay+1))
-                                        [k])
-                               normalisation (normalisation-constant-dirichelt params)]
-                           (map (fn [p] (into []
-                                              (concat prefix
-                                                      (conj (mapv name (states/split-need-setting (key p)))
-                                                            (/ (val p) normalisation)
-                                                            normalisation
-                                                            (val p)))))
-                                params))))
-               [] alphas)
+                (concat acc
+                        (let [prefix (if (vector? k)
+                                       (let [v (states/split-entity k)
+                                             ay+1 (inc (first v))]
+                                         (conj v ay+1))
+                                       [k])
+                              normalisation (normalisation-constant-dirichelt params)]
+                          (map (fn [p] (into []
+                                             (concat prefix
+                                                     (conj (mapv name (states/split-need-setting (key p)))
+                                                           (/ (val p) normalisation)
+                                                           normalisation
+                                                           (val p)))))
+                               params))))
+              [] alphas)
       (sort)))
 
 (defn output-beta-expectations
@@ -198,7 +217,8 @@
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
    to get the total cost."
   [{:keys [projection send-output transitions valid-states
-           population modify-transition-by standard-projection scenario-projection]}
+           population modify-transition-by standard-projection scenario-projection
+           simulations]}
    {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts
            keep-temp-files? use-confidence-bound-or-interval population-file]}]
   (let [transitions-data (ds/row-maps transitions)
@@ -247,7 +267,8 @@
         (report/info "First year of input data: " (report/bold (first years)))
         (report/info "Final year of input data: " (report/bold (inc (last years))))
         (report/info "Final year of projection: " (report/bold (+ (last years) (count (map :total-in-send send-output)))))
-        (output-transitions (str dir "/transitions.edn") projection)
+        (output-transitions dir "transitions" projection)
+        (output-transitions dir "transitions" projection simulations)
         (with-open [writer (io/writer (io/file (str dir "/Output_State.csv")))]
           (let [columns [:calendar-year :academic-year :need-setting :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
