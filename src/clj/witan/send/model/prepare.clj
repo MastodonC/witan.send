@@ -126,9 +126,9 @@
               :leaver-beta-params (stitch-state-params-by-ay splice-ncy
                                                              (p/beta-params-leavers validate-valid-states transitions)
                                                              (p/beta-params-leavers validate-valid-states transitions-filtered))
-              :joiner-state-alphas (stitch-ay-params-by-ay splice-ncy
-                                                           (p/alpha-params-joiners validate-valid-states (transitions-map transitions))
-                                                           (p/alpha-params-joiners validate-valid-states (transitions-map transitions-filtered)))
+              :joiner-state-alphas (stitch-state-params-by-ay splice-ncy
+                                                              (p/alpha-params-joiners validate-valid-states transitions)
+                                                              (p/alpha-params-joiners validate-valid-states transitions-filtered))
 
               :mover-beta-params (stitch-state-params-by-ay splice-ncy
                                                             (p/beta-params-movers validate-valid-states valid-transitions transitions)
