@@ -64,11 +64,11 @@
   (reduce
    (fn [coll [[ay need-setting] v]]
      (cond-> coll
-       (= (second (states/split-need-setting need-setting)) x)
+       (= (name (second (states/split-need-setting need-setting))) x)
        (assoc [ay need-setting] v)))
    (reduce (fn [coll [[ay need-setting] v]]
              (cond-> coll
-               (not= (second (states/split-need-setting need-setting)) x)
+               (not= (name (second (states/split-need-setting need-setting))) x)
                (assoc [ay need-setting] v)))
            {} a)
    b))
@@ -87,7 +87,7 @@
            {} a)
    b))
 
-(defn stitch-ay-params-by-ay
+(defn stitch-ay-params
   [x a b]
   (reduce
    (fn [coll [ay v]]
@@ -115,27 +115,43 @@
                                               (group-by :calendar-year)
                                               (medley/map-vals #(total-by-academic-year %)))}]
     (if transitions-filtered
-      (merge start-map
-             {:joiner-beta-params (stitch-ay-params-by-ay splice-ncy
-                                                          (p/beta-params-joiners validate-valid-states
-                                                                                 transitions
-                                                                                 (ds/row-maps population))
-                                                          (p/beta-params-joiners validate-valid-states
-                                                                                 transitions-filtered
-                                                                                 (ds/row-maps population)))
-              :leaver-beta-params (stitch-state-params-by-ay splice-ncy
-                                                             (p/beta-params-leavers validate-valid-states transitions)
-                                                             (p/beta-params-leavers validate-valid-states transitions-filtered))
-              :joiner-state-alphas (stitch-state-params-by-ay splice-ncy
-                                                              (p/alpha-params-joiners validate-valid-states transitions)
-                                                              (p/alpha-params-joiners validate-valid-states transitions-filtered))
+      (if (int? splice-ncy)
+        (merge start-map
+               {:joiner-beta-params (stitch-ay-params splice-ncy
+                                                      (p/beta-params-joiners validate-valid-states
+                                                                             transitions
+                                                                             (ds/row-maps population))
+                                                      (p/beta-params-joiners validate-valid-states
+                                                                             transitions-filtered
+                                                                             (ds/row-maps population)))
+                :leaver-beta-params (stitch-state-params-by-ay splice-ncy
+                                                               (p/beta-params-leavers validate-valid-states transitions)
+                                                               (p/beta-params-leavers validate-valid-states transitions-filtered))
+                :joiner-state-alphas (stitch-ay-params splice-ncy
+                                                       (p/alpha-params-joiners validate-valid-states (transitions-map transitions))
+                                                       (p/alpha-params-joiners validate-valid-states (transitions-map transitions-filtered)))
 
-              :mover-beta-params (stitch-state-params-by-ay splice-ncy
-                                                            (p/beta-params-movers validate-valid-states valid-transitions transitions)
-                                                            (p/beta-params-movers validate-valid-states valid-transitions transitions-filtered))
-              :mover-state-alphas (stitch-state-params-by-ay splice-ncy
-                                                             (p/alpha-params-movers validate-valid-states valid-transitions transitions)
-                                                             (p/alpha-params-movers validate-valid-states valid-transitions transitions-filtered))})
+                :mover-beta-params (stitch-state-params-by-ay splice-ncy
+                                                              (p/beta-params-movers validate-valid-states valid-transitions transitions)
+                                                              (p/beta-params-movers validate-valid-states valid-transitions transitions-filtered))
+                :mover-state-alphas (stitch-state-params-by-ay splice-ncy
+                                                               (p/alpha-params-movers validate-valid-states valid-transitions transitions)
+                                                               (p/alpha-params-movers validate-valid-states valid-transitions transitions-filtered))})
+        (merge start-map
+               {:joiner-beta-params (p/beta-params-joiners validate-valid-states
+                                                           transitions
+                                                           (ds/row-maps population))
+                :leaver-beta-params (stitch-state-params-by-setting splice-ncy
+                                                                    (p/beta-params-leavers validate-valid-states transitions)
+                                                                    (p/beta-params-leavers validate-valid-states transitions-filtered))
+                :joiner-state-alphas (p/alpha-params-joiners validate-valid-states (transitions-map transitions))
+
+                :mover-beta-params (stitch-state-params-by-setting splice-ncy
+                                                                   (p/beta-params-movers validate-valid-states valid-transitions transitions)
+                                                                   (p/beta-params-movers validate-valid-states valid-transitions transitions-filtered))
+                :mover-state-alphas (stitch-state-params-by-setting splice-ncy
+                                                                    (p/alpha-params-movers validate-valid-states valid-transitions transitions)
+                                                                    (p/alpha-params-movers validate-valid-states valid-transitions transitions-filtered))}))
       (merge start-map
              {:joiner-beta-params (p/beta-params-joiners validate-valid-states
                                                          transitions
