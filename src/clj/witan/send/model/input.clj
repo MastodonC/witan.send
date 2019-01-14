@@ -50,12 +50,6 @@
 (defn is-dataset-erroneous? [dataset]
   (->> dataset second :column-names first ((complement instance?) clojure.lang.Keyword)))
 
-(defn is-dataset-miscoded? [dataset]
-  (->> dataset second :column-names first first (= :error)))
-
-(defn is-dataset-empty? [dataset]
-  (->> dataset second :column-names empty?))
-
 (defn check-dataset [pred s datasets]
   (when (some true? (map pred datasets))
     (->> datasets
@@ -67,11 +61,9 @@
 (defn check-if-dataset-is-valid
   "Checks each expected dataset for errors"
   [datasets]
-  (when (some true? (map is-dataset-erroneous? datasets))
-    (let [errors (filter is-dataset-erroneous? datasets)]
-      (map (fn [f] (f errors))
-           [(partial check-dataset is-dataset-miscoded? "The following datasets are miscoded: ")
-            (partial check-dataset is-dataset-empty? "The following datasets are empty or do not exist: ")]))))
+  (if (some true? (map is-dataset-erroneous? datasets))
+    (check-dataset is-dataset-erroneous? "The following datasets may not exist or have errors in them " (filter is-dataset-erroneous? datasets))
+    true))
 
 (defn build-input-datasets
   "Build a map of the datasets to use for input"
