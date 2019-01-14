@@ -51,18 +51,17 @@
   (->> dataset second :column-names first ((complement instance?) clojure.lang.Keyword)))
 
 (defn check-dataset [pred s datasets]
-  (when (some true? (map pred datasets))
-    (->> datasets
-         (filter pred)
-         (map first)
-         (clojure.string/join ", ")
-         (str s))))
+  (->> datasets
+       (filter pred)
+       (map first)
+       (clojure.string/join ", ")
+       (str s)))
 
 (defn check-if-dataset-is-valid
   "Checks each expected dataset for errors"
   [datasets]
   (if (some true? (map is-dataset-erroneous? datasets))
-    (check-dataset is-dataset-erroneous? "The following datasets may not exist or have errors in them " (filter is-dataset-erroneous? datasets))
+    (check-dataset is-dataset-erroneous? "The following datasets may not exist or have errors in them: " (filter is-dataset-erroneous? datasets))
     true))
 
 (defn build-input-datasets
