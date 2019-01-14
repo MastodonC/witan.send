@@ -13,7 +13,7 @@
    (let [input (i/build-input-datasets (:project-dir config) (:file-inputs config) (:schema-inputs config))
          validate-input (i/check-if-dataset-is-valid input)]
      (if (= true validate-input)
-       (-> (p/prepare-send-inputs input (:transition-parameters config))
+       (-> (p/prepare-send-inputs input (:scenario-parameters config))
            (r/run-send-model (:projection-parameters config)))
        validate-input))))
 
