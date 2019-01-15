@@ -6,7 +6,9 @@
             [witan.send.main :as m]
             [witan.send.model.output :as so]
             [witan.send.send :as send]
-            [witan.send.validate-model :as v]))
+            [witan.send.validate-model :as v]
+            [witan.send.model.input :as i]
+            [clojure.core.matrix.dataset :as ds]))
 
 (deftest expected-results
   (let [expected-md5s {"Output_AY.csv" "848944192402c899e9891453e91287b4",
@@ -41,6 +43,13 @@
     #_(testing "all plots are produced"
         (is (every? true? (map #(.exists (io/file (join "/" [output-dir %]))) expected-plots))))))
 
+(defn load-results [path]
+  (let [csv (i/load-csv path)]
+    (ds/row-maps (ds/dataset (:column-names csv) (:columns csv)))))
+
+(defn find-in-map [seq-of-maps col v]
+  (get (first (filter #(= (get % col) v) seq-of-maps)) "expectation"))
+
 (deftest expected-filter-by-ay11-cy2015-results
   (let [expected-md5s {"Output_AY.csv" "89022266998810dd7f4c1c8283c16744",
                        "Output_AY_Group.csv" "e834a4f17eae2da61a542aa132dedd47",
@@ -61,4 +70,27 @@
     (testing "checksums are unchanged for scenario"
       (is (= expected-md5s
              (into {} (for [f files]
-                        [f (-> (io/file output-dir f) (digest/md5))])))))))
+                        [f (-> (io/file output-dir f) (digest/md5))])))))
+    (let [standard-joiner-exp (load-results "data/demo/results/joiner_beta_expectations.csv")
+          scenario-joiner-exp (load-results (str output-dir "/joiner_beta_expectations.csv"))
+          standard-leaver-exp (load-results "data/demo/results/leaver_beta_expectations.csv")
+          scenario-leaver-exp (load-results (str output-dir "/leaver_beta_expectations.csv"))
+          standard-mover-exp (load-results "data/demo/results/mover_beta_expectations.csv")
+          scenario-mover-exp (load-results (str output-dir "/mover_beta_expectations.csv"))]
+      (testing "some of the rates we expect to change are effected"
+        (is (not= (find-in-map standard-joiner-exp "ay" "11")
+                  (find-in-map scenario-joiner-exp "ay" "11")))
+        (is (= (find-in-map standard-joiner-exp "ay" "10")
+               (find-in-map scenario-joiner-exp "ay" "10")))
+        (is (not= (find-in-map standard-leaver-exp "ay" "11")
+                  (find-in-map scenario-leaver-exp "ay" "11")))
+        (is (= (find-in-map standard-leaver-exp "ay" "10")
+               (find-in-map scenario-leaver-exp "ay" "10")))
+        (is (not= (find-in-map standard-mover-exp "ay" "11")
+                  (find-in-map scenario-mover-exp "ay" "11")))
+        (is (= (find-in-map standard-mover-exp "ay" "10")
+               (find-in-map scenario-mover-exp "ay" "10"))))
+      (testing "rates are as expected"
+        (is (= 0.0012491078 (read-string (find-in-map scenario-joiner-exp "ay" "11"))))
+        (is (= 0.22826087 (read-string (find-in-map scenario-leaver-exp "ay" "11"))))
+        (is (= 0.25700936 (read-string (find-in-map scenario-mover-exp "ay" "11"))))))))
