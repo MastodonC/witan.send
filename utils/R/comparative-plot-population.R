@@ -37,8 +37,8 @@ comparative_plot_population = function(output, data1, data2){
   max_x = max(count_data1$calendar.year)
   
   ## data labels for plots
-  data1_label = str_to_title(sapply(strsplit(data1_folder, "-"), "[", 3))
-  data2_label = str_to_title(sapply(strsplit(data2_folder, "-"), "[", 3))
+  data1_label = str_to_title(sapply(strsplit(data1, "-"), "[", 3))
+  data2_label = str_to_title(sapply(strsplit(data2, "-"), "[", 3))
 
   ## ribbon plot version - not zero-indexed
   g <- ggplot(count_data1, aes(x=calendar.year)) +
