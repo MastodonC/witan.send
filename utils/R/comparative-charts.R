@@ -4,15 +4,20 @@ library(stringr)
 
 # DATA
 
-### Names of the folders containing the 2 data sets you want to compare.
-### The code expects the folder and the data to be in specific forms and places:
-### Each folder must contain all results of a witan.send model run
-### The code will extract what type of run the data comes from (e.g baseline, Scenario 1) the name of the folder, and will use this for
-### labelling the plot
-data_folder = "~/witan.send/data/demo/"
-data1 = "results/"
-data2 = "results-alt/"
+### Output directory must also be where the input data for the mode exists.
+### Results will be stored in a directory called comparisons within the output 
+### directory.
+### data1 and data2 correspond to the folders containing the 2 data sets you 
+### want to compare.
+### Each data folder must contain all results of a witan.send model run
+### The code will extract what the name of the folder, and will use this for 
+### labelling the plot.
+args = commandArgs(trailingOnly=TRUE)
+output_dir = args[1]
+data1 = args[2]
+data2 = args[3]
 
+dir.create(paste0(output_dir, "comparisons"))
 
 # INPUTS
 
@@ -38,10 +43,13 @@ cols = cbPalette[c(2,6)]
 # PLOTS
 
 ## cost
-source("utils/R/comparative-plot-cost.R")
-comparative_plot_cost(data_folder, data1, data2)
+source("comparative-plot-cost.R")
+comparative_plot_cost(output_dir, data1, data2)
 
 ## population count
-source("utils/R/comparative-plot-population.R")
-comparative_plot_population(data_folder, data1, data2)
+source("comparative-plot-population.R")
+comparative_plot_population(output_dir, data1, data2)
 
+# setting counts
+source("comparative-plot-settings.R")
+comparative_plot_settings(output_dir, data1, data2)

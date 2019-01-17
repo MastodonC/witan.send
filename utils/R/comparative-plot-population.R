@@ -1,14 +1,10 @@
-comparative_plot_population = function(data_folder, data1, data2){
+comparative_plot_population = function(output, data1, data2){
   
   # DATA
   
-  ## historic data
-  #historic_data <- read.csv(paste0(data_folder, "data/transitions.csv")) %>%
-    
-  
   ### import historic data - taken from send_charts.R
   remove_colons <-  function(x) {str_replace(x, ':', '')}
-  df_historical <- read.csv(paste0(data_folder, "data/transitions.csv")) %>%
+  df_historical <- read.csv(paste0(output, "data/transitions.csv")) %>%
     mutate_all(funs(remove_colons)) %>%
     filter(need.1 != "NONSEND")
   
@@ -26,11 +22,11 @@ comparative_plot_population = function(data_folder, data1, data2){
   ## projections
   
   ### import the baseline dataset
-  count_data1 = read.csv(paste0(data_folder, data1, "Output_Count.csv"))
+  count_data1 = read.csv(paste0(data1, "Output_Count.csv"))
   
   ### import the scenario dataset
   ### then bind to historic data for use in plot
-  count_data2 = read.csv(paste0(data_folder, data2, "Output_Count.csv")) %>%
+  count_data2 = read.csv(paste0(data2, "Output_Count.csv")) %>%
     bind_rows(count_data_historic)
   
   
@@ -41,8 +37,8 @@ comparative_plot_population = function(data_folder, data1, data2){
   max_x = max(count_data1$calendar.year)
   
   ## data labels for plots
-  data1_label = str_to_title(sapply(strsplit(data1_folder, "-"), "[", 3))
-  data2_label = str_to_title(sapply(strsplit(data2_folder, "-"), "[", 3))
+  data1_label = str_to_title(sapply(strsplit(data1, "-"), "[", 3))
+  data2_label = str_to_title(sapply(strsplit(data2, "-"), "[", 3))
 
   ## ribbon plot version - not zero-indexed
   g <- ggplot(count_data1, aes(x=calendar.year)) +
@@ -73,7 +69,7 @@ comparative_plot_population = function(data_folder, data1, data2){
               colour = cols[2]) +
     theme(legend.position="none")
   
-  ggsave(paste0(data_folder, "Total_Population_Comparative.pdf"),
+  ggsave(paste0(output, "comparisons/", "Total_Population_Comparative.pdf"),
          width=8,
          height=6,
          units="in")
@@ -82,7 +78,7 @@ comparative_plot_population = function(data_folder, data1, data2){
   # ribbon plot version - zero-indexed
   g + scale_y_continuous(limits = c(0, max(count_data1$q3, na.rm=T)))
   
-  ggsave(paste0(data_folder, "Total_Population_Comparative_Zeroindexed.pdf"),
+  ggsave(paste0(output, "comparisons/", "Total_Population_Comparative_Zeroindexed.pdf"),
          width=8,
          height=6,
          units="in")
