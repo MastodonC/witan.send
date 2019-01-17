@@ -18,8 +18,8 @@ comparative_plot_cost = function(output, data1, data2){
   max_x = max(cost_data1$calendar.year)
   
   ## data labels for plots
-  data1_label = str_to_title(sapply(strsplit(data1_folder, "-"), "[", 3))
-  data2_label = str_to_title(sapply(strsplit(data2_folder, "-"), "[", 3))
+  data1_label = str_to_title(sapply(strsplit(data1, "-"), "[", 3))
+  data2_label = str_to_title(sapply(strsplit(data2, "-"), "[", 3))
   
   ## ribbon plot - not zero-indexed
   g <- ggplot(cost_data1, aes(x=calendar.year)) +
