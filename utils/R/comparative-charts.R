@@ -38,10 +38,10 @@ cols = cbPalette[c(2,6)]
 # PLOTS
 
 ## cost
-source("utils/R/comparative-plot-cost.R")
-comparative_plot_cost(data_folder, data1, data2)
+source("comparative-plot-cost.R")
+comparative_plot_cost(output_dir, data1, data2)
 
 ## population count
-source("utils/R/comparative-plot-population.R")
-comparative_plot_population(data_folder, data1, data2)
+source("comparative-plot-population.R")
+comparative_plot_population(output_dir, data1, data2)
 
