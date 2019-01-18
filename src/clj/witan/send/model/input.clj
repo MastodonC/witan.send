@@ -12,16 +12,14 @@
   "Loads csv file with each row as a vector.
    Stored in map separating column-names from data"
   ([filename]
-   (let [file (io/file filename)]
-     (when (.exists (io/as-file file))
-       (let [parsed-csv (with-open [in-file (io/reader file)]
-                          (doall (->> in-file
-                                      data-csv/read-csv
-                                      (remove (fn [row] (blank-row? row))))))
-             parsed-data (rest parsed-csv)
-             headers (first parsed-csv)]
-         {:column-names headers
-          :columns (vec parsed-data)})))))
+   (let [parsed-csv (with-open [in-file (io/reader filename)]
+                      (into [] (->> in-file
+                                    data-csv/read-csv
+                                    (remove (fn [row] (blank-row? row))))))
+         parsed-data (rest parsed-csv)
+         headers (first parsed-csv)]
+     {:column-names headers
+      :columns (vec parsed-data)})))
 
 (defn apply-row-schema
   [col-schema csv-data]
