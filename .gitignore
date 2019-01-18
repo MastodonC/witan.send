@@ -7,7 +7,6 @@
 /data/*
 !/data/demo
 !/data/demo/*
-/data/demo/results/*
 pom.xml
 pom.xml.asc
 *.jar

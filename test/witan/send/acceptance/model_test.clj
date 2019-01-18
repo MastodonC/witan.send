@@ -6,7 +6,9 @@
             [witan.send.main :as m]
             [witan.send.model.output :as so]
             [witan.send.send :as send]
-            [witan.send.validate-model :as v]))
+            [witan.send.validate-model :as v]
+            [witan.send.model.input :as i]
+            [clojure.core.matrix.dataset :as ds]))
 
 (deftest expected-results
   (let [expected-md5s {"Output_AY.csv" "848944192402c899e9891453e91287b4",
@@ -40,3 +42,55 @@
     ;;; Following test works locally, but requires R install on CircleCI
     #_(testing "all plots are produced"
         (is (every? true? (map #(.exists (io/file (join "/" [output-dir %]))) expected-plots))))))
+
+(defn load-results [path]
+  (let [csv (i/load-csv path)]
+    (ds/row-maps (ds/dataset (:column-names csv) (:columns csv)))))
+
+(defn find-in-map [seq-of-maps col v]
+  (get (first (filter #(= (get % col) v) seq-of-maps)) "expectation"))
+
+(deftest expected-filter-by-ay11-cy2015-results
+  (let [expected-md5s {"Output_AY.csv" "89022266998810dd7f4c1c8283c16744",
+                       "Output_AY_Group.csv" "e834a4f17eae2da61a542aa132dedd47",
+                       "Output_State.csv" "b15b768bd3a53bfe74f0170fd9a3d481",
+                       "Output_Cost.csv" "c672ba67c5f6c004dca67ace5fd4d4ab",
+                       "Output_Count.csv" "6c8443f1e724ebda02e3523bca7bc1d5",
+                       "Output_Need.csv" "854c72e0cfe17d9a7463b6fb5163cf13",
+                       "Output_Setting.csv" "dee6241d19a76bb1b6a9058d8e4e70ce",
+                       "transitions.edn" "0144496f21ad6b7c44243acfc4bf98f3"}
+        files (keys expected-md5s)
+        config (m/read-config "data/demo/config_splicing.edn")
+        output-dir (m/get-output-dir config)]
+    (run! #(let [file (join "/" [output-dir %])]
+             (when (.exists (io/file file))
+               (io/delete-file file))) files)
+    (-> (send/run-send-workflow config)
+        (so/output-send-results (:output-parameters config)))
+    (testing "checksums are unchanged for scenario"
+      (is (= expected-md5s
+             (into {} (for [f files]
+                        [f (-> (io/file output-dir f) (digest/md5))])))))
+    (let [standard-joiner-exp (load-results "data/demo/results/joiner_beta_expectations.csv")
+          scenario-joiner-exp (load-results (str output-dir "/joiner_beta_expectations.csv"))
+          standard-leaver-exp (load-results "data/demo/results/leaver_beta_expectations.csv")
+          scenario-leaver-exp (load-results (str output-dir "/leaver_beta_expectations.csv"))
+          standard-mover-exp (load-results "data/demo/results/mover_beta_expectations.csv")
+          scenario-mover-exp (load-results (str output-dir "/mover_beta_expectations.csv"))]
+      (testing "some of the rates we expect to change are effected"
+        (is (not= (find-in-map standard-joiner-exp "ay" "11")
+                  (find-in-map scenario-joiner-exp "ay" "11")))
+        (is (= (find-in-map standard-joiner-exp "ay" "10")
+               (find-in-map scenario-joiner-exp "ay" "10")))
+        (is (not= (find-in-map standard-leaver-exp "ay" "11")
+                  (find-in-map scenario-leaver-exp "ay" "11")))
+        (is (= (find-in-map standard-leaver-exp "ay" "10")
+               (find-in-map scenario-leaver-exp "ay" "10")))
+        (is (not= (find-in-map standard-mover-exp "ay" "11")
+                  (find-in-map scenario-mover-exp "ay" "11")))
+        (is (= (find-in-map standard-mover-exp "ay" "10")
+               (find-in-map scenario-mover-exp "ay" "10"))))
+      (testing "rates are as expected"
+        (is (= 0.0012491078 (read-string (find-in-map scenario-joiner-exp "ay" "11"))))
+        (is (= 0.22826087 (read-string (find-in-map scenario-leaver-exp "ay" "11"))))
+        (is (= 0.25700936 (read-string (find-in-map scenario-mover-exp "ay" "11"))))))))

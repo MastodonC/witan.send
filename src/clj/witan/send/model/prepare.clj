@@ -88,8 +88,7 @@
    b))
 
 (defn prep-inputs [initial-send-pop splice-ncy validate-valid-states valid-transitions transitions
-                   transitions-filtered population valid-states
-                   original-transitions costs filter-transitions-from]
+                   transitions-filtered population valid-states original-transitions costs]
   (let [start-map {:population-by-state initial-send-pop
                    :valid-states valid-states
                    :transitions original-transitions
@@ -252,13 +251,12 @@
     {:standard-projection (prep-inputs initial-send-pop splice-ncy
                                        validate-valid-states valid-transitions transitions
                                        transitions-filtered
-                                       population valid-states original-transitions costs
-                                       filter-transitions-from)
+                                       population valid-states original-transitions costs)
      :scenario-projection (when modified-transitions
                             (prep-inputs initial-send-pop splice-ncy validate-valid-states
                                          valid-transitions modified-transitions
                                          transitions-filtered population valid-states
-                                         original-transitions costs filter-transitions-from))
+                                         original-transitions costs))
      :modify-transition-by modify-transition-by
      :modify-transitions-from  modify-transitions-from
      :seed-year (inc max-transition-year)}))

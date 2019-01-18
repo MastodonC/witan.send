@@ -1,0 +1,18 @@
+{:execution
+ {:start {:date "2019-01-14", :time "16:41:22"},
+  :end {:date "2019-01-14", :time "16:42:34"}},
+ :environment-metadata
+ {:model-version "1.7.0",
+  :os-name "Mac OS X",
+  :os-version "10.12.6",
+  :clj-version "1.9.0",
+  :jvm-version "25.51-b03",
+  :git-branch "feature/filter-by-setting",
+  :git-commit-id "4cd97ac",
+  :git-url
+  "https://github.com/MastodonC/witan.send/commit/4cd97ac8632d0fe2c8c55d708ddda9f87805fe7d"},
+ :file-inputs-md5s
+ {:transitions "4536db8e82c3e609c452b3c2eb5f3960",
+  :population "f19179ab601db8325def8a5738d8fe71",
+  :costs "e350dc3a403828457d75e4d11d80383f",
+  :valid-states "e655c2de1ee2a575f27f8ab6fc124387"}}
