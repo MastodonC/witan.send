@@ -13,7 +13,7 @@
                          :simulations 10}
 
  :output-parameters {:run-outputs true
-                     :run-charts true
+                     :run-charts false
                      :output-dir "results-spliced"
                      :settings-to-exclude-in-charts nil
                      :keep-temp-files? false
