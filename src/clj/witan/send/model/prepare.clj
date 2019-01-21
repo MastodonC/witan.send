@@ -176,6 +176,12 @@
             (assoc coll [academic-year (states/join-need-setting need setting)] population))
           {} send-data))
 
+(defn get-filter-params [filter-what]
+  (into {} (filter #(every? (complement nil?) (vals (val %))) filter-what)))
+
+(defn build-pred [m]
+  (partial (:op (val m)) (:val (val m))))
+
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
@@ -217,7 +223,8 @@
                               (transitions-map modified-transitions)
                               (transitions-map transitions))
          transitions-filtered (when filter-transitions-from
-                                (remove #(and (>= (:academic-year-1 %) (second filter-transitions-from)) (< (:calendar-year %) (first filter-transitions-from)))
+                                (remove #(and (>= (:academic-year-1 %) (second filter-transitions-from))
+                                              (< (:calendar-year %) (first filter-transitions-from)))
                                         (or modified-transitions transitions)))
          max-transition-year (apply max (map :calendar-year transitions))
          initial-send-pop (->> (filter #(= (:calendar-year %) max-transition-year) transitions)
