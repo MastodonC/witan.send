@@ -70,7 +70,7 @@
     (testing "checksums are unchanged for scenario"
       (is (= expected-md5s
              (into {} (for [f files]
-                        [f (-> (io/file output-dir f) (digest/md5))])))))
+                        [f (-> (io/file output-dir f) (digest/md5))]))))) ;; test fails, why are results/checksums different, expectations are the same but alpha and betas are different
     (let [standard-joiner-exp (load-results "data/demo/results/joiner_beta_expectations.csv")
           scenario-joiner-exp (load-results (str output-dir "/joiner_beta_expectations.csv"))
           standard-leaver-exp (load-results "data/demo/results/leaver_beta_expectations.csv")
@@ -81,7 +81,7 @@
         (is (not= (find-in-map standard-joiner-exp "ay" "11")
                   (find-in-map scenario-joiner-exp "ay" "11")))
         (is (= (find-in-map standard-joiner-exp "ay" "10")
-               (find-in-map scenario-joiner-exp "ay" "10")))
+               (find-in-map scenario-joiner-exp "ay" "10"))) ;; not sure why this is different, shouldn't be affected
         (is (not= (find-in-map standard-leaver-exp "ay" "11")
                   (find-in-map scenario-leaver-exp "ay" "11")))
         (is (= (find-in-map standard-leaver-exp "ay" "10")
