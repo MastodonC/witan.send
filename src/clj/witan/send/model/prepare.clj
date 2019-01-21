@@ -101,26 +101,13 @@
                                               (medley/map-vals #(total-by-academic-year %)))}]
     (if transitions-filtered
       (merge start-map
-             {:joiner-beta-params (stitch-ay-params splice-ncy
-                                                    (p/beta-params-joiners validate-valid-states
-                                                                           transitions
-                                                                           (ds/row-maps population))
-                                                    (p/beta-params-joiners validate-valid-states
-                                                                           transitions-filtered
-                                                                           (ds/row-maps population)))
-              :leaver-beta-params (stitch-state-params splice-ncy
-                                                       (p/beta-params-leavers validate-valid-states transitions)
-                                                       (p/beta-params-leavers validate-valid-states transitions-filtered))
-              :joiner-state-alphas (stitch-ay-params splice-ncy
-                                                     (p/alpha-params-joiners validate-valid-states (transitions-map transitions))
-                                                     (p/alpha-params-joiners validate-valid-states (transitions-map transitions-filtered)))
-
-              :mover-beta-params (stitch-state-params splice-ncy
-                                                      (p/beta-params-movers validate-valid-states valid-transitions transitions)
-                                                      (p/beta-params-movers validate-valid-states valid-transitions transitions-filtered))
-              :mover-state-alphas (stitch-state-params splice-ncy
-                                                       (p/alpha-params-movers validate-valid-states valid-transitions transitions)
-                                                       (p/alpha-params-movers validate-valid-states valid-transitions transitions-filtered))})
+             {:joiner-beta-params (p/beta-params-joiners validate-valid-states
+                                                         transitions-filtered
+                                                         (ds/row-maps population))
+              :leaver-beta-params (p/beta-params-leavers validate-valid-states transitions-filtered)
+              :joiner-state-alphas (p/alpha-params-joiners validate-valid-states (transitions-map transitions-filtered))
+              :mover-beta-params (p/beta-params-movers validate-valid-states valid-transitions transitions-filtered)
+              :mover-state-alphas  (p/alpha-params-movers validate-valid-states valid-transitions transitions-filtered)})
       (merge start-map
              {:joiner-beta-params (p/beta-params-joiners validate-valid-states
                                                          transitions
@@ -230,9 +217,8 @@
                               (transitions-map modified-transitions)
                               (transitions-map transitions))
          transitions-filtered (when filter-transitions-from
-                                (mapcat (fn [year] (filter #(> (:calendar-year %) year)
-                                                           (or modified-transitions transitions)))
-                                        [filter-transitions-from]))
+                                (remove #(and (>= (:academic-year-1 %) (second filter-transitions-from)) (< (:calendar-year %) (first filter-transitions-from)))
+                                        (or modified-transitions transitions)))
          max-transition-year (apply max (map :calendar-year transitions))
          initial-send-pop (->> (filter #(= (:calendar-year %) max-transition-year) transitions)
                                (filter #(not= (:setting-2 %) :NONSEND))
