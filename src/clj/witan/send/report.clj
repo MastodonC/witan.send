@@ -18,7 +18,7 @@
    (write-send-report send-report-file))
   ([report-file]
    (io/delete-file report-file :quiet)
-   (spit report-file (str/join "\n" @send-report) :append true)))
+   (spit report-file (str/join "\n\n" @send-report) :append true)))
 
 (defn reset-send-report
   []
