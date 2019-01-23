@@ -3,7 +3,13 @@
                :costs "data/costs.csv"
                :valid-states "data/valid-states.csv"}
 
- :transition-parameters {:filter-transitions-from [2016 11]
+ :transition-parameters {:filter-transitions-from [[2016 11] [2016 "MSSIB"]]
+                         :filter-what {:academic-years {:val nil :op nil}
+                                       :calendar-years {:val nil :op nil}
+                                       :setting-to {:val nil :op nil}
+                                       :setting-from {:val nil :op nil}
+                                       :need-to {:val nil :op nil}
+                                       :need-from {:val nil :op nil}}
                          :which-transitions? nil
                          :splice-ncy nil
                          :modify-transition-by nil
