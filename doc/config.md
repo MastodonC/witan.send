@@ -11,18 +11,18 @@ Each key refers to a specific input file and requires a string value (`"foo.csv"
 There are four required keys and one optional key.
 
 The required keys are:
-- `:transition-matrix`
+- `:transitions`
 - `:population`
-- `:setting-cost`
-- `:valid-setting-academic-years`
+- `:costs`
+- `:valid-states`
 
 The single optional key is `:settings-to-change` and is required when wanting to project a [“Modify setting(s) transitions rates”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-settings-transitions-rates), [“Modify setting(s) transitions rates and transfer individuals to alternative setting(s)”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-settings-transitions-rates-and-transfer-individuals-to-alternative-settings) or [“Modify transitions from a specific future calendar year”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-transitions-from-a-specific-future-calendar-year) scenario (more information in links).
 
 Description of what each file should contain can be found [here](https://docs.google.com/document/d/138mSLMwTnH5ev1z0po07qGPxcfvuVkjR0ax8Yo88724/edit#) and example files can be found [here](https://github.com/MastodonC/witan.send/tree/master/data/demo/data).
 
-### `:scenario-parameters`
+### `:transition-parameters`
 
-The scenario parameters are all optional parameters, used for running scenario projections.
+The transition parameters are all optional parameters, used for running scenario projections.
 
 ##### `:filter-transitions-from`
 
@@ -46,11 +46,11 @@ Expects an integer to multiply a list of settings by (provided with `:settings-t
 
 Expects a calendar year, provided as an integer, to start modifying transitions from, when `:modify-transition-by` & `:which-transitions?` are defined for either a [“Modify setting(s) transitions rates”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-settings-transitions-rates), [“Modify setting(s) transitions rates and transfer individuals to alternative setting(s)”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-settings-transitions-rates-and-transfer-individuals-to-alternative-settings) or [“Modify transitions from a specific future calendar year”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-transitions-from-a-specific-future-calendar-year) scenario.
 
-### `:run-parameters`
+### `:projection-parameters`
 
-Contains three required keys for every projection.
+Contains two required keys for every projection.
 
-The three required keys, `:random-seed`, `:simulations` and `:seed-year` define how the model will be run. `:modify-transitions-from` is optional and used in conjunction with `:transitions-parameters`.
+The three required keys, `:random-seed` and `:simulations` define how the model will be run.
 
 ##### `:random-seed`
 
@@ -59,10 +59,6 @@ Expects and integer with which to randomly seed the model with and enable repeat
 ##### `:simulations`
 
 Expects an integer corresponding to a number with which to repeat the model over _n_ number of times. Due to parallelisation, the minimum number of simulations is eight. In tests 1000 simulations typically provides sufficient depth to normalise the results.
-
-##### `:seed-year`
-
-Expects a calendar year, provided as an integer with which to project the model from.
 
 ### `:output-parameters`
 
@@ -91,6 +87,10 @@ Optional key, expects a string of comma-delimited settings to exclude from all p
 ##### `:use-confidence-bound-or-interval`
 
 Optional key, expects the string "interval", to use confidence interval in total population plotting, otherwise will use simple bounds.
+
+##### `:population-file`
+
+Takes either a path to a population file or `ref [:file-inputs :population]` which duplicates the path to the population file in `:file-inputs`. For use with the general population chart.
 
 ### `:validation-parameters`
 
