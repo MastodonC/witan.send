@@ -402,7 +402,7 @@ boxplot <- paste0("ggplot(cost_projected, aes(x=calendar.year)) +",
          ", ymax = ", as.name(high_bound), "), fill='snow', colour='darkcyan', stat = \"identity\") +",
          "ggtitle(\"SEND Cost Projection\") +",
          "scale_x_continuous(name='Calendar Year', breaks=seq(min_x, max_x, by=1), limits=c(min_x-0.5, max_x+0.5)) +",
-         "scale_y_continuous(name = \"Total projected SEND cost / £ million\", limits = c(0, max(cost_projected$",
+         "scale_y_continuous(name = \"Total projected SEND cost / Â£ million\", limits = c(0, max(cost_projected$",
          as.name(high_bound),
          "))) +",
          "theme_bw()")
