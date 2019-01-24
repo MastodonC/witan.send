@@ -3,11 +3,11 @@
                :costs "data/costs.csv"
                :valid-states "data/valid-states.csv"}
 
- :scenario-parameters {:filter-transitions-from 2015
-                       :which-transitions? nil
-                       :splice-ncy 11
-                       :modify-transition-by nil
-                       :modify-transitions-from nil}
+ :transition-parameters {:filter-transitions-from 2015
+                         :which-transitions? nil
+                         :splice-ncy 11
+                         :modify-transition-by nil
+                         :modify-transitions-from nil}
 
  :projection-parameters {:random-seed 50
                          :simulations 10}
