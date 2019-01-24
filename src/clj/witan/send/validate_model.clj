@@ -104,24 +104,24 @@
         (so/output-send-results (:output-parameters fold-config)))
     (collate-fold project-dir test-data year n-transitions)))
 
-(defn write-validation-results [project-dir results]
+(defn write-validation-results [project-dir output-dir results]
   "Takes seq of maps containing results returned by (validate-fold) and writes to disk"
   (->> (map :count results)
        flatten
-       (write-csv (io/file project-dir "validation/validation_results_count.csv")))
+       (write-csv (io/file project-dir (str output-dir "-validation/validation_results_count.csv"))))
   (->> (map :state results)
        flatten
-       (write-csv (io/file project-dir "validation/validation_results_state.csv"))))
+       (write-csv (io/file project-dir (str output-dir "-validation/validation_results_state.csv")))))
 
-(defn setup-validation-dirs [project-dir]
+(defn setup-validation-dirs [project-dir output-dir]
   "Create dirs required for validation process"
-  (doseq [dir [(temp-dir project-dir) (str/join "/" [project-dir "validation"])]]
+  (doseq [dir [(temp-dir project-dir) (str/join "/" [project-dir (str output-dir  "-validation")])]] ;; here
     (.mkdir (java.io.File. dir))))
 
-(defn tear-down-validation-dirs [project-dir keep-temp-files?]
+(defn tear-down-validation-dirs [project-dir output-dir keep-temp-files?]
   "Remove input data and results for separate folds, move to validation dir if keep-temp-files is true"
   (if keep-temp-files?
-    (copy-dir (temp-dir project-dir) (io/file project-dir "validation/")))
+    (copy-dir (temp-dir project-dir) (io/file project-dir (str output-dir "-validation/")))) ;; here
   (doseq [file (reverse (file-seq (io/file (temp-dir project-dir))))]
     (io/delete-file file)))
 
@@ -135,12 +135,13 @@
   Results are stored in a directory called validation within the project"
   ([config]
    (let [project-dir (:project-dir config)
+         output-dir (get-in config [:output-parameters :output-dir])
          keep-temp-files? (or (get-in config [:validation-parameters :keep-temp-files?])
                               false)]
-     (setup-validation-dirs project-dir)
+     (setup-validation-dirs project-dir output-dir)
      (let [years-to-validate (-> (io/file project-dir (:transitions (:file-inputs config)))
                                  load-csv-as-maps
                                  get-validation-years)
            results (doall (map #(validate-fold config %) years-to-validate))]
-       (write-validation-results project-dir results))
-     (tear-down-validation-dirs project-dir keep-temp-files?))))
+       (write-validation-results project-dir output-dir results))
+     (tear-down-validation-dirs project-dir output-dir keep-temp-files?))))
