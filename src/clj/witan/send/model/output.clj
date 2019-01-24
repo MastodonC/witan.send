@@ -96,7 +96,8 @@
   (= string "interval"))
 
 (defn qstr [s]
-  (if (= (System/getProperty "os.name") "Windows 10")
+  (if (or (nil? s)
+          (= (System/getProperty "os.name") "Windows 10"))
     (str "\"" s "\"")
     s))
 
