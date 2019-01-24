@@ -16,7 +16,7 @@
 
 (defn confidence-bounds
   [results calendar-year]
-  (if-let [academic-years (keys results)]
+  (when-let [academic-years (keys results)]
     (for [academic-year (sort academic-years)]
       (let [alpha (get-in results [academic-year calendar-year :alpha] 0)
             beta (get-in results [academic-year calendar-year :beta])]
@@ -48,7 +48,7 @@
 
 (defn prep-ribbon-plot-data
   [data years colours]
-  (if (not (nil? (first data)))
+  (when (first data)
     (let [n-years (count years)
           filter-data (map #(pull-year data %) (range n-years))
           ay (first (first filter-data))
@@ -96,7 +96,9 @@
   (= string "interval"))
 
 (defn qstr [s]
-  (str "\"" s "\""))
+  (if (= (System/getProperty "os.name") "Windows 10")
+    (str "\"" s "\"")
+    s))
 
 (defn r-plots [dir pop-path settings-to-exclude use-confidence-bound-or-interval]
   (let [send-charts (str (System/getProperty "java.io.tmpdir") "send-charts.R")
