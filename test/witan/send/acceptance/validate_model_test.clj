@@ -11,7 +11,8 @@
                        "validation_results_state.csv" "d7874e9361ad99d28eb69bac60762459"}
         files (keys expected-md5s)
         config (m/read-config "data/demo/config.edn")
-        validation-dir (join "/" [(:project-dir config) "validation"])]
+        output-dir (get-in config [:output-parameters :output-dir])
+        validation-dir (join "/" [(:project-dir config) (str output-dir "-validation")])]
     (run! #(let [file (join "/" [validation-dir %])]
              (when (.exists (io/file file))
                (io/delete-file file))) files)
