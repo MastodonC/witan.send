@@ -69,17 +69,19 @@ comparative_plot_population = function(output, data1, data2){
               colour = cols[2]) +
     theme(legend.position="none")
   
-  ggsave(paste0(output, "comparisons/", "Total_Population_Comparative.pdf"),
+  ggsave(paste0(output, "comparisons/", "Total_Population_Comparative.png"),
          width=8,
          height=6,
-         units="in")
+         units="in",
+         device = "png")
 
   
   # ribbon plot version - zero-indexed
   g + scale_y_continuous(limits = c(0, max(count_data1$q3, na.rm=T)))
   
-  ggsave(paste0(output, "comparisons/", "Total_Population_Comparative_Zeroindexed.pdf"),
+  ggsave(paste0(output, "comparisons/", "Total_Population_Comparative_Zeroindexed.png"),
          width=8,
          height=6,
-         units="in")
+         units="in",
+         device="png")
 }

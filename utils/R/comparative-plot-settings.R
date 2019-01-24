@@ -50,10 +50,11 @@ comparative_plot_settings = function(output, data1, data2){
                 colour = cols[2]) +
       theme(legend.position="none")
     
-    ggsave(paste0(output, "comparisons/", i, "_Population_Comparative.pdf"),
+    ggsave(paste0(output, "comparisons/", i, "_Population_Comparative.png"),
            width=8,
            height=6,
-           units="in")
+           units="in",
+           device = "png")
     }
   
   # ribbon plot version - zero-indexed
