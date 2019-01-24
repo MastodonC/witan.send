@@ -16,7 +16,7 @@
 
 (defn confidence-bounds
   [results calendar-year]
-  (let [academic-years (keys results)]
+  (if-let [academic-years (keys results)]
     (for [academic-year (sort academic-years)]
       (let [alpha (get-in results [academic-year calendar-year :alpha] 0)
             beta (get-in results [academic-year calendar-year :beta])]
@@ -48,15 +48,16 @@
 
 (defn prep-ribbon-plot-data
   [data years colours]
-  (let [n-years (count years)
-        filter-data (map #(pull-year data %) (range n-years))
-        ay (first (first filter-data))
-        uppers (create-CI-map "upper" filter-data 1 n-years)
-        lowers (create-CI-map "lower" filter-data 2 n-years)
-        non-zero-data (filter valid-years-vector? (first data))
-        min-year (first (first non-zero-data))
-        max-year (first (last non-zero-data))]
-    (merge lowers uppers {:year ay})))
+  (if (not (nil? (first data)))
+    (let [n-years (count years)
+          filter-data (map #(pull-year data %) (range n-years))
+          ay (first (first filter-data))
+          uppers (create-CI-map "upper" filter-data 1 n-years)
+          lowers (create-CI-map "lower" filter-data 2 n-years)
+          non-zero-data (filter valid-years-vector? (first data))
+          min-year (first (first non-zero-data))
+          max-year (first (last non-zero-data))]
+      (merge lowers uppers {:year ay}))))
 
 (defn leaver-rate [transitions-filtered]
   (reduce (fn [coll {:keys [calendar-year academic-year-1 setting-1 setting-2]}]
@@ -208,18 +209,14 @@
             joiner-ribbon-data (prep-ribbon-plot-data joiner-rates-CI years n-colours)
             filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send)) transitions-data)
             leaver-rates (leaver-rate filter-leavers)
-            leaver-rates-CI (if (seqable? leaver-rates)
-                              (map #(confidence-bounds leaver-rates %) years))
-            leaver-ribbon-data (if (seqable? leaver-rates-CI)
-                                 (prep-ribbon-plot-data leaver-rates-CI years n-colours))
+            leaver-rates-CI (map #(confidence-bounds leaver-rates %) years)
+            leaver-ribbon-data (prep-ribbon-plot-data leaver-rates-CI years n-colours)
             filter-movers (remove (fn [{:keys [setting-1 setting-2]}]
                                     (or (= setting-1 c/non-send)
                                         (= setting-2 c/non-send))) transitions-data)
             mover-rates (mover-rate filter-movers)
-            mover-rates-CI (if (seqable? mover-rates)
-                             (map #(confidence-bounds mover-rates %) years))
-            mover-ribbon-data (if (seqable? mover-rates-CI)
-                                (prep-ribbon-plot-data mover-rates-CI years n-colours))]
+            mover-rates-CI (map #(confidence-bounds mover-rates %) years)
+            mover-ribbon-data (prep-ribbon-plot-data mover-rates-CI years n-colours)]
         ;;future-transitions (mapcat u/projection->transitions projection) ;; for projection investigation
 
         (report/info "First year of input data: " (report/bold (first years)))
