@@ -1,20 +1,36 @@
-args = commandArgs(trailingOnly=TRUE)
-output_dir = args[1]
-pop_path = args[2]
-settings_to_remove <- strsplit(args[3], split=",")[[1]]
-
-low_bound <- paste0("low", args[4])
-high_bound <- paste0("high", args[4])
+#!/usr/bin/env Rscript
+# svglite requires cairo dev packages
+packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite", 
+                      "logging", "optparse")
 
 install_missing_packages <- function(package_name) {
   if(!require(package_name, character.only = TRUE)) {
-    install.packages(package_name, repos='http://cran.us.r-project.org') } }
-
-# svglite requires cairo dev packages
-packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite", "logging")
+    install.packages(package_name, repos='http://cran.us.r-project.org')}}
 
 for(package in packages_to_check) {
   install_missing_packages(package) }
+
+library("optparse")
+
+option_list = list(
+  make_option(c("-o", "--output-dir"), type="character", 
+              help="output dir name [default= %default]", metavar="character"),
+  make_option(c("-p", "--population-file"), type="character", 
+              help="population file name", metavar="character"),
+  make_option(c("-xs", "--exclude-settings"), type="character", default="", 
+              help="settings to exclude", metavar="character"),
+  make_option(c("-b", "--bound"), type="character", 
+              help="confidence bound", metavar="character"));
+
+opt_parser = OptionParser(option_list=option_list);
+opt = parse_args(opt_parser);
+
+output_dir = opt$`output-dir`
+pop_path = opt$`population-file`
+settings_to_remove <- strsplit(opt$`exclude-settings`, split=",")[[1]]
+
+low_bound <- paste0("low", opt$bound)
+high_bound <- paste0("high", opt$bound)
 
 library(dplyr)
 library(ggplot2)
@@ -381,19 +397,17 @@ cost_projected[,-1] <-  cost_projected[,-1] / 1000000
 min_x = min(cost_projected$calendar.year)
 max_x = max(cost_projected$calendar.year)
 
-boxplot <- function(lb, hb) {
-  paste0("ggplot(cost_projected, aes(x=calendar.year)) +",
-         "geom_boxplot(aes(lower = q1, upper = q3, middle = median, ymin = ", as.name(lb),
-         ", ymax = ", as.name(hb), "), fill='snow', colour='darkcyan', stat = \"identity\") +",
+boxplot <- paste0("ggplot(cost_projected, aes(x=calendar.year)) +",
+         "geom_boxplot(aes(lower = q1, upper = q3, middle = median, ymin = ", as.name(low_bound),
+         ", ymax = ", as.name(high_bound), "), fill='snow', colour='darkcyan', stat = \"identity\") +",
          "ggtitle(\"SEND Cost Projection\") +",
          "scale_x_continuous(name='Calendar Year', breaks=seq(min_x, max_x, by=1), limits=c(min_x-0.5, max_x+0.5)) +",
-         "scale_y_continuous(name = \"Total projected SEND cost / Â£ million\", limits = c(0, max(cost_projected$",
-         as.name(hb),
+         "scale_y_continuous(name = \"Total projected SEND cost / £ million\", limits = c(0, max(cost_projected$",
+         as.name(high_bound),
          "))) +",
          "theme_bw()")
-}
 
-evaluate_string(boxplot(low_bound, high_bound))
+evaluate_string(boxplot)
 
 save_plot(paste0(output_dir, "/Total_Cost.pdf"))
 
