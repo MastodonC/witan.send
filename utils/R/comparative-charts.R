@@ -4,7 +4,7 @@ library(stringr)
 
 # DATA
 
-### Output directory must also be where the input data for the mode exists.
+### Output directory must also be where the input data for the model exists.
 ### Results will be stored in a directory called comparisons within the output 
 ### directory.
 ### data1 and data2 correspond to the folders containing the 2 data sets you 
