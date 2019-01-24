@@ -108,20 +108,20 @@
   "Takes seq of maps containing results returned by (validate-fold) and writes to disk"
   (->> (map :count results)
        flatten
-       (write-csv (io/file project-dir (str output-dir "-validation/validation_results_count.csv"))))
+       (write-csv (io/file project-dir (str "validation-" output-dir "/validation_results_count.csv"))))
   (->> (map :state results)
        flatten
-       (write-csv (io/file project-dir (str output-dir "-validation/validation_results_state.csv")))))
+       (write-csv (io/file project-dir (str "validation-" output-dir "/validation_results_state.csv")))))
 
 (defn setup-validation-dirs [project-dir output-dir]
   "Create dirs required for validation process"
-  (doseq [dir [(temp-dir project-dir) (str/join "/" [project-dir (str output-dir  "-validation")])]] ;; here
+  (doseq [dir [(temp-dir project-dir) (str/join "/" [project-dir (str "validation-" output-dir)])]] ;; here
     (.mkdir (java.io.File. dir))))
 
 (defn tear-down-validation-dirs [project-dir output-dir keep-temp-files?]
   "Remove input data and results for separate folds, move to validation dir if keep-temp-files is true"
   (if keep-temp-files?
-    (copy-dir (temp-dir project-dir) (io/file project-dir (str output-dir "-validation/")))) ;; here
+    (copy-dir (temp-dir project-dir) (io/file project-dir (str "validation-" output-dir "/")))) ;; here
   (doseq [file (reverse (file-seq (io/file (temp-dir project-dir))))]
     (io/delete-file file)))
 
