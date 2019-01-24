@@ -95,11 +95,18 @@
   "default behaviour is to use bounds rather than CI"
   (= string "interval"))
 
+(defn qstr [s]
+  (str "\"" s "\""))
+
 (defn r-plots [dir pop-path settings-to-exclude use-confidence-bound-or-interval]
   (let [send-charts (str (System/getProperty "java.io.tmpdir") "send-charts.R")
-        response (sh/sh "Rscript" "--vanilla" send-charts dir pop-path
-                        (if (nil? settings-to-exclude) "" settings-to-exclude)
-                        (if (bound-or-interval? use-confidence-bound-or-interval) ".ci" ".95pc.bound"))]
+        response (sh/sh "Rscript" "--vanilla" send-charts
+                        "--output-dir" (qstr dir)
+                        "--population-file" (qstr pop-path)
+                        "--exclude-settings" (qstr settings-to-exclude)
+                        "--bound" (if (bound-or-interval? use-confidence-bound-or-interval)
+                                    (qstr ".ci")
+                                    (qstr ".95pc.bound")))]
     (if-not (zero? (:exit response))
       (throw (Exception. (:err response))))))
 
