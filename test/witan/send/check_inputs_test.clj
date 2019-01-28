@@ -8,8 +8,8 @@
 
 
 (deftest cost-for-need-setting?-tests
-  (is (= true (cost-for-need-setting? {:need :X, :setting :Y} test-setting-costs)))
-  (is (= false (cost-for-need-setting? {:need :X, :setting :Z} test-setting-costs))))
+  (is (= true (cost-for-need-setting? '(:X :Y) test-setting-costs)))
+  (is (= false (cost-for-need-setting? '(:X :Z) test-setting-costs))))
 
 
 (deftest valid-ay-for-state?-tests
