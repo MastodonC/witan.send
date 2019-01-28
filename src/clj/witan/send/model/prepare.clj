@@ -191,7 +191,8 @@
     (->> transitions
          (remove #(and (>= (:academic-year-1 %) (second (first filter-transitions-from)))
                        (< (:calendar-year %) (first (first filter-transitions-from)))))
-         (remove #(and (= (:setting-1 %) (second (second filter-transitions-from)))
+         (remove #(and (or (= (:setting-1 %) (second (second filter-transitions-from)))
+                           (= (:setting-2 %) (second (second filter-transitions-from))))
                        (< (:calendar-year %) (first (first filter-transitions-from))))))))
 
 (defn prepare-send-inputs
