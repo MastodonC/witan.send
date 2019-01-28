@@ -67,17 +67,25 @@
        (remove (fn [t] (= (+ 1 (:academic-year-1 t)) (:academic-year-2 t))))
        (map #(str "Academic years 1 and 2 are not incremental for " %))))
 
-(defn cost-for-need-setting? [state costs]
-  "Takes map containing state and returns true for match in costs"
-  (some? (some true? (map #(and (= (:need state) (:need %))
-                                (= (:setting state) (:setting %))) costs))))
+(defn cost-for-need-setting? [need-setting costs]
+  "Takes seq containing need-setting and returns true for match in costs"
+  (some? (some true? (map #(and (= (first need-setting) (:need %))
+                                (= (last need-setting) (:setting %))) costs))))
+
+(defn count-of-input-need-settings [transitions]
+  "Counts need setting pair occurrences in ay1 and ay2 cols in transitions"
+  (let [need-setting-1 (map #(vals (select-keys % [:need-1 :setting-1])) transitions)
+        need-setting-2 (map #(vals (select-keys % [:need-2 :setting-2])) transitions)
+        all-need-settings (filter #(not= :NONSEND (first %)) (concat need-setting-1 need-setting-2))]
+      (frequencies all-need-settings)))
 
 (defn check-missing-costs [transitions costs]
   "Produces warnings for states without costs via REPL and SEND_report.md"
-  (let [states (set-of-input-states transitions false)]
-    (->> states
-         (remove #(cost-for-need-setting? % costs))
-         (map #(str "Missing cost for state in transitions.csv: " (:need %) " " (:setting %))))))
+  (let [need-settings (count-of-input-need-settings transitions)]
+    (->> need-settings
+         (remove #(cost-for-need-setting? (first %) costs))
+         (map #(str "Missing cost for state in transitions.csv: " (first %)
+                    ", with " (last %) " occurrences")))))
 
 
 (defn valid-ay-for-state? [state valid-ays]
