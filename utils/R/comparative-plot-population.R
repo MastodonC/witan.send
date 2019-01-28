@@ -67,12 +67,13 @@ comparative_plot_population = function(output, data1, data2){
               y=count_data2$mean[count_data2$calendar.year==max_x]-20,
               label= data2_label,
               colour = cols[2]) +
-    theme(legend.position="none")
+    theme(legend.position="none") +
+    theme_bw()
   
   ggsave(paste0(output, "comparisons/", "Total_Population_Comparative.png"),
          width=8,
          height=6,
-         units="in",
+         dpi = 400,
          device = "png")
 
   
@@ -82,6 +83,6 @@ comparative_plot_population = function(output, data1, data2){
   ggsave(paste0(output, "comparisons/", "Total_Population_Comparative_Zeroindexed.png"),
          width=8,
          height=6,
-         units="in",
+         dpi = 400,
          device="png")
 }
