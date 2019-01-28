@@ -202,6 +202,7 @@
                           {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13} ; keep
                           {:calendar-year 2017, :setting-1 :MU, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12} ; remove
                           {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 3, :setting-2 :MU, :need-2 :NA, :academic-year-2 4} ; remove
+                          {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 6, :setting-2 :MU, :need-2 :NA, :academic-year-2 7}; keep
                           ) ; remove
         filter-transitions-from [[2017 12] [2017 :MU]]]
     (testing "Filters transitions: remove AY 12 and above from years below 2017, remove all \"MU\" setting from below 2017"
@@ -210,7 +211,8 @@
                {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :AK, :need-2 :NA, :academic-year-2 12}
                {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 12}
                {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13}
-               {:calendar-year 2017, :setting-1 :MU, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}))))))
+               {:calendar-year 2017, :setting-1 :MU, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}
+               {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 6, :setting-2 :MU, :need-2 :NA, :academic-year-2 7}))))))
 
 (deftest transition-present?-test
   (testing "transition state is present in coll"
