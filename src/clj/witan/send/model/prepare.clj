@@ -182,6 +182,18 @@
 (defn build-pred [m]
   (partial (:op (val m)) (:val (val m))))
 
+(defn filter-transitions
+  [filter-transitions-from transitions]
+  "This is a very specific filter and needs to be made more generic going forward.
+  We split out here though so that we may test it.
+  The logic is also awkward, due to implicit operators and the naming used."
+  (when filter-transitions-from
+    (->> transitions
+         (remove #(and (>= (:academic-year-1 %) (second (first filter-transitions-from)))
+                       (< (:calendar-year %) (first (first filter-transitions-from)))))
+         (remove #(and (= (:setting-1 %) (second (second filter-transitions-from)))
+                       (< (:calendar-year %) (first (first filter-transitions-from))))))))
+
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
@@ -222,12 +234,7 @@
          map-of-transitions (if modified-transitions
                               (transitions-map modified-transitions)
                               (transitions-map transitions))
-         transitions-filtered (when filter-transitions-from
-                                (->> (remove #(and (>= (:academic-year-1 %) (second (first filter-transitions-from)))
-                                                   (< (:calendar-year %) (first (first filter-transitions-from))))
-                                             (or modified-transitions transitions))
-                                     (remove #(and (= (:setting-1 %) (second (second filter-transitions-from)))
-                                                   (< (:calendar-year %) (first (first filter-transitions-from)))))))
+         transitions-filtered (filter-transitions filter-transitions-from (or modified-transitions transitions))
          max-transition-year (apply max (map :calendar-year transitions))
          initial-send-pop (->> (filter #(= (:calendar-year %) max-transition-year) transitions)
                                (filter #(not= (:setting-2 %) :NONSEND))

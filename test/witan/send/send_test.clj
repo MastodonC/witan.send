@@ -20,29 +20,29 @@
 
 (defn get-individual-input [key-name]
   (read-inputs
-   test-inputs
-   {:witan/name key-name}
-   []
-   (get test-inputs key-name)))
+    test-inputs
+    {:witan/name key-name}
+    []
+    (get test-inputs key-name)))
 
 ;; Use fake population datasets for testing
 (def grouped-data
-  (ds/dataset {:year  [2014 2015 2016]
-               :age   [0 1 2]
+  (ds/dataset {:year [2014 2015 2016]
+               :age [0 1 2]
                :state [:Non-SEND :Non-SEND :PSI-Mainstream]
                :count [3 0 1]}))
 
 (def individuals-data-with-sims
-  (ds/dataset {:year  [2014 2014 2014 2014 2014 2014 2016 2016]
-               :age   [0 0 0 0 0 0 2 2]
+  (ds/dataset {:year [2014 2014 2014 2014 2014 2014 2016 2016]
+               :age [0 0 0 0 0 0 2 2]
                :state [:Non-SEND :Non-SEND :Non-SEND :Non-SEND
                        :Non-SEND :Non-SEND :PSI-Mainstream :PSI-Mainstream]
                :sim-num [1 2 1 2 1 2 1 2]
-               :id    [1 1 2 2 3 3 4 4]}))
+               :id [1 1 2 2 3 3 4 4]}))
 
 (def historic-data
-  (ds/dataset {:year  [2016 2016 2016]
-               :age   [0 1 2]
+  (ds/dataset {:year [2016 2016 2016]
+               :age [0 1 2]
                :population [3 0 1]}))
 
 (def projected-population
@@ -66,9 +66,9 @@
                       2018 2018 2018 2018 2018 2018
                       2019 2019 2019 2019 2019 2019 2019 2019
                       2019 2019 2019 2019 2019 2019 2019 2019]
-               :age [0 0 0 0 1 1 1 1 2 2 2 2 2 2 2 2 2 2 ;;18
-                     0 0 1 1 2 2                         ;;6
-                     0 0 0 0 1 1 1 1 2 2 2 2 2 2 2 2] ;;16 total = 40
+               :age [0 0 0 0 1 1 1 1 2 2 2 2 2 2 2 2 2 2    ;;18
+                     0 0 1 1 2 2                            ;;6
+                     0 0 0 0 1 1 1 1 2 2 2 2 2 2 2 2]       ;;16 total = 40
                :state [:Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND
                        :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND
                        :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND :Non-SEND
@@ -112,9 +112,9 @@
      (is (= ~result-keys (set (keys ~result))))
      (when (~result-keys :age)
        (is (= ~expected-num-rows (count (:age ~result))))
-       (is (every? number?  (:age ~result))))
+       (is (every? number? (:age ~result))))
      (when (~result-keys :id)
-       (is (every? number?  (:id ~result))))
+       (is (every? number? (:id ~result))))
      (when (~result-keys :state)
        (is (every? keyword? (:state ~result))))
      (when (~result-keys :sim-num)
@@ -129,8 +129,8 @@
   `(do
      (is (= #{:age :state :year :sim-num :id} (set (:column-names ~result))))
      (is (= ~expected-num-rows (count (ds/column ~result :age))))
-     (is (every? number?  (ds/column ~result :age)))
-     (is (every? number?  (ds/column ~result :id)))
+     (is (every? number? (ds/column ~result :age)))
+     (is (every? number? (ds/column ~result :id)))
      (is (every? keyword? (ds/column ~result :state)))
      (is (every? #(and (number? %)
                        (<= % ~num-sims)) (ds/column ~result :sim-num)))
@@ -168,7 +168,7 @@
   (let [leaver-rates (->> :transitions get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send))) so/leaver-rate)
         result (so/confidence-bounds leaver-rates 2014)]
     (testing "output is not empty"
-      (is (not= empty? result) ))
+      (is (not= empty? result)))
     (testing "all intervals are between 0 and 1"
       (is (every? #(and (<= 0 %) (>= 1 %)) (map #(nth % 1) result)))
       (is (every? #(and (<= 0 %) (>= 1 %)) (map #(nth % 2) result))))
@@ -188,6 +188,29 @@
     (testing "odd values are rounded and exchanged correctly"
       (is (= 3 (get (mp/modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB])))
       (is (= 2 (get (mp/modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SP-MMSIB]))))))
+
+(deftest filter-transitions-from
+  "This test needs splitting to simpler cases but for speed captures most things.
+  There's some discussion to be had over how we should treat setting-2 as it moves into calendar year 2017
+  Note: the test discovered the keyname is required not a string :-("
+  (let [transitions (list {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12} ; keep?
+                          {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :AK, :need-2 :NA, :academic-year-2 12} ; keep
+                          {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13} ; remove
+                          {:calendar-year 2016, :setting-1 :MU, :need-1 :NA, :academic-year-1 10, :setting-2 :MU, :need-2 :NA, :academic-year-2 11} ; remove
+                          {:calendar-year 2016, :setting-1 :AK, :need-1 :NA, :academic-year-1 10, :setting-2 :MU, :need-2 :NA, :academic-year-2 11} ; keep?
+                          {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 12} ; keep
+                          {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13} ; keep
+                          {:calendar-year 2017, :setting-1 :MU, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}) ; keep
+        filter-transitions-from [[2017 12] [2017 :MU]]]
+    (testing "Filters transitions: remove AY 12 and above from years below 2017, remove all \"MU\" setting from below 2017"
+      (is (= (mp/filter-transitions filter-transitions-from transitions)
+             (list
+               {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}
+               {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :AK, :need-2 :NA, :academic-year-2 12}
+               {:calendar-year 2016, :setting-1 :AK, :need-1 :NA, :academic-year-1 10, :setting-2 :MU, :need-2 :NA, :academic-year-2 11}
+               {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 12}
+               {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13}
+               {:calendar-year 2017, :setting-1 :MU, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}))))))
 
 (deftest transition-present?-test
   (testing "transition state is present in coll"
