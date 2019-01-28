@@ -42,12 +42,13 @@ comparative_plot_cost = function(output, data1, data2){
               y=cost_data2$mean[cost_data2$calendar.year==max_x],
               label= data2_label,
               colour = cols[2]) +
-    theme(legend.position="none")
+    theme(legend.position="none") +
+    theme_bw()
   
   ggsave(paste0(output, "comparisons/", "Total_Cost_Comparative.png"),
          width=8,
          height=6,
-         units="in",
+         dpi = 400,
          device="png")
 
   
@@ -57,6 +58,6 @@ comparative_plot_cost = function(output, data1, data2){
   ggsave(paste0(output, "comparisons/", "Total_Cost_Comparative_Zeroindexed.png"),
          width=8,
          height=6,
-         units="in",
+         dpi = 400,
          device="png")
 }
