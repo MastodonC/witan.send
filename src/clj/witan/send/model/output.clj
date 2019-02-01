@@ -178,6 +178,21 @@
           rows (dirichlet-expectations alphas)]
       (csv/write-csv writer (into [headers] rows)))))
 
+(defn parse-pop-state [pop-state]
+  "Pop values are keyed by an entities index (ay, n, s)."
+  (-> (for [[k pop] pop-state]
+        (into [] (flatten [(states/split-entity k) pop])))
+      (sort)))
+
+(defn output-initial-population-state
+  "Write out initial population state"
+  [dir filename pop-state & cols]
+  (with-open [writer (io/writer (io/file (str dir "/" filename ".csv")))]
+    (let [columns (or (first cols) [:ay :need :setting :pop])
+          headers (mapv name columns)
+          rows (parse-pop-state pop-state)]
+      (csv/write-csv writer (into [headers] rows)))))
+
 ; Core function
 (defn output-send-results
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
@@ -322,6 +337,7 @@
         (output-dirichlet-expectations dir "movers_dirichlet_expectations" (standard-projection :mover-state-alphas))
         (output-dirichlet-expectations dir "joiners_dirichlet_expectations" (standard-projection :joiner-state-alphas)
                                        [:ay :need :setting :expectation :normalisation-constant :alpha])
+        (output-initial-population-state dir "initial_population_state" (standard-projection :population-by-state))
         (when run-charts
           (with-open [writer (io/writer (io/file (str dir "/historic-data.csv")))]
             (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
