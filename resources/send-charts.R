@@ -564,6 +564,7 @@ if(file_test("-f", pop_path)){
     geom_point(aes(color=NCY)) +
     scale_x_continuous(breaks = round(seq(min(ons$Year), max(ons$Year), by = 1))) +
     scale_y_continuous(name='Population') +
+    expand_limits(y = 0) +
     scale_color_manual(name = "NCY",
                        values = c("cyan", "coral", "dodgerblue", "hotpink", "green4"),
                        labels = c("0 and under", "1 to 6", "7 to 11", "12 to 13", "14 and up")) +
