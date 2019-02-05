@@ -224,26 +224,25 @@ for (y in df_set_years){
 df_set = df_set %>%
   mutate(mean = as.numeric(mean))
 
-
 df_set_counts <- df_set %>%
   filter(mean != 0) %>%
   group_by(Setting) %>%
   summarise(mean(mean)) %>%
-  rename(mean = "mean(mean)")
+  rename(mean = "mean(mean)") %>%
+  filter(Setting != "NONSEND") %>%
+  arrange(desc(mean))
 
+max_settings_per_chart <- 5
+n_settings <- nrow(df_set_counts)
+n_charts <- ceiling(n_settings/max_settings_per_chart)
+settings_per_chart <- ceiling(n_settings/n_charts)
+idx_start <- 1
+idx_end <- settings_per_chart
 
-split_1 <- quantile(df_set_counts$mean, 0.25)
-split_2 <- quantile(df_set_counts$mean, 0.5)
-split_3 <- quantile(df_set_counts$mean, 0.75)
-
-chart_1_settings <- df_set_counts[df_set_counts$mean <= split_1,]$Setting
-chart_2_settings <- df_set_counts[df_set_counts$mean > split_1 & df_set_counts$mean <= split_2,]$Setting
-chart_3_settings <- df_set_counts[df_set_counts$mean > split_2 & df_set_counts$mean <= split_3,]$Setting
-chart_4_settings <- df_set_counts[df_set_counts$mean > split_3,]$Setting
-
-
-for(i in 1:4) {
-  df_i <- subset(df_set, Setting %in% evaluate_string(paste("chart_",i,"_settings", sep="")))
+for(i in 1:n_charts) {
+  df_i <- subset(df_set, Setting %in% df_set_counts[idx_start:idx_end,]$Setting)
+  idx_start <- idx_end + 1
+  idx_end <-idx_end + settings_per_chart
   y_max <- max(df_i$mean)
 
   ggplot(df_i, aes(x=calendar.year, y=mean, group=Setting)) +
@@ -252,7 +251,7 @@ for(i in 1:4) {
     scale_x_discrete(name='Calendar Year') +
     scale_y_continuous(name='SEND Population', limits=c(0,y_max)) +
     theme_bw() +
-    ggtitle(paste("SEND Trends, by Setting",sep="")) +
+    ggtitle(paste("SEND Trends, by Setting (", i, " of ", n_charts, ")", sep="")) +
     geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
     annotate("text", label = "<-- Historical      Projected -->", x=n_hist_years[1,], y=y_max, color = "dodgerblue")
 
