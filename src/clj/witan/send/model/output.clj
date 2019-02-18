@@ -338,6 +338,17 @@
         (output-dirichlet-expectations dir "joiners_dirichlet_expectations" (standard-projection :joiner-state-alphas)
                                        [:ay :need :setting :expectation :normalisation-constant :alpha])
         (output-initial-population-state dir "initial_population_state" (standard-projection :population-by-state))
+        (if scenario-projection
+          (do
+            (output-beta-expectations dir "scenario_joiner_beta_expectations" (scenario-projection :joiner-beta-params)
+                                      [:ay :alpha :beta :expectation])
+            (output-beta-expectations dir "scenario_mover_beta_expectations" (scenario-projection :mover-beta-params))
+            (output-beta-expectations dir "scenario_leaver_beta_expectations" (scenario-projection :leaver-beta-params))
+            (output-dirichlet-expectations dir "scenario_movers_dirichlet_expectations" (scenario-projection :mover-state-alphas))
+            (output-dirichlet-expectations dir "scenario_joiners_dirichlet_expectations" (scenario-projection :joiner-state-alphas)
+                                           [:ay :need :setting :expectation :normalisation-constant :alpha])
+            (output-initial-population-state dir "scenario_initial_population_state" (standard-projection :population-by-state))))
+
         (when run-charts
           (with-open [writer (io/writer (io/file (str dir "/historic-data.csv")))]
             (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
