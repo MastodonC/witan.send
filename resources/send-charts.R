@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # svglite requires cairo dev packages
 packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite", 
-                      "logging", "optparse")
+                      "logging", "optparse", "cowplot")
 
 install_missing_packages <- function(package_name) {
   if(!require(package_name, character.only = TRUE)) {
@@ -38,6 +38,7 @@ library(reshape2)
 library(stringr)
 library(ggforce)
 library(logging)
+library(cowplot)
 
 basicConfig()
 loginfo(output_dir)
@@ -430,7 +431,7 @@ sankey <- function(data, title, colour_map) {
 ### Historic Primary to Secondary Transitions ###
 
 df_prim_sec_trans <- df_historical %>%
-  filter(setting.1 != "NONSEND" & academic.year.1 == 6) %>%
+  filter(setting.1 != "NONSEND") %>%
   filter(setting.2 != "NONSEND")
 
 years = as.numeric(unique(df_historical$calendar.year))
@@ -477,6 +478,20 @@ for (f in years) {
   sankey_prim_sec_trans(df_prim_sec_trans, f, transition_colours)
   save_plot(paste0(output_dir, "/Historic_Transitions_", f, ".png"))
 }
+
+sankey_ay_trans <- function(ay){
+  df_prim_sec_trans <- df_historical %>%
+    filter(setting.1 != "NONSEND" & academic.year.1 == ay ) %>%
+    filter(setting.2 != "NONSEND")
+  return(sankey_prim_sec_trans(df_prim_sec_trans, 2016, transition_colours))
+}
+
+p <- lapply(8:13, sankey_ay_trans)
+pg <- plot_grid(plotlist=p, ncol=6)
+cowplot::save_plot(paste0(output_dir, "/Historic_Transitions_Boom.png"), pg, ncol=6, base_height = 8, 
+                   base_aspect_ratio = NULL, 
+                   base_width = 5,
+                   limitsize = FALSE)
 
 ### SEND Joiner Transitions ###
 
