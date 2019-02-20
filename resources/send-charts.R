@@ -429,8 +429,8 @@ sankey <- function(data, title, colour_map) {
 
 ### Historic Primary to Secondary Transitions ###
 
-df_prim_sec_trans <- df_historical %>%
-  filter(setting.1 != "NONSEND" & academic.year.1 == 6) %>%
+df_transitions <- df_historical %>%
+  filter(setting.1 != "NONSEND") %>%
   filter(setting.2 != "NONSEND")
 
 years = as.numeric(unique(df_historical$calendar.year))
@@ -441,7 +441,7 @@ get_transition <- function(data, setting1, setting2) {
   table((data$setting.1 == setting1) & (data$setting.2 == setting2))[[2]]
 }
 
-sankey_prim_sec_trans <- function(data, calendar_year, colour_map) {
+sankey_transitions <- function(data, calendar_year, colour_map) {
   result<-data.frame()
   v = -1
   filtered_data<-filter(data, calendar.year == calendar_year)
@@ -467,14 +467,14 @@ sankey_prim_sec_trans <- function(data, calendar_year, colour_map) {
     rename(y = Type) %>%
     arrange(Setting)
 
-  sankey(result, paste0("Aggregate Settings Transitions ", calendar_year, "/", (calendar_year + 1)), colour_map)
+  sankey(result, paste0("Settings Transitions between ", calendar_year, " and ", (calendar_year + 1)), colour_map)
 }
 
 transition_colours <- colour_list
 names(transition_colours) <- unique(df_valid_settings$Type)
 
 for (f in years) {
-  sankey_prim_sec_trans(df_prim_sec_trans, f, transition_colours)
+  sankey_transitions(df_transitions, f, transition_colours)
   save_plot(paste0(output_dir, "/Historic_Transitions_", f, ".png"))
 }
 
