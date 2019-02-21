@@ -174,7 +174,6 @@ plot_setting_ay <- function(data, setting_str) {
   save_plot(paste0(output_dir, "/settings/", setting_str, "_Trends.png"))
 }
 
-plot_setting_ay(df_projected_setting_ay_counts, "MU")
 
 for (s in unique(df_projected_setting_ay_counts$setting)){
   plot_setting_ay(df_projected_setting_ay_counts, s)
