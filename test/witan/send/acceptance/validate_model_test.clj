@@ -12,8 +12,8 @@
         files (keys expected-md5s)
         config (m/read-config "data/demo/config.edn")
         output-dir (get-in config [:output-parameters :output-dir])
-        validation-dir (join "/" [(:project-dir config) (str "validation-" output-dir)])]
-    (run! #(let [file (join "/" [validation-dir %])]
+        validation-dir (io/file (:project-dir config) output-dir)]
+    (run! #(let [file (io/file validation-dir %)]
              (when (.exists (io/file file))
                (io/delete-file file))) files)
     (vm/run-send-validation config)
