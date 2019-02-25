@@ -43,9 +43,22 @@
               coll))
           params (sort academic-years)))
 
+(defn modify-transitions-double-joiner-a
+  ; It's unfortunate that the transition format differs between the distribution calculation functions calls.
+  ; Some use raw transitions data, some use transition data having had transition-map called over it.  This means we
+  ; need two versions of this functionality.
+  "Double transitions for setting-A"
+  [transitions]
+  (flatten (for [t transitions]
+             (if (= (:setting-2 t) :A)
+               (repeat 2 t)
+               t))))
+
 (defn calculate-joiners-per-calendar-year
   [transitions]
   (->> (filter transitions-joiner? transitions)
+       ; this modification could be any suitable function
+       (modify-transitions-double-joiner-a)
        (reduce (fn [coll {:keys [calendar-year academic-year-2]}]
                  (update-in coll [calendar-year academic-year-2] m/some+ 1))
                {})))
@@ -149,6 +162,16 @@
                 coll))
             {} valid-states)))
 
+(defn modify-transitions-double-joiner-a-transition-map
+  "Double transitions for setting-A"
+  [transitions]
+  (into {} (for [[[ay ns1 ns2] count] transitions]
+             [[ay ns1 ns2]
+              (let [[_ setting] (s/split-need-setting ns2)]
+                (if (= setting :A)
+                  (* 2 count)
+                  count))])))
+
 (defn alpha-params-joiners
   "The transition structure at this point is of the form:
 
@@ -167,7 +190,10 @@
   [valid-states transitions]
   (let [by-ay (-> transitions
                   (select-transitions joiner?)
+                  ; the following could be a generic function.
+                  (modify-transitions-double-joiner-a-transition-map)
                   (alpha-params (juxt academic-year state-2)))
+
         academic-years (->> valid-states (map first) distinct sort)
         params (reduce (fn [coll ay]
                          (let [valid-states (s/validate-states-for-ay valid-states ay)
