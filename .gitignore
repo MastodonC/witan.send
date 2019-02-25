@@ -22,4 +22,4 @@ data/demo/validation/
 *.Rhistory
 .Rproj.user
 *.ipynb_checkpoints
-data/demo/data/transitions.csv
+
