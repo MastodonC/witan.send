@@ -122,18 +122,10 @@
 
 (defn run-model-iteration
   "Takes the model & transitions, transition params, and the projected population and produce the next state of the model & transitions"
-  [modify-transitions-from
-   standard-projection
-   scenario-projection
+  [standard-projection
    {population-by-state :model}
    [calendar-year projected-population]]
-  (let [params (if (nil? modify-transitions-from)
-                 (if ((complement nil?) scenario-projection)
-                   scenario-projection
-                   standard-projection)
-                 (if (>= calendar-year modify-transitions-from)
-                   scenario-projection
-                   standard-projection))
+  (let [params standard-projection
         cohorts (step/age-population projected-population population-by-state)
         [population-by-state transitions] (reduce (fn [pop cohort]
                                                     (apply-leavers-movers-for-cohort pop cohort params calendar-year))
@@ -184,18 +176,13 @@
 (defn run-send-model
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
-  [{:keys [standard-projection scenario-projection modify-transition-by
-           modify-transitions-from seed-year]}
+  [{:keys [standard-projection seed-year]}
    {:keys [random-seed simulations]}]
   (d/set-seed! random-seed)
   (println "Preparing" simulations "simulations...")
   (let [{:keys [population population-by-state
                 projected-population cost-lookup
                 valid-states transitions] :as inputs} standard-projection
-        modified-inputs (when ((complement nil?) scenario-projection)
-                          (assoc scenario-projection :valid-year-settings
-                                 (->> (ds/row-maps valid-states)
-                                      (states/calculate-valid-year-settings-from-setting-academic-years))))
         projected-future-pop-by-year (->> projected-population
                                           (filter (fn [[k _]] (> k seed-year)))
                                           (sort-by key))
@@ -211,7 +198,7 @@
                                           (int (/ simulations 8))))
                          (pmap (fn [simulations]
                                  (->> (for [_ simulations]
-                                        (let [projection (reductions (partial run-model-iteration modify-transitions-from inputs modified-inputs)
+                                        (let [projection (reductions (partial run-model-iteration inputs)
                                                                      {:model population-by-state}
                                                                      projected-future-pop-by-year)]
                                           projection))
@@ -228,6 +215,4 @@
      :transitions transitions
      :valid-states valid-states
      :population population
-     :modify-transition-by modify-transition-by
-     :standard-projection standard-projection
-     :scenario-projection scenario-projection}))
+     :standard-projection standard-projection}))
