@@ -11,14 +11,14 @@
             [clojure.core.matrix.dataset :as ds]))
 
 (deftest expected-results
-  (let [expected-md5s {"Output_AY.csv" "848944192402c899e9891453e91287b4",
-                       "Output_AY_Group.csv" "d742c2727c455e3d8b65f42c58d00048",
-                       "Output_State.csv" "4aba396af0f6aaee0734723ebbd0f96c",
-                       "Output_Cost.csv" "7d6bffb95741ccb333d9b5dc90e24c4d",
-                       "Output_Count.csv" "e9f93ac2c13a41f5536e2bfb97daadd5",
-                       "Output_Need.csv" "460b794ff7bfdecc7c7c04657c2db585",
-                       "Output_Setting.csv" "2e89259376e530ed84439da0eb32027a",
-                       "transitions.edn" "27ca57ba18f6024d335fd57722ef1cbf"}
+  (let [expected-md5s {"Output_AY.csv"       "0dfb8d8bd19e64800a2e37d76d58cafc"
+                       "Output_AY_Group.csv" "dac7ec595449d6cfcb991cb656b1d928"
+                       "Output_Cost.csv"     "26452e8aafd84d5e3760dc74e754bd0a"
+                       "Output_Count.csv"    "8ba1b029910882f7e55fb656304bb38e"
+                       "Output_Need.csv"     "eb43d161874b286c87e6e4fd784fda75"
+                       "Output_Setting.csv"  "5384fb984eb38c24847adb79ff700ae2"
+                       "Output_State.csv"    "9462b190d8d9a0c6d62c19578260481e"
+                       "transitions.edn"     "baad299e776f1562f6585ae496a1166c"}
         historic-years (distinct (map :calendar-year (v/load-csv-as-maps "data/demo/data/transitions.csv")))
         expected-plots (into ["Joiner_Probability.pdf" "Joiner_Transitions.pdf" "Leaver_Probability.pdf"
                               "Mover_Probability.pdf" "NCY_Population_Trends.pdf" "Need_Trends.pdf"
@@ -51,14 +51,14 @@
   (get (first (filter #(= (get % col) v) seq-of-maps)) "expectation"))
 
 (deftest expected-filter-by-ay11-cy2015-results
-  (let [expected-md5s {"Output_AY.csv" "89022266998810dd7f4c1c8283c16744",
-                       "Output_AY_Group.csv" "e834a4f17eae2da61a542aa132dedd47",
-                       "Output_State.csv" "b15b768bd3a53bfe74f0170fd9a3d481",
-                       "Output_Cost.csv" "c672ba67c5f6c004dca67ace5fd4d4ab",
-                       "Output_Count.csv" "6c8443f1e724ebda02e3523bca7bc1d5",
-                       "Output_Need.csv" "854c72e0cfe17d9a7463b6fb5163cf13",
-                       "Output_Setting.csv" "dee6241d19a76bb1b6a9058d8e4e70ce",
-                       "transitions.edn" "0144496f21ad6b7c44243acfc4bf98f3"}
+  (let [expected-md5s {"Output_AY.csv"       "c8d70d87dc8119b987110ec8ff85650a"
+                       "Output_AY_Group.csv" "c1242f6ccf390e6230ee00c87e99aa3a"
+                       "Output_Cost.csv"     "646f383501b5767291cbbe5626c76573"
+                       "Output_Count.csv"    "3f0fd5fbb4a7ab6311f91808ee46db62"
+                       "Output_Need.csv"     "4ace9aa7a86653920373edd580e61b7c"
+                       "Output_Setting.csv"  "9651093f9f0a4d55b980f170ff589bde"
+                       "Output_State.csv"    "50f2332b826ed4d9557d230372c1beb0"
+                       "transitions.edn"     "517fdebfc3cc690513f34c04e9bc9656"}
         files (keys expected-md5s)
         config (m/read-config "data/demo/config_splicing.edn")
         output-dir (m/get-output-dir config)]
@@ -71,11 +71,11 @@
       (is (= expected-md5s
              (into {} (for [f files]
                         [f (-> (io/file output-dir f) (digest/md5))])))))
-    (let [standard-joiner-exp (load-results "data/demo/results/joiner_beta_expectations.csv")
+    (let [standard-joiner-exp (load-results "data/demo/results_for_checking/joiner_beta_expectations.csv")
           scenario-joiner-exp (load-results (str output-dir "/joiner_beta_expectations.csv"))
-          standard-leaver-exp (load-results "data/demo/results/leaver_beta_expectations.csv")
+          standard-leaver-exp (load-results "data/demo/results_for_checking/leaver_beta_expectations.csv")
           scenario-leaver-exp (load-results (str output-dir "/leaver_beta_expectations.csv"))
-          standard-mover-exp (load-results "data/demo/results/mover_beta_expectations.csv")
+          standard-mover-exp (load-results "data/demo/results_for_checking/mover_beta_expectations.csv")
           scenario-mover-exp (load-results (str output-dir "/mover_beta_expectations.csv"))]
       (testing "some of the rates we expect to change are effected"
         (is (not= (find-in-map standard-joiner-exp "ay" "11")
@@ -91,6 +91,6 @@
         (is (= (find-in-map standard-mover-exp "ay" "10")
                (find-in-map scenario-mover-exp "ay" "10"))))
       (testing "rates are as expected"
-        (is (= 0.0012491078 (read-string (find-in-map scenario-joiner-exp "ay" "11"))))
-        (is (= 0.22826087 (read-string (find-in-map scenario-leaver-exp "ay" "11"))))
-        (is (= 0.25700936 (read-string (find-in-map scenario-mover-exp "ay" "11"))))))))
+        (is (= 8.9221983E-4 (read-string (find-in-map scenario-joiner-exp "ay" "11"))))
+        (is (= 0.0255 (read-string (find-in-map scenario-leaver-exp "ay" "11"))))
+        (is (= 0.021875 (read-string (find-in-map scenario-mover-exp "ay" "11"))))))))
