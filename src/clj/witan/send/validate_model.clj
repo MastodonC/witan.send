@@ -108,10 +108,10 @@
   "Takes seq of maps containing results returned by (validate-fold) and writes to disk"
   (->> (map :count results)
        flatten
-       (write-csv (io/file project-dir (str "validation-" output-dir "/validation_results_count.csv"))))
+       (write-csv (io/file project-dir output-dir "validation_results_count.csv")))
   (->> (map :state results)
        flatten
-       (write-csv (io/file project-dir (str "validation-" output-dir "/validation_results_state.csv")))))
+       (write-csv (io/file project-dir output-dir "validation_results_state.csv"))))
 
 (defn setup-validation-dirs [project-dir output-dir]
   "Create dirs required for validation process"
