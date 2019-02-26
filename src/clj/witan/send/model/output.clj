@@ -102,7 +102,7 @@
     s))
 
 (defn r-plots [dir pop-path settings-to-exclude use-confidence-bound-or-interval]
-  (let [send-charts (str (System/getProperty "java.io.tmpdir") "send-charts.R")
+  (let [send-charts (str (System/getProperty "java.io.tmpdir") "/send-charts.R")
         response (sh/sh "Rscript" "--vanilla" send-charts
                         "--output-dir" (qstr dir)
                         "--population-file" (qstr pop-path)

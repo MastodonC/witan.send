@@ -115,6 +115,8 @@ edit the projects `config.edn` to alter the parameters.
 
 ### R Dependencies
 
+#### Native
+
 This is very fragile and *will* break in the future.
 
 For Ubuntu, get enough of an env that will allow compilation of R
@@ -132,6 +134,24 @@ install.packages("devtools")
 install.packages("concaveman")
 devtools::install_github('thomasp85/ggforce')
 ```
+
+#### R via Conda
+
+If the above doesn't work then you may install R via the environment file at the top level of the repo.
+
+``` bash
+conda env create -f environment.yml
+```
+
+You still have to build the github version of ggforce though
+
+``` bash
+conda activate witan.send
+Rscript "devtools::install_github('thomasp85/ggforce')"
+```
+
+Make sure you launch your IDE from a shell with the witan.send env activated.
+
 ## Features
 
 ##### Experiments with different configurations
