@@ -52,6 +52,15 @@
   [{:keys [need-setting n beta-params]}]
   (d/sample-beta-binomial n beta-params))
 
+(defn redistribute [need-setting movers]
+  "Take all X-A->X-B movement and change to X-A->X-C"
+  (if (= need-setting :X-A)
+    (if-let [xb (movers :X-B)]
+      (do (assoc movers :X-B 0)
+          (update movers :X-C (partial + xb)))
+      movers)
+    movers))
+
 (defn apply-leavers-movers-for-cohort-unsafe
   "We're calling this function 'unsafe' because it doesn't check whether the need-setting or
   or academic year range is valid."
@@ -63,12 +72,13 @@
     (let [leavers (predict-leavers {:need-setting need-setting
                                     :n population
                                     :beta-params (get leaver-beta-params [(dec year) need-setting])})
-          movers (if (states/can-move? valid-year-settings year need-setting)
-                               (predict-movers {:need-setting need-setting
-                                                :n (- population leavers)
-                                                :beta-params (get mover-beta-params [(dec year) need-setting])
-                                                :dirichlet-params mover-dirichlet-params})
-                               {need-setting (- population leavers)})
+          movers (->> (if (states/can-move? valid-year-settings year need-setting)
+                       (predict-movers {:need-setting     need-setting
+                                        :n                (- population leavers)
+                                        :beta-params      (get mover-beta-params [(dec year) need-setting])
+                                        :dirichlet-params mover-dirichlet-params})
+                       {need-setting (- population leavers)})
+                      (redistribute need-setting))
           [model transitions] (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
                                                                             :academic-year year :need-setting need-setting
                                                                             :predicted-populations movers
