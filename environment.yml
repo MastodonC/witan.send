@@ -1,0 +1,15 @@
+name: witan.send
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - r-essentials
+  - r-base
+  - r-dplyr
+  - r-ggplot2
+  - r-reshape2
+  - r-stringr
+  - r-logging
+  - r-svglite
+  - r-optparse
+  - r-devtools
