@@ -6,7 +6,6 @@
             [witan.send.maths :as m]
             [witan.send.schemas :as sc]
             [witan.send.states :as states]
-            [witan.send.step :as step]
             [witan.send.utils :as u]))
 
 (defn incorporate-new-ay-need-setting-populations
@@ -16,16 +15,16 @@
   [{:keys [model transitions academic-year need-setting
            predicted-populations calendar-year]}]
   (vector
-   (reduce (fn [coll [next-need-setting n]]
-             (cond-> coll
-               (pos? n)
-               (update [academic-year next-need-setting] m/some+ n)))
-           model predicted-populations)
-   (reduce (fn [coll [next-need-setting n]]
-             (cond-> coll
-               (pos? n)
-               (update [calendar-year academic-year need-setting next-need-setting] m/some+ n)))
-           transitions predicted-populations)))
+    (reduce (fn [coll [next-need-setting n]]
+              (cond-> coll
+                      (pos? n)
+                      (update [academic-year next-need-setting] m/some+ n)))
+            model predicted-populations)
+    (reduce (fn [coll [next-need-setting n]]
+              (cond-> coll
+                      (pos? n)
+                      (update [calendar-year academic-year need-setting next-need-setting] m/some+ n)))
+            transitions predicted-populations)))
 
 (defn predict-movers
   "Returns a map of predicted need-setting counts for movers for a given
@@ -49,32 +48,35 @@
     {}))
 
 (defn predict-leavers
-  [{:keys [need-setting n beta-params]}]
+  [{:keys [n beta-params]}]
   (d/sample-beta-binomial n beta-params))
 
 (defn apply-leavers-movers-for-cohort-unsafe
   "We're calling this function 'unsafe' because it doesn't check whether the need-setting or
   or academic year range is valid."
-  [[model transitions] [[year need-setting] population]
+  [[model transitions] [[ay need-setting] population]
    {:keys [mover-state-alphas mover-beta-params leaver-beta-params
-           valid-year-settings] :as params}
+           valid-year-settings valid-ay-need-settings]}
    calendar-year]
-  (if-let [mover-dirichlet-params (get mover-state-alphas [(dec year) need-setting])]
+  (if-let [mover-dirichlet-params (get mover-state-alphas [ay need-setting])]
     (let [leavers (predict-leavers {:need-setting need-setting
                                     :n population
-                                    :beta-params (get leaver-beta-params [(dec year) need-setting])})
-          movers (if (states/can-move? valid-year-settings year need-setting)
-                               (predict-movers {:need-setting need-setting
-                                                :n (- population leavers)
-                                                :beta-params (get mover-beta-params [(dec year) need-setting])
-                                                :dirichlet-params mover-dirichlet-params})
-                               {need-setting (- population leavers)})
-          [model transitions] (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
-                                                                            :academic-year year :need-setting need-setting
-                                                                            :predicted-populations movers
+                                    :beta-params (get leaver-beta-params [ay need-setting])})
+          movers+remainers (if (states/can-move? valid-year-settings ay need-setting)
+                             (predict-movers {:need-setting need-setting
+                                              :n (- population leavers)
+                                              :beta-params (get mover-beta-params [ay need-setting])
+                                              :dirichlet-params mover-dirichlet-params})
+                             (if (some #{[(+ 1 ay) need-setting]} valid-ay-need-settings) ; no so performant
+                               {need-setting (- population leavers)}))
+          [model transitions] (incorporate-new-ay-need-setting-populations {:model model
+                                                                            :transitions transitions
+                                                                            :academic-year (+ 1 ay) ;; aging on
+                                                                            :need-setting need-setting
+                                                                            :predicted-populations movers+remainers
                                                                             :calendar-year calendar-year})]
       [model
-       (update transitions [calendar-year year need-setting c/non-send] m/some+ leavers)])
+       (update transitions [calendar-year (+ 1 ay) need-setting c/non-send] m/some+ leavers)])
     [model transitions]))
 
 (defn apply-leavers-movers-for-cohort
@@ -82,17 +84,17 @@
   Calls 'unsafe' equivalent once we've removed non-send and children outside
   valid academic year range."
   [[model transitions :as population-by-state]
-   [[year state] population :as cohort]
+   [[ay need-setting] population :as cohort]
    params calendar-year]
   (cond
-    (= state c/non-send)
+    (= need-setting c/non-send)
     population-by-state
-    (or (<= year sc/min-academic-year)
-        (> year sc/max-academic-year))
+    (or (<= (+ 1 ay) sc/min-academic-year)
+        (> (+ 1 ay) sc/max-academic-year))
     [model
      (cond-> transitions
-       (pos? population)
-       (update [calendar-year year state c/non-send] m/some+ population))]
+             (pos? population)
+             (update [calendar-year (+ 1 ay) need-setting c/non-send] m/some+ population))]
     :else
     (apply-leavers-movers-for-cohort-unsafe population-by-state cohort params calendar-year)))
 
@@ -107,7 +109,10 @@
         (d/sample-dirichlet-multinomial joiners dirichlet-params)))))
 
 (defn apply-joiners-for-academic-year
-  [[model transitions] academic-year population {:keys [joiner-beta-params joiner-state-alphas]} calendar-year]
+  [[model transitions]
+   academic-year
+   population
+   {:keys [joiner-beta-params joiner-state-alphas]} calendar-year]
   (let [betas (get joiner-beta-params academic-year)
         alphas (get joiner-state-alphas academic-year)
         pop (get population academic-year)]
@@ -134,11 +139,10 @@
                  (if (>= calendar-year modify-transitions-from)
                    scenario-projection
                    standard-projection))
-        cohorts (step/age-population projected-population population-by-state)
         [population-by-state transitions] (reduce (fn [pop cohort]
                                                     (apply-leavers-movers-for-cohort pop cohort params calendar-year))
                                                   [{} {}]
-                                                  cohorts)
+                                                  population-by-state)
         [population-by-state transitions] (reduce (fn [pop academic-year]
                                                     (apply-joiners-for-academic-year pop academic-year projected-population params calendar-year))
                                                   [population-by-state transitions]
@@ -176,7 +180,7 @@
                   (values-rf {:by-state (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
                               :total-in-send-by-ay (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
                               :total-in-send (u/histogram-combiner-rf simulations number-of-significant-digits)
-                              :total-in-send-by-need (u/merge-with-rf (u/histogram-combiner-rf simulations  number-of-significant-digits))
+                              :total-in-send-by-need (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
                               :total-in-send-by-setting (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))
                               :total-cost (u/histogram-combiner-rf simulations number-of-significant-digits)
                               :total-in-send-by-ay-group (u/merge-with-rf (u/histogram-combiner-rf simulations number-of-significant-digits))})))
@@ -194,8 +198,8 @@
                 valid-states transitions] :as inputs} standard-projection
         modified-inputs (when ((complement nil?) scenario-projection)
                           (assoc scenario-projection :valid-year-settings
-                                 (->> (ds/row-maps valid-states)
-                                      (states/calculate-valid-year-settings-from-setting-academic-years))))
+                                                     (->> (ds/row-maps valid-states)
+                                                          (states/calculate-valid-year-settings-from-setting-academic-years))))
         projected-future-pop-by-year (->> projected-population
                                           (filter (fn [[k _]] (> k seed-year)))
                                           (sort-by key))
@@ -203,7 +207,8 @@
         validate-valid-states (->> (ds/row-maps valid-states)
                                    (states/calculate-valid-states-from-setting-academic-years))
         inputs (assoc inputs :valid-year-settings (->> (ds/row-maps valid-states)
-                                                       (states/calculate-valid-year-settings-from-setting-academic-years)))
+                                                       (states/calculate-valid-year-settings-from-setting-academic-years))
+                             :valid-ay-need-settings validate-valid-states)
         projections (->> (range simulations)
                          ;; The logic is for validation compatibility only, elsewise we could just use the truth expression
                          (partition-all (if (< simulations 8)
@@ -218,9 +223,9 @@
                                       (doall))))
                          (doall))
         reduced (doall
-                 (for [projection projections]
-                   (do (println "Reducing...")
-                       (transduce (map #(map :model %)) (reduce-rf iterations validate-valid-states cost-lookup) projection))))
+                  (for [projection projections]
+                    (do (println "Reducing...")
+                        (transduce (map #(map :model %)) (reduce-rf iterations validate-valid-states cost-lookup) projection))))
         projection (apply concat projections)]
     (println "Combining...")
     {:projection (projection->transitions projection)
