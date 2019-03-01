@@ -17,6 +17,7 @@
 
 (defn sample-beta-binomial
   [n params]
-  (if (pos? n)
+  (if (and (pos? n)
+           (not= params {:alpha 0 :beta 0}))
     (d/draw (d/beta-binomial n params) {:seed (get-seed!)})
     0))
