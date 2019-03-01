@@ -54,7 +54,7 @@
 
   (testing "Positive mover state alphas for every year with >1 setting"
     (let [transitions {}
-          params (sut/alpha-params-movers valid-states valid-transitions transitions)]
+          params (sut/alpha-params-movers valid-states valid-year-settings valid-transitions transitions)]
       (is (empty? (remove (fn [[academic-year state]]
                             (let [alphas (get params [academic-year state])]
                               (and (pos? (count alphas))
@@ -74,7 +74,7 @@
 
   (testing "Positive mover beta params for every valid state"
     (let [transitions {}
-          params (sut/beta-params-movers valid-states valid-transitions transitions)]
+          params (sut/beta-params-movers valid-states valid-year-settings transitions)]
       (is (every? (fn [[_ betas]]
                     (and (pos? (:alpha betas))
                          (pos? (:beta betas))))
