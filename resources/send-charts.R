@@ -104,7 +104,7 @@ ggplot(df_ay, aes(x=calendar.year, y=value, group=variable)) +
   scale_y_continuous(name='SEND Population') +
   scale_color_manual(name = "NCY",
                      values = c("cyan", "coral", "dodgerblue", "hotpink", "green4"),
-                     labels = c("0 and under", "1 to 6", "7 to 11", "12 to 13", "14 and up")) +
+                     labels = c("Early years", "1 to 6", "7 to 11", "12 to 13", "14 and up")) +
   theme_bw() +
   ggtitle("SEND Trends, grouped by National Curriculum Years") +
   geom_vline(xintercept = n_hist_years[1,], color = "dodgerblue", linetype = "dashed") +
@@ -556,21 +556,34 @@ if(file_test("-f", pop_path)){
                      ifelse(ons$academic.year <= 6, "NCY_01_06",
                             ifelse(ons$academic.year <= 11, "NCY_07_11",
                                    ifelse(ons$academic.year <= 13, "NCY_12_13", "NCY_14_up"))))
-  ons <- aggregate(ons$population, by=list(Year=ons$calendar.year, NCY=ons$NCY), FUN=sum)
+  ons_ncy <- aggregate(ons$population, by=list(Year=ons$calendar.year, NCY=ons$NCY), FUN=sum)
+  colnames(ons_ncy)[3] <- 'Population'
   
-  ggplot(ons, aes(x=Year, y=x, group=NCY)) +
+  ggplot(ons_ncy, aes(x=Year, y=Population, group=NCY)) +
     geom_line(aes(color=NCY)) +
     geom_point(aes(color=NCY)) +
-    scale_x_continuous(breaks = round(seq(min(ons$Year), max(ons$Year), by = 1))) +
+    scale_x_continuous(breaks = round(seq(min(ons_ncy$Year), max(ons_ncy$Year), by = 1))) +
     scale_y_continuous(name='Population') +
     expand_limits(y = 0) +
     scale_color_manual(name = "NCY",
                        values = c("cyan", "coral", "dodgerblue", "hotpink", "green4"),
-                       labels = c("0 and under", "1 to 6", "7 to 11", "12 to 13", "14 and up")) +
+                       labels = c("Early years", "1 to 6", "7 to 11", "12 to 13", "14 and up")) +
     theme_bw() +
     ggtitle("General Population, grouped by National Curriculum Years")
   
-  save_plot(paste0(output_dir, "/General_Population.png"))
+  save_plot(paste0(output_dir, "/General_Population_by_NCY.png"))
+  
+  ons_total <- aggregate(ons$population, by=list(Year=ons$calendar.year), FUN=sum)
+  colnames(ons_total)[2] <- 'Population'
+  ggplot(ons_total, aes(x=Year, y=Population)) +
+    geom_line(colour='darkblue') +
+    geom_point(colour='darkblue') +
+    theme_bw() +
+    scale_y_continuous() +
+    expand_limits(y = 0) +
+    scale_x_continuous(breaks = seq(min(ons_total$Year), max(ons_total$Year))) +
+    ggtitle("General Population, ages 0 to 25")
+  save_plot(paste0(output_dir, "/General_Population_total.png"))
 }
 
 ### Delete automatically produced Rplots.pdf file ###
