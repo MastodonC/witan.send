@@ -85,24 +85,26 @@
                                    :beta (- (get-in population [calendar-year academic-year]) j)})))
                     coll years)) {} ages))
 
-(defn output-transitions
-  ([dir filename projections]
-   (binding [*print-length* nil] (spit (str dir "/" filename ".edn") (pr-str projections))))
-  ([dir filename projections simulations]
-   (with-open [writer (io/writer (io/file (str dir "/" filename ".csv")))]
-     (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2 :academic-year-2 :avg-number-of]
-           headers (mapv name columns)
-           parse-need-setting #(map name ((comp reverse states/split-need-setting) %))
-           rows (sort (remove empty?
-                              (for [[[cy ay need-setting-source need-setting-destination] transitions] projections]
-                                (if (> (m/round0 (/ transitions simulations)) 0)
-                                  (into [] (flatten [cy
-                                                     ay
-                                                     (parse-need-setting need-setting-source)
-                                                     (inc ay)
-                                                     (parse-need-setting need-setting-destination)
-                                                     (m/round0 (/ transitions simulations))]))))))]
-       (csv/write-csv writer (into [headers] rows))))))
+(defn output-transitions-edn
+  [dir filename projections]
+  (binding [*print-length* nil] (spit (str dir "/" filename ".edn") (pr-str projections))))
+
+(defn output-transitions-csv
+  [dir filename projections simulations]
+  (with-open [writer (io/writer (io/file (str dir "/" filename ".csv")))]
+    (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2 :academic-year-2 :avg-number-of]
+          headers (mapv name columns)
+          parse-need-setting #(map name ((comp reverse states/split-need-setting) %))
+          rows (sort (remove empty?
+                             (for [[[cy ay need-setting-source need-setting-destination] transitions] projections]
+                               (if (> (m/round0 (/ transitions simulations)) 0)
+                                 (into [] (flatten [cy
+                                                    ay
+                                                    (parse-need-setting need-setting-source)
+                                                    (inc ay)
+                                                    (parse-need-setting need-setting-destination)
+                                                    (m/round0 (/ transitions simulations))]))))))]
+      (csv/write-csv writer (into [headers] rows)))))
 
 (defn ribbon-data-rows [ribbon-data]
   (mapv (fn [x] (mapv #(nth % x) (map val ribbon-data))) (range (count (val (last ribbon-data))))))
@@ -267,8 +269,8 @@
         (report/info "First year of input data: " (report/bold (first years)))
         (report/info "Final year of input data: " (report/bold (inc (last years))))
         (report/info "Final year of projection: " (report/bold (+ (last years) (count (map :total-in-send send-output)))))
-        (output-transitions dir "transitions" projection)
-        (output-transitions dir "transitions" projection simulations)
+        (output-transitions-edn dir "transitions" projection)
+        (output-transitions-csv dir "transitions" projection simulations)
         (with-open [writer (io/writer (io/file (str dir "/Output_State.csv")))]
           (let [columns [:calendar-year :academic-year :need-setting :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
