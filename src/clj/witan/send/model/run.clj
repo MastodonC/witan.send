@@ -224,6 +224,7 @@
         projection (apply concat projections)]
     (println "Combining...")
     {:projection (projection->transitions projection)
+     :simulations simulations
      :send-output (transduce identity (combine-rf simulations iterations) reduced)
      :transitions transitions
      :valid-states valid-states
