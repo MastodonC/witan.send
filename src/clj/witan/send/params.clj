@@ -5,7 +5,7 @@
             [witan.send.states :as s]))
 
 (defn joiner?
-  [[ay state-1 state-2]]
+  [[_ state-1 state-2]]
   (and (= state-1 c/non-send)
        (not= state-2 c/non-send)))
 
@@ -80,11 +80,15 @@
                                    (assoc coll ay {:alpha (double (/ alpha total))
                                                    :beta (double (/ beta total))})))
                                {} observations)
-        prior-per-year (continue-for-latter-ays prior-per-year academic-years)]
+        unobserved-priors (reduce (fn [coll ay]
+                                    (if (nil? (get observations ay))
+                                      (assoc coll ay {:alpha 0.5 :beta 0.5}))) ; these prior values need tweaking
+                                  {} academic-years)]
     (reduce (fn [coll [ay state]]
               (if-let [beta-params (merge-with +
                                                (get-in observations [ay state])
-                                               (get prior-per-year ay))]
+                                               (get prior-per-year ay)
+                                               (get unobserved-priors ay))]
                 (assoc coll [ay state] beta-params)
                 coll))
             {} valid-states)))
