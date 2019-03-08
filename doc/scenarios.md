@@ -20,7 +20,7 @@ Here each scenario projection is simply defined in terms of the collection of pa
 ### _“Modify setting(s) transitions rates”_
 
 * Parameters = `:which-transitions?`, `:modify-transitions-by` and `:settings-to-change`
-* Arguments = a file defining the settings rates to be modified (see [modify-settings1.csv](https://github.com/MastodonC/witan.send/blob/master/data/demo/data/modify-settings1.csv)), a value modify the transitions by (`0.5`), and a vector containing one (`["joiners"]`) or multiple strings describing the possible type of transitions to be modified, e.g.
+* Arguments = a file defining the settings rates to be modified (see [modify-settings1.csv](examples/modify-settings1.csv)), a value modify the transitions by (`0.5`), and a vector containing one (`["joiners"]`) or multiple strings describing the possible type of transitions to be modified, e.g.
   * “Joiners”
   * “Leavers”
   * “Movers-to”
@@ -30,7 +30,7 @@ Here each scenario projection is simply defined in terms of the collection of pa
 
 ### _“Modify setting(s) transitions rates and transfer individuals to alternative setting(s)”_
 
-* Parameter and Arguments as described above, however additionally takes a list of settings to transfer individuals in the modified setting(s) to (see [modify-settings2.csv](https://github.com/MastodonC/witan.send/blob/master/data/demo/data/modify-settings2.csv))
+* Parameter and Arguments as described above, however additionally takes a list of settings to transfer individuals in the modified setting(s) to (see [modify-settings2.csv](examples/modify-settings2.csv))
 * An [example](https://gist.github.com/seb231/b994bc040ed967e136424b623f165403) may be if a user halves the number of individuals joining “Mainstream”, they may wish to redistribute those joiners to another setting, for example “Special Independent”
 
 ### _“Modify transitions from a specific future calendar year”_
