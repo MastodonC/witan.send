@@ -1,23 +1,15 @@
 (ns witan.send.acceptance.validate-model-test
-  (:require [clojure.java.io :as io]
-            [clojure.string :refer [join]]
-            [clojure.test :refer [deftest is testing]]
-            digest
+  (:require [clojure.test :refer [deftest is testing]]
             [witan.send.main :as m]
-            [witan.send.validate-model :as vm]))
+            [witan.send.acceptance.utils :as au]))
+
+(def validation-files-to-check ["validation_results_state.csv"
+                                "validation_results_count.csv"])
 
 (deftest expected-validation-results
-  (let [expected-md5s {"validation_results_count.csv" "b4a4402c4676e456d69ff988c773e221"
-                       "validation_results_state.csv" "ccba3a0589a0b0deb01c67c7f028ab45"}
-        files (keys expected-md5s)
-        config (m/read-config "data/demo/config.edn")
-        output-dir (get-in config [:output-parameters :output-dir])
-        validation-dir (io/file (:project-dir config) output-dir)]
-    (run! #(let [file (io/file validation-dir %)]
-             (when (.exists (io/file file))
-               (io/delete-file file))) files)
-    (vm/run-send-validation config)
+  (let [config (m/read-config "data/demo/config.edn")
+        config-for-checking (m/read-config "data/demo/config_for_checking.edn")]
+    (au/run-validation-for-test config)
     (testing "Make sure new validation results are the same as the old validation results."
-      (is (= expected-md5s
-             (into {} (for [f files]
-                        [f (-> (io/file validation-dir f) (digest/md5))])))))))
+      (is (= (au/get-md5s config validation-files-to-check)
+             (au/get-md5s config-for-checking validation-files-to-check))))))
