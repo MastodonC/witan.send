@@ -11,8 +11,10 @@
 
 (defn get-md5s [config files]
   (if-let [output-dir (m/get-output-dir config)]
-    (into {} (for [f files]
-               [f (-> (io/file output-dir f) (digest/md5))]))))
+    (into {}
+          (map (fn [f]
+                 [f (-> (io/file output-dir f) (digest/md5))]))
+          files)))
 
 (defn- init-run-for-test [f]
   (fn [config]
