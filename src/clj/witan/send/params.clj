@@ -5,7 +5,7 @@
             [witan.send.states :as s]))
 
 (defn joiner?
-  [[_ state-1 state-2]]
+  [[ay state-1 state-2]]
   (and (= state-1 c/non-send)
        (not= state-2 c/non-send)))
 
