@@ -13,11 +13,10 @@
  :output-parameters
  {:run-outputs true,
   :run-charts true,
-  :output-dir "results",
+  :output-dir "results_for_checking",
   :settings-to-exclude-in-charts nil,
   :keep-temp-files? false,
   :use-confidence-bound-or-interval nil,
   :population-file "data/population.csv",
   :project-dir "data/demo"},
- :validation-parameters
- {:run-validation false, :keep-temp-files? false}}
+ :validation-parameters {:run-validation true, :keep-temp-files? false}}
