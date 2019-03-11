@@ -60,7 +60,9 @@
 
 (defn any-valid-transitions? [state valid-transitions]
   (< 1 (count (get valid-transitions (second (s/split-need-setting state))))))
+
 ;; informal api
+
 (defn beta-params-leavers [valid-states transitions]
   (let [academic-years (->> (map first valid-states)
                             (distinct)
@@ -80,11 +82,16 @@
                                    (assoc coll ay {:alpha (double (/ alpha total))
                                                    :beta (double (/ beta total))})))
                                {} observations)
-        prior-per-year (continue-for-latter-ays prior-per-year academic-years)]
+        unobserved-priors (reduce (fn [coll ay]
+                                    (if (nil? (get observations ay))
+                                      (assoc coll ay {:alpha 0.5 :beta 0.5}) ; these prior values need tweaking
+                                      coll)) 
+                                  {} academic-years)]
     (reduce (fn [coll [ay state]]
               (if-let [beta-params (merge-with +
                                                (get-in observations [ay state])
-                                               (get prior-per-year ay))]
+                                               (get prior-per-year ay)
+                                               (get unobserved-priors ay))]
                 (assoc coll [ay state] beta-params)
                 coll))
             {} valid-states)))

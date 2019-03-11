@@ -13,15 +13,23 @@
                             "Output_State.csv"
                             "transitions.edn"])
 
+(def beta-files-to-check ["joiner_beta_expectations.csv"
+                          "leaver_beta_expectations.csv"
+                          "mover_beta_expectations.csv"])
+
 (deftest expected-results
   (let [config (m/read-config "data/demo/config.edn")
         config-for-checking (m/read-config "data/demo/config_for_checking.edn")]
 
     (au/run-model-for-test config)
 
-    (testing "Checksums are unchanged"
+    (testing "Output checksums are unchanged"
       (is (= (au/get-md5s config output-files-to-check)
-             (au/get-md5s config-for-checking output-files-to-check))))))
+             (au/get-md5s config-for-checking output-files-to-check))))
+
+    (testing "Beta checksums are unchanged"
+      (is (= (au/get-md5s config beta-files-to-check)
+             (au/get-md5s config-for-checking beta-files-to-check))))))
 
 (defn find-in-map [seq-of-maps col v]
   (get (first (filter #(= (get % col) v) seq-of-maps)) "expectation"))
@@ -65,6 +73,6 @@
         (is (= (find-in-map checking-mover-exp "ay" "11")
                (find-in-map scenario-mover-exp "ay" "11")))))
 
-    (testing "checksums are unchanged for scenario"
+    (testing "output checksums are unchanged for scenario"
       (is (= (au/get-md5s config-splicing output-files-to-check)
              (au/get-md5s config-splicing-for-checking output-files-to-check))))))

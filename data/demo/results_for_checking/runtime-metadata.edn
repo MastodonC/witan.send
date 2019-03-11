@@ -1,16 +1,16 @@
 {:execution
- {:start {:date "2019-02-21", :time "16:36:48"},
-  :end {:date "2019-02-21", :time "16:37:18"}},
+ {:start {:date "2019-03-11", :time "16:26:55"},
+  :end {:date "2019-03-11", :time "16:28:01"}},
  :environment-metadata
  {:model-version "1.7.0",
-  :os-name "Mac OS X",
-  :os-version "10.14",
+  :os-name "Linux",
+  :os-version "4.18.0-16-generic",
   :clj-version "1.9.0",
-  :jvm-version "25.162-b12",
-  :git-branch "fix-transitions-and-ci",
-  :git-commit-id "bb5866c",
+  :jvm-version "25.201-b09",
+  :git-branch "tdf/leaver-prior",
+  :git-commit-id "0293a63",
   :git-url
-  "https://github.com/MastodonC/witan.send/commit/bb5866ccfbb2fca05bddc0a5733b62721af9d6e2"},
+  "https://github.com/MastodonC/witan.send/commit/0293a63b6f0891766fa080c6082d60b92d742f58"},
  :file-inputs-md5s
  {:transitions "6b1468a38742f54ccb61bccf820dd5df",
   :population "f19179ab601db8325def8a5738d8fe71",
