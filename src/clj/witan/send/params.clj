@@ -87,7 +87,6 @@
                                       (assoc coll ay {:alpha 0.5 :beta 0.5}) ; these prior values need tweaking
                                       coll)) 
                                   {} academic-years)]
-    (println unobserved-priors)
     (reduce (fn [coll [ay state]]
               (if-let [beta-params (merge-with +
                                                (get-in observations [ay state])
