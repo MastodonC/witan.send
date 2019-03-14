@@ -123,7 +123,7 @@
     (continue-for-latter-ays params academic-years)))
 
 (defn beta-params-movers
-  "calculates the rate of the likelihood of a state transitioning for an academic year"
+  "calculates the rate of the likelihood of a need-setting transitioning for an academic year"
   [valid-states valid-transitions transitions]
   (let [academic-years (->> (map first valid-states)
                             (distinct)
@@ -137,21 +137,27 @@
                                    (update-in coll [academic-year-1 (s/join-need-setting need-1 setting-1) :beta] m/some+ 1))))
                              {} transitions)
 
-        prior-per-year (reduce (fn [coll [ay state-betas]]
-                                 (let [betas (apply merge-with + (vals state-betas))
+        prior-per-year (reduce (fn [coll [ay need-setting-betas]]
+                                 (let [betas (apply merge-with + (vals need-setting-betas))
                                        alpha (+ (get betas :alpha 0) 0.5)
                                        beta (+ (get betas :beta 0) 0.5)
                                        total (+ alpha beta)]
                                    (assoc coll ay {:alpha (double (/ alpha total))
                                                    :beta (double (/ beta total))})))
                                {} observations)
-        prior-per-year (continue-for-latter-ays prior-per-year academic-years)]
-    (reduce (fn [coll [ay state]]
-              (if (any-valid-transitions? state valid-transitions)
+        prior-per-year (continue-for-latter-ays prior-per-year academic-years)
+        unobserved-priors (reduce (fn [coll ay]
+                                    (if (nil? (get observations ay))
+                                      (assoc coll ay {:alpha 1 :beta 1}) ; these prior values need tweaking
+                                      coll)) 
+                                  {} academic-years)]
+    (reduce (fn [coll [ay need-setting]]
+              (if (any-valid-transitions? need-setting valid-transitions)
                 (if-let [beta-params (merge-with +
-                                                 (get-in observations [ay state])
-                                                 (get prior-per-year ay))]
-                  (assoc coll [ay state] beta-params)
+                                                 (get-in observations [ay need-setting])
+                                                 (get prior-per-year ay)
+                                                 (get unobserved-priors ay))]
+                  (assoc coll [ay need-setting] beta-params)
                   coll)
                 coll))
             {} valid-states)))

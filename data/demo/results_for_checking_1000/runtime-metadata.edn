@@ -1,16 +1,16 @@
 {:execution
- {:start {:date "2019-03-14", :time "14:11:21"},
-  :end {:date "2019-03-14", :time "14:12:25"}},
+ {:start {:date "2019-03-14", :time "11:05:01"},
+  :end {:date "2019-03-14", :time "11:15:58"}},
  :environment-metadata
  {:model-version "1.7.0",
   :os-name "Linux",
   :os-version "4.18.0-16-generic",
   :clj-version "1.9.0",
   :jvm-version "25.201-b09",
-  :git-branch "tdf/mover-unobserved-prior",
-  :git-commit-id "dc5adf2",
+  :git-branch "master",
+  :git-commit-id "26648d3",
   :git-url
-  "https://github.com/MastodonC/witan.send/commit/dc5adf28232741fc6c1e18df824b42663414cad6"},
+  "https://github.com/MastodonC/witan.send/commit/26648d3d2bce9548f918092f99fcbae43dda554b"},
  :file-inputs-md5s
  {:transitions "6b1468a38742f54ccb61bccf820dd5df",
   :population "f19179ab601db8325def8a5738d8fe71",
