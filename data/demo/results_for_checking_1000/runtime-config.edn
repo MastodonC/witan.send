@@ -1,0 +1,22 @@
+{:file-inputs
+ {:transitions "data/transitions.csv",
+  :population "data/population.csv",
+  :costs "data/costs.csv",
+  :valid-states "data/valid-states.csv"},
+ :scenario-parameters
+ {:filter-transitions-from nil,
+  :which-transitions? nil,
+  :splice-ncy nil,
+  :modify-transition-by nil,
+  :modify-transitions-from nil},
+ :projection-parameters {:random-seed 50, :simulations 1000},
+ :output-parameters
+ {:run-outputs true,
+  :run-charts true,
+  :output-dir "results_for_checking",
+  :settings-to-exclude-in-charts nil,
+  :keep-temp-files? false,
+  :use-confidence-bound-or-interval nil,
+  :population-file "data/population.csv",
+  :project-dir "data/demo"},
+ :validation-parameters {:run-validation true, :keep-temp-files? false}}
