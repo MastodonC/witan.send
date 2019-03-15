@@ -44,11 +44,16 @@
           params (sort academic-years)))
 
 (defn calculate-joiners-per-calendar-year
+  "The result maps keys are used to lookup up external population so need to be added
+   even though there is no observed count"
   [transitions]
+  (let [observed-calendar-years (into #{} (map :calendar-year transitions))
+        joiners-per-calendar-year (into {} (for [cy observed-calendar-years] [cy {}]))]
   (->> (filter transitions-joiner? transitions)
        (reduce (fn [coll {:keys [calendar-year academic-year-2]}]
                  (update-in coll [calendar-year academic-year-2] m/some+ 1))
-               {})))
+                 {})
+         (merge joiners-per-calendar-year))))
 
 (defn calculate-population-per-calendar-year
   [population]
@@ -60,8 +65,6 @@
 
 (defn any-valid-transitions? [state valid-transitions]
   (< 1 (count (get valid-transitions (second (s/split-need-setting state))))))
-
-;; informal api
 
 (defn beta-params-leavers [valid-states transitions]
   (let [academic-years (->> (map first valid-states)
@@ -104,23 +107,24 @@
         joiner-calendar-years (keys joiners)
         population (calculate-population-per-calendar-year population)
         academic-years (->> (map first valid-states) distinct sort)
-        n (count joiner-calendar-years)
-        params (reduce
-                (fn [coll ay]
-                  (reduce
-                   (fn [coll cy]
-                     (let [j (get-in joiners [cy ay])
-                           p (get-in population [cy ay])]
-                       (if j
-                         (-> coll
-                             (update-in [ay :alpha] m/some+ (/ j n))
-                             (update-in [ay :beta] m/some+ (/ (- p j) n)))
-                         coll)))
-                   coll
-                   joiner-calendar-years))
-                {}
-                academic-years)]
-    (continue-for-latter-ays params academic-years)))
+        n (count joiner-calendar-years)]
+    (reduce
+     (fn [coll ay]
+       (reduce
+        (fn [coll cy]
+          (let [j (get-in joiners [cy ay])
+                p (get-in population [cy ay])]
+            (if j
+              (-> coll
+                  (update-in [ay :alpha] m/some+ (/ j n))
+                  (update-in [ay :beta] m/some+ (/ (- p j) n)))
+              (-> coll
+                  (update-in [ay :alpha] m/some+ 0.001) ; default prior may need tweaking
+                  (update-in [ay :beta] m/some+ (/ p n))))))
+        coll
+        joiner-calendar-years))
+     {}
+     academic-years)))
 
 (defn beta-params-movers
   "calculates the rate of the likelihood of a need-setting transitioning for an academic year"

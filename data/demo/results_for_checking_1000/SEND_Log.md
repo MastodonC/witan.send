@@ -12,9 +12,6 @@ __There are no joiners to AY -4__
 Used __input__ transitions matrix
 
 
-__Not every historic transition present in projection!__Consider checking valid state input.
-
-
 First year of input data: __2013__
 
 Final year of input data: __2017__
