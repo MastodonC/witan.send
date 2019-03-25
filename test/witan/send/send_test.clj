@@ -27,22 +27,22 @@
 
 ;; Use fake population datasets for testing
 (def grouped-data
-  (ds/dataset {:year  [2014 2015 2016]
-               :age   [0 1 2]
+  (ds/dataset {:year [2014 2015 2016]
+               :age [0 1 2]
                :state [:Non-SEND :Non-SEND :PSI-Mainstream]
                :count [3 0 1]}))
 
 (def individuals-data-with-sims
-  (ds/dataset {:year  [2014 2014 2014 2014 2014 2014 2016 2016]
-               :age   [0 0 0 0 0 0 2 2]
+  (ds/dataset {:year [2014 2014 2014 2014 2014 2014 2016 2016]
+               :age [0 0 0 0 0 0 2 2]
                :state [:Non-SEND :Non-SEND :Non-SEND :Non-SEND
                        :Non-SEND :Non-SEND :PSI-Mainstream :PSI-Mainstream]
                :sim-num [1 2 1 2 1 2 1 2]
-               :id    [1 1 2 2 3 3 4 4]}))
+               :id [1 1 2 2 3 3 4 4]}))
 
 (def historic-data
-  (ds/dataset {:year  [2016 2016 2016]
-               :age   [0 1 2]
+  (ds/dataset {:year [2016 2016 2016]
+               :age [0 1 2]
                :population [3 0 1]}))
 
 (def projected-population
@@ -188,6 +188,34 @@
     (testing "odd values are rounded and exchanged correctly"
       (is (= 3 (get (mp/modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB])))
       (is (= 2 (get (mp/modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SP-MMSIB]))))))
+
+(deftest filter-transitions-from
+  "This test needs splitting to simpler cases but for speed captures most things.
+  There's some discussion to be had over how we should treat setting-2 as it moves into calendar year 2017
+  Note: the test discovered the keyname is required not a string :-("
+  (let [transitions (list {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12} ; keep?
+                          {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :AK, :need-2 :NA, :academic-year-2 12} ; keep
+                          {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13} ; remove
+                          {:calendar-year 2016, :setting-1 :MU, :need-1 :NA, :academic-year-1 10, :setting-2 :MU, :need-2 :NA, :academic-year-2 11} ; remove
+                          {:calendar-year 2016, :setting-1 :AK, :need-1 :NA, :academic-year-1 10, :setting-2 :MU, :need-2 :NA, :academic-year-2 11} ; keep?
+                          {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 12} ; keep
+                          {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13} ; keep
+                          {:calendar-year 2017, :setting-1 :MU, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}) ; keep
+        filter-transitions-from [[2017 12] [2017 :MU]]]
+    (testing "Filters transitions: remove AY 12 and above from years below 2017, remove all \"MU\" setting from below 2017"
+      (is (= (mp/filter-transitions filter-transitions-from transitions)
+             (list
+              {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}
+              {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :AK, :need-2 :NA, :academic-year-2 12}
+              {:calendar-year 2016, :setting-1 :AK, :need-1 :NA, :academic-year-1 10, :setting-2 :MU, :need-2 :NA, :academic-year-2 11}
+              {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 12}
+              {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13}
+              {:calendar-year 2017, :setting-1 :MU, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}))))))
+
+;; SEB: are these the right results?
+#_({:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 12}
+   {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13}
+   {:calendar-year 2017, :setting-1 :MU, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12})
 
 (deftest transition-present?-test
   (testing "transition state is present in coll"
