@@ -148,13 +148,13 @@
               (let [[_ setting] (s/split-need-setting need-setting)
                     aged-on-valid-settings (get valid-year-settings (inc ay))]
                 (if (get aged-on-valid-settings setting)
-                (if-let [beta-params (merge-with +
-                                                 (get-in observations [ay need-setting])
-                                                 (get prior-per-year ay)
-                                                 (get unobserved-priors ay))]
-                  (assoc coll [ay need-setting] beta-params)
-                  coll)
-                coll)))
+                  (if-let [beta-params (merge-with +
+                                                   (get-in observations [ay need-setting])
+                                                   (get prior-per-year ay)
+                                                   (get unobserved-priors ay))]
+                    (assoc coll [ay need-setting] beta-params)
+                    coll)
+                  coll)))
             {} valid-states)))
 
 (defn alpha-params-joiners
