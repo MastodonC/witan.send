@@ -8,21 +8,26 @@
             [witan.send.states :as s]))
 
 (def valid-setting-academic-years
-  [{:setting :CC, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year -4, :max-academic-year 0, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :EO, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year -1, :max-academic-year 14, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :FEC, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year 12, :max-academic-year 20, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :IMS, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year -3, :max-academic-year 14, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :IN, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year -4, :max-academic-year 0, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :ISC, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year 15, :max-academic-year 20, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :ISCR, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year 15, :max-academic-year 20, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :ISS, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year 0, :max-academic-year 14, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :ISSR, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year 0, :max-academic-year 14, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :IT, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year 2, :max-academic-year 15, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :MMS, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year -3, :max-academic-year 14, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :MSS, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year -3, :max-academic-year 14, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :MU, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year -1, :max-academic-year 14, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :OOE, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year 6, :max-academic-year 20, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
-   {:setting :PRU, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year 2, :max-academic-year 14, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}])
+  [{:setting :A, :min-academic-year -3, :max-academic-year 15, :needs "T,U,V,W,X,Y" :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :B, :min-academic-year -1, :max-academic-year 16, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :C, :min-academic-year 6, :max-academic-year 15, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :D, :min-academic-year 6, :max-academic-year 15, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :E, :min-academic-year 2, :max-academic-year 15, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :F, :min-academic-year -1, :max-academic-year 14, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :G, :min-academic-year -2, :max-academic-year 15, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :H, :min-academic-year 0, :max-academic-year 14, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :I, :min-academic-year 0, :max-academic-year 15, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :J, :min-academic-year -2, :max-academic-year 16, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :K, :min-academic-year 0, :max-academic-year 14, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :L, :min-academic-year 0, :max-academic-year 15, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :M, :min-academic-year 6, :max-academic-year 15, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :N, :min-academic-year 8, :max-academic-year 17, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :O, :min-academic-year 0, :max-academic-year 6, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :P, :min-academic-year -3, :max-academic-year -1, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :Q, :min-academic-year -2, :max-academic-year 0, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :R, :min-academic-year -1, :max-academic-year 14, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}
+   {:setting :S, :min-academic-year 11, :max-academic-year 19, :needs "T,U,V,W,X,Y", :setting->setting "A,B,C,D,E,F,G,H,I,J,K,L,N,O,P,Q,R,S"}])
+
 
 (def population-dataset
   (i/csv-to-dataset "data/demo/data/population.csv" sc/PopulationDataset))

@@ -251,16 +251,15 @@
     (reduce (fn [coll [ay need-setting]]
               (let [[_ setting] (s/split-need-setting need-setting)
                     aged-on-valid-settings (get valid-year-settings (inc ay))]
-                (if (get aged-on-valid-settings setting)
-                  (let [obs-for-ay (get-in observations [ay need-setting])
-                        prior (mover-alpha-prior need-setting
-                                                 valid-transitions
-                                                 valid-settings
-                                                 aged-on-valid-settings
-                                                 valid-needs
-                                                 (mover-observations-per-ay valid-states mover-transitions)
-                                                 ay)]
-                    (assoc coll [ay need-setting] (merge-with + prior obs-for-ay)))
-                  coll)))
+                (let [obs-for-ay (get-in observations [ay need-setting])
+                      prior (mover-alpha-prior need-setting
+                                               valid-transitions
+                                               valid-settings
+                                               aged-on-valid-settings
+                                               valid-needs
+                                               (mover-observations-per-ay valid-states mover-transitions)
+                                               ay)]
+                  (assoc coll [ay need-setting] (merge-with + prior obs-for-ay)))
+                ))
             {}
             valid-states)))
