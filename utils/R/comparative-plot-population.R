@@ -4,7 +4,7 @@ comparative_plot_population = function(output, data1, data2){
   
   ### import historic data - taken from send_charts.R
   remove_colons <-  function(x) {str_replace(x, ':', '')}
-  df_historical <- read.csv(paste0(output, "data/transitions.csv")) %>%
+  df_historical <- read.csv(paste0(output, "data/baseline/transitions.csv")) %>%
     mutate_all(funs(remove_colons)) %>%
     filter(need.1 != "NONSEND")
   

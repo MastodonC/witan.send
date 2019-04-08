@@ -12,6 +12,8 @@ library(stringr)
 ### Each data folder must contain all results of a witan.send model run
 ### The code will extract what the name of the folder, and will use this for 
 ### labelling the plot.
+### output_dir is the root dir containting all results and input data
+### data1 and data2 are dir's containing results from a model run
 args = commandArgs(trailingOnly=TRUE)
 output_dir = args[1]
 data1 = args[2]
