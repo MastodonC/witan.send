@@ -37,16 +37,17 @@ comparative_plot_population = function(output, data1, data2){
   max_x = max(count_data1$calendar.year)
   
   ## data labels for plots
-  data1_label = str_to_title(sapply(strsplit(data1, "-"), "[", 3))
-  data2_label = str_to_title(sapply(strsplit(data2, "-"), "[", 3))
+  data1_label = tail(strsplit(data1, "/")[[1]], 1)
+  data2_label = tail(strsplit(data2, "/")[[1]], 1)
 
   ## ribbon plot version - not zero-indexed
   g <- ggplot(count_data1, aes(x=calendar.year)) +
-    geom_line(aes(y=mean), colour=cols[1], alpha = alpha_line) +
-    geom_ribbon(aes(ymin=q1, ymax=q3), fill=cols[1], alpha = alpha_ribbon) +
-    geom_line(data=count_data2, aes(y=mean), colour=cols[2], alpha = alpha_line) +
-    geom_ribbon(data=count_data2, aes(ymin=q1, ymax=q3), fill=cols[2], alpha = alpha_ribbon) +
+    geom_line(aes(y=mean, colour=cols[1]), alpha = alpha_line) +
+    geom_ribbon(aes(ymin=q1, ymax=q3), fill=cols[2], alpha = alpha_ribbon) +
+    geom_line(data=count_data2, aes(y=mean, colour=cols[2]), alpha = alpha_line) +
+    geom_ribbon(data=count_data2, aes(ymin=q1, ymax=q3), fill=cols[1], alpha = alpha_ribbon) +
     labs(y="Total SEND Population") +
+    scale_color_discrete(name = "", labels = c(data1_label, data2_label)) +
     scale_x_continuous(name="Year",
                        breaks = seq(min_x, max_x),
                        limits = c(min_x, max_x+1.5)) +
@@ -59,14 +60,6 @@ comparative_plot_population = function(output, data1, data2){
               y=max(count_data1$q3, na.rm=T),
               label = "<-- Historical      Projected -->",
               color = "dodgerblue") +
-    geom_text(x=max_x+1,
-              y=count_data1$mean[count_data1$calendar.year==max_x]+20,
-              label= data1_label,
-              colour = cols[1]) +
-    geom_text(x=max_x+1,
-              y=count_data2$mean[count_data2$calendar.year==max_x]-20,
-              label= data2_label,
-              colour = cols[2]) +
     theme(legend.position="none") +
     theme_bw()
   
@@ -78,7 +71,7 @@ comparative_plot_population = function(output, data1, data2){
 
   
   # ribbon plot version - zero-indexed
-  g + scale_y_continuous(limits = c(0, max(count_data1$q3, na.rm=T)))
+  g + scale_y_continuous(limits = c(0, max(count_data1$max, count_data2$max)))
   
   ggsave(paste0(output, "comparisons/", "Total_Population_Comparative_Zeroindexed.png"),
          width=8,
