@@ -18,33 +18,25 @@ comparative_plot_cost = function(output, data1, data2){
   max_x = max(cost_data1$calendar.year)
   
   ## data labels for plots
-  data1_label = str_to_title(sapply(strsplit(data1, "-"), "[", 3))
-  data2_label = str_to_title(sapply(strsplit(data2, "-"), "[", 3))
+  data1_label = tail(strsplit(data1, "/")[[1]], 1)
+  data2_label = tail(strsplit(data2, "/")[[1]], 1)
   
   ## ribbon plot - not zero-indexed
   g <- ggplot(cost_data1, aes(x=calendar.year)) +
-    geom_line(aes(y=mean), colour=cols[1], alpha = alpha_line) +
-    geom_ribbon(aes(ymin=q1, ymax=q3), fill=cols[1], alpha = alpha_ribbon)  +
-    geom_ribbon(aes(ymin=q1, ymax=q3), fill=cols[1], alpha = alpha_ribbon) +
-    geom_line(data=cost_data2, aes(y=mean), colour=cols[2], alpha = alpha_line) +
-    geom_ribbon(data=cost_data2, aes(ymin=q1, ymax=q3), fill=cols[2], alpha = alpha_ribbon) +
+    geom_line(aes(y=mean, colour=cols[1]), alpha = alpha_line) +
+    geom_ribbon(aes(ymin=q1, ymax=q3), fill=cols[2], alpha = alpha_ribbon) +
+    geom_line(data=cost_data2, aes(y=mean, colour=cols[2]), alpha = alpha_line) +
+    geom_ribbon(data=cost_data2, aes(ymin=q1, ymax=q3), fill=cols[1], alpha = alpha_ribbon) +
     labs(y = "Total Projected SEND Cost / £ million") +
+    scale_color_discrete(name = "", labels = c(data1_label, data2_label)) +
     scale_x_continuous(name="Year",
                        breaks = seq(min_x, max_x),
-                       limits = c(min_x, max_x+1)) +
+                       limits = c(min_x, max_x)) +
     ggtitle("SEND Cost Projection") +
     theme(axis.text.x = element_text(size=8)) +
-    geom_text(x=max_x+0.8,
-              y=cost_data1$mean[cost_data1$calendar.year==max_x],
-              label= data1_label,
-              colour = cols[1]) +
-    geom_text(x=max_x+0.8,
-              y=cost_data2$mean[cost_data2$calendar.year==max_x],
-              label= data2_label,
-              colour = cols[2]) +
     theme(legend.position="none") +
     theme_bw()
-  
+
   ggsave(paste0(output, "comparisons/", "Total_Cost_Comparative.png"),
          width=8,
          height=6,
