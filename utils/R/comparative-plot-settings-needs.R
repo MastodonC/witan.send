@@ -1,4 +1,4 @@
-comparative_plot_settings = function(output, data1, data2){
+comparative_plot_settings_needs = function(output, data1, data2){
   
   ## projections
   
@@ -33,7 +33,7 @@ comparative_plot_settings = function(output, data1, data2){
       geom_line(data=df2, aes(y=mean, colour=cols[2]), alpha = alpha_line) +
       geom_ribbon(data=df1, aes(ymin=q1, ymax=q3), fill=cols[2], alpha = alpha_ribbon) +
       geom_ribbon(data=df2, aes(ymin=q1, ymax=q3), fill=cols[1], alpha = alpha_ribbon) +
-      scale_color_discrete(name = "", labels = c(first_data, second_data)) +
+      scale_color_discrete(name = "", labels = c(second_data, first_data)) +
       labs(y = paste(entity, "SEND Population")) +
       scale_y_continuous(limits = c(0, max_y)) +
       scale_x_continuous(name="Year",
