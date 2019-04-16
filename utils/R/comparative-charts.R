@@ -53,5 +53,5 @@ source("comparative-plot-population.R")
 comparative_plot_population(output_dir, data1, data2)
 
 # setting counts
-source("comparative-plot-settings.R")
-comparative_plot_settings(output_dir, data1, data2)
+source("comparative-plot-settings-needs.R")
+comparative_plot_settings_needs(output_dir, data1, data2)
