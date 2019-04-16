@@ -28,7 +28,7 @@ comparative_plot_cost = function(output, data1, data2){
     geom_line(data=cost_data2, aes(y=mean, colour=cols[2]), alpha = alpha_line) +
     geom_ribbon(data=cost_data2, aes(ymin=q1, ymax=q3), fill=cols[1], alpha = alpha_ribbon) +
     labs(y = "Total Projected SEND Cost / £ million") +
-    scale_color_discrete(name = "", labels = c(data1_label, data2_label)) +
+    scale_color_discrete(name = "", labels = c(data2_label, data1_label)) +
     scale_x_continuous(name="Year",
                        breaks = seq(min_x, max_x),
                        limits = c(min_x, max_x)) +
