@@ -42,9 +42,16 @@
        (map (fn [[ay' state]] state))))
 
 (defn calculate-valid-settings-for-need-ay [valid-states]
-  (reduce (fn [coll [ay state]]
-            (let [[need setting] (split-need-setting state)]
+  (let [vs (reduce (fn [coll [ay need-setting]]
+                     (let [[need setting] (split-need-setting need-setting)]
               (update coll [ay need] (fnil conj #{}) setting)))
+                   {} valid-states)]
+    vs))
+
+(defn calculate-valid-needs-for-setting-ay [valid-states]
+  (reduce (fn [coll [ay need-setting]]
+            (let [[need setting] (split-need-setting need-setting)]
+              (update coll [ay setting] (fnil conj #{}) need)))
           {} valid-states))
 
 (defn aggregate-setting->setting [setting setting->setting]
@@ -77,3 +84,9 @@
 (defn can-move? [valid-year-settings academic-year state]
   (let [[need setting] (split-need-setting state)]
     (pos? (count (disj (get valid-year-settings (inc academic-year)) setting)))))
+
+(defn capable-of-moving?
+  "All entities are capable of moving as need movement is unrestricted except in the last possible year
+  when everyone must leave"
+  [ay]
+  (< ay c/max-academic-year))

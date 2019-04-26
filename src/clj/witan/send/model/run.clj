@@ -24,57 +24,35 @@
    (reduce (fn [coll [next-need-setting n]]
              (cond-> coll
                (pos? n)
-               (update [calendar-year academic-year need-setting next-need-setting] m/some+ n)))
+                      (update [calendar-year (dec academic-year) need-setting next-need-setting] m/some+ n)))
            transitions predicted-populations)))
-
-(defn predict-movers
-  "Returns a map of predicted need-setting counts for movers for a given
-  `need-setting` and a population `n` with the provided probability
-  distribution parameters.
-
-  Also work out how much of the population remains (non-movers) and
-  add to the results.
-
-  Note: the actual results are the combination of chaining the beta
-  and binomial distributions or the Dirichlet and multinomial
-  distribution.  Beta and Dirichlet are used to sample a distribution
-  and the outcome is selected by the respective binomial or
-  multinomial."
-  [{:keys [need-setting n dirichlet-params beta-params]}]
-  (if (pos? n)
-    (let [mover-n (d/sample-beta-binomial n beta-params)
-          non-mover-n (- n mover-n)]
-      (-> (d/sample-dirichlet-multinomial mover-n dirichlet-params)
-          (assoc need-setting non-mover-n)))
-    {}))
-
-(defn predict-leavers
-  [{:keys [need-setting n beta-params]}]
-  (d/sample-beta-binomial n beta-params))
 
 (defn apply-leavers-movers-for-cohort-unsafe
   "We're calling this function 'unsafe' because it doesn't check whether the need-setting or
   or academic year range is valid."
   [[model transitions] [[year need-setting] population]
    {:keys [mover-state-alphas mover-beta-params leaver-beta-params
-           valid-year-settings] :as params}
+           valid-year-settings valid-ay-need-settings] :as params}
    calendar-year]
   (if-let [mover-dirichlet-params (get mover-state-alphas [(dec year) need-setting])]
-    (let [leavers (predict-leavers {:need-setting need-setting
-                                    :n population
-                                    :beta-params (get leaver-beta-params [(dec year) need-setting])})
-          movers (if (states/can-move? valid-year-settings year need-setting)
-                               (predict-movers {:need-setting need-setting
-                                                :n (- population leavers)
-                                                :beta-params (get mover-beta-params [(dec year) need-setting])
-                                                :dirichlet-params mover-dirichlet-params})
-                               {need-setting (- population leavers)})
+    (let [leaver-beta-params (get leaver-beta-params [(dec year) need-setting])
+          leavers (d/sample-beta-binomial population leaver-beta-params)
+          mover-beta-params (get mover-beta-params [(dec year) need-setting])
+          movers-n (d/sample-beta-binomial (- population leavers) mover-beta-params)
+          movers (d/sample-dirichlet-multinomial movers-n mover-dirichlet-params)
+          remainers-n (- population leavers movers-n)
           [model transitions] (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
                                                                             :academic-year year :need-setting need-setting
                                                                             :predicted-populations movers
-                                                                            :calendar-year calendar-year})]
-      [model
-       (update transitions [calendar-year year need-setting c/non-send] m/some+ leavers)])
+                                                                            :calendar-year calendar-year})
+          [model transitions] (if (some #{[year need-setting]} valid-ay-need-settings)
+                                (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
+                                                                              :academic-year year :need-setting need-setting
+                                                                              :predicted-populations {need-setting remainers-n}
+                                                                              :calendar-year calendar-year})
+                                [model (update transitions [calendar-year (dec year) need-setting c/non-send] m/some+ remainers-n)])
+          ]
+      [model (update transitions [calendar-year (dec year) need-setting c/non-send] m/some+ leavers)])
     [model transitions]))
 
 (defn apply-leavers-movers-for-cohort
@@ -92,7 +70,7 @@
     [model
      (cond-> transitions
        (pos? population)
-       (update [calendar-year year state c/non-send] m/some+ population))]
+             (update [calendar-year (dec year) state c/non-send] m/some+ population))]
     :else
     (apply-leavers-movers-for-cohort-unsafe population-by-state cohort params calendar-year)))
 
@@ -203,7 +181,8 @@
         validate-valid-states (->> (ds/row-maps valid-states)
                                    (states/calculate-valid-states-from-setting-academic-years))
         inputs (assoc inputs :valid-year-settings (->> (ds/row-maps valid-states)
-                                                       (states/calculate-valid-year-settings-from-setting-academic-years)))
+                                                       (states/calculate-valid-year-settings-from-setting-academic-years))
+                             :valid-ay-need-settings validate-valid-states)
         projections (->> (range simulations)
                          ;; The logic is for validation compatibility only, elsewise we could just use the truth expression
                          (partition-all (if (< simulations 8)

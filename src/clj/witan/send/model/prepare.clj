@@ -88,7 +88,8 @@
    b))
 
 (defn prep-inputs [initial-send-pop splice-ncy validate-valid-states valid-transitions transitions
-                   transitions-filtered population valid-states original-transitions costs]
+                   transitions-filtered population valid-states valid-year-settings
+                   original-transitions costs]
   (let [start-map {:population-by-state initial-send-pop
                    :valid-states valid-states
                    :transitions original-transitions
@@ -116,19 +117,24 @@
                                                      (p/alpha-params-joiners validate-valid-states (transitions-map transitions-filtered)))
 
               :mover-beta-params (stitch-state-params splice-ncy
-                                                      (p/beta-params-movers validate-valid-states valid-transitions transitions)
-                                                      (p/beta-params-movers validate-valid-states valid-transitions transitions-filtered))
+                                                      (p/beta-params-movers validate-valid-states valid-year-settings transitions)
+                                                      (p/beta-params-movers validate-valid-states valid-year-settings transitions-filtered))
               :mover-state-alphas (stitch-state-params splice-ncy
-                                                       (p/alpha-params-movers validate-valid-states valid-transitions transitions)
-                                                       (p/alpha-params-movers validate-valid-states valid-transitions transitions-filtered))})
+                                                       (p/alpha-params-movers validate-valid-states valid-year-settings valid-transitions transitions)
+                                                       (p/alpha-params-movers validate-valid-states valid-year-settings valid-transitions transitions-filtered))
+              :validate-valid-states validate-valid-states
+              :valid-transitions valid-transitions
+              :valid-year-settings valid-year-settings})
       (merge start-map
              {:joiner-beta-params (p/beta-params-joiners validate-valid-states
                                                          transitions
                                                          (ds/row-maps population))
               :leaver-beta-params (p/beta-params-leavers validate-valid-states transitions)
               :joiner-state-alphas (p/alpha-params-joiners validate-valid-states (transitions-map transitions))
-              :mover-beta-params (p/beta-params-movers validate-valid-states valid-transitions transitions)
-              :mover-state-alphas  (p/alpha-params-movers validate-valid-states valid-transitions transitions)}))))
+              :mover-beta-params (p/beta-params-movers validate-valid-states valid-year-settings transitions)
+              :mover-state-alphas (p/alpha-params-movers validate-valid-states valid-year-settings valid-transitions transitions)
+              :validate-valid-states validate-valid-states
+              :valid-transitions valid-transitions}))))
 
 (defn generate-transition-key [{:keys [transition-type cy ay need setting move-state]}]
   (when (not= move-state (states/join-need-setting need setting))
@@ -213,6 +219,7 @@
                                 initialise-validation)
          valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years
                               initialise-validation)
+
          transitions-to-change (when modify-transition-by
                                  (mapcat (fn [transition-type]
                                            (build-transitions-to-change settings-to-change
@@ -251,11 +258,11 @@
     {:standard-projection (prep-inputs initial-send-pop splice-ncy
                                        validate-valid-states valid-transitions transitions
                                        transitions-filtered
-                                       population valid-states original-transitions costs)
+                                       population valid-states valid-year-settings original-transitions costs)
      :scenario-projection (when modified-transitions
                             (prep-inputs initial-send-pop splice-ncy validate-valid-states
                                          valid-transitions modified-transitions
-                                         transitions-filtered population valid-states
+                                         transitions-filtered population valid-states valid-year-settings
                                          original-transitions costs))
      :modify-transition-by modify-transition-by
      :modify-transitions-from  modify-transitions-from
