@@ -3,9 +3,9 @@
                :costs "data/costs.csv"
                :valid-states "data/valid-states.csv"}
 
- :transition-parameters {:filter-transitions-from 2015
+ :transition-parameters {:filter-transitions-from {:calendar-academic {:< 2016 :>= 11}}
                          :which-transitions? nil
-                         :splice-ncy 11
+                         :splice-ncy nil
                          :modify-transition-by nil
                          :modify-transitions-from nil}
 
