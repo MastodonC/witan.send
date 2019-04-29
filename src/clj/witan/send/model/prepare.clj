@@ -196,6 +196,57 @@
                            (= (:setting-2 %) (second (second filter-transitions-from))))
                        (< (:calendar-year %) (first (first filter-transitions-from))))))))
 
+(def operators {:= =
+                :< <
+                :<= <=
+                :> >
+                :>= >=})
+
+(defn operator-key [filter-k]
+  (filter-k operators))
+
+(defn build-filter [filter-kv]
+  "Expects a key-value pair like [:calendar-academic {:< 2017, :>= 12}].
+
+   Each key much conform to :calendar-academic, :calendar-setting, :calendar-need, :academic-setting,
+   :academic-need or :setting-need.
+
+   The inner map must contain two key-value pairs, the key corresponding to an operator and the value
+   corresponding to a value to filter on"
+  (let [k (first filter-kv)
+        v (second filter-kv)
+        op1 (operator-key (first (keys v)))
+        op2 (operator-key (second (keys v)))
+        val1 (first (vals v))
+        val2 (second (vals v))]
+    (cond
+      (= k :calendar-academic) (remove #(or (and (op1 (:calendar-year %) val1)
+                                                 (op2 (:academic-year-1 %) val2))
+                                            (and (op1 (+ 1 (:calendar-year %)) val1)
+                                                 (op2 (:academic-year-2 %) val2))))
+      (= k :calendar-setting) (remove #(or (and (op1 (:calendar-year %) val1)
+                                                (op2 (:setting-1 %) val2))
+                                           (and (op1 (+ 1 (:calendar-year %)) val1)
+                                                (op2 (:setting-2 %) val2))))
+      (= k :calendar-need) (remove #(or (and (op1 (:calendar-year %) val1)
+                                             (op2 (:need-1 %) val2))
+                                        (and (op1 (+ 1 (:calendar-year %)) val1)
+                                             (op2 (:need-2 %) val2))))
+      (= k :academic-setting) (remove #(or (and (op1 (:academic-year-1 %) val1)
+                                                (op2 (:setting-1 %) val2))
+                                           (and (op1 (:academic-year-2 %) val1)
+                                                (op2 (:setting-2 %) val2))))
+      (= k :academic-need) (remove #(or (and (op1 (:academic-year-1 %) val1)
+                                             (op2 (:need-1 %) val2))
+                                        (and (op1 (:academic-year-2 %) val1)
+                                             (op2 (:need-2 %) val2))))
+      (= k :setting-need) (remove #(or (and (op1 (:setting-1 %) val1)
+                                            (op2 (:need-1 %) val2))
+                                       (and (op1 (:setting-2 %) val1)
+                                            (op2 (:need-2 %) val2)))))))
+
+
+
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
