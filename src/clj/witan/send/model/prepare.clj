@@ -287,7 +287,8 @@
          map-of-transitions (if modified-transitions
                               (transitions-map modified-transitions)
                               (transitions-map transitions))
-         transitions-filtered (filter-transitions filter-transitions-from (or modified-transitions transitions))
+         transitions-filtered (when filter-transitions-from
+                                (reduce #(sequence (build-filter %2) %1) (or modified-transitions transitions) filter-transitions-from))
          max-transition-year (apply max (map :calendar-year transitions))
          initial-send-pop (->> (filter #(= (:calendar-year %) max-transition-year) transitions)
                                (filter #(not= (:setting-2 %) :NONSEND))
