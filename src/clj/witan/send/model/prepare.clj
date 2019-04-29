@@ -182,20 +182,6 @@
 (defn build-pred [m]
   (partial (:op (val m)) (:val (val m))))
 
-(defn filter-transitions
-  [filter-transitions-from transitions]
-  "This is a very specific filter and needs to be made more generic going forward.
-  We split out here though so that we may test it.
-  The logic is also awkward, due to implicit operators and the naming used."
-  (when filter-transitions-from
-    (->> transitions
-         (remove #(and (or (>= (:academic-year-1 %) (second (first filter-transitions-from)))
-                           (>= (:academic-year-2 %) (second (first filter-transitions-from))))
-                       (< (:calendar-year %) (first (first filter-transitions-from)))))
-         (remove #(and (or (= (:setting-1 %) (second (second filter-transitions-from)))
-                           (= (:setting-2 %) (second (second filter-transitions-from))))
-                       (< (:calendar-year %) (first (first filter-transitions-from))))))))
-
 (def operators {:= =
                 :< <
                 :<= <=
