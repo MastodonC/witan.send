@@ -1,8 +1,8 @@
 (ns witan.send.acceptance.model-test
-  (:require 
-            [clojure.test :refer [deftest is testing]]
-            [witan.send.main :as m]
-            [witan.send.acceptance.utils :as au]))
+  (:require
+   [clojure.test :refer [deftest is testing]]
+   [witan.send.main :as m]
+   [witan.send.acceptance.utils :as au]))
 
 (def output-files-to-check ["Output_AY.csv"
                             "Output_AY_Group.csv"
@@ -50,7 +50,7 @@
           (load-results-triple "leaver_beta_expectations.csv")
           [standard-mover-exp, scenario-mover-exp, checking-mover-exp]
           (load-results-triple  "mover_beta_expectations.csv")]
-      
+
       (testing "some of the rates we expect to change are effected"
         (is (not= (find-in-map standard-joiner-exp "ay" "11")
                   (find-in-map scenario-joiner-exp "ay" "11")))
@@ -58,21 +58,17 @@
                (find-in-map scenario-joiner-exp "ay" "10")))
         (is (not= (find-in-map standard-leaver-exp "ay" "11")
                   (find-in-map scenario-leaver-exp "ay" "11")))
-        (is (= (find-in-map standard-leaver-exp "ay" "10")
-               (find-in-map scenario-leaver-exp "ay" "10")))
+        (is (= (find-in-map standard-leaver-exp "ay" "9")
+               (find-in-map scenario-leaver-exp "ay" "9")))
         (is (not= (find-in-map standard-mover-exp "ay" "11")
                   (find-in-map scenario-mover-exp "ay" "11")))
-        (is (= (find-in-map standard-mover-exp "ay" "10")
-               (find-in-map scenario-mover-exp "ay" "10"))))
-      
+        (is (= (find-in-map standard-mover-exp "ay" "9")
+               (find-in-map scenario-mover-exp "ay" "9"))))
+
       (testing "rates are as expected"
-        (is (= (find-in-map checking-joiner-exp "ay" "11")
-               (find-in-map scenario-joiner-exp "ay" "11")))
+        (is (= (find-in-map checking-joiner-exp "ay" "10")
+               (find-in-map scenario-joiner-exp "ay" "10")))
         (is (= (find-in-map checking-leaver-exp "ay" "11")
                (find-in-map scenario-leaver-exp "ay" "11")))
         (is (= (find-in-map checking-mover-exp "ay" "11")
-               (find-in-map scenario-mover-exp "ay" "11")))))
-
-    (testing "output checksums are unchanged for scenario"
-      (is (= (au/get-md5s config-splicing output-files-to-check)
-             (au/get-md5s config-splicing-for-checking output-files-to-check))))))
+               (find-in-map scenario-mover-exp "ay" "11")))))))
