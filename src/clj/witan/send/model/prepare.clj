@@ -101,26 +101,13 @@
                                               (medley/map-vals #(total-by-academic-year %)))}]
     (if transitions-filtered
       (merge start-map
-             {:joiner-beta-params (stitch-ay-params splice-ncy
-                                                    (p/beta-params-joiners validate-valid-states
-                                                                           transitions
-                                                                           (ds/row-maps population))
-                                                    (p/beta-params-joiners validate-valid-states
-                                                                           transitions-filtered
-                                                                           (ds/row-maps population)))
-              :leaver-beta-params (stitch-state-params splice-ncy
-                                                       (p/beta-params-leavers validate-valid-states transitions)
-                                                       (p/beta-params-leavers validate-valid-states transitions-filtered))
-              :joiner-state-alphas (stitch-ay-params splice-ncy
-                                                     (p/alpha-params-joiners validate-valid-states (transitions-map transitions))
-                                                     (p/alpha-params-joiners validate-valid-states (transitions-map transitions-filtered)))
-
-              :mover-beta-params (stitch-state-params splice-ncy
-                                                      (p/beta-params-movers validate-valid-states valid-transitions transitions)
-                                                      (p/beta-params-movers validate-valid-states valid-transitions transitions-filtered))
-              :mover-state-alphas (stitch-state-params splice-ncy
-                                                       (p/alpha-params-movers validate-valid-states valid-transitions transitions)
-                                                       (p/alpha-params-movers validate-valid-states valid-transitions transitions-filtered))})
+             {:joiner-beta-params (p/beta-params-joiners validate-valid-states
+                                                         transitions-filtered
+                                                         (ds/row-maps population))
+              :leaver-beta-params (p/beta-params-leavers validate-valid-states transitions-filtered)
+              :joiner-state-alphas (p/alpha-params-joiners validate-valid-states (transitions-map transitions-filtered))
+              :mover-beta-params (p/beta-params-movers validate-valid-states valid-transitions transitions-filtered)
+              :mover-state-alphas (p/alpha-params-movers validate-valid-states valid-transitions transitions-filtered)})
       (merge start-map
              {:joiner-beta-params (p/beta-params-joiners validate-valid-states
                                                          transitions
@@ -189,6 +176,54 @@
             (assoc coll [academic-year (states/join-need-setting need setting)] population))
           {} send-data))
 
+(def operators {:= =
+                :< <
+                :<= <=
+                :> >
+                :>= >=})
+
+(defn remove-transitions-xf [remove-operation]
+  "Expects a key-value pair like [:calendar-academic {:< 2017, :>= 12}].
+
+   Each key much conform to :calendar-academic, :calendar-setting, :calendar-need, :academic-setting,
+   :academic-need or :setting-need.
+
+   The inner map must contain two key-value pairs, the key corresponding to an operator and the value
+   corresponding to a value to filter on"
+  (let [k (first remove-operation)
+        v (second remove-operation)
+        op1 ((first (keys v)) operators)
+        op2 ((second (keys v)) operators)
+        val1 (first (vals v))
+        val2 (second (vals v))]
+    (cond
+      (= k :calendar-academic) (remove #(or (and (op1 (:calendar-year %) val1)
+                                                 (op2 (:academic-year-1 %) val2))
+                                            (and (op1 (+ 1 (:calendar-year %)) val1)
+                                                 (op2 (:academic-year-2 %) val2))))
+      (= k :calendar-setting) (remove #(or (and (op1 (:calendar-year %) val1)
+                                                (op2 (:setting-1 %) val2))
+                                           (and (op1 (+ 1 (:calendar-year %)) val1)
+                                                (op2 (:setting-2 %) val2))))
+      (= k :calendar-need) (remove #(or (and (op1 (:calendar-year %) val1)
+                                             (op2 (:need-1 %) val2))
+                                        (and (op1 (+ 1 (:calendar-year %)) val1)
+                                             (op2 (:need-2 %) val2))))
+      (= k :academic-setting) (remove #(or (and (op1 (:academic-year-1 %) val1)
+                                                (op2 (:setting-1 %) val2))
+                                           (and (op1 (:academic-year-2 %) val1)
+                                                (op2 (:setting-2 %) val2))))
+      (= k :academic-need) (remove #(or (and (op1 (:academic-year-1 %) val1)
+                                             (op2 (:need-1 %) val2))
+                                        (and (op1 (:academic-year-2 %) val1)
+                                             (op2 (:need-2 %) val2))))
+      (= k :setting-need) (remove #(or (and (op1 (:setting-1 %) val1)
+                                            (op2 (:need-1 %) val2))
+                                       (and (op1 (:setting-2 %) val1)
+                                            (op2 (:need-2 %) val2)))))))
+
+
+
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
@@ -230,9 +265,7 @@
                               (transitions-map modified-transitions)
                               (transitions-map transitions))
          transitions-filtered (when filter-transitions-from
-                                (mapcat (fn [year] (filter #(> (:calendar-year %) year)
-                                                           (or modified-transitions transitions)))
-                                        [filter-transitions-from]))
+                                (reduce #(sequence (remove-transitions-xf %2) %1) (or modified-transitions transitions) filter-transitions-from))
          max-transition-year (apply max (map :calendar-year transitions))
          initial-send-pop (->> (filter #(= (:calendar-year %) max-transition-year) transitions)
                                (filter #(not= (:setting-2 %) :NONSEND))
