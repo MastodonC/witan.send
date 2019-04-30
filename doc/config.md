@@ -22,17 +22,34 @@ Description of what each file should contain can be found [here](https://docs.go
 
 ### `:transition-parameters`
 
-The transition parameters are all optional parameters, used for running scenario projections.
+The transition parameters are all optional, used for running scenario projections.
 
 ##### `:filter-transitions-from`
 
-Expects a calendar year stored in a vector (e.g. `[2016]`). Sets a year to filter historic transitions from e.g. for `[2016]` transitions data prior to 2016 will be ignored. To be used with `:splice-ncy` for a [“Ignore historic data before a specific calendar year for an age group”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#ignore-historic-data-before-a-specific-calendar-year-for-an-age-group) scenario.
+Expects a map consisting of keys corresponding to a set list of possible entity combinations (see below) and inner maps indicating which transitions to remove by an operator key and a value. For example to filter by everything earlier than 2016 and over and including academic year 11:
 
-##### `:splice-ncy`
+`{:calendar-academic {:< 2016 :>= 11}}`
 
-NCY = National Curricullum Year.
+The possible entity pair keys include:
+* `:calendar-academic`
+* `:calendar-setting`
+* `:calendar-need`
+* `:academic-setting`
+* `:academic-need`
+* `:setting-need`
+`
+The inner maps contents should correspond to the order of the outer key, so for `{:< 2016 :>= 11}` the first, key-value pair refers to `calendar-year` and the second refers to `academic-year`.
 
-Expects an integer corresponding to the national curricullum year/academic year to filter from (typically between -5 and 20). To be used in conjunction with `:filter-transitions-from` for a [“Ignore historic data before a specific calendar year for an age group”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#ignore-historic-data-before-a-specific-calendar-year-for-an-age-group) scenario. Currently will filter the provided NCY and all years above (e.g. for 16, NCYs 16-20 will be filtered).
+Operator keys include:
+* `>` - more than
+* `>=` - more than or equal to
+* `<` - less than
+* `<=` - less than or equal to
+* `=` - equal to
+
+Multiple entity pair filters can be applied in parallel.
+
+To be used for a [“Ignore historic data before a specific calendar year for an age group”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#ignore-historic-data-before-a-specific-calendar-year-for-an-age-group) scenario.
 
 ##### `:which-transitions?`
 
