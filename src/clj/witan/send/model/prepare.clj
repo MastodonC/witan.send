@@ -176,22 +176,13 @@
             (assoc coll [academic-year (states/join-need-setting need setting)] population))
           {} send-data))
 
-(defn get-filter-params [filter-what]
-  (into {} (filter #(every? (complement nil?) (vals (val %))) filter-what)))
-
-(defn build-pred [m]
-  (partial (:op (val m)) (:val (val m))))
-
 (def operators {:= =
                 :< <
                 :<= <=
                 :> >
                 :>= >=})
 
-(defn operator-key [filter-k]
-  (filter-k operators))
-
-(defn build-filter [filter-kv]
+(defn remove-transitions-xf [remove-operation]
   "Expects a key-value pair like [:calendar-academic {:< 2017, :>= 12}].
 
    Each key much conform to :calendar-academic, :calendar-setting, :calendar-need, :academic-setting,
@@ -199,10 +190,10 @@
 
    The inner map must contain two key-value pairs, the key corresponding to an operator and the value
    corresponding to a value to filter on"
-  (let [k (first filter-kv)
-        v (second filter-kv)
-        op1 (operator-key (first (keys v)))
-        op2 (operator-key (second (keys v)))
+  (let [k (first remove-operation)
+        v (second remove-operation)
+        op1 ((first (keys v)) operators)
+        op2 ((second (keys v)) operators)
         val1 (first (vals v))
         val2 (second (vals v))]
     (cond
@@ -274,7 +265,7 @@
                               (transitions-map modified-transitions)
                               (transitions-map transitions))
          transitions-filtered (when filter-transitions-from
-                                (reduce #(sequence (build-filter %2) %1) (or modified-transitions transitions) filter-transitions-from))
+                                (reduce #(sequence (remove-transitions-xf %2) %1) (or modified-transitions transitions) filter-transitions-from))
          max-transition-year (apply max (map :calendar-year transitions))
          initial-send-pop (->> (filter #(= (:calendar-year %) max-transition-year) transitions)
                                (filter #(not= (:setting-2 %) :NONSEND))
