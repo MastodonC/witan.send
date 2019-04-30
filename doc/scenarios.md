@@ -2,19 +2,18 @@
 
 This is a short primer for how to use some of the parameters available in the witan.send model in order to run scenarios projections.
 
-Each of the paramater keys (e.g. `:splice-ncy`) can be found, and their values defined, in the [config.edn](https://github.com/MastodonC/witan.send/blob/master/data/demo/config.edn) file.
+Each of the paramater keys (e.g. `::settings-to-change`) can be found, and their values defined, in the [config.edn](https://github.com/MastodonC/witan.send/blob/master/data/demo/config.edn) file.
 
 More information on how to define a scenario projection can be found [here](https://docs.google.com/document/d/1lQ2RrESpiyU5x2YUY8YvT287K4iq6NJw4jqHUIqC2VM/edit?ts=5b7d6444#heading=h.ebeiyry5kb3k). 
 
 Here each scenario projection is simply defined in terms of the collection of parameters to use together, what arguments are expected and what the expected behaviuor is.
 
-### _“Ignore historic data before a specific calendar year for an age group”_
+### _“Ignore historic data for a set entity pair group”_
 
-* Parameters = `:filter-transitions-from` & `:splice-ncy`
-* Arguments = a calendar year (`2016`) and national curriculum year (`11`)
+* Parameters = `:filter-transitions-from`
+* Arguments = for example, a calendar year (`2016`) and national curriculum year (`11`) and corresponding operators (e.g. `>`)
 * Defines a separate set of transition rates based on a defined start year and minimum age
 * For [example](https://gist.github.com/seb231/c752e3a8562017c29ea0df01f76b0169), historic transitions may date back to 2014, but a user may only want to use data for a specific age group from 2016
-* Providing `:splice-ncy` with 11 filters anyone over that age
 * Typically we see a significant change in the trends in those over NCY 11, as these are only recently included in SEND, so data prior to this change may not want to be included as it could skew the models results
 
 ### _“Modify setting(s) transitions rates”_
