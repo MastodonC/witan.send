@@ -160,6 +160,18 @@
     (update m k #(arithmetic-fn % v))
     (assoc m k v)))
 
+(comment
+  (def foo [{:setting-2 :MU, :academic-year-2 1} {:setting-2 :MSSE, :academic-year-2 12}])
+  ;; need to take these maps, build predicates out of each key-value pair and combine them into an `and` filter for each map to filter on the sequence below (bar)
+
+  ;; needs to be able to take any number of key-value pairs and any number of maps
+
+  (def bar '({:calendar-year 2018, :setting-1 :MU, :need-1 :ASD, :setting-2 :MSSE, :need-2 :ASD, :academic-year-2 10, :academic-year-1 9} {:calendar-year 2018, :setting-1 :MU, :need-1 :ASD, :setting-2 :MU, :need-2 :ASD, :academic-year-2 10, :academic-year-1 9} {:calendar-year 2018, :setting-1 :NONSEND, :need-1 :NONSEND, :setting-2 :MU, :need-2 :ASD, :academic-year-2 10, :academic-year-1 9}))
+
+  (map (fn [[k v]] (partial #(= (k %) v))) (first foo))
+  ;; returns a sequence of predicates
+  )
+
 (defn modify-transitions [transitions [first-state second-state] arithmetic-fn v]
   (if (contains? transitions first-state)
     (let [pop (get transitions first-state)
@@ -248,7 +260,7 @@
                                 initialise-validation)
          valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years
                               initialise-validation)
-         transitions-to-change (when modify-transition-by
+         transitions-to-change (when modify-transition-by ;;; REDUNDANT???
                                  (mapcat (fn [transition-type]
                                            (build-transitions-to-change settings-to-change
                                                                         valid-needs valid-settings
@@ -258,6 +270,8 @@
          modified-transitions (when modify-transition-by
                                 (let [convert (-> transitions
                                                   full-transitions-map)
+                                      ;; in here filter full-transitions-map by the args supplied to the config
+                                      ;; data looks like:
                                       result (reduce (fn [m k] (modify-transitions m k * modify-transition-by))
                                                      convert transitions-to-change)]
                                   (mapcat (fn [[k v]] (back-to-transitions k v)) result)))
