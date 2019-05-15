@@ -87,7 +87,7 @@
            {} a)
    b))
 
-(defn prep-inputs [initial-send-pop splice-ncy validate-valid-states valid-transitions transitions
+(defn prep-inputs [initial-send-pop validate-valid-states valid-transitions transitions
                    transitions-filtered population valid-states original-transitions costs]
   (let [start-map {:population-by-state initial-send-pop
                    :valid-states valid-states
@@ -117,60 +117,10 @@
               :mover-beta-params (p/beta-params-movers validate-valid-states valid-transitions transitions)
               :mover-state-alphas  (p/alpha-params-movers validate-valid-states valid-transitions transitions)}))))
 
-(defn generate-transition-key [{:keys [transition-type cy ay need setting move-state]}]
-  (when (not= move-state (states/join-need-setting need setting))
-    (case transition-type
-      "joiners"
-      (vector cy ay :NONSEND (states/join-need-setting need setting))
-
-      "leavers"
-      (vector cy ay (states/join-need-setting need setting) :NONSEND)
-
-      "movers-to"
-      (vector cy ay move-state (states/join-need-setting need setting))
-
-      "movers-from"
-      (vector cy ay (states/join-need-setting need setting) move-state))))
-
-(defn build-transitions-to-change [input valid-needs valid-settings ages years transition-type]
-  (let [to-maps (ds/row-maps input)
-        settings-to-change (if (= :nil (-> to-maps
-                                           first
-                                           :setting-2))
-                             (map #(vector (:setting-1 %)) to-maps)
-                             (map #(vector (:setting-1 %) (:setting-2 %)) to-maps))]
-    (->> (for [year years
-               age ages
-               need valid-needs
-               setting valid-settings
-               setting-to-change settings-to-change]
-           (let [keys {:transition-type transition-type :cy year :ay age
-                       :need need :move-state (states/join-need-setting need setting)}]
-             (if (= :nil (-> to-maps
-                             first
-                             :setting-2))
-               (vector (generate-transition-key (merge keys {:setting (first setting-to-change)})))
-               (vector (generate-transition-key (merge keys {:setting (first setting-to-change)}))
-                       (generate-transition-key (merge keys {:setting (second setting-to-change)}))))))
-         (remove #(nil? (first %)))
-         distinct)))
-
 (defn update-ifelse-assoc [m k arithmetic-fn v]
   (if (contains? m k)
     (update m k #(arithmetic-fn % v))
     (assoc m k v)))
-
-(comment
-  (def foo [{:setting-2 :MU, :academic-year-2 1} {:setting-2 :MSSE, :academic-year-2 12}])
-  ;; need to take these maps, build predicates out of each key-value pair and combine them into an `and` filter for each map to filter on the sequence below (bar)
-
-  ;; needs to be able to take any number of key-value pairs and any number of maps
-
-  (def bar '({:calendar-year 2018, :setting-1 :MU, :need-1 :ASD, :setting-2 :MSSE, :need-2 :ASD, :academic-year-2 10, :academic-year-1 9} {:calendar-year 2018, :setting-1 :MU, :need-1 :ASD, :setting-2 :MU, :need-2 :ASD, :academic-year-2 10, :academic-year-1 9} {:calendar-year 2018, :setting-1 :NONSEND, :need-1 :NONSEND, :setting-2 :MU, :need-2 :ASD, :academic-year-2 10, :academic-year-1 9}))
-
-  (map (fn [[k v]] (partial #(= (k %) v))) (first foo))
-  ;; returns a sequence of predicates
-  )
 
 (defn modify-transitions [transitions [first-state second-state] arithmetic-fn v]
   (if (contains? transitions first-state)
@@ -288,22 +238,18 @@
                                (map #(assoc (first %) :population (last %) :calendar-year (inc max-transition-year)))
                                (map #(rename-keys % {:setting-2 :setting, :need-2 :need :academic-year-2 :academic-year}))
                                (initialise-model))]
-    (when modify-transition-by
-      (report/info "\nModified transitions by " (report/bold modify-transition-by)))
     (if modified-transitions
       (report/info "\nUsed " (report/bold "modified") " transitions matrix\n")
       (report/info "\nUsed " (report/bold "input") " transitions matrix\n"))
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) map-of-transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) costs)
-    {:standard-projection (prep-inputs initial-send-pop splice-ncy
+    {:standard-projection (prep-inputs initial-send-pop
                                        validate-valid-states valid-transitions transitions
                                        transitions-filtered
                                        population valid-states original-transitions costs)
      :scenario-projection (when modified-transitions
-                            (prep-inputs initial-send-pop splice-ncy validate-valid-states
+                            (prep-inputs initial-send-pop validate-valid-states
                                          valid-transitions modified-transitions
                                          transitions-filtered population valid-states
                                          original-transitions costs))
-     :modify-transition-by modify-transition-by
-     :modify-transitions-from  modify-transitions-from
      :seed-year (inc max-transition-year)}))
