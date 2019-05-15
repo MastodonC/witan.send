@@ -184,15 +184,16 @@
                                        (and (op1 (:setting-2 %) val1)
                                             (op2 (:need-2 %) val2)))))))
 
-
+(defn test-predicates [data pred-map]
+  (map (fn [[k v]] (= (k data) v)) pred-map))
 
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
-  [{:keys [settings-to-change transitions population
+  [{:keys [transitions population
            costs valid-states]}
-   {:keys [which-transitions? modify-transition-by splice-ncy
-           filter-transitions-from modify-transitions-from]}]
+   {:keys [which-transitions? transitions-to-change
+           filter-transitions-from]}]
   (run-input-checks (ds/row-maps transitions)
                     (ds/row-maps costs)
                     (ds/row-maps valid-states))
@@ -210,21 +211,21 @@
                                 initialise-validation)
          valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years
                               initialise-validation)
-         transitions-to-change (when modify-transition-by ;;; REDUNDANT???
-                                 (mapcat (fn [transition-type]
-                                           (build-transitions-to-change settings-to-change
-                                                                        valid-needs valid-settings
-                                                                        ages years transition-type))
-                                         which-transitions?))
          transitions (ds/row-maps transitions)
-         modified-transitions (when modify-transition-by
-                                (let [convert (-> transitions
-                                                  full-transitions-map)
-                                      ;; in here filter full-transitions-map by the args supplied to the config
-                                      ;; data looks like:
-                                      result (reduce (fn [m k] (modify-transitions m k * modify-transition-by))
-                                                     convert transitions-to-change)]
-                                  (mapcat (fn [[k v]] (back-to-transitions k v)) result)))
+         modified-transitions (when transitions-to-change
+                                (do (print "Using modified transition rates\n")
+                                    (let [change (mapcat
+                                                  #(let [pred-map (dissoc % :modify-transition-by)]
+                                                     (->> transitions
+                                                          (filter (fn [t] (every? identity (test-predicates t pred-map))))
+                                                          full-transitions-map
+                                                          (map (fn [[k v]] [k (* v (:modify-transition-by %))]))))
+                                                  transitions-to-change)
+                                          no-change (-> (reduce (fn [x s] (let [pred-map (dissoc s :modify-transition-by)]
+                                                                            (remove (fn [t] (every? identity (test-predicates t pred-map))) x)))
+                                                                transitions transitions-to-change)
+                                                        full-transitions-map)]
+                                      (mapcat (fn [[k v]] (back-to-transitions k v)) (concat change no-change)))))
          map-of-transitions (if modified-transitions
                               (transitions-map modified-transitions)
                               (transitions-map transitions))
