@@ -8,7 +8,6 @@
                          :modify-transitions-from nil
                          :transitions-to-change [{:setting-2 :A :academic-year-2 1 :modify-transition-by 40}
                                                  {:setting-2 :B :academic-year-2 12 :modify-transition-by 40}]}
- ;;; need to check these settings exist
 
  :projection-parameters {:random-seed 50
                          :simulations 10}

@@ -244,10 +244,10 @@
       (report/info "\nUsed " (report/bold "input") " transitions matrix\n"))
     (s/validate (sc/TransitionsMap+ valid-needs valid-settings) map-of-transitions)
     (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) costs)
-    {:standard-projection (prep-inputs initial-send-pop
-                                       validate-valid-states valid-transitions transitions
-                                       transitions-filtered
-                                       population valid-states original-transitions costs)
+    {:standard-projection (prep-inputs initial-send-pop validate-valid-states
+                                       valid-transitions transitions
+                                       transitions-filtered population valid-states
+                                       original-transitions costs)
      :scenario-projection (when modified-transitions
                             (prep-inputs initial-send-pop validate-valid-states
                                          valid-transitions modified-transitions
