@@ -74,6 +74,10 @@
             {}
             (range minimum-academic-year (inc maximum-academic-year)))))
 
-(defn can-move? [valid-year-settings academic-year state]
+(defn any-valid-transitions? [state valid-transitions]
+  (< 1 (count (get valid-transitions (second (split-need-setting state))))))
+
+(defn can-move? [valid-year-settings academic-year state valid-transitions]
   (let [[need setting] (split-need-setting state)]
-    (pos? (count (disj (get valid-year-settings (inc academic-year)) setting)))))
+    (and (any-valid-transitions? (join-need-setting need setting) valid-transitions)
+         (pos? (count (disj (get valid-year-settings (inc academic-year)) setting))))))

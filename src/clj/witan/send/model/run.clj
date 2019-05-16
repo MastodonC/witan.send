@@ -58,17 +58,17 @@
   [[model transitions] [[year need-setting] population]
    {:keys [mover-state-alphas mover-beta-params leaver-beta-params
            valid-year-settings] :as params}
-   calendar-year]
+   calendar-year valid-transitions]
   (if-let [mover-dirichlet-params (get mover-state-alphas [(dec year) need-setting])]
     (let [leavers (predict-leavers {:need-setting need-setting
                                     :n population
                                     :beta-params (get leaver-beta-params [(dec year) need-setting])})
-          movers (if (states/can-move? valid-year-settings year need-setting)
-                               (predict-movers {:need-setting need-setting
-                                                :n (- population leavers)
-                                                :beta-params (get mover-beta-params [(dec year) need-setting])
-                                                :dirichlet-params mover-dirichlet-params})
-                               {need-setting (- population leavers)})
+          movers (if (states/can-move? valid-year-settings year need-setting valid-transitions)
+                   (predict-movers {:need-setting need-setting
+                                    :n (- population leavers)
+                                    :beta-params (get mover-beta-params [(dec year) need-setting])
+                                    :dirichlet-params mover-dirichlet-params})
+                   {need-setting (- population leavers)})
           [model transitions] (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
                                                                             :academic-year year :need-setting need-setting
                                                                             :predicted-populations movers
@@ -83,7 +83,7 @@
   valid academic year range."
   [[model transitions :as population-by-state]
    [[year state] population :as cohort]
-   params calendar-year]
+   params calendar-year valid-transitions]
   (cond
     (= state c/non-send)
     population-by-state
@@ -94,7 +94,7 @@
        (pos? population)
        (update [calendar-year year state c/non-send] m/some+ population))]
     :else
-    (apply-leavers-movers-for-cohort-unsafe population-by-state cohort params calendar-year)))
+    (apply-leavers-movers-for-cohort-unsafe population-by-state cohort params calendar-year valid-transitions)))
 
 (defn predict-joiners
   "Returns a map of predicted need-setting counts for joiners for a
@@ -127,7 +127,8 @@
    scenario-projection
    {population-by-state :model}
    [calendar-year projected-population]]
-  (let [params (if (nil? modify-transitions-from)
+  (let [valid-transitions (:valid-transitions standard-projection)
+        params (if (nil? modify-transitions-from)
                  (if ((complement nil?) scenario-projection)
                    scenario-projection
                    standard-projection)
@@ -136,7 +137,7 @@
                    standard-projection))
         cohorts (step/age-population projected-population population-by-state)
         [population-by-state transitions] (reduce (fn [pop cohort]
-                                                    (apply-leavers-movers-for-cohort pop cohort params calendar-year))
+                                                    (apply-leavers-movers-for-cohort pop cohort params calendar-year valid-transitions))
                                                   [{} {}]
                                                   cohorts)
         [population-by-state transitions] (reduce (fn [pop academic-year]
