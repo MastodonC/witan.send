@@ -92,7 +92,7 @@
 (defn output-transitions-csv
   [dir filename projections simulations]
   (with-open [writer (io/writer (io/file (str dir "/" filename ".csv")))]
-    (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2 :academic-year-2 :avg-number-of]
+    (let [columns [:calendar-year :academic-year-1 :setting-1 :need-1 :academic-year-2 :setting-2 :need-2 :avg-number-of]
           headers (mapv name columns)
           parse-need-setting #(map name ((comp reverse states/split-need-setting) %))
           rows (sort (remove empty?
