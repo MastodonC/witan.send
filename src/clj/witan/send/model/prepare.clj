@@ -90,6 +90,7 @@
 (defn prep-inputs [initial-send-pop validate-valid-states valid-transitions transitions
                    transitions-filtered population valid-states original-transitions costs]
   (let [start-map {:population-by-state initial-send-pop
+                   :valid-transitions valid-transitions
                    :valid-states valid-states
                    :transitions original-transitions
                    :population population

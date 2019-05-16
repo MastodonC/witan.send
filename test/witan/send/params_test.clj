@@ -61,7 +61,8 @@
                                    (->> alphas vals (every? pos?)))))
                           (for [academic-year c/academic-years
                                 state (s/validate-states-for-ay valid-states academic-year)
-                                :when (s/can-move? valid-year-settings academic-year state)]
+                                :when (s/can-move? valid-year-settings academic-year
+                                                   state valid-transitions)]
                             [academic-year state]))))))
 
   (testing "Positive leaver beta params for every valid state"
