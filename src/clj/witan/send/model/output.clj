@@ -219,16 +219,16 @@
   "Groups the individual data from the loop to get a demand projection, and applies the cost profile
    to get the total cost."
   [{:keys [projection send-output transitions valid-states
-           population modify-transition-by standard-projection scenario-projection
+           population standard-projection scenario-projection
            simulations]}
    {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts
            keep-temp-files? use-confidence-bound-or-interval population-file]}]
   (let [transitions-data (ds/row-maps transitions)
         transform-transitions (->> transitions-data
                                    (map #(vector
-                                           (:academic-year-2 %)
-                                           (states/join-need-setting (:need-1 %) (:setting-1 %))
-                                           (states/join-need-setting (:need-2 %) (:setting-2 %))))
+                                          (:academic-year-2 %)
+                                          (states/join-need-setting (:need-1 %) (:setting-1 %))
+                                          (states/join-need-setting (:need-2 %) (:setting-2 %))))
                                    distinct)
         transform-projection (->> projection
                                   keys
@@ -242,7 +242,7 @@
     (when run-outputs
       (let [valid-settings (assoc (->> (ds/row-maps valid-states)
                                        (reduce #(assoc %1 (:setting %2) (:setting-group %2)) {}))
-                             :NON-SEND "Other")
+                                  :NON-SEND "Other")
             years (sort (distinct (map :calendar-year transitions-data)))
             initial-projection-year (+ 1 (last years))
             joiners-count (p/calculate-joiners-per-calendar-year transitions-data)

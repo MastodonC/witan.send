@@ -4,18 +4,16 @@
                :valid-states "data/valid-states.csv"}
 
  :transition-parameters {:filter-transitions-from nil
-                         :which-transitions? nil
-                         :splice-ncy nil
-                         :modify-transition-by nil
                          :modify-transitions-from nil
-                         :settings-to-change nil}
+                         :transitions-to-change [{:setting-2 :A :academic-year-2 1 :modify-transition-by 40}
+                                                 {:setting-2 :B :academic-year-2 12 :modify-transition-by 40}]}
 
  :projection-parameters {:random-seed 50
                          :simulations 10}
 
  :output-parameters {:run-outputs true
-                     :run-charts false
-                     :output-dir "results"
+                     :run-charts true
+                     :output-dir "results-transitions-to-change"
                      :settings-to-exclude-in-charts nil
                      :keep-temp-files? false
                      :use-confidence-bound-or-interval nil
