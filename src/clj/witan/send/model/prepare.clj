@@ -213,19 +213,19 @@
                               initialise-validation)
          transitions (ds/row-maps transitions)
          modified-transitions (when transitions-to-change
-                                (do (print "Using modified transition rates\n")
-                                    (let [change (mapcat
-                                                  #(let [pred-map (dissoc % :modify-transition-by)]
-                                                     (->> transitions
-                                                          (filter (fn [t] (every? identity (test-predicates t pred-map))))
-                                                          full-transitions-map
-                                                          (map (fn [[k v]] [k (* v (:modify-transition-by %))]))))
-                                                  transitions-to-change)
-                                          no-change (-> (reduce (fn [x s] (let [pred-map (dissoc s :modify-transition-by)]
-                                                                            (remove (fn [t] (every? identity (test-predicates t pred-map))) x)))
-                                                                transitions transitions-to-change)
-                                                        full-transitions-map)]
-                                      (mapcat (fn [[k v]] (back-to-transitions k v)) (concat change no-change)))))
+                                (println "Using modified transition rates")
+                                (let [change (mapcat
+                                              #(let [pred-map (dissoc % :modify-transition-by)]
+                                                 (->> transitions
+                                                      (filter (fn [t] (every? identity (test-predicates t pred-map))))
+                                                      full-transitions-map
+                                                      (map (fn [[k v]] [k (* v (:modify-transition-by %))]))))
+                                              transitions-to-change)
+                                      no-change (-> (reduce (fn [x s] (let [pred-map (dissoc s :modify-transition-by)]
+                                                                        (remove (fn [t] (every? identity (test-predicates t pred-map))) x)))
+                                                            transitions transitions-to-change)
+                                                    full-transitions-map)]
+                                  (mapcat (fn [[k v]] (back-to-transitions k v)) (concat change no-change))))
          map-of-transitions (if modified-transitions
                               (transitions-map modified-transitions)
                               (transitions-map transitions))
