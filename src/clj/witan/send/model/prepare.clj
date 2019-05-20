@@ -36,18 +36,18 @@
 (defn back-to-transitions [k v]
   (let [[calendar-year academic-year-2 need-setting-1 need-setting-2] k
         total v]
-    (repeat total (assoc {}
-                         :calendar-year calendar-year
-                         :academic-year-1 (- academic-year-2 1)
-                         :academic-year-2 academic-year-2
-                         :need-1 (split-need-state need-setting-1 first)
-                         :setting-1 (if (nil? (split-need-state need-setting-1 second))
-                                      (split-need-state need-setting-1 first)
-                                      (split-need-state need-setting-1 second))
-                         :need-2 (split-need-state need-setting-2 first)
-                         :setting-2 (if (nil? (split-need-state need-setting-2 second))
-                                      (split-need-state need-setting-2 first)
-                                      (split-need-state need-setting-2 second))))))
+    (repeat (Math/round (float total)) (assoc {}
+                                              :calendar-year calendar-year
+                                              :academic-year-1 (- academic-year-2 1)
+                                              :academic-year-2 academic-year-2
+                                              :need-1 (split-need-state need-setting-1 first)
+                                              :setting-1 (if (nil? (split-need-state need-setting-1 second))
+                                                           (split-need-state need-setting-1 first)
+                                                           (split-need-state need-setting-1 second))
+                                              :need-2 (split-need-state need-setting-2 first)
+                                              :setting-2 (if (nil? (split-need-state need-setting-2 second))
+                                                           (split-need-state need-setting-2 first)
+                                                           (split-need-state need-setting-2 second))))))
 
 (def total-by-academic-year
   "Given a sequence of {:academic-year year :population population}
