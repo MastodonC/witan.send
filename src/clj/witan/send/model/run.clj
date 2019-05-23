@@ -58,16 +58,20 @@
   [[model transitions] [[year need-setting] population]
    {:keys [mover-state-alphas mover-beta-params leaver-beta-params
            valid-year-settings] :as params}
-   calendar-year valid-transitions]
+   calendar-year valid-transitions make-setting-invalid]
   (if-let [mover-dirichlet-params (get mover-state-alphas [(dec year) need-setting])]
-    (let [leavers (predict-leavers {:need-setting need-setting
-                                    :n population
-                                    :beta-params (get leaver-beta-params [(dec year) need-setting])})
+    (let [leavers (if (= (second (states/split-need-setting need-setting)) make-setting-invalid)
+                    population
+                    (predict-leavers {:need-setting need-setting
+                                      :n population
+                                      :beta-params (get leaver-beta-params [(dec year) need-setting])}))
           movers (if (states/can-move? valid-year-settings year need-setting valid-transitions)
-                   (predict-movers {:need-setting need-setting
-                                    :n (- population leavers)
-                                    :beta-params (get mover-beta-params [(dec year) need-setting])
-                                    :dirichlet-params mover-dirichlet-params})
+                   (if (= (second (states/split-need-setting need-setting)) make-setting-invalid)
+                     0
+                     (predict-movers {:need-setting need-setting
+                                      :n (- population leavers)
+                                      :beta-params (get mover-beta-params [(dec year) need-setting])
+                                      :dirichlet-params mover-dirichlet-params}))
                    {need-setting (- population leavers)})
           [model transitions] (incorporate-new-ay-need-setting-populations {:model model :transitions transitions
                                                                             :academic-year year :need-setting need-setting
@@ -83,7 +87,8 @@
   valid academic year range."
   [[model transitions :as population-by-state]
    [[year state] population :as cohort]
-   params calendar-year valid-transitions]
+   params calendar-year valid-transitions
+   make-setting-invalid]
   (cond
     (= state c/non-send)
     population-by-state
@@ -94,7 +99,8 @@
        (pos? population)
        (update [calendar-year year state c/non-send] m/some+ population))]
     :else
-    (apply-leavers-movers-for-cohort-unsafe population-by-state cohort params calendar-year valid-transitions)))
+    (apply-leavers-movers-for-cohort-unsafe population-by-state cohort params calendar-year
+                                            valid-transitions make-setting-invalid)))
 
 (defn predict-joiners
   "Returns a map of predicted need-setting counts for joiners for a
@@ -123,6 +129,7 @@
 (defn run-model-iteration
   "Takes the model & transitions, transition params, and the projected population and produce the next state of the model & transitions"
   [modify-transitions-from
+   make-setting-invalid
    standard-projection
    scenario-projection
    {population-by-state :model}
@@ -137,7 +144,7 @@
                    standard-projection))
         cohorts (step/age-population projected-population population-by-state)
         [population-by-state transitions] (reduce (fn [pop cohort]
-                                                    (apply-leavers-movers-for-cohort pop cohort params calendar-year valid-transitions))
+                                                    (apply-leavers-movers-for-cohort pop cohort params calendar-year valid-transitions make-setting-invalid))
                                                   [{} {}]
                                                   cohorts)
         [population-by-state transitions] (reduce (fn [pop academic-year]
@@ -186,7 +193,7 @@
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
   [{:keys [standard-projection scenario-projection modify-transition-by
-           modify-transitions-from seed-year]}
+           modify-transitions-from seed-year make-setting-invalid]}
    {:keys [random-seed simulations]}]
   (d/set-seed! random-seed)
   (println "Preparing" simulations "simulations...")
@@ -212,7 +219,8 @@
                                           (int (/ simulations 8))))
                          (pmap (fn [simulations]
                                  (->> (for [_ simulations]
-                                        (let [projection (reductions (partial run-model-iteration modify-transitions-from inputs modified-inputs)
+                                        (let [projection (reductions (partial run-model-iteration modify-transitions-from make-setting-invalid
+                                                                              inputs modified-inputs)
                                                                      {:model population-by-state}
                                                                      projected-future-pop-by-year)]
                                           projection))
