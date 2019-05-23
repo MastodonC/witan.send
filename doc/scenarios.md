@@ -35,3 +35,8 @@ Here each scenario projection is simply defined in terms of the collection of pa
 * Parameters = `:modify-transitions-from` and `:transitions-to-change
 * Arguments = as with above scenario, and additionally a calendar year (`2020`) from when a user may wish to apply the new transition rates
 * An [example](https://gist.github.com/seb231/0218cb773df526e4e99b992db028703d) may be that a user only wants to start modelling a transition rate policy change in three years time and maintain the current trends until that time
+
+### _“Make a setting invalid”_
+
+* Parameters = `:make-setting-invalid` and `:transitions-to-change`
+* Arguments = `:make-setting-invalid` expects a setting name as a key and `:transitions-to-change` must take a map whereby `:setting-2` equals the setting to make invalid and `:modify-transition-by` equals `0`.

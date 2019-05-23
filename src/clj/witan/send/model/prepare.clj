@@ -194,7 +194,7 @@
   [{:keys [transitions population
            costs valid-states]}
    {:keys [which-transitions? transitions-to-change
-           filter-transitions-from]}]
+           filter-transitions-from make-setting-invalid]}]
   (run-input-checks (ds/row-maps transitions)
                     (ds/row-maps costs)
                     (ds/row-maps valid-states))
@@ -254,4 +254,5 @@
                                          valid-transitions modified-transitions
                                          transitions-filtered population valid-states
                                          original-transitions costs))
-     :seed-year (inc max-transition-year)}))
+     :seed-year (inc max-transition-year)
+     :make-setting-invalid make-setting-invalid}))
