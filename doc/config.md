@@ -71,6 +71,10 @@ The more keys/entities used the more specific the set of transitions to be modif
 
 A further additional, required key in each map is `:modify-transitions-by`, which should include a value corresponding to a number (integer or float) by which to multiply the count of transitions corresponding to the entity keys with which to filter on. For example a value of `2` here would double the number of transition of a specific type, and `0.5` would half them.
 
+##### `:making-setting-invalid`
+
+Expects a setting as a key (i.e. `:OE`), corresponding to the setting to make future movement invalid to.
+
 ### `:projection-parameters`
 
 Contains two required keys for every projection.
