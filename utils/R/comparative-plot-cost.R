@@ -45,7 +45,7 @@ comparative_plot_cost = function(output, data1, data2){
 
   
   ## ribbon plot - zero-indexed
-  g + scale_y_continuous(limits = c(0, max(cost_data1$q3, na.rm=T)))
+  g + scale_y_continuous(limits = c(0, max(cost_data1$max, cost_data2$max)))
   
   ggsave(paste0(output, "comparisons/", "Total_Cost_Comparative_Zeroindexed.png"),
          width=8,
