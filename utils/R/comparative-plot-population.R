@@ -53,10 +53,10 @@ comparative_plot_population = function(output, data1, data2){
                        limits = c(min_x, max_x+1.5)) +
     ggtitle("SEND Population Projection") +
     theme(axis.text.x = element_text(size=8)) +
-    geom_vline(xintercept = max(count_data_historic$calendar.year) + 0.5,
+    geom_vline(xintercept = max(count_data_historic$calendar.year) + 1.5,
                color = "dodgerblue",
                linetype = "dashed")  +
-    geom_text(x=max(count_data_historic$calendar.year) + 0.5,
+    geom_text(x=max(count_data_historic$calendar.year) + 1.5,
               y=max(count_data1$q3, na.rm=T),
               label = "<-- Historical      Projected -->",
               color = "dodgerblue") +
