@@ -115,9 +115,12 @@
               (-> coll
                   (update-in [ay :alpha] m/some+ (/ j n))
                   (update-in [ay :beta] m/some+ (/ (- p j) n)))
-              (-> coll
-                  (update-in [ay :alpha] m/some+ 0.001) ; default prior may need tweaking
-                  (update-in [ay :beta] m/some+ (/ p n))))))
+              (if p
+                (-> coll
+                    (update-in [ay :alpha] m/some+ 0.001) ; default prior may need tweaking
+                    (update-in [ay :beta] m/some+ (/ p n)))
+                (throw (ex-info "No population data for calendar year/academic year pair"
+                                {:calendar-year cy :academic-year ay}))))))
         coll
         joiner-calendar-years))
      {}
