@@ -4,7 +4,9 @@ library(stringr)
 
 # DATA
 
-### Output directory must also be where the input data for the model exists.
+### Most straightforward way of running this script is from "witan.send/utils/R/"
+### Output directory must the root directory for the clients repo and contain
+### a directory "data/baseline/" which then contains the file transitions.csv
 ### Results will be stored in a directory called comparisons within the output 
 ### directory.
 ### data1 and data2 correspond to the folders containing the 2 data sets you 
@@ -14,6 +16,9 @@ library(stringr)
 ### labelling the plot.
 ### output_dir is the root dir containting all results and input data
 ### data1 and data2 are dir's containing results from a model run
+### example:
+### `> Rscript comparative-charts.R "~/home/repo/" "first-results/" "second-results/"`
+
 args = commandArgs(trailingOnly=TRUE)
 output_dir = args[1]
 data1 = args[2]
