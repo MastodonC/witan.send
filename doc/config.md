@@ -37,7 +37,7 @@ The possible entity pair keys include:
 * `:academic-setting`
 * `:academic-need`
 * `:setting-need`
-`
+
 The inner maps contents should correspond to the order of the outer key, so for `{:< 2016 :>= 11}` the first, key-value pair refers to `calendar-year` and the second refers to `academic-year`.
 
 Operator keys include:
