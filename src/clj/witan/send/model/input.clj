@@ -27,6 +27,15 @@
         (throw (ex-info (format "Failed to parse supplied value '%s'" x)
                         {:value x}))))
 
+(defn csv->x [xf file-name]
+  (with-open [reader (io/reader file-name)]
+    (let [[header & data] (data-csv/read-csv reader)
+          header (map keyword header)]
+      (into []
+            (comp
+             (map #(zipmap header %))
+             xf)
+            data))))
 
 (defn blank-row? [row]
   (every? #(= "" %) row))
