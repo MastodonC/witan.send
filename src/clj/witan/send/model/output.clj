@@ -1,6 +1,5 @@
 (ns witan.send.model.output
-  (:require [clojure.core.matrix.dataset :as ds]
-            [clojure.data.csv :as csv]
+  (:require [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [clojure.java.shell :as sh]
             [medley.core :as medley]
@@ -223,8 +222,7 @@
            simulations]}
    {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts
            keep-temp-files? use-confidence-bound-or-interval population-file]}]
-  (let [transitions-data (ds/row-maps transitions)
-        transform-transitions (->> transitions-data
+  (let [transform-transitions (->> transitions
                                    (map #(vector
                                           (:academic-year-2 %)
                                           (states/join-need-setting (:need-1 %) (:setting-1 %))
@@ -240,27 +238,25 @@
     (when (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
       (report/info (report/bold "Not every historic transition present in projection!") "Consider checking valid state input.\n"))
     (when run-outputs
-      (let [valid-settings (assoc (->> (ds/row-maps valid-states)
-                                       (reduce #(assoc %1 (:setting %2) (:setting-group %2)) {}))
+      (let [valid-settings (assoc (reduce #(assoc %1 (:setting %2) (:setting-group %2)) {} valid-states)
                                   :NON-SEND "Other")
-            years (sort (distinct (map :calendar-year transitions-data)))
+            years (sort (distinct (map :calendar-year transitions)))
             initial-projection-year (+ 1 (last years))
-            joiners-count (p/calculate-joiners-per-calendar-year transitions-data)
+            joiners-count (p/calculate-joiners-per-calendar-year transitions)
             population-count (-> population
-                                 ds/row-maps
                                  p/calculate-population-per-calendar-year)
             ages (-> population-count first val keys)
             n-colours (take (count years) ["#1b9e77" "#d95f02" "#7570b3" "#e7298a" "#D55E00" "#CC79A7"])
             joiner-rates (joiner-rate joiners-count population-count ages years)
             joiner-rates-CI (map #(confidence-bounds joiner-rates %) years)
             joiner-ribbon-data (prep-ribbon-plot-data joiner-rates-CI years n-colours)
-            filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send)) transitions-data)
+            filter-leavers (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send)) transitions)
             leaver-rates (leaver-rate filter-leavers)
             leaver-rates-CI (map #(confidence-bounds leaver-rates %) years)
             leaver-ribbon-data (prep-ribbon-plot-data leaver-rates-CI years n-colours)
             filter-movers (remove (fn [{:keys [setting-1 setting-2]}]
                                     (or (= setting-1 c/non-send)
-                                        (= setting-2 c/non-send))) transitions-data)
+                                        (= setting-2 c/non-send))) transitions)
             mover-rates (mover-rate filter-movers)
             mover-rates-CI (map #(confidence-bounds mover-rates %) years)
             mover-ribbon-data (prep-ribbon-plot-data mover-rates-CI years n-colours)]
@@ -376,7 +372,7 @@
           (with-open [writer (io/writer (io/file (str dir "/historic-data.csv")))]
             (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
                   headers (mapv name columns)
-                  rows (mapv #(mapv % columns) transitions-data)]
+                  rows (mapv #(mapv % columns) transitions)]
               (csv/write-csv writer (into [headers] rows))))
           (with-open [writer (io/writer (io/file (str dir "/valid-settings.csv")))]
             (csv/write-csv writer valid-settings))

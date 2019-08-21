@@ -1,10 +1,9 @@
 (ns witan.send.params-test
-  (:require [clojure.core.matrix.dataset :as ds]
-            [clojure.test :refer [deftest testing is]]
+  (:require [clojure.test :refer [deftest testing is]]
             [witan.send.constants :as c]
-            [witan.send.model.input :as i]
+            [witan.send.model.input.population :as ip]
+            [witan.send.model.input.transitions :as it]
             [witan.send.params :as sut]
-            [witan.send.schemas :as sc]
             [witan.send.states :as s]))
 
 (def valid-setting-academic-years
@@ -24,11 +23,9 @@
    {:setting :OOE, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year 6, :max-academic-year 20, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}
    {:setting :PRU, :setting->setting "CC,EO,FEC,IMS,IN,ISC,ISCR,ISS,ISSR,IT,MMS,MSS,MU,OOE,PRU" :min-academic-year 2, :max-academic-year 14, :needs "ASD,HI,M,MLD,MSI,OTH,PD,PMLD,SEMH,SLCN,SLD,SPLD,VI"}])
 
-(def population-dataset
-  (i/csv-to-dataset "data/demo/data/population.csv" sc/PopulationDataset))
+(def population-dataset (ip/csv->population "data/demo/data/population.csv"))
 
-(def transitions
-  (i/csv-to-dataset "data/demo/data/transitions.csv" sc/TransitionCounts))
+(def transitions (it/csv->transitions "data/demo/data/transitions.csv"))
 
 (def valid-states
   (-> valid-setting-academic-years
@@ -82,39 +79,29 @@
                   params)))))
 
 (deftest calculate-population-per-calendar-year-test
-  (let [population (ds/row-maps population-dataset)
-        result (sut/calculate-population-per-calendar-year population)]
+  (let [result (sut/calculate-population-per-calendar-year population-dataset)]
     (testing "all input calendar years are present"
       (let [expected-calendar-years (->> population-dataset
-                                         ds/row-maps
                                          (map :calendar-year)
                                          (into #{}))]
         (is (= (-> result keys set)
                expected-calendar-years))))
     (testing "each calendar year contains expected academic years"
       (let [expected-academic-years (->> population-dataset
-                                         ds/row-maps
                                          (map :academic-year)
                                          (into #{}))]
         (is (every? #(= (set (keys %))
                         expected-academic-years)
                     (vals result)))))
     (testing "population count matches expectation"
-      (is (= (reduce + (map :population population))
+      (is (= (reduce + (map :population population-dataset))
              (reduce + (mapcat vals (vals result))))))))
 
 (deftest beta-params-joiners-test
   []
-  (let [population-row-maps (->> population-dataset
-                                 ds/row-maps)
-        transitions (->> transitions
-                         ds/row-maps)
-        expected-academic-years (->> population-row-maps
-                                     (map :academic-year)
-                                     (into #{}))
-        result (sut/beta-params-joiners valid-states
+  (let [result (sut/beta-params-joiners valid-states
                                         transitions
-                                        population-row-maps)]
+                                        population-dataset)]
     (testing "each val is a valid beta param"
       (is (every? (every-pred :alpha :beta) (vals result)))
       (is (every? (comp (partial every? pos?) vals) (vals result))))))

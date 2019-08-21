@@ -1,22 +1,16 @@
 (ns witan.send.states-test
-  (:require [clojure.core.matrix.dataset :as ds]
-            [clojure.test :refer [deftest testing is]]
-            [witan.send.model.input :as i]
-            [witan.send.schemas :as sc]
-            [witan.send.states :refer :all]))
-
-(defn test-inputs []
-  {:valid-states ["data/demo/data/valid-states.csv" sc/ValidSettingAcademicYears]})
+  (:require [clojure.test :refer [deftest testing is]]
+            [witan.send.model.input.valid-states :as vs]
+            [witan.send.states :refer [calculate-valid-year-settings-from-setting-academic-years
+                                       calculate-valid-mover-transitions
+                                       can-move?]]))
 
 (deftest calculate-valid-year-settings-from-setting-academic-years-test
-  (let [[path schema] (:valid-states (test-inputs))
-        data (ds/row-maps (i/csv-to-dataset path schema))]
-    (testing ""
-      (is (calculate-valid-year-settings-from-setting-academic-years data)))))
+  (testing ""
+    (is (calculate-valid-year-settings-from-setting-academic-years (vs/csv->valid-states "data/demo/data/valid-states.csv")))))
 
 (deftest can-move-test
-  (let [[path schema] (:valid-states (test-inputs))
-        data (ds/row-maps (i/csv-to-dataset path schema))
+  (let [data (vs/csv->valid-states "data/demo/data/valid-states.csv")
         valid-year-settings (calculate-valid-year-settings-from-setting-academic-years data)
         valid-transitions (calculate-valid-mover-transitions data)]
     (testing ""
