@@ -5,6 +5,29 @@
             [schema.coerce :as coerce]
             [witan.send.schemas :as sc]))
 
+(defn ->int [x]
+  (cond (int? x)
+        x
+        (double? x)
+        (int x)
+        (string? x)
+        (int (Double/valueOf x))
+        :else
+        (throw (ex-info (format "Failed to parse supplied value '%s'" x)
+                        {:value x}))))
+
+(defn ->double [x]
+  (cond (double? x)
+        x
+        (int? x)
+        (double x)
+        (string? x)
+        (Double/valueOf x)
+        :else
+        (throw (ex-info (format "Failed to parse supplied value '%s'" x)
+                        {:value x}))))
+
+
 (defn blank-row? [row]
   (every? #(= "" %) row))
 
