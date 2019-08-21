@@ -1,6 +1,5 @@
 (ns witan.send.model.prepare
-  (:require [clojure.core.matrix.dataset :as ds]
-            [clojure.string :as str]
+  (:require [clojure.string :as str]
             [witan.send.maths :as m]
             [witan.send.states :as states]
             [medley.core :as medley]
@@ -8,9 +7,7 @@
             [witan.send.check-inputs :refer [run-input-checks]]
             [clojure.set :refer [rename-keys]]
             [clojure.walk :refer [postwalk]]
-            [witan.send.report :as report]
-            [schema.core :as s]
-            [witan.send.schemas :as sc]))
+            [witan.send.report :as report]))
 
 (defn transitions-map
   [dataset]
@@ -94,17 +91,17 @@
                    :valid-states valid-states
                    :transitions original-transitions
                    :population population
-                   :cost-lookup (->> (ds/row-maps costs)
+                   :cost-lookup (->> costs
                                      (map (juxt (juxt :need :setting) :cost))
                                      (into {}))
-                   :projected-population (->> (ds/row-maps population)
+                   :projected-population (->> population
                                               (group-by :calendar-year)
                                               (medley/map-vals #(total-by-academic-year %)))}]
     (if transitions-filtered
       (merge start-map
              {:joiner-beta-params (p/beta-params-joiners validate-valid-states
                                                          transitions-filtered
-                                                         (ds/row-maps population))
+                                                         population)
               :leaver-beta-params (p/beta-params-leavers validate-valid-states transitions-filtered)
               :joiner-state-alphas (p/alpha-params-joiners validate-valid-states (transitions-map transitions-filtered))
               :mover-beta-params (p/beta-params-movers validate-valid-states valid-transitions transitions-filtered)
@@ -112,7 +109,7 @@
       (merge start-map
              {:joiner-beta-params (p/beta-params-joiners validate-valid-states
                                                          transitions
-                                                         (ds/row-maps population))
+                                                         population)
               :leaver-beta-params (p/beta-params-leavers validate-valid-states transitions)
               :joiner-state-alphas (p/alpha-params-joiners validate-valid-states (transitions-map transitions))
               :mover-beta-params (p/beta-params-movers validate-valid-states valid-transitions transitions)
@@ -191,17 +188,15 @@
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
-  [{:keys [transitions population
-           costs valid-states]}
-   {:keys [which-transitions? transitions-to-change
-           filter-transitions-from make-setting-invalid]}]
-  (run-input-checks (ds/row-maps transitions)
-                    (ds/row-maps costs)
-                    (ds/row-maps valid-states))
+  [{:keys [transitions population costs valid-states]}
+   {:keys [transitions-to-change filter-transitions-from make-setting-invalid]}]
+  (run-input-checks transitions
+                    costs
+                    valid-states)
   (let  [original-transitions transitions
-         ages (distinct (map :academic-year (ds/row-maps population)))
-         years (distinct (map :calendar-year (ds/row-maps population)))
-         initialise-validation (ds/row-maps valid-states)
+         ages (distinct (map :academic-year population))
+         years (distinct (map :calendar-year population))
+         initialise-validation valid-states
          valid-transitions (states/calculate-valid-mover-transitions
                             initialise-validation)
          valid-needs (states/calculate-valid-needs-from-setting-academic-years
@@ -212,7 +207,6 @@
                                 initialise-validation)
          valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years
                               initialise-validation)
-         transitions (ds/row-maps transitions)
          modified-transitions (when transitions-to-change
                                 (println "Using modified transition rates")
                                 (let [change (mapcat
@@ -243,8 +237,9 @@
     (if modified-transitions
       (report/info "\nUsed " (report/bold "modified") " transitions matrix\n")
       (report/info "\nUsed " (report/bold "input") " transitions matrix\n"))
-    (s/validate (sc/TransitionsMap+ valid-needs valid-settings) map-of-transitions)
-    (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) costs)
+    ;; TODO - better validation here
+    #_(s/validate (sc/TransitionsMap+ valid-needs valid-settings) map-of-transitions)
+    #_(s/validate (sc/NeedSettingCost+ valid-needs valid-settings) costs)
     {:standard-projection (prep-inputs initial-send-pop validate-valid-states
                                        valid-transitions transitions
                                        transitions-filtered population valid-states

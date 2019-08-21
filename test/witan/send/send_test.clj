@@ -1,67 +1,17 @@
 (ns witan.send.send-test
-  (:require [clojure.core.matrix.dataset :as ds]
-            [clojure.test :refer [deftest is testing]]
+  (:require [clojure.test :refer [deftest is testing]]
             [witan.send.constants :as c]
-            [witan.send.model.input :as si]
+            [witan.send.model.input.population :as population]
+            [witan.send.model.input.transitions :as transitions]
             [witan.send.model.output :as so]
             [witan.send.model.prepare :as mp]
-            [witan.send.params :as p]
-            [witan.send.schemas :as sc]))
-
-;; Use real population datasets for testing
-(def test-inputs
-  {:initial-population ["data/demo/data/population.csv" sc/PopulationDataset]
-   :initial-send-population ["data/demo/data/send-population.csv" sc/SENDPopulation]
-   :transitions ["data/demo/data/transitions.csv" sc/TransitionCounts]})
-
-(defn read-inputs [data input _ schema]
-  (let [[data-location fileschema] (get data (:witan/name input))]
-    (si/csv-to-dataset data-location fileschema)))
-
-(defn get-individual-input [key-name]
-  (read-inputs
-   test-inputs
-   {:witan/name key-name}
-   []
-   (get test-inputs key-name)))
-
-;; Helpers for tests validation
-(defmacro is-valid-result?
-  [result num-sims result-keys expected-num-rows]
-  `(do
-     (is (= ~result-keys (set (keys ~result))))
-     (when (~result-keys :age)
-       (is (= ~expected-num-rows (count (:age ~result))))
-       (is (every? number?  (:age ~result))))
-     (when (~result-keys :id)
-       (is (every? number?  (:id ~result))))
-     (when (~result-keys :state)
-       (is (every? keyword? (:state ~result))))
-     (when (~result-keys :sim-num)
-       (is (every? #(and (number? %)
-                         (<= % ~num-sims)) (:sim-num ~result))))
-     (when (~result-keys :year)
-       (is (every? #(and (number? %)
-                         (>= % ~2016)) (:year ~result))))))
-
-(defmacro is-valid-result-ds?
-  [result num-sims expected-num-rows]
-  `(do
-     (is (= #{:age :state :year :sim-num :id} (set (:column-names ~result))))
-     (is (= ~expected-num-rows (count (ds/column ~result :age))))
-     (is (every? number?  (ds/column ~result :age)))
-     (is (every? number?  (ds/column ~result :id)))
-     (is (every? keyword? (ds/column ~result :state)))
-     (is (every? #(and (number? %)
-                       (<= % ~num-sims)) (ds/column ~result :sim-num)))
-     (is (every? #(and (number? %)
-                       (>= % ~2016)) (ds/column ~result :year)))))
+            [witan.send.params :as p]))
 
 ;; Tests
 
 (deftest joiner-rate-test
-  (let [joiner-count (-> :transitions get-individual-input ds/row-maps p/calculate-joiners-per-calendar-year)
-        population-count (-> :initial-population get-individual-input ds/row-maps p/calculate-population-per-calendar-year)
+  (let [joiner-count (p/calculate-joiners-per-calendar-year (transitions/csv->transitions "data/demo/data/transitions.csv"))
+        population-count (p/calculate-joiners-per-calendar-year (population/csv->population "data/demo/data/population.csv"))
         ages (-> population-count first val keys)
         years [2013 2014 2015 2016]
         result (so/joiner-rate joiner-count population-count ages years)]
@@ -71,21 +21,24 @@
       (is (= (keys result) ages)))))
 
 (deftest mover-rate-test
-  (let [mover-count (->> :transitions get-individual-input ds/row-maps (remove (fn [{:keys [setting-1 setting-2]}]
-                                                                                 (or (= setting-1 c/non-send)
-                                                                                     (= setting-2 c/non-send)))))
+  (let [mover-count (->> (transitions/csv->transitions "data/demo/data/transitions.csv")
+                         (remove (fn [{:keys [setting-1 setting-2]}]
+                                   (or (= setting-1 c/non-send)
+                                       (= setting-2 c/non-send)))))
         result (so/mover-rate mover-count)]
     (testing "output is not empty"
       (is (not= empty? result)))))
 
 (deftest leaver-rate-test
-  (let [leaver-count (->> :transitions get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send))))
+  (let [leaver-count (->> (transitions/csv->transitions "data/demo/data/transitions.csv")
+                          (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send))))
         result (so/leaver-rate leaver-count)]
     (testing "output is not empty"
       (is (not= empty? result)))))
 
 (deftest confidence-bounds-test
-  (let [leaver-rates (->> :transitions get-individual-input ds/row-maps (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send))) so/leaver-rate)
+  (let [leaver-rates (->> (transitions/csv->transitions "data/demo/data/transitions.csv")
+                          (remove (fn [{:keys [setting-1]}] (= setting-1 c/non-send))) so/leaver-rate)
         result (so/confidence-bounds leaver-rates 2014)]
     (testing "output is not empty"
       (is (not= empty? result) ))

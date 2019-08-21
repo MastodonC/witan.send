@@ -1,12 +1,11 @@
 (ns witan.send.acceptance.utils
-  (:require [me.raynes.fs :as fs]
+  (:require [clojure.java.io :as io]
+            [clojure.data.csv :as data-csv]
+            [me.raynes.fs :as fs]
             [witan.send.main :as m]
             [witan.send.model.output :as so]
             [witan.send.send :as send]
-            [clojure.java.io :as io]
             [witan.send.validate-model :as vm]
-            [witan.send.model.input :as i]
-            [clojure.core.matrix.dataset :as ds]
             digest))
 
 (defn get-md5s [config files]
@@ -35,5 +34,9 @@
 
 (defn load-results [config file]
   (when-let [output-dir (m/get-output-dir config)]
-    (let [csv (i/load-csv (str output-dir "/" file))]
-      (ds/row-maps (ds/dataset (:column-names csv) (:columns csv))))))
+    (with-open [reader (io/reader (str output-dir "/" file))]
+      (let [[header & data] (data-csv/read-csv reader)
+            header (map keyword header)]
+        (into []
+              (map #(zipmap header %))
+              data)))))
