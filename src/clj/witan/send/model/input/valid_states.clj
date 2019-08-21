@@ -1,15 +1,13 @@
 (ns witan.send.model.input.valid-states
-  (:require [clojure.string :as s]
-            [witan.send.model.input :as i]))
+  (:require [witan.send.model.input :as i]))
 
 
 (defn csv->valid-states
   [file-name]
   (i/csv->x (map #(-> %
+                      (update :setting keyword)
                       (update :min-academic-year i/->int)
-                      (update :max-academic-year i/->int)
-                      (update :needs s/split #",")
-                      (update :setting->setting s/split #",")))
+                      (update :max-academic-year i/->int)))
             file-name))
 
 (comment
