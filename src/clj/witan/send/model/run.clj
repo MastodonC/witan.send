@@ -1,6 +1,5 @@
 (ns witan.send.model.run
-  (:require [clojure.core.matrix.dataset :as ds]
-            [redux.core :as r]
+  (:require [redux.core :as r]
             [witan.send.constants :as c]
             [witan.send.distributions :as d]
             [witan.send.maths :as m]
@@ -202,16 +201,13 @@
                 valid-states transitions] :as inputs} standard-projection
         modified-inputs (when ((complement nil?) scenario-projection)
                           (assoc scenario-projection :valid-year-settings
-                                 (->> (ds/row-maps valid-states)
-                                      (states/calculate-valid-year-settings-from-setting-academic-years))))
+                                 (states/calculate-valid-year-settings-from-setting-academic-years valid-states)))
         projected-future-pop-by-year (->> projected-population
                                           (filter (fn [[k _]] (> k seed-year)))
                                           (sort-by key))
         iterations (inc (count projected-future-pop-by-year)) ;; include current year
-        validate-valid-states (->> (ds/row-maps valid-states)
-                                   (states/calculate-valid-states-from-setting-academic-years))
-        inputs (assoc inputs :valid-year-settings (->> (ds/row-maps valid-states)
-                                                       (states/calculate-valid-year-settings-from-setting-academic-years)))
+        validate-valid-states (states/calculate-valid-states-from-setting-academic-years valid-states)
+        inputs (assoc inputs :valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years valid-states))
         projections (->> (range simulations)
                          ;; The logic is for validation compatibility only, elsewise we could just use the truth expression
                          (partition-all (if (< simulations 8)

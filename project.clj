@@ -14,11 +14,9 @@
                  [kixi/stats "0.4.3"]
                  [me.raynes/fs "1.4.6"]
                  [medley "1.0.0"]
-                 [net.mikera/core.matrix "0.55.0" :exclusions [org.clojure/clojure]] ;; going to 0.62.0 is bad
                  [org.apache.commons/commons-math3 "3.6.1"]
-                 [org.hdrhistogram/HdrHistogram "2.1.9"] ;; upgrading to 2.1.10 causes a test to fail
-                 [prismatic/schema "1.1.9"]
-                 [schema-contrib "0.1.5"]]
+                 ;; upgrading to 2.1.10 causes a test to fail
+                 [org.hdrhistogram/HdrHistogram "2.1.9"]]
   :main witan.send.main
   :aot [witan.send.main]
   :source-paths ["src/clj"]

@@ -5,16 +5,17 @@
             [clojure.string :as string]
             [witan.send.metadata :as md]
             [witan.send.model.output :as so]
-            [witan.send.schemas :as sc]
             [witan.send.send :as send]
             [witan.send.validate-model :as vm]))
 
+;; FIXME: correct when we have better validation
 (def default-schemas
-  {:schema-inputs {:settings-to-change sc/SettingsToChange
-                   :transitions sc/TransitionCounts
-                   :population sc/PopulationDataset
-                   :costs sc/NeedSettingCost
-                   :valid-states sc/ValidSettingAcademicYears}})
+  {:schema-inputs #_{:settings-to-change sc/SettingsToChange
+                     :transitions sc/TransitionCounts
+                     :population sc/PopulationDataset
+                     :costs sc/NeedSettingCost
+                     :valid-states sc/ValidSettingAcademicYears}
+   {}})
 
 (defn read-config
   "Read a config file and merge it with schema inputs"
