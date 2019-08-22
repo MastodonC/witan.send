@@ -73,35 +73,6 @@
         (is (= (find-in-map checking-mover-exp :ay "11")
                (find-in-map scenario-mover-exp :ay "11")))))))
 
-
-(comment
-
-  ;; find out why the above test is failing
-  ;; I think I've got waaaay to many invalid states which makes me think I'm not passing through the right data somewhere.
-
-  (let [config (m/read-config "data/demo/config.edn")
-        config-splicing (m/read-config "data/demo/config_splicing.edn")
-        config-splicing-for-checking (m/read-config "data/demo/config_for_checking_splicing.edn")]
-
-    (run! au/run-model-for-test [config config-splicing])
-
-    (let [load-results-triple (fn [f] [(au/load-results config f),
-                                       (au/load-results config-splicing f)
-                                       (au/load-results config-splicing-for-checking f)])
-          [standard-joiner-exp, scenario-joiner-exp, checking-joiner-exp]
-          (load-results-triple "joiner_beta_expectations.csv")
-          [standard-leaver-exp, scenario-leaver-exp, checking-leaver-exp]
-          (load-results-triple "leaver_beta_expectations.csv")
-          [standard-mover-exp, scenario-mover-exp, checking-mover-exp]
-          (load-results-triple  "mover_beta_expectations.csv")]
-
-      [[standard-joiner-exp, scenario-joiner-exp, checking-joiner-exp]
-       [standard-leaver-exp, scenario-leaver-exp, checking-leaver-exp]
-       [standard-mover-exp, scenario-mover-exp, checking-mover-exp]]
-      ))
-
-  )
-
 (comment
 
   (def conf (m/read-config "data/demo/config.edn"))

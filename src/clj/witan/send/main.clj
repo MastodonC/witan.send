@@ -8,6 +8,7 @@
             [witan.send.send :as send]
             [witan.send.validate-model :as vm]))
 
+;; FIXME: correct when we have better validation
 (def default-schemas
   {:schema-inputs #_{:settings-to-change sc/SettingsToChange
                      :transitions sc/TransitionCounts

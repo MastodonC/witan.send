@@ -30,6 +30,7 @@
          ]
      (-> (p/prepare-send-inputs input (:transition-parameters config))
          (r/run-send-model (:projection-parameters config)))
+     ;; FIXME: Put in appropriate validation
      #_(if (= true validate-input)
          (-> (p/prepare-send-inputs input (:transition-parameters config))
              (r/run-send-model (:projection-parameters config)))

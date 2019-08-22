@@ -15,8 +15,8 @@
                  [me.raynes/fs "1.4.6"]
                  [medley "1.0.0"]
                  [org.apache.commons/commons-math3 "3.6.1"]
-                 [org.hdrhistogram/HdrHistogram "2.1.9"] ;; upgrading to 2.1.10 causes a test to fail
-                 ]
+                 ;; upgrading to 2.1.10 causes a test to fail
+                 [org.hdrhistogram/HdrHistogram "2.1.9"]]
   :main witan.send.main
   :aot [witan.send.main]
   :source-paths ["src/clj"]
