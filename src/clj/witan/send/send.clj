@@ -11,10 +11,10 @@
 (defn build-input-datasets
   "Build a map of the datasets to use for input"
   [project-dir {:keys [costs population settings-to-change transitions valid-states] :as file-inputs} schema-inputs]
-  (let [input-datasets {:costs (wic/csv->costs (str project-dir "/" costs))
-                        :population (wip/csv->population (str project-dir "/" population))
-                        :transitions (wit/csv->transitions (str project-dir "/" transitions))
-                        :valid-states (wivs/csv->valid-states (str project-dir "/" valid-states))}]
+  (let [input-datasets {:costs (wic/csv->costs costs)
+                        :population (wip/csv->population population)
+                        :transitions (wit/csv->transitions transitions)
+                        :valid-states (wivs/csv->valid-states valid-states)}]
     (if settings-to-change
       (assoc input-datasets :settings-to-change (wistc/csv->settings-to-change (str project-dir "/" settings-to-change)))
       input-datasets)))

@@ -28,8 +28,8 @@
                 {:output-parameters {:project-dir project-dir}})))
 
 (defn get-output-dir [config]
-  (string/join "/" [(:project-dir config)
-                    (get-in config [:output-parameters :output-dir])]))
+  (get-in config [:output-parameters :output-dir])#_(string/join "/" [(:project-dir config)
+                                                                      (get-in config [:output-parameters :output-dir])]))
 
 (defn save-runtime-config
   [config]

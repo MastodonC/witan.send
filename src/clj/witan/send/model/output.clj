@@ -86,11 +86,11 @@
 
 (defn output-transitions-edn
   [dir filename projections]
-  (binding [*print-length* nil] (spit (str dir "/" filename ".edn") (pr-str projections))))
+  (binding [*print-length* nil] (spit (str filename ".edn") (pr-str projections))))
 
 (defn output-transitions-csv
   [dir filename projections simulations]
-  (with-open [writer (io/writer (io/file (str dir "/" filename ".csv")))]
+  (with-open [writer (io/writer (io/file (str filename ".csv")))]
     (let [columns [:calendar-year :academic-year-1 :setting-1 :need-1 :academic-year-2 :setting-2 :need-2 :avg-number-of]
           headers (mapv name columns)
           parse-need-setting #(map name ((comp reverse states/split-need-setting) %))
@@ -232,9 +232,9 @@
                                   keys
                                   (map #(vec (drop 1 %)))
                                   distinct)
-        dir (str project-dir "/" output-dir)]
-    (if (not (.isDirectory (io/file dir)))
-      (.mkdir (io/file dir)))
+        dir (str output-dir)]
+    (if (not (.isDirectory (io/file output-dir)))
+      (.mkdir (io/file output-dir)))
     (when (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
       (report/info (report/bold "Not every historic transition present in projection!") "Consider checking valid state input.\n"))
     (when run-outputs
@@ -265,9 +265,9 @@
         (report/info "First year of input data: " (report/bold (first years)))
         (report/info "Final year of input data: " (report/bold (inc (last years))))
         (report/info "Final year of projection: " (report/bold (+ (last years) (count (map :total-in-send send-output)))))
-        (output-transitions-edn dir "transitions" projection)
-        (output-transitions-csv dir "transitions" projection simulations)
-        (with-open [writer (io/writer (io/file (str dir "/Output_State.csv")))]
+        (output-transitions-edn output-dir "transitions" projection)
+        (output-transitions-csv output-dir "transitions" projection simulations)
+        (with-open [writer (io/writer (io/file (str output-dir "/Output_State.csv")))]
           (let [columns [:calendar-year :academic-year :need-setting :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
                            (map (fn [[[academic-year need-setting] stats]]
@@ -277,7 +277,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file (str dir "/Output_State_pop_only.csv")))]
+        (with-open [writer (io/writer (io/file (str output-dir "/Output_State_pop_only.csv")))]
           (let [columns [:calendar-year :academic-year :need-setting :mean]
                 output (->> (mapcat (fn [output year]
                                       (map (fn [[[academic-year need-setting] stats]]
@@ -291,7 +291,7 @@
                             (concat [(map name [:calendar-year :academic-year :need :setting :population])])
                             (mapv flatten))]
             (csv/write-csv writer output)))
-        (with-open [writer (io/writer (io/file (str dir "/Output_AY.csv")))]
+        (with-open [writer (io/writer (io/file (str output-dir "/Output_AY.csv")))]
           (let [columns [:calendar-year :academic-year :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
                            (map (fn [[academic-year stats]]
@@ -301,7 +301,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file (str dir "/Output_Need.csv")))]
+        (with-open [writer (io/writer (io/file (str output-dir "/Output_Need.csv")))]
           (let [columns [:calendar-year :need :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
                            (map (fn [[need stats]]
@@ -311,7 +311,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file (str dir "/Output_Setting.csv")))]
+        (with-open [writer (io/writer (io/file (str output-dir "/Output_Setting.csv")))]
           (let [columns [:calendar-year :setting :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
                            (map (fn [[setting stats]]
@@ -321,7 +321,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file (str dir "/Output_Count.csv")))]
+        (with-open [writer (io/writer (io/file (str output-dir "/Output_Count.csv")))]
           (let [columns [:calendar-year :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (map (fn [stats year]
                         (-> (medley/map-vals m/round stats)
@@ -330,7 +330,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file (str dir "/Output_Cost.csv")))]
+        (with-open [writer (io/writer (io/file (str output-dir "/Output_Cost.csv")))]
           (let [columns [:calendar-year :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (map (fn [stats year]
                         (-> (medley/map-vals m/round stats)
@@ -339,7 +339,7 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file (str dir "/Output_AY_Group.csv")))]
+        (with-open [writer (io/writer (io/file (str output-dir "/Output_AY_Group.csv")))]
           (let [columns [:calendar-year :ay-group :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]
                            (map (fn [[ay-group stats]]
@@ -349,44 +349,44 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (output-beta-expectations dir "joiner_beta_expectations" (standard-projection :joiner-beta-params)
+        (output-beta-expectations output-dir "joiner_beta_expectations" (standard-projection :joiner-beta-params)
                                   [:ay :alpha :beta :expectation])
-        (output-beta-expectations dir "mover_beta_expectations" (standard-projection :mover-beta-params))
-        (output-beta-expectations dir "leaver_beta_expectations" (standard-projection :leaver-beta-params))
-        (output-dirichlet-expectations dir "movers_dirichlet_expectations" (standard-projection :mover-state-alphas))
-        (output-dirichlet-expectations dir "joiners_dirichlet_expectations" (standard-projection :joiner-state-alphas)
+        (output-beta-expectations output-dir "mover_beta_expectations" (standard-projection :mover-beta-params))
+        (output-beta-expectations output-dir "leaver_beta_expectations" (standard-projection :leaver-beta-params))
+        (output-dirichlet-expectations output-dir "movers_dirichlet_expectations" (standard-projection :mover-state-alphas))
+        (output-dirichlet-expectations output-dir "joiners_dirichlet_expectations" (standard-projection :joiner-state-alphas)
                                        [:ay :need :setting :expectation :normalisation-constant :alpha])
-        (output-initial-population-state dir "initial_population_state" (standard-projection :population-by-state))
+        (output-initial-population-state output-dir "initial_population_state" (standard-projection :population-by-state))
         (if scenario-projection
           (do
-            (output-beta-expectations dir "scenario_joiner_beta_expectations" (scenario-projection :joiner-beta-params)
+            (output-beta-expectations output-dir "scenario_joiner_beta_expectations" (scenario-projection :joiner-beta-params)
                                       [:ay :alpha :beta :expectation])
-            (output-beta-expectations dir "scenario_mover_beta_expectations" (scenario-projection :mover-beta-params))
-            (output-beta-expectations dir "scenario_leaver_beta_expectations" (scenario-projection :leaver-beta-params))
-            (output-dirichlet-expectations dir "scenario_movers_dirichlet_expectations" (scenario-projection :mover-state-alphas))
-            (output-dirichlet-expectations dir "scenario_joiners_dirichlet_expectations" (scenario-projection :joiner-state-alphas)
+            (output-beta-expectations output-dir "scenario_mover_beta_expectations" (scenario-projection :mover-beta-params))
+            (output-beta-expectations output-dir "scenario_leaver_beta_expectations" (scenario-projection :leaver-beta-params))
+            (output-dirichlet-expectations output-dir "scenario_movers_dirichlet_expectations" (scenario-projection :mover-state-alphas))
+            (output-dirichlet-expectations output-dir "scenario_joiners_dirichlet_expectations" (scenario-projection :joiner-state-alphas)
                                            [:ay :need :setting :expectation :normalisation-constant :alpha])
-            (output-initial-population-state dir "scenario_initial_population_state" (standard-projection :population-by-state))))
+            (output-initial-population-state output-dir "scenario_initial_population_state" (standard-projection :population-by-state))))
 
         (when run-charts
-          (with-open [writer (io/writer (io/file (str dir "/historic-data.csv")))]
+          (with-open [writer (io/writer (io/file (str output-dir "/historic-data.csv")))]
             (let [columns [:calendar-year :setting-1 :need-1 :academic-year-1 :setting-2 :need-2]
                   headers (mapv name columns)
                   rows (mapv #(mapv % columns) transitions)]
               (csv/write-csv writer (into [headers] rows))))
-          (with-open [writer (io/writer (io/file (str dir "/valid-settings.csv")))]
+          (with-open [writer (io/writer (io/file (str output-dir "/valid-settings.csv")))]
             (csv/write-csv writer valid-settings))
-          (with-open [writer (io/writer (io/file (str dir "/joiner-rates.csv")))]
+          (with-open [writer (io/writer (io/file (str output-dir "/joiner-rates.csv")))]
             (let [columns (into [] (keys joiner-ribbon-data))
                   headers (mapv name columns)
                   rows (ribbon-data-rows joiner-ribbon-data)]
               (csv/write-csv writer (into [headers] rows))))
-          (with-open [writer (io/writer (io/file (str dir "/leaver-rates.csv")))]
+          (with-open [writer (io/writer (io/file (str output-dir "/leaver-rates.csv")))]
             (let [columns (into [] (keys leaver-ribbon-data))
                   headers (mapv name columns)
                   rows (ribbon-data-rows leaver-ribbon-data)]
               (csv/write-csv writer (into [headers] rows))))
-          (with-open [writer (io/writer (io/file (str dir "/mover-rates.csv")))]
+          (with-open [writer (io/writer (io/file (str output-dir "/mover-rates.csv")))]
             (let [columns (into [] (keys mover-ribbon-data))
                   headers (mapv name columns)
                   rows (ribbon-data-rows mover-ribbon-data)]
@@ -394,11 +394,11 @@
           (println "Producing charts...")
           (with-open [in (io/input-stream (io/resource "send-charts.R"))]
             (io/copy in (io/file (System/getProperty "java.io.tmpdir") "send-charts.R")))
-          (r-plots dir (str project-dir "/" population-file)
+          (r-plots output-dir (str project-dir "/" population-file)
                    settings-to-exclude-in-charts
                    use-confidence-bound-or-interval)
           (when-not keep-temp-files?
-            (run! #(io/delete-file (str dir "/" %) :quiet)
+            (run! #(io/delete-file (str output-dir "/" %) :quiet)
                   ["historic-data.csv" "valid-settings.csv" "joiner-rates.csv"
                    "leaver-rates.csv" "mover-rates.csv"])))))
-    (report/write-send-report (str dir "/SEND_Log.md"))))
+    (report/write-send-report (str output-dir "/SEND_Log.md"))))
