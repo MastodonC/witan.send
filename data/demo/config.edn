@@ -1,7 +1,7 @@
-{:file-inputs {:transitions "data/transitions.csv"
-               :population "data/population.csv"
-               :costs "data/costs.csv"
-               :valid-states "data/valid-states.csv"}
+{:file-inputs {:transitions "data/demo/data/transitions.csv"
+               :population "data/demo/data/population.csv"
+               :costs "data/demo/data/costs.csv"
+               :valid-states "data/demo/data/valid-states.csv"}
 
  :transition-parameters {:filter-transitions-from nil
                          :which-transitions? nil

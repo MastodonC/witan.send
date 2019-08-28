@@ -1,7 +1,7 @@
-{:file-inputs {:transitions "data/transitions.csv"
-               :population "data/population.csv"
-               :costs "data/costs.csv"
-               :valid-states "data/valid-states.csv"}
+{:file-inputs {:transitions "data/demo/data/transitions.csv"
+               :population "data/demo/data/population.csv"
+               :costs "data/demo/data/costs.csv"
+               :valid-states "data/demo/data/valid-states.csv"}
 
  :transition-parameters {:filter-transitions-from {:calendar-academic {:< 2016 :>= 11}}
                          :which-transitions? nil
@@ -14,7 +14,7 @@
 
  :output-parameters {:run-outputs true
                      :run-charts false
-                     :output-dir "results-spliced"
+                     :output-dir "data/demo/results-spliced"
                      :settings-to-exclude-in-charts nil
                      :keep-temp-files? false
                      :use-confidence-bound-or-interval nil
