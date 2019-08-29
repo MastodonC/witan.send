@@ -20,7 +20,8 @@
 (defn read-config
   "Read a config file and merge it with schema inputs"
   [config-path]
-  (let [project-dir (.getParent (java.io.File. config-path))]
+  (let [project-dir (or (.getParent (java.io.File. config-path))
+                        (System/getProperty "user.dir"))]
     (merge-with merge
                 (aero/read-config config-path)
                 default-schemas
