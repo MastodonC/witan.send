@@ -7,8 +7,8 @@
   "Static settings for all runs with different configs (settings in inputs will be overwritten)"
   {:file-inputs {:transitions "data/transitions.csv"
                  :population "data/population.csv"
-                 :costs "data/need-setting-costs.csv"
-                 :valid-states "data/valid-setting-academic-years.csv"}
+                 :costs "data/costs.csv"
+                 :valid-states "data/valid-states.csv"}
    :transition-parameters {:filter-transitions-from nil
                            :which-transitions? nil
                            :splice-ncy nil
