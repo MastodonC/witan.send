@@ -5,17 +5,17 @@
 
 (def default-config
   "Static settings for all runs with different configs (settings in inputs will be overwritten)"
-  {:file-inputs {:transitions "data/transitions.csv"
+  {:project-dir "data/demo/"
+   :file-inputs {:transitions "data/transitions.csv"
                  :population "data/population.csv"
                  :costs "data/costs.csv"
                  :valid-states "data/valid-states.csv"}
    :transition-parameters {:filter-transitions-from nil
-                           :which-transitions? nil
-                           :splice-ncy nil
-                           :modify-transition-by nil
-                           :modify-transitions-from nil}
+                           :modify-transitions-from nil
+                           :transitions-to-change nil
+                           }
    :projection-parameters {:random-seed 50
-                           :simulations 1000
+                           :simulations 10
                            :seed-year 2017}
    :output-parameters {:run-outputs true
                        :run-charts true
@@ -53,6 +53,13 @@
   [acc n]
   (assoc-in acc (subvec n 0 (dec (count n))) (last n)))
 
+(defn generate-configs [inputs config]
+  (->> (generate-params inputs)
+       (map #(reduce update-nested-map config %))
+       (map #(merge-with merge %
+                         main/default-schemas
+                         {:output-parameters {:project-dir (:project-dir config)}}))))
+
 (defn run-multi-configs
   "Main function to run multi configs. Edit default-config to specify consistent config settings.
 
@@ -61,11 +68,7 @@
     project-dir: full path to project (dir which contains file-inputs in default-config)
 
   Returns nil. Model results for each run are output to unique folder in project-dir."
-  [inputs project-dir]
-  (let [configs (->> (generate-params inputs)
-                     (map #(reduce update-nested-map default-config %))
-                     (map #(merge-with merge %
-                                       main/default-schemas
-                                       {:project-dir project-dir}
-                                       {:output-parameters {:project-dir project-dir}})))]
-    (map main/run-recorded-send configs)))
+  ([inputs config]
+   (map main/run-recorded-send (generate-configs inputs config)))
+  ([inputs]
+   (run-multi-configs inputs default-config)))
