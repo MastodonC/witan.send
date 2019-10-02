@@ -21,6 +21,23 @@
                       (update :population i/->int)))
             filepath))
 
+(defn get-target-pop [config]
+  (let [state (-> (get-in config [:transition-parameters :transitions-to-change])
+                  first
+                  (clojure.set/rename-keys {:setting-2 :setting :need-2 :need :academic-year-2 :ay})
+                  (select-keys [:setting :need]))
+        out-dir (:output-dir (:output-parameters config))
+        state-pop (str (System/getProperty "user.home")
+                       "/code/witan.send.afc/"
+                       out-dir
+                       "/Output_State_pop_only.csv")
+        results (filter #(and (= (:setting state) (:setting %))
+                              (= (:need state) (:need %)))
+                        (csv->state-pop state-pop))]
+    (map #(merge (assoc {} :year (key %))
+                 (apply merge-with + (map (fn [m] (select-keys m [:population])) (val %))))
+         (group-by :calendar-year results))))
+
 (defn target-results [m start end step base-config target]
   "Takes a map of keys partially matching a transition, a start, end and step range to modify
    the transition by, a template config and a map containing a target population and year"
