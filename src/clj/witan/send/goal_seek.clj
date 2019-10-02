@@ -38,6 +38,9 @@
                  (apply merge-with + (map (fn [m] (select-keys m [:population])) (val %))))
          (group-by :calendar-year results))))
 
+(defn update-results-path [config]
+  (assoc-in config [:output-parameters :output-dir] (str "results/" (get-in config [:output-parameters :output-dir]))))
+
 (defn target-results [m start end step base-config target]
   "Takes a map of keys partially matching a transition, a start, end and step range to modify
    the transition by, a template config and a map containing a target population and year"
