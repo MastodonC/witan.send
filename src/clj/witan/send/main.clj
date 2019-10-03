@@ -6,7 +6,8 @@
             [witan.send.metadata :as md]
             [witan.send.model.output :as so]
             [witan.send.send :as send]
-            [witan.send.validate-model :as vm]))
+            [witan.send.validate-model :as vm]
+            [clojure.java.io :as io]))
 
 ;; FIXME: correct when we have better validation
 (def default-schemas
@@ -20,7 +21,7 @@
 (defn read-config
   "Read a config file and merge it with schema inputs"
   [config-path]
-  (let [project-dir (or (.getParent (java.io.File. config-path))
+  (let [project-dir (or (.getParent (io/as-file config-path))
                         (System/getProperty "user.dir"))]
     (merge-with merge
                 (aero/read-config config-path)

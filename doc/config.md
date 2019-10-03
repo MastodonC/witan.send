@@ -60,7 +60,7 @@ Expects a calendar year, provided as an integer, to start modifying transitions 
 Expects a vector of maps, with each map corresponding to a different type of transition to be modified and how to be modified. Each map can contain any of the following keys corresponding to entities within a transition to select to be modified:
 
 * `:setting-1`
-* `:setting-2
+* `:setting-2`
 * `:need-1`
 * `:need-2`
 * `:academic-year-1`
