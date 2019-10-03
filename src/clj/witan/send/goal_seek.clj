@@ -27,8 +27,8 @@
                   (clojure.set/rename-keys {:setting-2 :setting :need-2 :need :academic-year-2 :ay})
                   (select-keys [:setting :need]))
         out-dir (:output-dir (:output-parameters config))
-        state-pop (str (System/getProperty "user.home")
-                       "/code/witan.send.afc/"
+        state-pop (str (:project-dir config)
+                       "/"
                        out-dir
                        "/Output_State_pop_only.csv")
         results (filter #(and (= (:setting state) (:setting %))
