@@ -60,14 +60,13 @@
    the transition by, a template config and a map containing a target population range and year
 
    e.g. {:year 2019 :population [6 12]}"
-  (let [configs (map update-results-path (mc/generate-configs (create-transition-modifier-seq m start end step) base-config))]
-    (loop [n 0]
-      (let [config (nth configs n)
-            result (do (main/run-recorded-send config)
-                       (get-target-pop config))
-            current-pop (get-current-pop (:year target) result)
-            diff (pop-diff-by-year (:year target) result)]
-        (if (target-pop-exceeded? current-pop (:population target))
-          (println "Population already exceeds target population")
-          (when-not (within-pop-range? (:population target) diff)
-            (recur (+ n 1))))))))
+  (loop [configs (map update-results-path (mc/generate-configs (create-transition-modifier-seq m start end step) base-config))]
+    (let [[config & rest-configs] configs
+          result (do (main/run-recorded-send config)
+                     (get-target-pop config))
+          current-pop (get-current-pop (:year target) result)
+          diff (pop-diff-by-year (:year target) result)]
+      (if (target-pop-exceeded? current-pop (:population target))
+        (println "Population already exceeds target population")
+        (when-not (within-pop-range? (:population target) diff)
+          (recur rest-configs))))))
