@@ -41,6 +41,20 @@
 (defn update-results-path [config]
   (assoc-in config [:output-parameters :output-dir] (str "results/" (get-in config [:output-parameters :output-dir]))))
 
+(defn get-current-pop [year result]
+  (:population (first (filter #(= year (:year %)) result))))
+
+(defn pop-diff-by-year [year result]
+  (- (get-current-pop year result)
+     (get-current-pop (- year 1) result)))
+
+(defn within-pop-range? [pop diff]
+  (and (<= (first pop) diff)
+       (>= (second pop) diff)))
+
+(defn target-pop-exceeded? [pop target-pop]
+  (> pop (apply max target-pop)))
+
 (defn target-results [m start end step base-config target]
   "Takes a map of keys partially matching a transition, a start, end and step range to modify
    the transition by, a template config and a map containing a target population range and year
@@ -51,9 +65,9 @@
       (let [config (nth configs n)
             result (do (main/run-recorded-send config)
                        (get-target-pop config))
-            diff (- (:population (first (filter #(= (:year target) (:year %)) result)))
-                    (:population (first (filter #(= (- (:year target) 1) (:year %)) result))))]
-        (when-not (and (<= (first (:population target)) diff)
-                       (>= (second (:population target)) diff))
-          (recur (+ n 1)))))))
-
+            current-pop (get-current-pop (:year target) result)
+            diff (pop-diff-by-year (:year target) result)]
+        (if (target-pop-exceeded? current-pop (:population target))
+          (println "Population already exceeds target population")
+          (when-not (within-pop-range? (:population target) diff)
+            (recur (+ n 1))))))))
