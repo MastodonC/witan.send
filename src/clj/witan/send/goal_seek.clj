@@ -73,6 +73,6 @@
           current-pop (get-current-pop (:year target) result)
           diff (pop-diff-by-year (:year target) result)]
       (if (target-pop-exceeded? current-pop (:population target))
-        (println "Population already exceeds target population")
+        (println "Population exceeds target population")
         (when-not (within-pop-range? (:population target) diff)
           (recur rest-configs))))))
