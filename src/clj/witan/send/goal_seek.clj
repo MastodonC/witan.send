@@ -37,7 +37,8 @@
 
 (defn get-target-pop [[state state-pop]]
   "Takes a vector with a state to find (e.g. {:setting :SFSS, :need :ASD}) and filepath
-  for a Output_State_pop_only.csv file to return summed population over calender years"
+  for a Output_State_pop_only.csv file to return summed populations sorted by calender year
+  for ease of reading in REPL"
   (->> (csv->state-pop state-pop)
        (filter #(and (= (:setting state) (:setting %))
                      (= (:need state) (:need %))))
