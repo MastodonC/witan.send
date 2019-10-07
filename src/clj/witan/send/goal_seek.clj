@@ -74,6 +74,11 @@
           result (do (main/run-recorded-send config)
                      (get-target-pop (state-pop config)))
           current-pop (get-current-pop (:year target) result)
+          _ (println (->> config
+                          (get-in [:transition-parameters :transitions-to-change])
+                          first
+                          :modify-transition-by))
+          _ (println result)
           diff (pop-diff-by-year (:year target) result)]
       (if (target-pop-exceeded? current-pop (:population target))
         (println "Population exceeds target population")
