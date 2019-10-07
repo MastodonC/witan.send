@@ -38,11 +38,13 @@
 (defn get-target-pop [[state state-pop]]
   "Takes a vector with a state to find (e.g. {:setting :SFSS, :need :ASD}) and filepath
   for a Output_State_pop_only.csv file to return summed population over calender years"
-  (map #(merge (assoc {} :year (key %))
-               (apply merge-with + (map (fn [m] (select-keys m [:population])) (val %))))
-       (group-by :calendar-year (filter #(and (= (:setting state) (:setting %))
-                                              (= (:need state) (:need %)))
-                                        (csv->state-pop state-pop)))))
+  (->> (csv->state-pop state-pop)
+       (filter #(and (= (:setting state) (:setting %))
+                     (= (:need state) (:need %))))
+       (group-by :calendar-year)
+       (map #(merge (assoc {} :year (key %))
+                    (apply merge-with + (map (fn [m] (select-keys m [:population])) (val %)))))
+       (sort-by :year)))
 
 (defn update-results-path [config]
   (assoc-in config [:output-parameters :output-dir] (str "results/" (get-in config [:output-parameters :output-dir]))))
