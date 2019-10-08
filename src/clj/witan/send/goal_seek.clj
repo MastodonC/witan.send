@@ -1,7 +1,8 @@
 (ns witan.send.goal-seek
   (:require [witan.send.multi-config :as mc]
             [witan.send.main :as main]
-            [witan.send.model.input :as i]))
+            [witan.send.model.input :as i]
+            [witan.send.model.prepare :as p]))
 
 (defn update-transition-modifier [m n]
   "Takes a map of keys partially matching a transition and a new modifier"
@@ -40,8 +41,7 @@
   for a Output_State_pop_only.csv file to return summed populations sorted by calender year
   for ease of reading in REPL"
   (->> (csv->state-pop state-pop)
-       (filter #(and (= (:setting state) (:setting %))
-                     (= (:need state) (:need %))))
+       (filter #(every? identity (p/test-predicates % state))) ;; need something to build predicates
        (group-by :calendar-year)
        (map #(merge (assoc {} :year (key %))
                     (apply merge-with + (map (fn [m] (select-keys m [:population])) (val %)))))
