@@ -184,6 +184,8 @@
                                             (op2 (:need-2 %) val2)))))))
 
 (defn test-predicates [data pred-map]
+  "data can be any map, while pred-map must be a sequence of key-value pairs
+   matching the key to filter on and the value to filter by"
   (map (fn [[k v]] (= (k data) v)) pred-map))
 
 (defn prepare-send-inputs
