@@ -186,7 +186,9 @@
 (defn test-predicates [data pred-map]
   "data can be any map, while pred-map must be a sequence of key-value pairs
    matching the key to filter on and the value to filter by"
-  (map (fn [[k v]] (= (k data) v)) pred-map))
+  (map (fn [[k v]] (if (vector? v)
+                     (true? (some #(= (k data) %) v))
+                     (= (k data) v))) pred-map))
 
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
