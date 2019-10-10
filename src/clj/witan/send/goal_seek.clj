@@ -51,7 +51,9 @@
   (assoc-in config [:output-parameters :output-dir] (str "results/" (get-in config [:output-parameters :output-dir]))))
 
 (defn get-current-pop [year result]
-  (:population (first (filter #(= year (:year %)) result))))
+  (if-let [out (:population (first (filter #(= year (:year %)) result)))]
+    out
+    0))
 
 (defn pop-diff-by-year [year result]
   (- (get-current-pop year result)
