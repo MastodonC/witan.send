@@ -353,9 +353,9 @@
                                   [:ay :alpha :beta :expectation])
         (output-beta-expectations dir "mover_beta_expectations" (standard-projection :mover-beta-params))
         (output-beta-expectations dir "leaver_beta_expectations" (standard-projection :leaver-beta-params))
-        (output-dirichlet-expectations dir "movers_dirichlet_expectations" (standard-projection :mover-state-alphas))
-        (output-dirichlet-expectations dir "joiners_dirichlet_expectations" (standard-projection :joiner-state-alphas)
-                                       [:ay :need :setting :expectation :normalisation-constant :alpha])
+        #_(output-dirichlet-expectations dir "movers_dirichlet_expectations" (standard-projection :mover-state-alphas))
+        #_(output-dirichlet-expectations dir "joiners_dirichlet_expectations" (standard-projection :joiner-state-alphas)
+                                         [:ay :need :setting :expectation :normalisation-constant :alpha])
         (output-initial-population-state dir "initial_population_state" (standard-projection :population-by-state))
         (if scenario-projection
           (do
