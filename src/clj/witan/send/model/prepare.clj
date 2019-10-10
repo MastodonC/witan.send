@@ -190,6 +190,47 @@
                      (true? (some #(= (k data) %) v))
                      (= (k data) v))) pred-map))
 
+(defn does-not-contain? [coll k]
+  ((complement contains?) coll k))
+
+(defn academic-years? [pred-map ages]
+  (let [result (map #(does-not-contain? pred-map %) [:academic-year-1 :academic-year-2])]
+    (cond
+      (= [false false] result)
+      (let [age (rand-nth ages)]
+        (-> pred-map
+            (assoc :academic-year-1 age)
+            (assoc :academic-year-2 (+ age 1))))
+
+      (= [false true] result)
+      (let [age (rand-nth (:academic-year-1 pred-map))]
+        (-> pred-map
+            (assoc :academic-year-1 age)
+            (assoc :academic-year-2 (+ age 1))))
+
+      (= [true false] result)
+      (let [age (rand-nth (:academic-year-2 pred-map))]
+        (-> pred-map
+            (assoc :academic-year-2 age)
+            (assoc :academic-year-1 (- age 1)))))))
+
+(defn incomplete-transition [pred-map ages year]
+  (cond-> pred-map
+    (does-not-contain? pred-map :setting-1) (assoc :setting-1 :NONSEND)
+    (does-not-contain? pred-map :need-1) (assoc :need-1 :NONSEND)
+    (does-not-contain? pred-map :setting-2) (assoc :setting-2 :NONSEND)
+    (does-not-contain? pred-map :need-2) (assoc :need-2 :NONSEND)
+    (does-not-contain? pred-map :calendar-year) (assoc :calendar-year year)))
+
+(defn filter-transitions [pred-map transitions ages year]
+  (let [result (filter (fn [t] (every? identity (test-predicates t pred-map))) transitions)]
+    (if result
+      (-> pred-map
+          (incomplete-transition ages year)
+          (academic-years? ages)
+          vector)
+      result)))
+
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
@@ -207,9 +248,9 @@
          modified-transitions (when transitions-to-change
                                 (println "Using modified transition rates")
                                 (let [change (mapcat
-                                              #(let [pred-map (dissoc % :modify-transition-by)]
-                                                 (->> transitions
-                                                      (filter (fn [t] (every? identity (test-predicates t pred-map))))
+                                              #(let [pred-map (dissoc % :modify-transition-by)
+                                                     filtered-trans (filter-transitions pred-map transitions ages (apply max (map :calendar-year transitions)))]
+                                                 (->> filtered-trans
                                                       full-transitions-map
                                                       (map (fn [[k v]] [k (* v (:modify-transition-by %))]))))
                                               transitions-to-change)
