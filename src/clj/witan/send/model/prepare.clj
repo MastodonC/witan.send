@@ -225,11 +225,11 @@
 (defn filter-transitions [pred-map transitions ages year]
   (let [result (filter (fn [t] (every? identity (test-predicates t pred-map))) transitions)]
     (if result
+      result
       (-> pred-map
           (incomplete-transition ages year)
           (academic-years? ages)
-          vector)
-      result)))
+          vector))))
 
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
