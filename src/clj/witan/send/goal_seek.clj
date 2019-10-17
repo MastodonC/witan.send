@@ -67,6 +67,30 @@
 (defn target-pop-exceeded? [pop target-pop]
   (> pop (apply max target-pop)))
 
+(defn assoc-transition-params [config m]
+  (let [state (create-transition-modifier-seq m 1 2 1)]
+    (-> config
+        (assoc-in (first (first state))
+                  (first (second (first state)))))))
+
+(defn target-result [config target-year & modifier]
+  (let [result (do (main/run-recorded-send config)
+                   (get-target-pop (state-pop config)))
+        current-pop (get-current-pop target-year result)
+        modifier (if modifier
+                   modifier
+                   (-> config
+                       (get-in [:transition-parameters :transitions-to-change])
+                       first
+                       :modify-transition-by))
+        achieved-pop (->> result
+                          (filter #(= (:year %) target-year))
+                          first
+                          :population)]
+    (do (println "Modifier:" modifier)
+        (println "Population:" achieved-pop))
+    [result current-pop]))
+
 (defn target-results [m base-config target & step]
   "Takes a map of keys partially matching a transition, a baseline config to use as a template,
    a map containing a target population range and year, e.g. {:year 2019 :population 6} and an
@@ -74,12 +98,10 @@
   (let [step (if step
                step
                0.1)
-        state (create-transition-modifier-seq m 1 2 1)
-        baseline-pop (->> (-> base-config
-                              (assoc-in (first (first state))
-                                        (first (second (first state))))
-                              state-pop
-                              get-target-pop)
+        baseline-pop (->> m
+                          (assoc-transition-params base-config)
+                          state-pop
+                          get-target-pop
                           (filter #(= (:year %) (:year target)))
                           first
                           :population)
@@ -87,26 +109,16 @@
         target-year (:year target)
         target-pop-range (vector (- target-pop 1) (+ target-pop 1))
         initial-modifier (math/round (/ target-pop baseline-pop))]
-    (loop [configs (map update-results-path (-> (create-transition-modifier-seq m
-                                                                                (- initial-modifier 1)
-                                                                                (+ initial-modifier 1) step)
-                                                (mc/generate-configs base-config)))]
+    (loop [configs (map update-results-path
+                        (-> (create-transition-modifier-seq
+                             m
+                             (- initial-modifier 1)
+                             (+ initial-modifier 1) step)
+                            (mc/generate-configs base-config)))]
       (let [[config & rest-configs] configs
-            result (do (main/run-recorded-send config)
-                       (get-target-pop (state-pop config)))
-            current-pop (get-current-pop (:year target) result)
-            modifier (-> config
-                         (get-in [:transition-parameters :transitions-to-change])
-                         first
-                         :modify-transition-by)
-            achieved-pop (->> result
-                              (filter #(= (:year %) target-year))
-                              first
-                              :population)
+            [result current-pop] (target-result config target-year)
             diff (pop-diff-by-year target-year result)]
-        (do (println "Modifier:" modifier)
-            (println "Population:" achieved-pop)
-            (if (target-pop-exceeded? current-pop target-pop-range)
-              (println "Population exceeds target population")
-              (when-not (within-pop-range? target-pop-range diff)
-                (recur rest-configs))))))))
+        (if (target-pop-exceeded? current-pop target-pop-range)
+          (println "Population exceeds target population")
+          (when-not (within-pop-range? target-pop-range diff)
+            (recur rest-configs)))))))
