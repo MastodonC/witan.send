@@ -2,7 +2,8 @@
   (:require [witan.send.multi-config :as mc]
             [witan.send.main :as main]
             [witan.send.model.input :as i]
-            [witan.send.model.prepare :as p]))
+            [witan.send.model.prepare :as p]
+            [witan.send.maths :as math]))
 
 (defn update-transition-modifier [m n]
   "Takes a map of keys partially matching a transition and a new modifier"
@@ -66,23 +67,46 @@
 (defn target-pop-exceeded? [pop target-pop]
   (> pop (apply max target-pop)))
 
-(defn target-results [m start end step base-config target]
-  "Takes a map of keys partially matching a transition, a start, end and step range to modify
-   the transition by, a template config and a map containing a target population range and year
-
-   e.g. {:year 2019 :population [6 12]}"
-  (loop [configs (map update-results-path (mc/generate-configs (create-transition-modifier-seq m start end step) base-config))]
-    (let [[config & rest-configs] configs
-          result (do (main/run-recorded-send config)
-                     (get-target-pop (state-pop config)))
-          current-pop (get-current-pop (:year target) result)
-          _ (println (-> config
+(defn target-results [m base-config target & step]
+  "Takes a map of keys partially matching a transition, a baseline config to use as a template,
+   a map containing a target population range and year, e.g. {:year 2019 :population 6} and an
+   optional range step value"
+  (let [step (if step
+               step
+               0.1)
+        state (create-transition-modifier-seq m 1 2 1)
+        baseline-pop (->> (-> base-config
+                              (assoc-in (first (first state))
+                                        (first (second (first state))))
+                              state-pop
+                              get-target-pop)
+                          (filter #(= (:year %) (:year target)))
+                          first
+                          :population)
+        target-pop (:population target)
+        target-year (:year target)
+        target-pop-range (vector (- target-pop 1) (+ target-pop 1))
+        initial-modifier (math/round (/ target-pop baseline-pop))]
+    (loop [configs (map update-results-path (-> (create-transition-modifier-seq m
+                                                                                (- initial-modifier 1)
+                                                                                (+ initial-modifier 1) step)
+                                                (mc/generate-configs base-config)))]
+      (let [[config & rest-configs] configs
+            result (do (main/run-recorded-send config)
+                       (get-target-pop (state-pop config)))
+            current-pop (get-current-pop (:year target) result)
+            modifier (-> config
                          (get-in [:transition-parameters :transitions-to-change])
                          first
-                         :modify-transition-by))
-          _ (println result)
-          diff (pop-diff-by-year (:year target) result)]
-      (if (target-pop-exceeded? current-pop (:population target))
-        (println "Population exceeds target population")
-        (when-not (within-pop-range? (:population target) diff)
-          (recur rest-configs))))))
+                         :modify-transition-by)
+            achieved-pop (->> result
+                              (filter #(= (:year %) target-year))
+                              first
+                              :population)
+            diff (pop-diff-by-year target-year result)]
+        (do (println "Modifier:" modifier)
+            (println "Population:" achieved-pop)
+            (if (target-pop-exceeded? current-pop target-pop-range)
+              (println "Population exceeds target population")
+              (when-not (within-pop-range? target-pop-range diff)
+                (recur rest-configs))))))))
