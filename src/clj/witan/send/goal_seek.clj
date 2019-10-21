@@ -73,16 +73,19 @@
         (assoc-in (first (first state))
                   (first (second (first state)))))))
 
-(defn target-result [config target-year & modifier]
-  (let [result (do (main/run-recorded-send config)
+(defn target-result [config target-year & m]
+  "Takes a baseline config to use as a template, a target year and
+   an optional map of keys partially matching a transition,"
+  (let [config (if m
+                 (assoc-in config [:transition-parameters :transitions-to-change] (vec m))
+                 config)
+        modifier (-> config
+                     (get-in [:transition-parameters :transitions-to-change])
+                     first
+                     :modify-transition-by)
+        result (do (main/run-recorded-send config)
                    (get-target-pop (state-pop config)))
         current-pop (get-current-pop target-year result)
-        modifier (if modifier
-                   modifier
-                   (-> config
-                       (get-in [:transition-parameters :transitions-to-change])
-                       first
-                       :modify-transition-by))
         achieved-pop (->> result
                           (filter #(= (:year %) target-year))
                           first
