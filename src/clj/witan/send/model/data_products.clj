@@ -8,7 +8,9 @@
 
 (def number-of-significant-digits 3)
 
-(defn roll-up-calendar-year-by-need-setting [calendar-year]
+(defn roll-up-calendar-year-by-need-setting
+  "This rolls up all need-settings, even invalid ones."
+  [calendar-year]
   (transduce
    (map (fn [[[ay need-setting] population]] [need-setting population]))
    (fn
@@ -18,7 +20,9 @@
    {}
    calendar-year))
 
-(defn roll-up-calendar-year-by-state [all-valid-states calendar-year]
+(defn roll-up-calendar-year-by-state
+  "This only rolls up valid need-setings (aka states)."
+  [all-valid-states calendar-year]
   (reduce
    (fn [acc state]
      (assoc acc state (get calendar-year state 0)))
