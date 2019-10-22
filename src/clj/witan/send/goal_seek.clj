@@ -28,8 +28,8 @@
    Output_State_pop_only.csv results"
   (let [state (-> (get-in config [:transition-parameters :transitions-to-change])
                   first
-                  (clojure.set/rename-keys {:setting-2 :setting :need-2 :need :academic-year-2 :ay})
-                  (select-keys [:setting :need]))
+                  (clojure.set/rename-keys {:setting-2 :setting :need-2 :need :academic-year-2 :academic-year})
+                  (select-keys [:setting :need :academic-year]))
         out-dir (:output-dir (:output-parameters config))
         state-pop (str (:project-dir config)
                        "/"
