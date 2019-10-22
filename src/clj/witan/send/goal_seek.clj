@@ -94,10 +94,10 @@
         (println "Population:" achieved-pop))
     [result current-pop]))
 
-(defn target-results [m base-config target & step]
-  "Takes a map of keys partially matching a transition, a baseline config to use as a template,
-   a map containing a target population range and year, e.g. {:year 2019 :population 6} and an
-   optional range step value"
+(defn target-results [base-config target m & step]
+  "Takes a baseline config to use as a template, a map containing a target population
+   range and year, e.g. {:year 2019 :population 6}, a map of keys partially matching
+   a transition and an optional range step value"
   (let [step (if step
                step
                0.1)
