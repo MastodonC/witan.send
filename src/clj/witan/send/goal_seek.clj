@@ -74,8 +74,8 @@
                   (first (second (first state)))))))
 
 (defn target-result [config target-year & m]
-  "Takes a baseline config to use as a template, a target year and
-   an optional map of keys partially matching a transition,"
+  "Takes a baseline config to use as a template, a target year and an optional map of keys
+   partially matching a transition, and a value to modify by"
   (let [config (if m
                  (assoc-in config [:transition-parameters :transitions-to-change] (vec m))
                  config)
