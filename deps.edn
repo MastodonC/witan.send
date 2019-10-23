@@ -11,13 +11,12 @@
          me.raynes/fs                     {:mvn/version "1.4.6"}
          medley                           {:mvn/version "1.2.0"}
          org.apache.commons/commons-math3 {:mvn/version "3.6.1"}
-         org.hdrhistogram/HdrHistogram    {:mvn/version "2.1.11"}}
+         ;;org.hdrhistogram/HdrHistogram    {:mvn/version "2.1.11"}
+         org.hdrhistogram/HdrHistogram    {:mvn/version "2.1.9"}}
  :aliases
- {:test {:extra-paths ["test"]
-         :extra-deps  {org.clojure/test.check {:mvn/version "RELEASE"}}}
-  :runner
-  {:extra-deps {com.cognitect/test-runner
-                {:git/url "https://github.com/cognitect-labs/test-runner"
-                 :sha     "76568540e7f40268ad2b646110f237a60295fa3c"}}
-   :main-opts  ["-m" "cognitect.test-runner"
-                "-d" "test"]}}}
+ {:test {:jvm-opts ["-Xmx8g"]
+         :extra-paths ["test"]
+         :extra-deps {com.cognitect/test-runner {:git/url "https://github.com/cognitect-labs/test-runner.git"
+                                                 :sha "209b64504cb3bd3b99ecfec7937b358a879f55c1"}
+                      org.clojure/test.check {:mvn/version "RELEASE"}}
+         :main-opts ["-m" "cognitect.test-runner"]}}}
