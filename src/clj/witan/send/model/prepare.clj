@@ -11,21 +11,21 @@
 
 (defn transitions-map
   [dataset]
-  (->> dataset
-       (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-2]}]
-                 (let [need-setting-1 (states/join-need-setting need-1 setting-1)
-                       need-setting-2 (states/join-need-setting need-2 setting-2)]
-                   (update coll [academic-year-2 need-setting-1 need-setting-2] m/some+ 1)))
-               {})))
+  (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-2]}]
+            (let [need-setting-1 (states/join-need-setting need-1 setting-1)
+                  need-setting-2 (states/join-need-setting need-2 setting-2)]
+              (update coll [academic-year-2 need-setting-1 need-setting-2] m/some+ 1)))
+          {}
+          dataset))
 
 (defn full-transitions-map
   [dataset]
-  (->> dataset
-       (reduce (fn [coll {:keys [calendar-year setting-1 need-1 setting-2 need-2 academic-year-2]}]
-                 (let [need-setting-1 (states/join-need-setting need-1 setting-1)
-                       need-setting-2 (states/join-need-setting need-2 setting-2)]
-                   (update coll [calendar-year academic-year-2 need-setting-1 need-setting-2] m/some+ 1)))
-               {})))
+  (reduce (fn [coll {:keys [calendar-year setting-1 need-1 setting-2 need-2 academic-year-2]}]
+            (let [need-setting-1 (states/join-need-setting need-1 setting-1)
+                  need-setting-2 (states/join-need-setting need-2 setting-2)]
+              (update coll [calendar-year academic-year-2 need-setting-1 need-setting-2] m/some+ 1)))
+          {}
+          dataset))
 
 (defn split-need-state [state pos]
   (keyword (pos (str/split (name state) #"-"))))
@@ -142,7 +142,7 @@
                 :> >
                 :>= >=})
 
-(defn remove-transitions-xf [remove-operation]
+(defn remove-transitions-xf
   "Expects a key-value pair like [:calendar-academic {:< 2017, :>= 12}].
 
    Each key much conform to :calendar-academic, :calendar-setting, :calendar-need, :academic-setting,
@@ -150,6 +150,7 @@
 
    The inner map must contain two key-value pairs, the key corresponding to an operator and the value
    corresponding to a value to filter on"
+  [remove-operation]
   (let [k (first remove-operation)
         v (second remove-operation)
         op1 ((first (keys v)) operators)
@@ -194,19 +195,11 @@
                     costs
                     valid-states)
   (let  [original-transitions transitions
-         ages (distinct (map :academic-year population))
-         years (distinct (map :calendar-year population))
          initialise-validation valid-states
          valid-transitions (states/calculate-valid-mover-transitions
                             initialise-validation)
-         valid-needs (states/calculate-valid-needs-from-setting-academic-years
-                      initialise-validation)
-         valid-settings (states/calculate-valid-settings-from-setting-academic-years
-                         initialise-validation)
          validate-valid-states (states/calculate-valid-states-from-setting-academic-years
                                 initialise-validation)
-         valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years
-                              initialise-validation)
          modified-transitions (when transitions-to-change
                                 (println "Using modified transition rates")
                                 (let [change (mapcat
@@ -221,9 +214,6 @@
                                                             transitions transitions-to-change)
                                                     full-transitions-map)]
                                   (mapcat (fn [[k v]] (back-to-transitions k v)) (concat change no-change))))
-         map-of-transitions (if modified-transitions
-                              (transitions-map modified-transitions)
-                              (transitions-map transitions))
          transitions-filtered (when filter-transitions-from
                                 (reduce #(sequence (remove-transitions-xf %2) %1) (or modified-transitions transitions) filter-transitions-from))
          max-transition-year (apply max (map :calendar-year transitions))
