@@ -240,6 +240,7 @@
                     costs
                     valid-states)
   (let  [original-transitions transitions
+         ages (distinct (map :academic-year population))
          initialise-validation valid-states
          valid-transitions (states/calculate-valid-mover-transitions
                             initialise-validation)
