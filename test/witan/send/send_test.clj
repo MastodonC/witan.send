@@ -63,9 +63,11 @@
       (is (= 2 (get (mp/modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SP-MMSIB]))))))
 
 (deftest remove-transitions-xf-test
-  "This test needs splitting to simpler cases but for speed captures most things.
-  There's some discussion to be had over how we should treat setting-2 as it moves into calendar year 2017
-  Note: the test discovered the keyname is required not a string :-("
+  ;; This test needs splitting to simpler cases but for speed captures
+  ;; most things.  There's some discussion to be had over how we
+  ;; should treat setting-2 as it moves into calendar year 2017
+  ;;
+  ;; Note: the test discovered the keyname is required not a string :-(
   (let [transitions (list {:calendar-year 2015, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}
                           {:calendar-year 2015, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :AK, :need-2 :NA, :academic-year-2 12}
                           {:calendar-year 2015, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 9, :setting-2 :AK, :need-2 :NA, :academic-year-2 10}
