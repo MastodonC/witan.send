@@ -1,6 +1,5 @@
 (ns witan.send.report
   (:require [clojure.java.io :as io]
-            [witan.send.metadata :as md]
             [clojure.string :as str]))
 
 (def send-report (atom []))
