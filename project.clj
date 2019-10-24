@@ -3,19 +3,21 @@
   :url "http://github.com/mastodonc/witan.send"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.9.0"]
+  :dependencies [;; [org.clojure/clojure "1.10.1"]
+                 [org.clojure/clojure "1.9.0"]
                  [org.clojure/data.csv "0.1.4"]
-                 [org.clojure/math.combinatorics "0.1.4"]
-                 [org.clojure/test.check "0.9.0"]
+                 [org.clojure/math.combinatorics "0.1.6"]
+                 [org.clojure/test.check "0.10.0"]
                  [aero "1.1.3"]
-                 [clj-time "0.15.1"]
-                 [digest "1.4.8"]
-                 [instaparse "1.4.9"]
+                 [clj-time "0.15.2"]
+                 [digest "1.4.9"]
+                 [instaparse "1.4.10"]
+                 ;; [kixi/stats "0.5.2"]
                  [kixi/stats "0.4.3"]
                  [me.raynes/fs "1.4.6"]
-                 [medley "1.0.0"]
+                 [medley "1.2.0"]
                  [org.apache.commons/commons-math3 "3.6.1"]
-                 ;; upgrading to 2.1.10 causes a test to fail
+                 ;; [org.hdrhistogram/HdrHistogram "2.1.11"]
                  [org.hdrhistogram/HdrHistogram "2.1.9"]]
   :main witan.send.main
   :aot [witan.send.main]
