@@ -1,6 +1,6 @@
 (ns witan.send.check-inputs-test
-  (:require [clojure.test :refer :all]
-            [witan.send.check-inputs :refer :all]))
+  (:require [clojure.test :refer [deftest is testing]]
+            [witan.send.check-inputs :refer [check-ages-go-up-one-year check-all-ages-present check-joiner-leaver-gaps check-nonsend-states-valid cost-for-need-setting? valid-ay-for-state?]]))
 
 
 (def test-setting-costs [{:need :X, :setting :Y, :cost 999.9}])

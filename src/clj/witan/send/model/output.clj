@@ -30,7 +30,7 @@
 
 (defn pull-year
   [data pos]
-  (if (seq? data)
+  (when (seq? data)
     (->> (nth data pos)
          (map (fn [[a b c]] (if (zero? b) [a :NA :NA] [a b c])))
          (apply mapv vector))))
@@ -96,7 +96,7 @@
           parse-need-setting #(map name ((comp reverse states/split-need-setting) %))
           rows (sort (remove empty?
                              (for [[[cy ay need-setting-source need-setting-destination] transitions] projections]
-                               (if (> (m/round0 (/ transitions simulations)) 0)
+                               (when (> (m/round0 (/ transitions simulations)) 0)
                                  (into [] (flatten [cy
                                                     ay
                                                     (parse-need-setting need-setting-source)
@@ -108,8 +108,9 @@
 (defn ribbon-data-rows [ribbon-data]
   (mapv (fn [x] (mapv #(nth % x) (map val ribbon-data))) (range (count (val (last ribbon-data))))))
 
-(defn bound-or-interval? [string]
+(defn bound-or-interval?
   "default behaviour is to use bounds rather than CI"
+  [string]
   (= string "interval"))
 
 (defn qstr [s]
@@ -141,12 +142,13 @@
 
 (defn beta-params-expectation
   "Return alpha, beta and expectation as a vector from a hash"
-  [{:keys [:alpha :beta] :as params}]
+  [{:keys [:alpha :beta]}]
   (mapv float [alpha beta (expectation alpha beta)]))
 
-(defn beta-expectations [betas]
+(defn beta-expectations
   "Beta disto parameters are stored in a map typically keyed by an entities index (ay, n, s).
   Apply expectation to the values of this map"
+  [betas]
   (-> (for [[k params] betas]
         (if (vector? k)                                     ; this is weak, better to use schema checking here
           (into [] (concat (states/split-entity k) (beta-params-expectation params)))
@@ -156,24 +158,25 @@
 (defn normalisation-constant-dirichelt [params]
   (reduce + (map val params)))
 
-(defn dirichlet-expectations [alphas]
-  "Dirichelt distro parameters are stored in a map typically keyed by an entities index (ay, n, s)."
+(defn dirichlet-expectations
+  "Dirichlet distro parameters are stored in a map typically keyed by an entities index (ay, n, s)."
+  [alphas]
   (-> (reduce (fn [acc [k params]]
-                 (concat acc
-                         (let [prefix (if (vector? k)
-                                        (let [v (states/split-entity k)
-                                              ay+1 (inc (first v))]
-                                          (conj v ay+1))
-                                        [k])
-                               normalisation (normalisation-constant-dirichelt params)]
-                           (map (fn [p] (into []
-                                              (concat prefix
-                                                      (conj (mapv name (states/split-need-setting (key p)))
-                                                            (/ (val p) normalisation)
-                                                            normalisation
-                                                            (val p)))))
-                                params))))
-               [] alphas)
+                (concat acc
+                        (let [prefix (if (vector? k)
+                                       (let [v (states/split-entity k)
+                                             ay+1 (inc (first v))]
+                                         (conj v ay+1))
+                                       [k])
+                              normalisation (normalisation-constant-dirichelt params)]
+                          (map (fn [p] (into []
+                                             (concat prefix
+                                                     (conj (mapv name (states/split-need-setting (key p)))
+                                                           (/ (val p) normalisation)
+                                                           normalisation
+                                                           (val p)))))
+                               params))))
+              [] alphas)
       (sort)))
 
 (defn output-beta-expectations
@@ -198,8 +201,9 @@
           rows (dirichlet-expectations alphas)]
       (csv/write-csv writer (into [headers] rows)))))
 
-(defn parse-pop-state [pop-state]
+(defn parse-pop-state
   "Pop values are keyed by an entities index (ay, n, s)."
+  [pop-state]
   (-> (for [[k pop] pop-state]
         (into [] (flatten [(states/split-entity k) pop])))
       (sort)))
@@ -233,7 +237,7 @@
                                   (map #(vec (drop 1 %)))
                                   distinct)
         dir (str project-dir "/" output-dir)]
-    (if (not (.isDirectory (io/file dir)))
+    (when (not (.isDirectory (io/file dir)))
       (.mkdir (io/file dir)))
     (when (every? (fn [transition] (transition-present? transition transform-projection)) transform-transitions)
       (report/info (report/bold "Not every historic transition present in projection!") "Consider checking valid state input.\n"))
@@ -357,7 +361,7 @@
         (output-dirichlet-expectations dir "joiners_dirichlet_expectations" (standard-projection :joiner-state-alphas)
                                        [:ay :need :setting :expectation :normalisation-constant :alpha])
         (output-initial-population-state dir "initial_population_state" (standard-projection :population-by-state))
-        (if scenario-projection
+        (when scenario-projection
           (do
             (output-beta-expectations dir "scenario_joiner_beta_expectations" (scenario-projection :joiner-beta-params)
                                       [:ay :alpha :beta :expectation])

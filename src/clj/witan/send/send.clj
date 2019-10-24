@@ -10,7 +10,7 @@
 
 (defn build-input-datasets
   "Build a map of the datasets to use for input"
-  [project-dir {:keys [costs population settings-to-change transitions valid-states] :as file-inputs} schema-inputs]
+  [project-dir {:keys [costs population settings-to-change transitions valid-states]} schema-inputs]
   (let [input-datasets {:costs (wic/csv->costs (str project-dir "/" costs))
                         :population (wip/csv->population (str project-dir "/" population))
                         :transitions (wit/csv->transitions (str project-dir "/" transitions))

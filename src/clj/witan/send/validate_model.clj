@@ -6,60 +6,69 @@
             [witan.send.send :as send]
             [witan.send.model.output :as so]))
 
-(defn temp-dir [project-dir]
+(defn temp-dir
   "Returns path to validation temp dir for project"
+  [project-dir]
   (str project-dir "/data/temp/"))
 
-(defn csv-data->maps [csv-data]
+(defn csv-data->maps
   "Returns CSV data as seq of maps"
+  [csv-data]
   (map zipmap
        (->> (first csv-data)
             (map keyword)
             repeat)
        (rest csv-data)))
 
-(defn write-csv [file data]
+(defn write-csv
   "Write seq of maps to CSV"
+  [file data]
   (with-open [writer (io/writer (io/file file))]
     (let [columns (into [] (keys (first data)))
           headers (mapv name columns)
           rows (mapv #(mapv % columns) data)]
       (csv/write-csv writer (into [headers] rows)))))
 
-(defn load-csv-as-maps [file]
+(defn load-csv-as-maps
   "Loads CSV data as maps"
+  [file]
   (csv-data->maps
-    (with-open [reader (io/reader file)]
-      (doall
-        (csv/read-csv reader)))))
+   (with-open [reader (io/reader file)]
+     (doall
+      (csv/read-csv reader)))))
 
-(defn get-validation-years [transitions]
+(defn get-validation-years
   "Returns list of years to use for delineate validation folds"
+  [transitions]
   (->> (map :calendar-year transitions)
        (distinct)
        (map #(Integer/parseInt %))
        (sort)
        (drop-last)))
 
-(defn return-fold [bound-fn year transitions]
+(defn return-fold
   "Splits transitions data based on condition passed with bound-fn and year e.g. > 2016"
+  [bound-fn year transitions]
   (filter #(bound-fn (Integer/parseInt (:calendar-year %)) year) transitions))
 
-(defn return-testable-data [file test-years]
+(defn return-testable-data
   "Creates subset of model output for years where there is ground truth for comparison"
+  [file test-years]
   (->> (for [year test-years] (filter #(= year (:calendar-year %)) (load-csv-as-maps file)))
        (mapcat seq)))
 
-(defn append-count-with-test [model-count test-data n-transitions]
+(defn append-count-with-test
   "Adds total population count ground truth to model output"
+  [model-count test-data n-transitions]
   (let [test-year (str (dec (Integer/parseInt (:calendar-year model-count))))
         test-data-for-year  (filter #(= test-year (:calendar-year %)) test-data)
         send-test-data-for-year  (filter #(not= "NONSEND" (:need-2 %)) test-data-for-year)
         ground-truth-count (count send-test-data-for-year)]
     (assoc model-count :ground-truth (str ground-truth-count) :n-transition n-transitions)))
 
-(defn append-state-with-test [model-states test-data n-transitions]
+(defn append-state-with-test
   "Adds states ground truth from test-data to model output"
+  [model-states test-data n-transitions]
   (let [test-year (str (dec (Integer/parseInt (:calendar-year model-states))))
         [need setting] (str/split (str/replace (:need-setting model-states) ":" "") #"-")
         academic-year (:academic-year model-states)
@@ -81,11 +90,11 @@
         state-results (map #(append-state-with-test % test-data n-transitions) model-states)]
     {:count count-results :state state-results}))
 
-(defn validate-fold [config year]
+(defn validate-fold
   "Splits project transitions.csv into training and test data, before and after year argument.
   Runs model with config, overriding default transition matrix with training data.
   Returns map containing results of comparing model predictions with test data for total count and individual states"
-
+  [config year]
   (let [project-dir (:project-dir config)
         transitions (load-csv-as-maps (io/file project-dir (:transitions (:file-inputs config))))
         train-data (return-fold <= year transitions)
@@ -104,8 +113,9 @@
         (so/output-send-results (:output-parameters fold-config)))
     (collate-fold project-dir test-data year n-transitions)))
 
-(defn write-validation-results [project-dir output-dir results]
+(defn write-validation-results
   "Takes seq of maps containing results returned by (validate-fold) and writes to disk"
+  [project-dir output-dir results]
   (->> (map :count results)
        flatten
        (write-csv (io/file project-dir output-dir "validation_results_count.csv")))
@@ -113,14 +123,16 @@
        flatten
        (write-csv (io/file project-dir output-dir "validation_results_state.csv"))))
 
-(defn setup-validation-dirs [project-dir output-dir]
+(defn setup-validation-dirs
   "Create dirs required for validation process"
+  [project-dir output-dir]
   (doseq [dir [(temp-dir project-dir) (str/join "/" [project-dir (str "validation-" output-dir)])]] ;; here
     (.mkdir (java.io.File. dir))))
 
-(defn tear-down-validation-dirs [project-dir output-dir keep-temp-files?]
+(defn tear-down-validation-dirs
   "Remove input data and results for separate folds, move to validation dir if keep-temp-files is true"
-  (if keep-temp-files?
+  [project-dir output-dir keep-temp-files?]
+  (when keep-temp-files?
     (copy-dir (temp-dir project-dir) (io/file project-dir (str "validation-" output-dir "/")))) ;; here
   (doseq [file (reverse (file-seq (io/file (temp-dir project-dir))))]
     (io/delete-file file)))
