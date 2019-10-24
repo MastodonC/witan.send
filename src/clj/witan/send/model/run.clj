@@ -1,6 +1,5 @@
 (ns witan.send.model.run
-  (:require [redux.core :as r]
-            [witan.send.constants :as c]
+  (:require [witan.send.constants :as c]
             [witan.send.distributions :as d]
             [witan.send.maths :as m]
             [witan.send.schemas :as sc]
@@ -56,7 +55,7 @@
   or academic year range is valid."
   [[model transitions] [[year need-setting] population]
    {:keys [mover-state-alphas mover-beta-params leaver-beta-params
-           valid-year-settings] :as params}
+           valid-year-settings]}
    calendar-year valid-transitions make-setting-invalid]
   (if-let [mover-dirichlet-params (get mover-state-alphas [(dec year) need-setting])]
     (let [leavers (if (= (second (states/split-need-setting need-setting)) make-setting-invalid)
