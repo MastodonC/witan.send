@@ -65,3 +65,33 @@
                               calendar-year
                               valid-transitions
                               make-setting-invalid)))))))
+
+(deftest apply-joiners-for-academic-year-test
+  (testing "Transitions counts are stable on re-run"
+    (is (= [[{[3 :T-B] 10, [3 :X-B] 2, [3 :X-J] 1} {[2018 3 :T-B :T-B] 1, [2018 3 :NONSEND :T-B] 9, [2018 3 :NONSEND :X-B] 1}]
+            [{[3 :T-B] 18, [3 :X-B] 4, [3 :X-J] 1} {[2018 3 :T-B :T-B] 1, [2018 3 :NONSEND :T-B] 17, [2018 3 :NONSEND :X-B] 3}]
+            [{[3 :T-B] 8, [3 :X-B] 3, [3 :X-J] 1} {[2018 3 :T-B :T-B] 1, [2018 3 :NONSEND :T-B] 7, [2018 3 :NONSEND :X-B] 2}]
+            [{[3 :T-B] 9, [3 :X-B] 1, [3 :X-J] 1} {[2018 3 :T-B :T-B] 1, [2018 3 :NONSEND :T-B] 8}]
+            [{[3 :T-B] 17, [3 :X-B] 8, [3 :X-J] 1} {[2018 3 :T-B :T-B] 1, [2018 3 :NONSEND :T-B] 16, [2018 3 :NONSEND :X-B] 7}]
+            [{[3 :T-B] 6, [3 :X-B] 6, [3 :X-J] 1} {[2018 3 :T-B :T-B] 1, [2018 3 :NONSEND :T-B] 5, [2018 3 :NONSEND :X-B] 5}]
+            [{[3 :T-B] 13, [3 :X-B] 4, [3 :X-J] 1} {[2018 3 :T-B :T-B] 1, [2018 3 :NONSEND :T-B] 12, [2018 3 :NONSEND :X-B] 3}]
+            [{[3 :T-B] 14, [3 :X-B] 5, [3 :X-J] 1} {[2018 3 :T-B :T-B] 1, [2018 3 :NONSEND :T-B] 13, [2018 3 :NONSEND :X-B] 4}]
+            [{[3 :T-B] 11, [3 :X-B] 4, [3 :X-J] 1} {[2018 3 :T-B :T-B] 1, [2018 3 :NONSEND :T-B] 10, [2018 3 :NONSEND :X-B] 3}]
+            [{[3 :T-B] 3, [3 :X-B] 6, [3 :X-J] 1} {[2018 3 :T-B :T-B] 1, [2018 3 :NONSEND :T-B] 2, [2018 3 :NONSEND :X-B] 5}]]
+           (let [_ (d/set-seed! 42)
+                 joiner-beta-params {3 { :alpha 57/4, :beta 7027N }}
+                 joiner-state-alphas {3 {:T-B 25.01 :X-B 11.01 :X-J 0.01388888}}
+                 academic-year 3
+                 population {3 8102}
+                 calendar-year 2018
+                 model {[3 :T-B] 1
+                        [3 :X-B] 1
+                        [3 :X-J] 1}
+                 transitions {[2018 3 :T-B :T-B] 1}]
+             (repeatedly 10 #(sut/apply-joiners-for-academic-year
+                              [model transitions]
+                              academic-year
+                              population
+                              {:joiner-beta-params joiner-beta-params
+                               :joiner-state-alphas joiner-state-alphas}
+                              calendar-year)))))))
