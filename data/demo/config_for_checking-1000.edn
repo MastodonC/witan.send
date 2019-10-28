@@ -13,7 +13,7 @@
                          :simulations 1000}
 
  :output-parameters {:run-outputs true
-                     :run-charts true
+                     :run-charts false
                      :output-dir "results_for_checking_1000"
                      :settings-to-exclude-in-charts nil
                      :keep-temp-files? false
