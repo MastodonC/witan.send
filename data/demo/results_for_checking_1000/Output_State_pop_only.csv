@@ -1487,7 +1487,7 @@ calendar-year,academic-year,need,setting,population
 2018,-2,U,Q,0.0
 2018,-2,V,A,0.0
 2018,-2,V,G,0.0
-2018,-2,V,J,1.0
+2018,-2,V,J,0.0
 2018,-2,V,P,0.0
 2018,-2,V,Q,0.0
 2018,-2,W,A,0.0
@@ -1547,14 +1547,14 @@ calendar-year,academic-year,need,setting,population
 2018,-1,X,R,0.0
 2018,-1,Y,A,0.0
 2018,-1,Y,B,4.0
-2018,-1,Y,F,2.0
+2018,-1,Y,F,1.0
 2018,-1,Y,G,0.0
 2018,-1,Y,J,1.0
 2018,-1,Y,P,1.0
 2018,-1,Y,Q,0.0
 2018,-1,Y,R,0.0
 2018,0,T,A,10.0
-2018,0,T,B,56.0
+2018,0,T,B,55.0
 2018,0,T,F,5.0
 2018,0,T,G,0.0
 2018,0,T,H,0.0
@@ -1764,7 +1764,7 @@ calendar-year,academic-year,need,setting,population
 2018,2,Y,O,0.0
 2018,2,Y,R,0.0
 2018,3,T,A,18.0
-2018,3,T,B,56.0
+2018,3,T,B,55.0
 2018,3,T,E,1.0
 2018,3,T,F,7.0
 2018,3,T,G,0.0
@@ -2302,11 +2302,11 @@ calendar-year,academic-year,need,setting,population
 2018,9,W,L,0.0
 2018,9,W,M,0.0
 2018,9,W,N,0.0
-2018,9,W,R,0.0
+2018,9,W,R,1.0
 2018,9,X,A,1.0
 2018,9,X,B,6.0
 2018,9,X,C,0.0
-2018,9,X,D,3.0
+2018,9,X,D,2.0
 2018,9,X,E,0.0
 2018,9,X,F,0.0
 2018,9,X,G,0.0
@@ -2316,7 +2316,7 @@ calendar-year,academic-year,need,setting,population
 2018,9,X,K,0.0
 2018,9,X,L,1.0
 2018,9,X,M,0.0
-2018,9,X,N,0.0
+2018,9,X,N,1.0
 2018,9,X,R,2.0
 2018,9,Y,A,0.0
 2018,9,Y,B,12.0
@@ -2334,7 +2334,7 @@ calendar-year,academic-year,need,setting,population
 2018,9,Y,N,0.0
 2018,9,Y,R,0.0
 2018,10,T,A,16.0
-2018,10,T,B,63.0
+2018,10,T,B,64.0
 2018,10,T,C,0.0
 2018,10,T,D,0.0
 2018,10,T,E,1.0
@@ -2406,7 +2406,7 @@ calendar-year,academic-year,need,setting,population
 2018,10,X,K,0.0
 2018,10,X,L,1.0
 2018,10,X,M,0.0
-2018,10,X,N,7.0
+2018,10,X,N,6.0
 2018,10,X,R,4.0
 2018,10,Y,A,1.0
 2018,10,Y,B,4.0
@@ -2712,7 +2712,7 @@ calendar-year,academic-year,need,setting,population
 2018,13,Y,R,0.0
 2018,13,Y,S,2.0
 2018,14,T,A,1.0
-2018,14,T,B,5.0
+2018,14,T,B,6.0
 2018,14,T,C,0.0
 2018,14,T,D,0.0
 2018,14,T,E,1.0
@@ -2728,7 +2728,7 @@ calendar-year,academic-year,need,setting,population
 2018,14,T,R,0.0
 2018,14,T,S,6.0
 2018,14,U,A,5.0
-2018,14,U,B,4.0
+2018,14,U,B,5.0
 2018,14,U,C,0.0
 2018,14,U,D,0.0
 2018,14,U,E,0.0
@@ -2786,7 +2786,7 @@ calendar-year,academic-year,need,setting,population
 2018,14,X,I,0.0
 2018,14,X,J,0.0
 2018,14,X,K,0.0
-2018,14,X,L,3.0
+2018,14,X,L,2.0
 2018,14,X,M,0.0
 2018,14,X,N,3.0
 2018,14,X,R,0.0
@@ -2808,7 +2808,7 @@ calendar-year,academic-year,need,setting,population
 2018,14,Y,R,0.0
 2018,14,Y,S,2.0
 2018,15,T,A,1.0
-2018,15,T,B,1.0
+2018,15,T,B,2.0
 2018,15,T,C,1.0
 2018,15,T,D,0.0
 2018,15,T,E,0.0
@@ -2947,7 +2947,7 @@ calendar-year,academic-year,need,setting,population
 2019,-2,U,A,5.0
 2019,-2,U,G,0.0
 2019,-2,U,J,1.0
-2019,-2,U,P,2.0
+2019,-2,U,P,1.0
 2019,-2,U,Q,1.0
 2019,-2,V,A,0.0
 2019,-2,V,G,0.0
@@ -2970,14 +2970,14 @@ calendar-year,academic-year,need,setting,population
 2019,-2,Y,P,3.0
 2019,-2,Y,Q,0.0
 2019,-1,T,A,1.0
-2019,-1,T,B,15.0
+2019,-1,T,B,16.0
 2019,-1,T,F,1.0
 2019,-1,T,G,0.0
 2019,-1,T,J,1.0
 2019,-1,T,P,2.0
 2019,-1,T,Q,3.0
 2019,-1,T,R,0.0
-2019,-1,U,A,8.0
+2019,-1,U,A,7.0
 2019,-1,U,B,7.0
 2019,-1,U,F,0.0
 2019,-1,U,G,0.0
@@ -3018,7 +3018,7 @@ calendar-year,academic-year,need,setting,population
 2019,-1,Y,Q,0.0
 2019,-1,Y,R,0.0
 2019,0,T,A,7.0
-2019,0,T,B,48.0
+2019,0,T,B,47.0
 2019,0,T,F,4.0
 2019,0,T,G,0.0
 2019,0,T,H,0.0
@@ -3030,7 +3030,7 @@ calendar-year,academic-year,need,setting,population
 2019,0,T,Q,0.0
 2019,0,T,R,0.0
 2019,0,U,A,4.0
-2019,0,U,B,14.0
+2019,0,U,B,13.0
 2019,0,U,F,0.0
 2019,0,U,G,0.0
 2019,0,U,H,0.0
@@ -3090,7 +3090,7 @@ calendar-year,academic-year,need,setting,population
 2019,0,Y,Q,0.0
 2019,0,Y,R,0.0
 2019,1,T,A,17.0
-2019,1,T,B,71.0
+2019,1,T,B,70.0
 2019,1,T,F,9.0
 2019,1,T,G,0.0
 2019,1,T,H,0.0
@@ -3101,7 +3101,7 @@ calendar-year,academic-year,need,setting,population
 2019,1,T,O,0.0
 2019,1,T,R,0.0
 2019,1,U,A,6.0
-2019,1,U,B,17.0
+2019,1,U,B,18.0
 2019,1,U,F,1.0
 2019,1,U,G,0.0
 2019,1,U,H,0.0
@@ -3228,7 +3228,7 @@ calendar-year,academic-year,need,setting,population
 2019,2,Y,O,0.0
 2019,2,Y,R,0.0
 2019,3,T,A,22.0
-2019,3,T,B,75.0
+2019,3,T,B,74.0
 2019,3,T,E,1.0
 2019,3,T,F,10.0
 2019,3,T,G,0.0
@@ -3300,7 +3300,7 @@ calendar-year,academic-year,need,setting,population
 2019,3,Y,O,0.0
 2019,3,Y,R,0.0
 2019,4,T,A,20.0
-2019,4,T,B,59.0
+2019,4,T,B,58.0
 2019,4,T,E,1.0
 2019,4,T,F,7.0
 2019,4,T,G,0.0
@@ -3360,7 +3360,7 @@ calendar-year,academic-year,need,setting,population
 2019,4,X,O,0.0
 2019,4,X,R,0.0
 2019,4,Y,A,2.0
-2019,4,Y,B,9.0
+2019,4,Y,B,8.0
 2019,4,Y,E,0.0
 2019,4,Y,F,5.0
 2019,4,Y,G,2.0
@@ -3368,7 +3368,7 @@ calendar-year,academic-year,need,setting,population
 2019,4,Y,I,0.0
 2019,4,Y,J,0.0
 2019,4,Y,K,0.0
-2019,4,Y,L,0.0
+2019,4,Y,L,1.0
 2019,4,Y,O,0.0
 2019,4,Y,R,0.0
 2019,5,T,A,18.0
@@ -3444,7 +3444,7 @@ calendar-year,academic-year,need,setting,population
 2019,5,Y,O,0.0
 2019,5,Y,R,0.0
 2019,6,T,A,27.0
-2019,6,T,B,69.0
+2019,6,T,B,68.0
 2019,6,T,C,0.0
 2019,6,T,D,0.0
 2019,6,T,E,2.0
@@ -3544,7 +3544,7 @@ calendar-year,academic-year,need,setting,population
 2019,7,T,I,2.0
 2019,7,T,J,0.0
 2019,7,T,K,0.0
-2019,7,T,L,5.0
+2019,7,T,L,4.0
 2019,7,T,M,0.0
 2019,7,T,R,0.0
 2019,7,U,A,10.0
@@ -3640,7 +3640,7 @@ calendar-year,academic-year,need,setting,population
 2019,8,U,F,0.0
 2019,8,U,G,0.0
 2019,8,U,H,1.0
-2019,8,U,I,0.0
+2019,8,U,I,1.0
 2019,8,U,J,2.0
 2019,8,U,K,0.0
 2019,8,U,L,1.0
@@ -3693,7 +3693,7 @@ calendar-year,academic-year,need,setting,population
 2019,8,X,N,1.0
 2019,8,X,R,1.0
 2019,8,Y,A,0.0
-2019,8,Y,B,6.0
+2019,8,Y,B,7.0
 2019,8,Y,C,0.0
 2019,8,Y,D,0.0
 2019,8,Y,E,0.0
@@ -3768,7 +3768,7 @@ calendar-year,academic-year,need,setting,population
 2019,9,W,N,0.0
 2019,9,W,R,1.0
 2019,9,X,A,2.0
-2019,9,X,B,8.0
+2019,9,X,B,7.0
 2019,9,X,C,0.0
 2019,9,X,D,5.0
 2019,9,X,E,1.0
@@ -3825,7 +3825,7 @@ calendar-year,academic-year,need,setting,population
 2019,10,U,K,1.0
 2019,10,U,L,1.0
 2019,10,U,M,0.0
-2019,10,U,N,3.0
+2019,10,U,N,2.0
 2019,10,U,R,0.0
 2019,10,V,A,1.0
 2019,10,V,B,1.0
@@ -3904,7 +3904,7 @@ calendar-year,academic-year,need,setting,population
 2019,11,T,R,0.0
 2019,11,T,S,0.0
 2019,11,U,A,13.0
-2019,11,U,B,18.0
+2019,11,U,B,19.0
 2019,11,U,C,0.0
 2019,11,U,D,0.0
 2019,11,U,E,0.0
@@ -3959,7 +3959,7 @@ calendar-year,academic-year,need,setting,population
 2019,11,X,F,0.0
 2019,11,X,G,1.0
 2019,11,X,H,1.0
-2019,11,X,I,0.0
+2019,11,X,I,1.0
 2019,11,X,J,2.0
 2019,11,X,K,0.0
 2019,11,X,L,1.0
@@ -3984,7 +3984,7 @@ calendar-year,academic-year,need,setting,population
 2019,11,Y,R,0.0
 2019,11,Y,S,0.0
 2019,12,T,A,6.0
-2019,12,T,B,26.0
+2019,12,T,B,27.0
 2019,12,T,C,2.0
 2019,12,T,D,0.0
 2019,12,T,E,0.0
@@ -4048,7 +4048,7 @@ calendar-year,academic-year,need,setting,population
 2019,12,W,R,1.0
 2019,12,W,S,0.0
 2019,12,X,A,0.0
-2019,12,X,B,2.0
+2019,12,X,B,1.0
 2019,12,X,C,0.0
 2019,12,X,D,1.0
 2019,12,X,E,1.0
@@ -4062,7 +4062,7 @@ calendar-year,academic-year,need,setting,population
 2019,12,X,M,0.0
 2019,12,X,N,4.0
 2019,12,X,R,1.0
-2019,12,X,S,1.0
+2019,12,X,S,2.0
 2019,12,Y,A,0.0
 2019,12,Y,B,4.0
 2019,12,Y,C,0.0
@@ -4080,14 +4080,14 @@ calendar-year,academic-year,need,setting,population
 2019,12,Y,R,0.0
 2019,12,Y,S,0.0
 2019,13,T,A,8.0
-2019,13,T,B,15.0
+2019,13,T,B,16.0
 2019,13,T,C,1.0
 2019,13,T,D,0.0
 2019,13,T,E,1.0
 2019,13,T,F,0.0
 2019,13,T,G,1.0
 2019,13,T,H,3.0
-2019,13,T,I,2.0
+2019,13,T,I,1.0
 2019,13,T,J,1.0
 2019,13,T,K,2.0
 2019,13,T,L,2.0
@@ -4106,13 +4106,13 @@ calendar-year,academic-year,need,setting,population
 2019,13,U,I,0.0
 2019,13,U,J,0.0
 2019,13,U,K,1.0
-2019,13,U,L,1.0
+2019,13,U,L,0.0
 2019,13,U,M,0.0
 2019,13,U,N,0.0
 2019,13,U,R,1.0
 2019,13,U,S,1.0
 2019,13,V,A,0.0
-2019,13,V,B,3.0
+2019,13,V,B,2.0
 2019,13,V,C,0.0
 2019,13,V,D,0.0
 2019,13,V,E,0.0
@@ -4150,17 +4150,17 @@ calendar-year,academic-year,need,setting,population
 2019,13,X,E,0.0
 2019,13,X,F,0.0
 2019,13,X,G,2.0
-2019,13,X,H,1.0
+2019,13,X,H,0.0
 2019,13,X,I,0.0
 2019,13,X,J,1.0
 2019,13,X,K,0.0
 2019,13,X,L,0.0
 2019,13,X,M,0.0
-2019,13,X,N,1.0
+2019,13,X,N,2.0
 2019,13,X,R,0.0
 2019,13,X,S,1.0
 2019,13,Y,A,0.0
-2019,13,Y,B,4.0
+2019,13,Y,B,5.0
 2019,13,Y,C,0.0
 2019,13,Y,D,0.0
 2019,13,Y,E,0.0
@@ -4283,7 +4283,7 @@ calendar-year,academic-year,need,setting,population
 2019,15,T,M,0.0
 2019,15,T,N,0.0
 2019,15,T,S,3.0
-2019,15,U,A,0.0
+2019,15,U,A,1.0
 2019,15,U,B,0.0
 2019,15,U,C,0.0
 2019,15,U,D,0.0
@@ -4294,7 +4294,7 @@ calendar-year,academic-year,need,setting,population
 2019,15,U,L,0.0
 2019,15,U,M,0.0
 2019,15,U,N,0.0
-2019,15,U,S,5.0
+2019,15,U,S,4.0
 2019,15,V,A,0.0
 2019,15,V,B,0.0
 2019,15,V,C,0.0
@@ -4308,7 +4308,7 @@ calendar-year,academic-year,need,setting,population
 2019,15,V,N,0.0
 2019,15,V,S,1.0
 2019,15,W,A,0.0
-2019,15,W,B,3.0
+2019,15,W,B,2.0
 2019,15,W,C,0.0
 2019,15,W,D,0.0
 2019,15,W,E,0.0
@@ -4382,7 +4382,7 @@ calendar-year,academic-year,need,setting,population
 2019,18,T,S,0.0
 2019,18,U,S,1.0
 2019,18,V,S,0.0
-2019,18,W,S,2.0
+2019,18,W,S,1.0
 2019,18,X,S,0.0
 2019,18,Y,S,1.0
 2019,19,T,S,0.0
@@ -4412,10 +4412,10 @@ calendar-year,academic-year,need,setting,population
 2020,-2,U,G,0.0
 2020,-2,U,J,1.0
 2020,-2,U,P,2.0
-2020,-2,U,Q,1.0
+2020,-2,U,Q,0.0
 2020,-2,V,A,0.0
 2020,-2,V,G,0.0
-2020,-2,V,J,1.0
+2020,-2,V,J,0.0
 2020,-2,V,P,0.0
 2020,-2,V,Q,0.0
 2020,-2,W,A,0.0
@@ -4439,7 +4439,7 @@ calendar-year,academic-year,need,setting,population
 2020,-1,T,G,0.0
 2020,-1,T,J,1.0
 2020,-1,T,P,2.0
-2020,-1,T,Q,4.0
+2020,-1,T,Q,3.0
 2020,-1,T,R,0.0
 2020,-1,U,A,8.0
 2020,-1,U,B,7.0
@@ -4478,11 +4478,11 @@ calendar-year,academic-year,need,setting,population
 2020,-1,Y,F,2.0
 2020,-1,Y,G,0.0
 2020,-1,Y,J,1.0
-2020,-1,Y,P,1.0
+2020,-1,Y,P,2.0
 2020,-1,Y,Q,0.0
 2020,-1,Y,R,0.0
 2020,0,T,A,7.0
-2020,0,T,B,49.0
+2020,0,T,B,48.0
 2020,0,T,F,4.0
 2020,0,T,G,0.0
 2020,0,T,H,0.0
@@ -4610,7 +4610,7 @@ calendar-year,academic-year,need,setting,population
 2020,1,X,R,0.0
 2020,1,Y,A,1.0
 2020,1,Y,B,7.0
-2020,1,Y,F,5.0
+2020,1,Y,F,4.0
 2020,1,Y,G,0.0
 2020,1,Y,H,0.0
 2020,1,Y,I,0.0
@@ -4620,7 +4620,7 @@ calendar-year,academic-year,need,setting,population
 2020,1,Y,O,0.0
 2020,1,Y,R,0.0
 2020,2,T,A,22.0
-2020,2,T,B,76.0
+2020,2,T,B,75.0
 2020,2,T,E,1.0
 2020,2,T,F,9.0
 2020,2,T,G,0.0
@@ -4628,7 +4628,7 @@ calendar-year,academic-year,need,setting,population
 2020,2,T,I,1.0
 2020,2,T,J,2.0
 2020,2,T,K,1.0
-2020,2,T,L,0.0
+2020,2,T,L,1.0
 2020,2,T,O,0.0
 2020,2,T,R,0.0
 2020,2,U,A,7.0
@@ -4637,7 +4637,7 @@ calendar-year,academic-year,need,setting,population
 2020,2,U,F,0.0
 2020,2,U,G,0.0
 2020,2,U,H,0.0
-2020,2,U,I,1.0
+2020,2,U,I,0.0
 2020,2,U,J,1.0
 2020,2,U,K,0.0
 2020,2,U,L,0.0
@@ -4772,10 +4772,10 @@ calendar-year,academic-year,need,setting,population
 2020,4,T,I,1.0
 2020,4,T,J,1.0
 2020,4,T,K,0.0
-2020,4,T,L,1.0
+2020,4,T,L,2.0
 2020,4,T,O,0.0
 2020,4,T,R,0.0
-2020,4,U,A,14.0
+2020,4,U,A,13.0
 2020,4,U,B,23.0
 2020,4,U,E,0.0
 2020,4,U,F,0.0
@@ -4812,7 +4812,7 @@ calendar-year,academic-year,need,setting,population
 2020,4,W,O,0.0
 2020,4,W,R,0.0
 2020,4,X,A,3.0
-2020,4,X,B,6.0
+2020,4,X,B,5.0
 2020,4,X,E,0.0
 2020,4,X,F,0.0
 2020,4,X,G,0.0
@@ -4885,7 +4885,7 @@ calendar-year,academic-year,need,setting,population
 2020,5,W,R,0.0
 2020,5,X,A,7.0
 2020,5,X,B,7.0
-2020,5,X,E,0.0
+2020,5,X,E,1.0
 2020,5,X,F,0.0
 2020,5,X,G,0.0
 2020,5,X,H,0.0
@@ -4907,7 +4907,7 @@ calendar-year,academic-year,need,setting,population
 2020,5,Y,L,1.0
 2020,5,Y,O,0.0
 2020,5,Y,R,0.0
-2020,6,T,A,21.0
+2020,6,T,A,20.0
 2020,6,T,B,73.0
 2020,6,T,C,0.0
 2020,6,T,D,0.0
@@ -4918,7 +4918,7 @@ calendar-year,academic-year,need,setting,population
 2020,6,T,I,0.0
 2020,6,T,J,0.0
 2020,6,T,K,1.0
-2020,6,T,L,3.0
+2020,6,T,L,2.0
 2020,6,T,M,0.0
 2020,6,T,O,0.0
 2020,6,T,R,2.0
@@ -5007,8 +5007,8 @@ calendar-year,academic-year,need,setting,population
 2020,7,T,H,3.0
 2020,7,T,I,2.0
 2020,7,T,J,0.0
-2020,7,T,K,1.0
-2020,7,T,L,3.0
+2020,7,T,K,0.0
+2020,7,T,L,4.0
 2020,7,T,M,0.0
 2020,7,T,R,0.0
 2020,7,U,A,12.0
@@ -5081,7 +5081,7 @@ calendar-year,academic-year,need,setting,population
 2020,7,Y,L,1.0
 2020,7,Y,M,0.0
 2020,7,Y,R,0.0
-2020,8,T,A,29.0
+2020,8,T,A,28.0
 2020,8,T,B,80.0
 2020,8,T,C,0.0
 2020,8,T,D,0.0
@@ -5144,7 +5144,7 @@ calendar-year,academic-year,need,setting,population
 2020,8,X,A,3.0
 2020,8,X,B,9.0
 2020,8,X,C,0.0
-2020,8,X,D,3.0
+2020,8,X,D,2.0
 2020,8,X,E,1.0
 2020,8,X,F,0.0
 2020,8,X,G,0.0
@@ -5178,7 +5178,7 @@ calendar-year,academic-year,need,setting,population
 2020,9,T,E,2.0
 2020,9,T,F,0.0
 2020,9,T,G,2.0
-2020,9,T,H,0.0
+2020,9,T,H,1.0
 2020,9,T,I,2.0
 2020,9,T,J,1.0
 2020,9,T,K,1.0
@@ -5190,7 +5190,7 @@ calendar-year,academic-year,need,setting,population
 2020,9,U,B,17.0
 2020,9,U,C,0.0
 2020,9,U,D,0.0
-2020,9,U,E,0.0
+2020,9,U,E,1.0
 2020,9,U,F,0.0
 2020,9,U,G,0.0
 2020,9,U,H,1.0
@@ -5277,7 +5277,7 @@ calendar-year,academic-year,need,setting,population
 2020,10,T,N,0.0
 2020,10,T,R,0.0
 2020,10,U,A,2.0
-2020,10,U,B,25.0
+2020,10,U,B,24.0
 2020,10,U,C,0.0
 2020,10,U,D,0.0
 2020,10,U,E,1.0
@@ -5325,7 +5325,7 @@ calendar-year,academic-year,need,setting,population
 2020,10,X,B,7.0
 2020,10,X,C,0.0
 2020,10,X,D,5.0
-2020,10,X,E,1.0
+2020,10,X,E,2.0
 2020,10,X,F,0.0
 2020,10,X,G,1.0
 2020,10,X,H,0.0
@@ -5416,7 +5416,7 @@ calendar-year,academic-year,need,setting,population
 2020,11,W,R,1.0
 2020,11,W,S,0.0
 2020,11,X,A,1.0
-2020,11,X,B,4.0
+2020,11,X,B,5.0
 2020,11,X,C,0.0
 2020,11,X,D,2.0
 2020,11,X,E,1.0
@@ -5428,7 +5428,7 @@ calendar-year,academic-year,need,setting,population
 2020,11,X,K,0.0
 2020,11,X,L,1.0
 2020,11,X,M,0.0
-2020,11,X,N,3.0
+2020,11,X,N,4.0
 2020,11,X,R,4.0
 2020,11,X,S,0.0
 2020,11,Y,A,0.0
@@ -5448,7 +5448,7 @@ calendar-year,academic-year,need,setting,population
 2020,11,Y,R,0.0
 2020,11,Y,S,0.0
 2020,12,T,A,15.0
-2020,12,T,B,32.0
+2020,12,T,B,33.0
 2020,12,T,C,3.0
 2020,12,T,D,0.0
 2020,12,T,E,1.0
@@ -5456,19 +5456,19 @@ calendar-year,academic-year,need,setting,population
 2020,12,T,G,0.0
 2020,12,T,H,4.0
 2020,12,T,I,2.0
-2020,12,T,J,3.0
+2020,12,T,J,4.0
 2020,12,T,K,1.0
 2020,12,T,L,4.0
 2020,12,T,M,0.0
 2020,12,T,N,1.0
 2020,12,T,R,1.0
-2020,12,T,S,6.0
+2020,12,T,S,7.0
 2020,12,U,A,13.0
 2020,12,U,B,13.0
 2020,12,U,C,0.0
 2020,12,U,D,0.0
 2020,12,U,E,0.0
-2020,12,U,F,0.0
+2020,12,U,F,1.0
 2020,12,U,G,0.0
 2020,12,U,H,1.0
 2020,12,U,I,0.0
@@ -5639,7 +5639,7 @@ calendar-year,academic-year,need,setting,population
 2020,13,Y,N,0.0
 2020,13,Y,R,0.0
 2020,13,Y,S,0.0
-2020,14,T,A,6.0
+2020,14,T,A,7.0
 2020,14,T,B,8.0
 2020,14,T,C,1.0
 2020,14,T,D,0.0
@@ -5655,7 +5655,7 @@ calendar-year,academic-year,need,setting,population
 2020,14,T,N,1.0
 2020,14,T,R,1.0
 2020,14,T,S,5.0
-2020,14,U,A,4.0
+2020,14,U,A,5.0
 2020,14,U,B,3.0
 2020,14,U,C,0.0
 2020,14,U,D,0.0
@@ -5745,9 +5745,9 @@ calendar-year,academic-year,need,setting,population
 2020,15,T,J,2.0
 2020,15,T,L,0.0
 2020,15,T,M,0.0
-2020,15,T,N,0.0
+2020,15,T,N,1.0
 2020,15,T,S,4.0
-2020,15,U,A,0.0
+2020,15,U,A,1.0
 2020,15,U,B,0.0
 2020,15,U,C,0.0
 2020,15,U,D,0.0
@@ -5803,7 +5803,7 @@ calendar-year,academic-year,need,setting,population
 2020,15,Y,G,0.0
 2020,15,Y,I,0.0
 2020,15,Y,J,1.0
-2020,15,Y,L,0.0
+2020,15,Y,L,1.0
 2020,15,Y,M,0.0
 2020,15,Y,N,0.0
 2020,15,Y,S,2.0
@@ -5938,7 +5938,7 @@ calendar-year,academic-year,need,setting,population
 2021,-1,X,Q,0.0
 2021,-1,X,R,0.0
 2021,-1,Y,A,0.0
-2021,-1,Y,B,5.0
+2021,-1,Y,B,4.0
 2021,-1,Y,F,2.0
 2021,-1,Y,G,0.0
 2021,-1,Y,J,1.0
@@ -6073,7 +6073,7 @@ calendar-year,academic-year,need,setting,population
 2021,1,X,O,0.0
 2021,1,X,R,0.0
 2021,1,Y,A,1.0
-2021,1,Y,B,8.0
+2021,1,Y,B,7.0
 2021,1,Y,F,5.0
 2021,1,Y,G,0.0
 2021,1,Y,H,0.0
@@ -6086,7 +6086,7 @@ calendar-year,academic-year,need,setting,population
 2021,2,T,A,17.0
 2021,2,T,B,68.0
 2021,2,T,E,0.0
-2021,2,T,F,8.0
+2021,2,T,F,7.0
 2021,2,T,G,0.0
 2021,2,T,H,0.0
 2021,2,T,I,1.0
@@ -6096,7 +6096,7 @@ calendar-year,academic-year,need,setting,population
 2021,2,T,O,0.0
 2021,2,T,R,0.0
 2021,2,U,A,5.0
-2021,2,U,B,21.0
+2021,2,U,B,20.0
 2021,2,U,E,0.0
 2021,2,U,F,1.0
 2021,2,U,G,0.0
@@ -6120,7 +6120,7 @@ calendar-year,academic-year,need,setting,population
 2021,2,V,O,0.0
 2021,2,V,R,0.0
 2021,2,W,A,0.0
-2021,2,W,B,0.0
+2021,2,W,B,1.0
 2021,2,W,E,0.0
 2021,2,W,F,0.0
 2021,2,W,G,0.0
@@ -6146,7 +6146,7 @@ calendar-year,academic-year,need,setting,population
 2021,2,Y,A,1.0
 2021,2,Y,B,8.0
 2021,2,Y,E,0.0
-2021,2,Y,F,5.0
+2021,2,Y,F,4.0
 2021,2,Y,G,0.0
 2021,2,Y,H,0.0
 2021,2,Y,I,0.0
@@ -6156,7 +6156,7 @@ calendar-year,academic-year,need,setting,population
 2021,2,Y,O,0.0
 2021,2,Y,R,0.0
 2021,3,T,A,23.0
-2021,3,T,B,77.0
+2021,3,T,B,76.0
 2021,3,T,E,1.0
 2021,3,T,F,9.0
 2021,3,T,G,0.0
@@ -6176,7 +6176,7 @@ calendar-year,academic-year,need,setting,population
 2021,3,U,I,0.0
 2021,3,U,J,2.0
 2021,3,U,K,0.0
-2021,3,U,L,1.0
+2021,3,U,L,0.0
 2021,3,U,O,0.0
 2021,3,U,R,1.0
 2021,3,V,A,0.0
@@ -6229,7 +6229,7 @@ calendar-year,academic-year,need,setting,population
 2021,3,Y,R,0.0
 2021,4,T,A,16.0
 2021,4,T,B,68.0
-2021,4,T,E,1.0
+2021,4,T,E,2.0
 2021,4,T,F,7.0
 2021,4,T,G,0.0
 2021,4,T,H,0.0
@@ -6240,13 +6240,13 @@ calendar-year,academic-year,need,setting,population
 2021,4,T,O,0.0
 2021,4,T,R,0.0
 2021,4,U,A,9.0
-2021,4,U,B,28.0
+2021,4,U,B,27.0
 2021,4,U,E,0.0
 2021,4,U,F,1.0
 2021,4,U,G,0.0
 2021,4,U,H,0.0
 2021,4,U,I,1.0
-2021,4,U,J,3.0
+2021,4,U,J,2.0
 2021,4,U,K,0.0
 2021,4,U,L,1.0
 2021,4,U,O,0.0
@@ -6288,7 +6288,7 @@ calendar-year,academic-year,need,setting,population
 2021,4,X,O,0.0
 2021,4,X,R,0.0
 2021,4,Y,A,1.0
-2021,4,Y,B,8.0
+2021,4,Y,B,7.0
 2021,4,Y,E,0.0
 2021,4,Y,F,9.0
 2021,4,Y,G,0.0
@@ -6308,7 +6308,7 @@ calendar-year,academic-year,need,setting,population
 2021,5,T,I,1.0
 2021,5,T,J,1.0
 2021,5,T,K,1.0
-2021,5,T,L,1.0
+2021,5,T,L,2.0
 2021,5,T,O,0.0
 2021,5,T,R,0.0
 2021,5,U,A,13.0
@@ -6348,7 +6348,7 @@ calendar-year,academic-year,need,setting,population
 2021,5,W,O,0.0
 2021,5,W,R,0.0
 2021,5,X,A,4.0
-2021,5,X,B,7.0
+2021,5,X,B,6.0
 2021,5,X,E,1.0
 2021,5,X,F,0.0
 2021,5,X,G,0.0
@@ -6372,7 +6372,7 @@ calendar-year,academic-year,need,setting,population
 2021,5,Y,O,0.0
 2021,5,Y,R,0.0
 2021,6,T,A,23.0
-2021,6,T,B,66.0
+2021,6,T,B,65.0
 2021,6,T,C,0.0
 2021,6,T,D,0.0
 2021,6,T,E,1.0
@@ -6387,7 +6387,7 @@ calendar-year,academic-year,need,setting,population
 2021,6,T,O,0.0
 2021,6,T,R,0.0
 2021,6,U,A,16.0
-2021,6,U,B,27.0
+2021,6,U,B,26.0
 2021,6,U,C,0.0
 2021,6,U,D,0.0
 2021,6,U,E,0.0
@@ -6447,7 +6447,7 @@ calendar-year,academic-year,need,setting,population
 2021,6,X,O,0.0
 2021,6,X,R,0.0
 2021,6,Y,A,2.0
-2021,6,Y,B,11.0
+2021,6,Y,B,10.0
 2021,6,Y,C,0.0
 2021,6,Y,D,0.0
 2021,6,Y,E,0.0
@@ -6461,7 +6461,7 @@ calendar-year,academic-year,need,setting,population
 2021,6,Y,M,0.0
 2021,6,Y,O,0.0
 2021,6,Y,R,0.0
-2021,7,T,A,23.0
+2021,7,T,A,22.0
 2021,7,T,B,74.0
 2021,7,T,C,0.0
 2021,7,T,D,0.0
@@ -6517,10 +6517,10 @@ calendar-year,academic-year,need,setting,population
 2021,7,W,L,0.0
 2021,7,W,M,0.0
 2021,7,W,R,1.0
-2021,7,X,A,3.0
+2021,7,X,A,2.0
 2021,7,X,B,13.0
 2021,7,X,C,0.0
-2021,7,X,D,2.0
+2021,7,X,D,3.0
 2021,7,X,E,0.0
 2021,7,X,F,0.0
 2021,7,X,G,0.0
@@ -6551,17 +6551,17 @@ calendar-year,academic-year,need,setting,population
 2021,8,T,D,0.0
 2021,8,T,E,3.0
 2021,8,T,F,0.0
-2021,8,T,G,3.0
+2021,8,T,G,2.0
 2021,8,T,H,3.0
 2021,8,T,I,3.0
 2021,8,T,J,1.0
-2021,8,T,K,1.0
+2021,8,T,K,0.0
 2021,8,T,L,4.0
 2021,8,T,M,0.0
 2021,8,T,N,0.0
 2021,8,T,R,0.0
 2021,8,U,A,12.0
-2021,8,U,B,19.0
+2021,8,U,B,18.0
 2021,8,U,C,0.0
 2021,8,U,D,0.0
 2021,8,U,E,0.0
@@ -6604,7 +6604,7 @@ calendar-year,academic-year,need,setting,population
 2021,8,W,L,0.0
 2021,8,W,M,0.0
 2021,8,W,N,0.0
-2021,8,W,R,0.0
+2021,8,W,R,1.0
 2021,8,X,A,2.0
 2021,8,X,B,7.0
 2021,8,X,C,0.0
@@ -6635,7 +6635,7 @@ calendar-year,academic-year,need,setting,population
 2021,8,Y,M,0.0
 2021,8,Y,N,0.0
 2021,8,Y,R,0.0
-2021,9,T,A,27.0
+2021,9,T,A,26.0
 2021,9,T,B,80.0
 2021,9,T,C,0.0
 2021,9,T,D,0.0
@@ -6733,7 +6733,7 @@ calendar-year,academic-year,need,setting,population
 2021,10,T,F,0.0
 2021,10,T,G,2.0
 2021,10,T,H,1.0
-2021,10,T,I,3.0
+2021,10,T,I,2.0
 2021,10,T,J,1.0
 2021,10,T,K,1.0
 2021,10,T,L,3.0
@@ -6788,7 +6788,7 @@ calendar-year,academic-year,need,setting,population
 2021,10,X,A,2.0
 2021,10,X,B,7.0
 2021,10,X,C,0.0
-2021,10,X,D,3.0
+2021,10,X,D,4.0
 2021,10,X,E,2.0
 2021,10,X,F,0.0
 2021,10,X,G,1.0
@@ -6796,7 +6796,7 @@ calendar-year,academic-year,need,setting,population
 2021,10,X,I,1.0
 2021,10,X,J,2.0
 2021,10,X,K,0.0
-2021,10,X,L,0.0
+2021,10,X,L,1.0
 2021,10,X,M,0.0
 2021,10,X,N,3.0
 2021,10,X,R,5.0
@@ -6918,7 +6918,7 @@ calendar-year,academic-year,need,setting,population
 2021,12,T,E,2.0
 2021,12,T,F,0.0
 2021,12,T,G,1.0
-2021,12,T,H,1.0
+2021,12,T,H,0.0
 2021,12,T,I,0.0
 2021,12,T,J,3.0
 2021,12,T,K,0.0
@@ -7008,7 +7008,7 @@ calendar-year,academic-year,need,setting,population
 2021,12,Y,R,0.0
 2021,12,Y,S,0.0
 2021,13,T,A,13.0
-2021,13,T,B,23.0
+2021,13,T,B,24.0
 2021,13,T,C,2.0
 2021,13,T,D,0.0
 2021,13,T,E,1.0
@@ -7017,7 +7017,7 @@ calendar-year,academic-year,need,setting,population
 2021,13,T,H,4.0
 2021,13,T,I,2.0
 2021,13,T,J,2.0
-2021,13,T,K,0.0
+2021,13,T,K,1.0
 2021,13,T,L,3.0
 2021,13,T,M,0.0
 2021,13,T,N,2.0
@@ -7033,7 +7033,7 @@ calendar-year,academic-year,need,setting,population
 2021,13,U,H,1.0
 2021,13,U,I,0.0
 2021,13,U,J,1.0
-2021,13,U,K,0.0
+2021,13,U,K,1.0
 2021,13,U,L,2.0
 2021,13,U,M,0.0
 2021,13,U,N,0.0
@@ -7210,7 +7210,7 @@ calendar-year,academic-year,need,setting,population
 2021,15,T,L,0.0
 2021,15,T,M,0.0
 2021,15,T,N,0.0
-2021,15,T,S,6.0
+2021,15,T,S,5.0
 2021,15,U,A,0.0
 2021,15,U,B,0.0
 2021,15,U,C,0.0
@@ -7278,7 +7278,7 @@ calendar-year,academic-year,need,setting,population
 2021,16,U,B,0.0
 2021,16,U,J,1.0
 2021,16,U,N,0.0
-2021,16,U,S,4.0
+2021,16,U,S,3.0
 2021,16,V,B,0.0
 2021,16,V,J,0.0
 2021,16,V,N,0.0
@@ -7336,7 +7336,7 @@ calendar-year,academic-year,need,setting,population
 2022,-2,T,J,1.0
 2022,-2,T,P,0.0
 2022,-2,T,Q,0.0
-2022,-2,U,A,6.0
+2022,-2,U,A,5.0
 2022,-2,U,G,0.0
 2022,-2,U,J,1.0
 2022,-2,U,P,2.0
@@ -7362,7 +7362,7 @@ calendar-year,academic-year,need,setting,population
 2022,-2,Y,P,3.0
 2022,-2,Y,Q,0.0
 2022,-1,T,A,1.0
-2022,-1,T,B,16.0
+2022,-1,T,B,17.0
 2022,-1,T,F,1.0
 2022,-1,T,G,0.0
 2022,-1,T,J,1.0
@@ -7370,7 +7370,7 @@ calendar-year,academic-year,need,setting,population
 2022,-1,T,Q,4.0
 2022,-1,T,R,0.0
 2022,-1,U,A,8.0
-2022,-1,U,B,8.0
+2022,-1,U,B,7.0
 2022,-1,U,F,0.0
 2022,-1,U,G,0.0
 2022,-1,U,J,1.0
@@ -7409,7 +7409,7 @@ calendar-year,academic-year,need,setting,population
 2022,-1,Y,P,2.0
 2022,-1,Y,Q,0.0
 2022,-1,Y,R,0.0
-2022,0,T,A,8.0
+2022,0,T,A,7.0
 2022,0,T,B,51.0
 2022,0,T,F,4.0
 2022,0,T,G,0.0
@@ -7422,7 +7422,7 @@ calendar-year,academic-year,need,setting,population
 2022,0,T,Q,0.0
 2022,0,T,R,0.0
 2022,0,U,A,8.0
-2022,0,U,B,15.0
+2022,0,U,B,14.0
 2022,0,U,F,0.0
 2022,0,U,G,0.0
 2022,0,U,H,0.0
@@ -7470,7 +7470,7 @@ calendar-year,academic-year,need,setting,population
 2022,0,X,Q,0.0
 2022,0,X,R,0.0
 2022,0,Y,A,0.0
-2022,0,Y,B,8.0
+2022,0,Y,B,7.0
 2022,0,Y,F,4.0
 2022,0,Y,G,0.0
 2022,0,Y,H,0.0
@@ -7482,7 +7482,7 @@ calendar-year,academic-year,need,setting,population
 2022,0,Y,Q,0.0
 2022,0,Y,R,0.0
 2022,1,T,A,14.0
-2022,1,T,B,65.0
+2022,1,T,B,66.0
 2022,1,T,F,7.0
 2022,1,T,G,0.0
 2022,1,T,H,0.0
@@ -7538,7 +7538,7 @@ calendar-year,academic-year,need,setting,population
 2022,1,X,R,0.0
 2022,1,Y,A,1.0
 2022,1,Y,B,8.0
-2022,1,Y,F,6.0
+2022,1,Y,F,5.0
 2022,1,Y,G,0.0
 2022,1,Y,H,0.0
 2022,1,Y,I,0.0
@@ -7547,10 +7547,10 @@ calendar-year,academic-year,need,setting,population
 2022,1,Y,L,0.0
 2022,1,Y,O,0.0
 2022,1,Y,R,0.0
-2022,2,T,A,18.0
-2022,2,T,B,69.0
+2022,2,T,A,17.0
+2022,2,T,B,68.0
 2022,2,T,E,0.0
-2022,2,T,F,8.0
+2022,2,T,F,7.0
 2022,2,T,G,0.0
 2022,2,T,H,0.0
 2022,2,T,I,1.0
@@ -7562,7 +7562,7 @@ calendar-year,academic-year,need,setting,population
 2022,2,U,A,8.0
 2022,2,U,B,21.0
 2022,2,U,E,0.0
-2022,2,U,F,1.0
+2022,2,U,F,0.0
 2022,2,U,G,0.0
 2022,2,U,H,0.0
 2022,2,U,I,0.0
@@ -7608,7 +7608,7 @@ calendar-year,academic-year,need,setting,population
 2022,2,X,O,0.0
 2022,2,X,R,0.0
 2022,2,Y,A,1.0
-2022,2,Y,B,9.0
+2022,2,Y,B,8.0
 2022,2,Y,E,0.0
 2022,2,Y,F,5.0
 2022,2,Y,G,0.0
@@ -7619,10 +7619,10 @@ calendar-year,academic-year,need,setting,population
 2022,2,Y,L,0.0
 2022,2,Y,O,0.0
 2022,2,Y,R,0.0
-2022,3,T,A,19.0
+2022,3,T,A,18.0
 2022,3,T,B,69.0
 2022,3,T,E,1.0
-2022,3,T,F,8.0
+2022,3,T,F,7.0
 2022,3,T,G,0.0
 2022,3,T,H,0.0
 2022,3,T,I,1.0
@@ -7632,7 +7632,7 @@ calendar-year,academic-year,need,setting,population
 2022,3,T,O,0.0
 2022,3,T,R,0.0
 2022,3,U,A,6.0
-2022,3,U,B,21.0
+2022,3,U,B,20.0
 2022,3,U,E,0.0
 2022,3,U,F,1.0
 2022,3,U,G,0.0
@@ -7668,7 +7668,7 @@ calendar-year,academic-year,need,setting,population
 2022,3,W,O,0.0
 2022,3,W,R,0.0
 2022,3,X,A,3.0
-2022,3,X,B,6.0
+2022,3,X,B,5.0
 2022,3,X,E,1.0
 2022,3,X,F,0.0
 2022,3,X,G,0.0
@@ -7680,9 +7680,9 @@ calendar-year,academic-year,need,setting,population
 2022,3,X,O,0.0
 2022,3,X,R,0.0
 2022,3,Y,A,1.0
-2022,3,Y,B,10.0
+2022,3,Y,B,9.0
 2022,3,Y,E,0.0
-2022,3,Y,F,5.0
+2022,3,Y,F,4.0
 2022,3,Y,G,0.0
 2022,3,Y,H,0.0
 2022,3,Y,I,0.0
@@ -7692,7 +7692,7 @@ calendar-year,academic-year,need,setting,population
 2022,3,Y,O,0.0
 2022,3,Y,R,0.0
 2022,4,T,A,25.0
-2022,4,T,B,80.0
+2022,4,T,B,78.0
 2022,4,T,E,2.0
 2022,4,T,F,9.0
 2022,4,T,G,0.0
@@ -7776,7 +7776,7 @@ calendar-year,academic-year,need,setting,population
 2022,5,T,O,0.0
 2022,5,T,R,0.0
 2022,5,U,A,9.0
-2022,5,U,B,29.0
+2022,5,U,B,28.0
 2022,5,U,E,0.0
 2022,5,U,F,1.0
 2022,5,U,G,0.0
@@ -7826,7 +7826,7 @@ calendar-year,academic-year,need,setting,population
 2022,5,Y,A,1.0
 2022,5,Y,B,7.0
 2022,5,Y,E,0.0
-2022,5,Y,F,9.0
+2022,5,Y,F,8.0
 2022,5,Y,G,0.0
 2022,5,Y,H,0.0
 2022,5,Y,I,0.0
@@ -7836,11 +7836,11 @@ calendar-year,academic-year,need,setting,population
 2022,5,Y,O,0.0
 2022,5,Y,R,0.0
 2022,6,T,A,28.0
-2022,6,T,B,84.0
+2022,6,T,B,83.0
 2022,6,T,C,0.0
 2022,6,T,D,0.0
 2022,6,T,E,2.0
-2022,6,T,F,8.0
+2022,6,T,F,9.0
 2022,6,T,G,0.0
 2022,6,T,H,0.0
 2022,6,T,I,1.0
@@ -7896,7 +7896,7 @@ calendar-year,academic-year,need,setting,population
 2022,6,W,O,0.0
 2022,6,W,R,0.0
 2022,6,X,A,5.0
-2022,6,X,B,8.0
+2022,6,X,B,7.0
 2022,6,X,C,0.0
 2022,6,X,D,0.0
 2022,6,X,E,1.0
@@ -7926,7 +7926,7 @@ calendar-year,academic-year,need,setting,population
 2022,6,Y,O,0.0
 2022,6,Y,R,0.0
 2022,7,T,A,25.0
-2022,7,T,B,67.0
+2022,7,T,B,66.0
 2022,7,T,C,0.0
 2022,7,T,D,0.0
 2022,7,T,E,1.0
@@ -7940,7 +7940,7 @@ calendar-year,academic-year,need,setting,population
 2022,7,T,M,0.0
 2022,7,T,R,0.0
 2022,7,U,A,17.0
-2022,7,U,B,27.0
+2022,7,U,B,26.0
 2022,7,U,C,0.0
 2022,7,U,D,0.0
 2022,7,U,E,0.0
@@ -7982,7 +7982,7 @@ calendar-year,academic-year,need,setting,population
 2022,7,W,M,0.0
 2022,7,W,R,1.0
 2022,7,X,A,3.0
-2022,7,X,B,12.0
+2022,7,X,B,11.0
 2022,7,X,C,0.0
 2022,7,X,D,3.0
 2022,7,X,E,0.0
@@ -8009,8 +8009,8 @@ calendar-year,academic-year,need,setting,population
 2022,7,Y,L,1.0
 2022,7,Y,M,0.0
 2022,7,Y,R,0.0
-2022,8,T,A,23.0
-2022,8,T,B,70.0
+2022,8,T,A,22.0
+2022,8,T,B,69.0
 2022,8,T,C,0.0
 2022,8,T,D,0.0
 2022,8,T,E,2.0
@@ -8068,7 +8068,7 @@ calendar-year,academic-year,need,setting,population
 2022,8,W,L,0.0
 2022,8,W,M,0.0
 2022,8,W,N,0.0
-2022,8,W,R,0.0
+2022,8,W,R,1.0
 2022,8,X,A,3.0
 2022,8,X,B,10.0
 2022,8,X,C,0.0
@@ -8189,7 +8189,7 @@ calendar-year,academic-year,need,setting,population
 2022,9,Y,M,0.0
 2022,9,Y,N,0.0
 2022,9,Y,R,0.0
-2022,10,T,A,26.0
+2022,10,T,A,25.0
 2022,10,T,B,79.0
 2022,10,T,C,0.0
 2022,10,T,D,0.0
@@ -8258,7 +8258,7 @@ calendar-year,academic-year,need,setting,population
 2022,10,X,G,1.0
 2022,10,X,H,0.0
 2022,10,X,I,1.0
-2022,10,X,J,2.0
+2022,10,X,J,3.0
 2022,10,X,K,0.0
 2022,10,X,L,1.0
 2022,10,X,M,0.0
@@ -8270,7 +8270,7 @@ calendar-year,academic-year,need,setting,population
 2022,10,Y,D,0.0
 2022,10,Y,E,0.0
 2022,10,Y,F,4.0
-2022,10,Y,G,0.0
+2022,10,Y,G,1.0
 2022,10,Y,H,1.0
 2022,10,Y,I,1.0
 2022,10,Y,J,0.0
@@ -8287,10 +8287,10 @@ calendar-year,academic-year,need,setting,population
 2022,11,T,F,0.0
 2022,11,T,G,2.0
 2022,11,T,H,1.0
-2022,11,T,I,3.0
-2022,11,T,J,4.0
+2022,11,T,I,2.0
+2022,11,T,J,3.0
 2022,11,T,K,1.0
-2022,11,T,L,3.0
+2022,11,T,L,2.0
 2022,11,T,M,0.0
 2022,11,T,N,1.0
 2022,11,T,R,0.0
@@ -8442,7 +8442,7 @@ calendar-year,academic-year,need,setting,population
 2022,12,X,A,1.0
 2022,12,X,B,1.0
 2022,12,X,C,0.0
-2022,12,X,D,4.0
+2022,12,X,D,3.0
 2022,12,X,E,1.0
 2022,12,X,F,0.0
 2022,12,X,G,2.0
@@ -8453,7 +8453,7 @@ calendar-year,academic-year,need,setting,population
 2022,12,X,L,0.0
 2022,12,X,M,0.0
 2022,12,X,N,4.0
-2022,12,X,R,0.0
+2022,12,X,R,1.0
 2022,12,X,S,1.0
 2022,12,Y,A,1.0
 2022,12,Y,B,8.0
@@ -8568,13 +8568,13 @@ calendar-year,academic-year,need,setting,population
 2022,13,Y,R,0.0
 2022,13,Y,S,0.0
 2022,14,T,A,11.0
-2022,14,T,B,11.0
+2022,14,T,B,12.0
 2022,14,T,C,2.0
 2022,14,T,D,0.0
 2022,14,T,E,0.0
 2022,14,T,F,0.0
 2022,14,T,G,0.0
-2022,14,T,H,3.0
+2022,14,T,H,4.0
 2022,14,T,I,1.0
 2022,14,T,J,1.0
 2022,14,T,K,0.0
@@ -8600,7 +8600,7 @@ calendar-year,academic-year,need,setting,population
 2022,14,U,R,0.0
 2022,14,U,S,2.0
 2022,14,V,A,0.0
-2022,14,V,B,1.0
+2022,14,V,B,0.0
 2022,14,V,C,0.0
 2022,14,V,D,0.0
 2022,14,V,E,0.0
@@ -8674,7 +8674,7 @@ calendar-year,academic-year,need,setting,population
 2022,15,T,L,0.0
 2022,15,T,M,0.0
 2022,15,T,N,0.0
-2022,15,T,S,4.0
+2022,15,T,S,5.0
 2022,15,U,A,1.0
 2022,15,U,B,0.0
 2022,15,U,C,0.0
@@ -8682,7 +8682,7 @@ calendar-year,academic-year,need,setting,population
 2022,15,U,E,0.0
 2022,15,U,G,0.0
 2022,15,U,I,0.0
-2022,15,U,J,0.0
+2022,15,U,J,1.0
 2022,15,U,L,0.0
 2022,15,U,M,0.0
 2022,15,U,N,0.0
@@ -8740,7 +8740,7 @@ calendar-year,academic-year,need,setting,population
 2022,16,T,N,0.0
 2022,16,T,S,3.0
 2022,16,U,B,0.0
-2022,16,U,J,1.0
+2022,16,U,J,0.0
 2022,16,U,N,0.0
 2022,16,U,S,3.0
 2022,16,V,B,0.0
@@ -8752,8 +8752,8 @@ calendar-year,academic-year,need,setting,population
 2022,16,W,N,0.0
 2022,16,W,S,0.0
 2022,16,X,B,0.0
-2022,16,X,J,0.0
-2022,16,X,N,1.0
+2022,16,X,J,1.0
+2022,16,X,N,0.0
 2022,16,X,S,1.0
 2022,16,Y,B,0.0
 2022,16,Y,J,0.0
