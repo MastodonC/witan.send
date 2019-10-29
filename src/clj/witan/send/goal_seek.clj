@@ -71,7 +71,10 @@
 (defn target-pop-exceeded? [pop target-pop]
   (> pop (apply max target-pop)))
 
-(defn assoc-transition-params [config m]
+(defn assoc-transition-params
+  "Takes a config and creates or updates :transitions-to-change key with a partial
+   transition map"
+  [config m]
   (let [state (create-transition-modifier-seq m 1 2 1)]
     (-> config
         (assoc-in (first (first state))
