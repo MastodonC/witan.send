@@ -98,8 +98,8 @@
                           (filter #(= (:year %) target-year))
                           first
                           :population)]
-    (do (println "Modifier:" modifier)
-        (println "Population:" achieved-pop))
+    (println "Modifier:" modifier)
+    (println "Population:" achieved-pop)
     [result current-pop]))
 
 (defn target-results
