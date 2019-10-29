@@ -5,13 +5,15 @@
             [witan.send.model.prepare :as p]
             [witan.send.maths :as math]))
 
-(defn update-transition-modifier [m n]
+(defn update-transition-modifier
   "Takes a map of keys partially matching a transition and a new modifier"
+  [m n]
   [(assoc m :modify-transition-by n)])
 
-(defn create-transition-modifier-seq [m start end step]
+(defn create-transition-modifier-seq
   "Takes a map of keys partially matching a transition and start, end and step range to modify
    the transition by, creating a sequence of configs for :transitions-to-change"
+  [m start end step]
   [[[:transition-parameters :transitions-to-change]
     (mapv #(update-transition-modifier m %) (range start end step))]])
 
@@ -23,9 +25,10 @@
                       (update :population i/->int)))
             filepath))
 
-(defn state-pop [config]
+(defn state-pop
   "Takes a config and returns the state to be modified and output path of
    Output_State_pop_only.csv results"
+  [config]
   (let [state (-> (get-in config [:transition-parameters :transitions-to-change])
                   first
                   (clojure.set/rename-keys {:setting-2 :setting :need-2 :need :academic-year-2 :academic-year})
@@ -37,10 +40,11 @@
                        "/Output_State_pop_only.csv")]
     [state state-pop]))
 
-(defn get-target-pop [[state state-pop]]
+(defn get-target-pop
   "Takes a vector with a state to find (e.g. {:setting :SFSS, :need :ASD}) and filepath
   for a Output_State_pop_only.csv file to return summed populations sorted by calender year
   for ease of reading in REPL"
+  [[state state-pop]]
   (->> (csv->state-pop state-pop)
        (filter #(every? identity (p/test-predicates % state))) ;; need something to build predicates
        (group-by :calendar-year)
@@ -73,9 +77,10 @@
         (assoc-in (first (first state))
                   (first (second (first state)))))))
 
-(defn target-result [config target-year & m]
+(defn target-result
   "Takes a baseline config to use as a template, a target year and an optional map of keys
    partially matching a transition, and a value to modify by"
+  [config target-year & m]
   (let [config (if m
                  (assoc-in config [:transition-parameters :transitions-to-change] (vec m))
                  config)
@@ -94,10 +99,11 @@
         (println "Population:" achieved-pop))
     [result current-pop]))
 
-(defn target-results [base-config target m & step]
+(defn target-results
   "Takes a baseline config to use as a template, a map containing a target population
    range and year, e.g. {:year 2019 :population 6}, a map of keys partially matching
    a transition and an optional range step value"
+  [base-config target m & step]
   (let [step (if step
                step
                0.1)
