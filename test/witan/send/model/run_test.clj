@@ -95,3 +95,136 @@
                               {:joiner-beta-params joiner-beta-params
                                :joiner-state-alphas joiner-state-alphas}
                               calendar-year)))))))
+
+(comment
+
+  (let [modify-transition-from nil
+        make-setting-invalid nil
+        standard-projection
+        {:mover-state-alphas {[10 :Y-F]
+                              {:Y-H 0.0017035775127768312
+                               :Y-L 0.04940374787052811
+                               :Y-D 0.0017035775127768312
+                               :Y-K 2.02555366269165247 ;; 0.02555366269165247
+                               :Y-A 0.02555366269165247
+                               :Y-I 0.0017035775127768312
+                               :Y-B 0.0017035775127768312
+                               :Y-J 0.2402044293015332
+                               :Y-C 0.07325383304940375
+                               :Y-E 0.12095400340715501
+                               :Y-R 0.0017035775127768312
+                               :Y-G 0.07325383304940375
+                               :Y-N 2.3594548551959114 ;; 0.3594548551959114
+                               :Y-S 0.023850085178875637}
+                              [9 :Y-F]
+                              {:Y-H 0.0017035775127768312
+                               :Y-L 0.04940374787052811
+                               :Y-D 0.0017035775127768312
+                               :Y-K 2.02555366269165247 ;; 0.02555366269165247
+                               :Y-A 0.02555366269165247
+                               :Y-I 0.0017035775127768312
+                               :Y-B 0.0017035775127768312
+                               :Y-J 0.2402044293015332
+                               :Y-C 0.07325383304940375
+                               :Y-E 0.12095400340715501
+                               :Y-R 0.0017035775127768312
+                               :Y-G 0.07325383304940375
+                               :Y-N 2.3594548551959114 ;; 0.3594548551959114
+                               :Y-S 0.023850085178875637}}
+         :transitions {}
+         :leaver-beta-params {[10 :Y-F] { :beta 1.0 ;; 11.958035714285714,
+                                         :alpha 1.0 ;; 5.04196428571428571 ;; :alpha 0.04196428571428571
+                                         }}
+         :joiner-state-alphas {10 {:T-B 25.01 :X-B 11.01 :X-J 0.01388888}}
+         :projected-population {2018 {0 8949
+                                      -4 9142
+                                      7 6871
+                                      20 16131
+                                      1 8882
+                                      24 19217
+                                      -2 8524
+                                      4 7541
+                                      -1 8407
+                                      15 9489
+                                      21 17732
+                                      13 6233
+                                      22 18998
+                                      -3 8773
+                                      6 7084
+                                      25 19502
+                                      17 11040
+                                      3 8102
+                                      12 6023
+                                      2 8331
+                                      23 19037
+                                      19 14421
+                                      11 6143
+                                      9 6275
+                                      5 7301
+                                      14 8232
+                                      16 10366
+                                      10 6362
+                                      18 12557
+                                      -5 9639
+                                      8 6296}}
+         :valid-transitions {:Y [:A :B :C :D :E :F :G :H :I :J :K :L :N :O :P :Q :R :S]
+                             :F [:A :B :C :D :E :F :G :H :I :J :K :L :N :O :P :Q :R :S]}
+         :population {10 8102}
+         :mover-beta-parameters {[10 :Y-F] { :beta 10.0 ;; 11.920856610800746,
+                                            :alpha 1.0 ;; 40.07914338919925512 ;; :alpha 0.07914338919925512
+                                            }}
+         :valid-states {} ;; is this OK?
+         :joiner-beta-params {10 { :alpha 57/4, :beta 7027N }}
+         :valid-year-settings {9 #{:L :M :I :R :A :F :D :B :J :C :E :G :H :N :K}
+                               10 #{:L :M :I :R :A :F :D :B :J :C :E :G :H :N :K}
+                               11 #{:L :M :I :R :A :F :D :B :J :C :E :G :H :N :K}
+                               12 #{:L :M :I :R :A :F :D :B :J :C :E :G :H :N :K}}
+         }
+        scenario-projection nil
+        population-by-state {[9 :T-B] 10
+                             [9 :X-B] 10
+                             [9 :X-J] 10}
+        calendar-year 2018
+        projected-population {2018 {0 8949
+                                    -4 9142
+                                    7 6871
+                                    20 16131
+                                    1 8882
+                                    24 19217
+                                    -2 8524
+                                    4 7541
+                                    -1 8407
+                                    15 9489
+                                    21 17732
+                                    13 6233
+                                    22 18998
+                                    -3 8773
+                                    6 7084
+                                    25 19502
+                                    17 11040
+                                    3 8102
+                                    12 6023
+                                    2 8331
+                                    23 19037
+                                    19 14421
+                                    11 6143
+                                    9 6275
+                                    5 7301
+                                    14 8232
+                                    16 10366
+                                    10 6362
+                                    18 12557
+                                    -5 9639
+                                    8 6296}}
+        ]
+
+    (sut/run-model-iteration
+     modify-transition-from
+     make-setting-invalid
+     standard-projection
+     scenario-projection
+     {:model population-by-state}
+     [calendar-year projected-population]))
+
+
+  )
