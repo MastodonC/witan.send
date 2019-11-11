@@ -17,7 +17,7 @@ option_list = list(
               help="output dir name [default= %default]", metavar="character"),
   make_option(c("-p", "--population-file"), type="character", 
               help="population file name", metavar="character"),
-  make_option(c("-xs", "--exclude-settings"), type="character", default="", 
+  make_option(c("-x", "--exclude-settings"), type="character", default="", 
               help="settings to exclude", metavar="character"),
   make_option(c("-b", "--bound"), type="character", 
               help="confidence bound", metavar="character"));
