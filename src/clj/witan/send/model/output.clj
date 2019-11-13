@@ -325,6 +325,16 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
+        (with-open [writer (io/writer (io/file (str dir "/Output_Setting_Cost.csv")))]
+          (let [columns [:calendar-year :setting :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
+            (->> (mapcat (fn [output year]
+                           (map (fn [[setting stats]]
+                                  (-> (medley/map-vals m/round stats)
+                                      (assoc :setting (name setting) :calendar-year year)))
+                                (:setting-cost output))) send-output (range initial-projection-year 3000))
+                 (map (apply juxt columns))
+                 (concat [(map name columns)])
+                 (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file (str dir "/Output_Count.csv")))]
           (let [columns [:calendar-year :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (map (fn [stats year]
