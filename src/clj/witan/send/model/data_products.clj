@@ -74,6 +74,24 @@
    {}
    calendar-year))
 
+(defn roll-up-calendar-year-by-cost-per-setting [cost-lookup calendar-year]
+  (transduce
+   (comp
+    (remove (fn [[[ay need-setting] population]]
+              (= need-setting constants/non-send))) ;; remove non-send
+    ;; convert need-setting population to need-setting cost
+    (map (fn [[[ay need-setting] population]] [need-setting population]))
+    (map (fn [[need-setting population]] [(states/split-need-setting need-setting) population]))
+    (map (fn [[[need setting :as need-setting] population]] [setting
+                                                             (* (get cost-lookup need-setting 0)
+                                                                population)]))
+    (map (fn [[setting cost]] [setting cost])))
+   (fn
+     ([totals] totals)
+     ([totals [setting cost]] (update totals setting (fnil + 0) cost)))
+   {}
+   calendar-year))
+
 (defn roll-up-calendar-year-by-total-cost [cost-lookup calendar-year]
   (transduce
    (comp
@@ -180,14 +198,17 @@
                                  (map :total-cost)
                                  (summarise-results (partial roll-up-calendar-year-by-total-cost cost-lookup)
                                                     simulations)))
-        total-in-send-by-ay-group (future (summarise-results roll-up-total-in-send-by-ay-group simulations))
-        ]
+        setting-cost (future (into []
+                                   (summarise-results (partial roll-up-calendar-year-by-cost-per-setting cost-lookup)
+                                                      simulations)))
+        total-in-send-by-ay-group (future (summarise-results roll-up-total-in-send-by-ay-group simulations))]
     {:by-state @by-state
      :total-in-send-by-ay @total-in-send-by-ay
      :total-in-send @total-in-send
      :total-in-send-by-need @total-in-send-by-need
      :total-in-send-by-setting @total-in-send-by-setting
      :total-cost @total-cost
+     :setting-cost @setting-cost
      :total-in-send-by-ay-group @total-in-send-by-ay-group}))
 
 (defn ->send-output-style [data-products]
