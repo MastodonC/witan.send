@@ -3,9 +3,10 @@
 ## Context
 
 The model projects future activity by creating multiple simulations of
-the future. We then run these simulation runs through a HDR Histogram
-to get summary statistics. When we use the data directly at the
-ay/need/setting level, then we don't need to roll it up.
+the future. We then run these simulation results through a HDR
+Histogram to get summary statistics. When we use the data directly at
+the ay/need/setting + population level, then we don't need to roll up
+the simulation results as they are already summarised at this level.
 
 If we want to figure out costs, then we need to multiply each
 need-setting by the appropriate amount, or if we wanted to sum needs
