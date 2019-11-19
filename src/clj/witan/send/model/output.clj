@@ -7,7 +7,8 @@
             [witan.send.maths :as m]
             [witan.send.params :as p]
             [witan.send.report :as report]
-            [witan.send.states :as states])
+            [witan.send.states :as states]
+            [witan.send.model.data-products.setting-summary :as setting-summary])
   (:import org.apache.commons.math3.distribution.BetaDistribution))
 
 (defn transition-present? [transition projection]
@@ -315,26 +316,8 @@
                  (map (apply juxt columns))
                  (concat [(map name columns)])
                  (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file (str dir "/Output_Setting.csv")))]
-          (let [columns [:calendar-year :setting :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
-            (->> (mapcat (fn [output year]
-                           (map (fn [[setting stats]]
-                                  (-> (medley/map-vals m/round stats)
-                                      (assoc :setting (name setting) :calendar-year year)))
-                                (:total-in-send-by-setting output))) send-output (range initial-projection-year 3000))
-                 (map (apply juxt columns))
-                 (concat [(map name columns)])
-                 (csv/write-csv writer))))
-        (with-open [writer (io/writer (io/file (str dir "/Output_Setting_Cost.csv")))]
-          (let [columns [:calendar-year :setting :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
-            (->> (mapcat (fn [output year]
-                           (map (fn [[setting stats]]
-                                  (-> (medley/map-vals m/round stats)
-                                      (assoc :setting (name setting) :calendar-year year)))
-                                (:setting-cost output))) send-output (range initial-projection-year 3000))
-                 (map (apply juxt columns))
-                 (concat [(map name columns)])
-                 (csv/write-csv writer))))
+        (setting-summary/->output-setting-csv dir initial-projection-year send-output)
+        (setting-summary/->output-setting-cost-csv dir initial-projection-year send-output)
         (with-open [writer (io/writer (io/file (str dir "/Output_Count.csv")))]
           (let [columns [:calendar-year :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (map (fn [stats year]

@@ -3,7 +3,8 @@
             [witan.send.maths :as m]
             [witan.send.schemas :as sc]
             [witan.send.states :as states]
-            [witan.send.utils :as u])
+            [witan.send.utils :as u]
+            [witan.send.model.data-products.setting-summary :as setting-summary])
   (:import org.HdrHistogram.IntCountsHistogram))
 
 (def number-of-significant-digits 3)
@@ -57,38 +58,6 @@
      ([totals] totals)
      ([totals [need population]]
       (update totals need m/some+ population)))
-   {}
-   calendar-year))
-
-(defn roll-up-calendar-year-by-total-in-send-by-setting [calendar-year]
-  (transduce
-   (map (fn [[[ay need-setting] population]]
-          [(-> need-setting
-               (states/split-need-setting)
-               second)
-           population]))
-   (fn
-     ([totals] totals)
-     ([totals [setting population]]
-      (update totals setting m/some+ population)))
-   {}
-   calendar-year))
-
-(defn roll-up-calendar-year-by-cost-per-setting [cost-lookup calendar-year]
-  (transduce
-   (comp
-    (remove (fn [[[ay need-setting] population]]
-              (= need-setting constants/non-send))) ;; remove non-send
-    ;; convert need-setting population to need-setting cost
-    (map (fn [[[ay need-setting] population]] [need-setting population]))
-    (map (fn [[need-setting population]] [(states/split-need-setting need-setting) population]))
-    (map (fn [[[need setting :as need-setting] population]] [setting
-                                                             (* (get cost-lookup need-setting 0)
-                                                                population)]))
-    (map (fn [[setting cost]] [setting cost])))
-   (fn
-     ([totals] totals)
-     ([totals [setting cost]] (update totals setting (fnil + 0) cost)))
    {}
    calendar-year))
 
@@ -187,29 +156,28 @@
   (let [by-state (future (summarise-results
                           (partial roll-up-calendar-year-by-state
                                    (states/calculate-valid-states-from-setting-academic-years valid-states))
-                          simulations))
+                          simulations)) ;; FIXME - this should be a state filter for all data products
         total-in-send-by-ay (future (summarise-results roll-up-calendar-year-by-ay simulations))
-        total-in-send (future (into []
-                                    (map :total-population)
-                                    (summarise-results roll-up-calendar-year-by-total-send-population simulations)))
-        total-in-send-by-need (future (summarise-results roll-up-calendar-year-by-total-in-send-by-need simulations))
-        total-in-send-by-setting (future (summarise-results roll-up-calendar-year-by-total-in-send-by-setting simulations))
+        total-in-send-by-ay-group (future (summarise-results roll-up-total-in-send-by-ay-group simulations))
+        total-send-population (future (into []
+                                            (map :total-population)
+                                            (summarise-results roll-up-calendar-year-by-total-send-population simulations)))
         total-cost (future (into []
                                  (map :total-cost)
                                  (summarise-results (partial roll-up-calendar-year-by-total-cost cost-lookup)
                                                     simulations)))
-        setting-cost (future (into []
-                                   (summarise-results (partial roll-up-calendar-year-by-cost-per-setting cost-lookup)
-                                                      simulations)))
-        total-in-send-by-ay-group (future (summarise-results roll-up-total-in-send-by-ay-group simulations))]
+        total-in-send-by-need (future (summarise-results roll-up-calendar-year-by-total-in-send-by-need simulations))
+        population-by-setting (future (summarise-results setting-summary/population simulations))
+        cost-by-setting (future (into []
+                                      (summarise-results (partial setting-summary/cost cost-lookup) simulations)))]
     {:by-state @by-state
      :total-in-send-by-ay @total-in-send-by-ay
-     :total-in-send @total-in-send
-     :total-in-send-by-need @total-in-send-by-need
-     :total-in-send-by-setting @total-in-send-by-setting
+     :total-in-send-by-ay-group @total-in-send-by-ay-group
+     :total-in-send @total-send-population
      :total-cost @total-cost
-     :setting-cost @setting-cost
-     :total-in-send-by-ay-group @total-in-send-by-ay-group}))
+     :total-in-send-by-need @total-in-send-by-need
+     :total-in-send-by-setting @population-by-setting
+     :setting-cost @cost-by-setting}))
 
 (defn ->send-output-style [data-products]
   (let [data-keys (keys data-products)]
