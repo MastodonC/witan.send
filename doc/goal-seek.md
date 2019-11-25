@@ -1,21 +1,31 @@
 # Implementing goal-seek
 
-Goal-seek allows one to search for the best model config parameters with which to achieve a certain subpopulation within the SEND projection.
+Goal-seek allows one to search for the best modifier config parameters with which to achieve a certain subpopulation within the SEND projection. See ["transtions to change"](config.md#transitions-to-change) for more information on applying transition modifiers.
 
-Goal-seek will run the SEND model multiple times with the same underlying data but varying the scenario parameters by input values, stopping when it hits your target population size.
+Goal-seek can run the SEND model multiple times with the same underlying data but varying the scenario parameters by input values, stopping when it hits the target subpopulation size.
 
 ## Usage
 
-In the REPL, call `target-results` providing it with six arguments:
+There are two ways of using goal-seek; either for a single run to test a modifier input (`target-result`), or multiple runs whereby a string of modifiers are tested (`target-results`). For multiple runs goal-seek will stop when it achieves or exceeds the target population. 
 
-1. A map partially matching a transition to be modified, for more information see [here](https://github.com/MastodonC/witan.send/blob/feature/goal-seek/doc/config.md#transitions-to-change)
+### `target-result`
 
-2. A value to start transitions modification at. This value multiplies the number of transitions, so 0.5 would halve the number of matching transitions and 2 would double them. Typically the starting value would be 1 (e.g. no multiplier).
+In the REPL, call `target-results` providing it with at least two arguments:
 
-3. A value to stop the transition modificaiton at. When the model has been run this many times (- 1, due to zero indexing), goal-seek will cease looping. This value is somewhat arbitary if you are somewhat confident in the range of values to provide goal-seek.
+1. A base config, with which to be modified. The base config will provide information such as where the baseline input data is located and for how many iterations the model should run. N.B. See [here](config.md) for more information on building a config (or config file). Note that using `main/read-config` will allow one to load a config in the REPL while in the goal-seek namespace.
 
-4. A value by which to increment by when modifying transitions. A value of 1 here, and 1 and 10 will run the model ten times.
+2. A target year is the calendar year in which the the population we seek is present. This is mainly used in conjunction with `target-results`, but allows this function to return the population count for the target year.
 
-5. A base config must be provided, which will then be modified with the preceeding information. The base config will provide information such as where the baseline input data is located and for how many iterations the model should run.
+3. A map partially matching a transition to be modified, for more information see [here](config.md#transitions-to-change) (Optional).
 
-6. A map consisting of a target population number and a calendar year (e.g. `{:year 2020 :population [40 50]}`). Goal-seek will have found an intial optimum projection when the range of values provided here for `:population` for the corresponding calendar year, match the transition to modify as described in `1.`. Here there is a trade off between making this range quite wide, and reduce upon subsequent goal-seek run, else provide `4.` above with a finer scale incrementor and do more runs.
+### `target-results`
+
+In the REPL, call `target-results` providing it with at least three arguments:
+
+1. A base config, with which to be modified. The base config will provide information such as where the baseline input data is located and for how many iterations the model should run. N.B. See [here](config.md) for more information on building a config (or config file). Note that using `main/read-config` will allow one to load a config in the REPL while in the goal-seek namespace.
+
+2. A map consisting of a target population range and a calendar year (e.g. `{:year 2020 :population [40 50]}`). Goal-seek will have found an intial optimum projection when the range of values provided here for `:population` for the corresponding calendar year, match the transition to modify described in `3.`. Here there is a trade off between making this range quite wide, and reduce upon subsequent goal-seek run, else provide `4.` above with a finer scale incrementor and do more runs.
+
+3. A map partially matching a transition to be modified, for more information see [here](config.md#transitions-to-change)
+
+4. A value by which to increment by when modifying transitions (Optional).
