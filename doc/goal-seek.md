@@ -6,7 +6,7 @@ Goal-seek can run the SEND model multiple times with the same underlying data bu
 
 ## Usage
 
-There are two ways of using goal-seek; either for a single run to test a modifier input (`taregt-result`), or multiple runs whereby a string of modifiers are tested (`target-results`). For multiple runs goal-seek will stop when it achieves or exceeds the target population. 
+There are two ways of using goal-seek; either for a single run to test a modifier input (`target-result`), or multiple runs whereby a string of modifiers are tested (`target-results`). For multiple runs goal-seek will stop when it achieves or exceeds the target population. 
 
 ### `target-result`
 
