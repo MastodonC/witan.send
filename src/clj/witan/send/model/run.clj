@@ -124,6 +124,22 @@
                                                     :calendar-year calendar-year})
       [model transitions])))
 
+(defn modify-transitions-params
+  [modify-transitions-date-range scenario-projection standard-projection calendar-year]
+  (if (nil? modify-transitions-date-range)
+    (if ((complement nil?) scenario-projection)
+      scenario-projection
+      standard-projection)
+    (cond
+      (contains? modify-transitions-date-range :from)
+      (if (>= calendar-year (:from modify-transitions-date-range))
+        scenario-projection
+        standard-projection)
+      (contains? modify-transitions-date-range :until)
+      (if (<= calendar-year (:until modify-transitions-date-range))
+        scenario-projection
+        standard-projection))))
+
 (defn run-model-iteration
   "Takes the model & transitions, transition params, and the projected population and produce the next state of the model & transitions"
   [modify-transitions-date-range
@@ -133,20 +149,8 @@
    {population-by-state :model}
    [calendar-year projected-population]]
   (let [valid-transitions (:valid-transitions standard-projection)
-        params (if (nil? modify-transitions-date-range)
-                 (if ((complement nil?) scenario-projection)
-                   scenario-projection
-                   standard-projection)
-                 (cond
-                   (contains? modify-transitions-date-range :from)
-                   (if (>= calendar-year (:from modify-transitions-date-range))
-                     scenario-projection
-                     standard-projection)
-
-                   (contains? modify-transitions-date-range :until)
-                   (if (<= calendar-year (:until modify-transitions-date-range))
-                     scenario-projection
-                     standard-projection)))
+        params (modify-transitions-params modify-transitions-date-range scenario-projection
+                                          standard-projection calendar-year)
         cohorts (step/age-population projected-population population-by-state)
         [population-by-state transitions] (reduce (fn [pop cohort]
                                                     (apply-leavers-movers-for-cohort pop cohort params calendar-year valid-transitions make-setting-invalid))
