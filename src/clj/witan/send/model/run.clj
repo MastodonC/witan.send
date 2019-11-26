@@ -124,22 +124,33 @@
                                                     :calendar-year calendar-year})
       [model transitions])))
 
+(defn modify-transitions-params
+  [modify-transitions-date-range scenario-projection standard-projection calendar-year]
+  (if (nil? modify-transitions-date-range)
+    (if ((complement nil?) scenario-projection)
+      scenario-projection
+      standard-projection)
+    (cond
+      (contains? modify-transitions-date-range :from)
+      (if (>= calendar-year (:from modify-transitions-date-range))
+        scenario-projection
+        standard-projection)
+      (contains? modify-transitions-date-range :until)
+      (if (<= calendar-year (:until modify-transitions-date-range))
+        scenario-projection
+        standard-projection))))
+
 (defn run-model-iteration
   "Takes the model & transitions, transition params, and the projected population and produce the next state of the model & transitions"
-  [modify-transitions-from
+  [modify-transitions-date-range
    make-setting-invalid
    standard-projection
    scenario-projection
    {population-by-state :model}
    [calendar-year projected-population]]
   (let [valid-transitions (:valid-transitions standard-projection)
-        params (if (nil? modify-transitions-from)
-                 (if ((complement nil?) scenario-projection)
-                   scenario-projection
-                   standard-projection)
-                 (if (>= calendar-year modify-transitions-from)
-                   scenario-projection
-                   standard-projection))
+        params (modify-transitions-params modify-transitions-date-range scenario-projection
+                                          standard-projection calendar-year)
         cohorts (step/age-population projected-population population-by-state)
         [population-by-state transitions] (reduce (fn [pop cohort]
                                                     (apply-leavers-movers-for-cohort pop cohort params calendar-year valid-transitions make-setting-invalid))
@@ -160,11 +171,11 @@
        (filter (fn [[k _]] (> k seed-year)))
        (sort-by key)))
 
-(defn create-projections [simulations modify-transitions-from make-setting-invalid inputs modified-inputs population-by-state projected-population seed-year]
+(defn create-projections [simulations modify-transitions-date-range make-setting-invalid inputs modified-inputs population-by-state projected-population seed-year]
   (sequence
    (map (fn [simulation-run]
           (reductions (partial run-model-iteration
-                               modify-transitions-from
+                               modify-transitions-date-range
                                make-setting-invalid
                                inputs
                                modified-inputs)
@@ -176,7 +187,7 @@
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
   [{:keys [standard-projection scenario-projection modify-transition-by
-           modify-transitions-from seed-year make-setting-invalid]}
+           modify-transitions-date-range seed-year make-setting-invalid]}
    {:keys [random-seed simulations]}]
   (d/set-seed! random-seed)
   (println "Preparing" simulations "simulations...")
@@ -188,7 +199,7 @@
                                  (states/calculate-valid-year-settings-from-setting-academic-years valid-states)))
         inputs (assoc inputs :valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years valid-states))
         projection (create-projections simulations
-                                       modify-transitions-from
+                                       modify-transitions-date-range
                                        make-setting-invalid
                                        inputs
                                        modified-inputs
