@@ -2,7 +2,7 @@
 
 This is a short primer for how to use some of the parameters available in the witan.send model in order to run scenarios projections.
 
-Each of the paramater keys (e.g. `::settings-to-change`) can be found, and their values defined, in the [config.edn](https://github.com/MastodonC/witan.send/blob/master/data/demo/config.edn) file.
+Each of the paramater keys (e.g. `::settings-to-change`) can be found, and their values defined, in the [config.edn](../data/demo/config.edn) file.
 
 More information on how to define a scenario projection can be found [here](https://docs.google.com/document/d/1lQ2RrESpiyU5x2YUY8YvT287K4iq6NJw4jqHUIqC2VM/edit?ts=5b7d6444#heading=h.ebeiyry5kb3k).
 
@@ -28,7 +28,7 @@ Here each scenario projection is simply defined in terms of the collection of pa
   * `:academic-year-2`
   * `:calendar-year`
 * Defines single or multiple transition states to modify the rates of, and by how much
-* For [example](https://github.com/MastodonC/witan.send/blob/83cacebd36053a6e74f94ea36cdadac98cd8335a/data/demo/config-transitions-to-change.edn), a user may want to modify how many individuals are joining and moving to to the setting “A” in academic year 1 by increasing the current rate 40 fold.
+* For [example](../data/demo/config-transitions-to-change.edn), a user may want to modify how many individuals are joining and moving to to the setting “A” in academic year 1 by increasing the current rate 40 fold.
 
 ### _“Modify transitions from or until a specific future calendar year”_
 
