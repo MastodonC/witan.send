@@ -4,7 +4,7 @@ This is a short primer for how to use some of the parameters available in the wi
 
 Each of the paramater keys (e.g. `::settings-to-change`) can be found, and their values defined, in the [config.edn](https://github.com/MastodonC/witan.send/blob/master/data/demo/config.edn) file.
 
-More information on how to define a scenario projection can be found [here](https://docs.google.com/document/d/1lQ2RrESpiyU5x2YUY8YvT287K4iq6NJw4jqHUIqC2VM/edit?ts=5b7d6444#heading=h.ebeiyry5kb3k). 
+More information on how to define a scenario projection can be found [here](https://docs.google.com/document/d/1lQ2RrESpiyU5x2YUY8YvT287K4iq6NJw4jqHUIqC2VM/edit?ts=5b7d6444#heading=h.ebeiyry5kb3k).
 
 Here each scenario projection is simply defined in terms of the collection of parameters to use together, what arguments are expected and what the expected behaviuor is.
 
@@ -21,7 +21,7 @@ Here each scenario projection is simply defined in terms of the collection of pa
 * Parameters = `:transitions-to-change`
 * Arguments = a vector of map(s) each containing one or more entity keys (see below), each with corresponding keys or integers, and `:modify-transition-by` with a value corresponding to a number (integer or float) by which to multiply transitions matching the previous entity keys. Possible entity keys include:
   * `:setting-1`
-  * `:setting-2
+  * `:setting-2`
   * `:need-1`
   * `:need-2`
   * `:academic-year-1`
@@ -30,10 +30,10 @@ Here each scenario projection is simply defined in terms of the collection of pa
 * Defines single or multiple transition states to modify the rates of, and by how much
 * For [example](https://github.com/MastodonC/witan.send/blob/83cacebd36053a6e74f94ea36cdadac98cd8335a/data/demo/config-transitions-to-change.edn), a user may want to modify how many individuals are joining and moving to to the setting “A” in academic year 1 by increasing the current rate 40 fold.
 
-### _“Modify transitions from a specific future calendar year”_
+### _“Modify transitions from or until a specific future calendar year”_
 
-* Parameters = `:modify-transitions-from` and `:transitions-to-change
-* Arguments = as with above scenario, and additionally a calendar year (`2020`) from when a user may wish to apply the new transition rates
+* Parameters = `:modify-transitions-date-range` and `:transitions-to-change
+* Arguments = as with above scenario, and additionally a map with the key `:from` or `:until` and a calendar year (`2020`) from when a user may wish to apply the new transition rates, or until.
 * An [example](https://gist.github.com/seb231/0218cb773df526e4e99b992db028703d) may be that a user only wants to start modelling a transition rate policy change in three years time and maintain the current trends until that time
 
 ### _“Make a setting invalid”_

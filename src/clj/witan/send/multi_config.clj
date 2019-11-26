@@ -11,7 +11,7 @@
                  :costs "data/costs.csv"
                  :valid-states "data/valid-states.csv"}
    :transition-parameters {:filter-transitions-from nil
-                           :modify-transitions-from nil
+                           :modify-transitions-date-range nil
                            :transitions-to-change nil
                            }
    :projection-parameters {:random-seed 50

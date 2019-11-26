@@ -51,9 +51,9 @@ Multiple entity pair filters can be applied in parallel.
 
 To be used for a [“Ignore historic data before a specific calendar year for an age group”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#ignore-historic-data-before-a-specific-calendar-year-for-an-age-group) scenario.
 
-##### `:modify-transitions-from`
+##### `:modify-transitions-date-range`
 
-Expects a calendar year, provided as an integer, to start modifying transitions from, when `:modify-transition-by` & `:which-transitions?` are defined for either a [“Modify setting(s) transitions rates”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-settings-transitions-rates), [“Modify setting(s) transitions rates and transfer individuals to alternative setting(s)”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-settings-transitions-rates-and-transfer-individuals-to-alternative-settings) or [“Modify transitions from a specific future calendar year”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-transitions-from-a-specific-future-calendar-year) scenario.
+Expects a map with either `:from` or `:until` key and a calendar as an integer to modify transitions either from or until, when `:transitions-to-change` is used. Used for either a [“Modify setting(s) transitions rates”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-settings-transitions-rates), [“Modify setting(s) transitions rates and transfer individuals to alternative setting(s)”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-settings-transitions-rates-and-transfer-individuals-to-alternative-settings) or [“Modify transitions from a specific future calendar year”](https://github.com/MastodonC/witan.send/blob/master/doc/scenarios.md#modify-transitions-from-a-specific-future-calendar-year) scenario.
 
 ##### `:transitions-to-change`
 
@@ -67,7 +67,7 @@ Expects a vector of maps, with each map corresponding to a different type of tra
 * `:academic-year-2`
 * `:calendar-year`
 
-The more keys/entities used the more specific the set of transitions to be modified will be. The minimum number of entities is one, and no entity can be repeated (although you can specifiy a second map to define another set of transitions to modify). Each entity should have as a value either key (e.g. `:A`) corresponding to a need or setting, or an integer corresponding to an academic or calendar year. 
+The more keys/entities used the more specific the set of transitions to be modified will be. The minimum number of entities is one, and no entity can be repeated (although you can specifiy a second map to define another set of transitions to modify). Each entity should have as a value either key (e.g. `:A`) corresponding to a need or setting, or an integer corresponding to an academic or calendar year.
 
 A further additional, required key in each map is `:modify-transitions-by`, which should include a value corresponding to a number (integer or float) by which to multiply the count of transitions corresponding to the entity keys with which to filter on. For example a value of `2` here would double the number of transition of a specific type, and `0.5` would half them.
 
