@@ -53,7 +53,7 @@ To be used for a [“Ignore historic data before a specific calendar year for an
 
 ##### `:modify-transitions-date-range`
 
-Expects a map with either `:from` or `:until` key and a calendar as an integer to modify transitions either from or until, when `:transitions-to-change` is used. Used for either a [“Modify setting(s) transitions rates”](scenarios.md#modify-settings-transitions-rates), [“Modify setting(s) transitions rates and transfer individuals to alternative setting(s)”](scenarios.md#modify-settings-transitions-rates-and-transfer-individuals-to-alternative-settings) or [“Modify transitions from a specific future calendar year”](scenarios.md#modify-transitions-from-a-specific-future-calendar-year) scenario.
+Expects a map with either `:from` or `:until` key and a calendar year as an integer to modify transitions either from or until, when `:transitions-to-change` is used. Used for either a [“Modify setting(s) transitions rates”](scenarios.md#modify-settings-transitions-rates), [“Modify setting(s) transitions rates and transfer individuals to alternative setting(s)”](scenarios.md#modify-settings-transitions-rates-and-transfer-individuals-to-alternative-settings) or [“Modify transitions from a specific future calendar year”](scenarios.md#modify-transitions-from-a-specific-future-calendar-year) scenario.
 
 ##### `:transitions-to-change`
 
