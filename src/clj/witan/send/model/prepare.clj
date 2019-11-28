@@ -85,7 +85,8 @@
    b))
 
 (defn prep-inputs [initial-send-pop validate-valid-states valid-transitions transitions
-                   transitions-filtered population valid-states original-transitions costs]
+                   transitions-filtered population valid-states original-transitions
+                   costs unmodified-transitions]
   (let [start-map {:population-by-state initial-send-pop
                    :valid-transitions valid-transitions
                    :valid-states valid-states
@@ -108,7 +109,7 @@
               :mover-state-alphas (p/alpha-params-movers validate-valid-states valid-transitions transitions-filtered)})
       (merge start-map
              {:joiner-beta-params (p/beta-params-joiners validate-valid-states
-                                                         transitions
+                                                         unmodified-transitions
                                                          population)
               :leaver-beta-params (p/beta-params-leavers validate-valid-states transitions)
               :joiner-state-alphas (p/alpha-params-joiners validate-valid-states (transitions-map transitions))
@@ -280,12 +281,12 @@
     {:standard-projection (prep-inputs initial-send-pop validate-valid-states
                                        valid-transitions transitions
                                        transitions-filtered population valid-states
-                                       original-transitions costs)
+                                       original-transitions costs transitions)
      :scenario-projection (when modified-transitions
                             (prep-inputs initial-send-pop validate-valid-states
                                          valid-transitions modified-transitions
                                          transitions-filtered population valid-states
-                                         original-transitions costs))
+                                         original-transitions costs transitions))
      :seed-year (inc max-transition-year)
      :make-setting-invalid make-setting-invalid
      :modify-transitions-date-range modify-transitions-date-range}))
