@@ -235,7 +235,8 @@
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
   [{:keys [transitions population costs valid-states]}
-   {:keys [transitions-to-change filter-transitions-from make-setting-invalid]}]
+   {:keys [transitions-to-change filter-transitions-from
+           make-setting-invalid modify-transitions-date-range]}]
   (run-input-checks transitions
                     costs
                     valid-states)
@@ -286,4 +287,5 @@
                                          transitions-filtered population valid-states
                                          original-transitions costs))
      :seed-year (inc max-transition-year)
-     :make-setting-invalid make-setting-invalid}))
+     :make-setting-invalid make-setting-invalid
+     :modify-transitions-date-range modify-transitions-date-range}))
