@@ -3,13 +3,13 @@ comparative_plot_settings_needs = function(output, data1, data2){
   ## projections
   
   ### import the baseline datasets
-  count_setting_1 = read.csv(paste0(data1, "Output_Setting.csv"))
-  count_need_1 = read.csv(paste0(data1, "Output_Need.csv"))
+  count_setting_1 = read.csv(paste0(output, data1, "Output_Setting.csv"))
+  count_need_1 = read.csv(paste0(output, data1, "Output_Need.csv"))
   
   ### import the scenario datasets
   ### then bind to historic data for use in plot
-  count_setting_2 = read.csv(paste0(data2, "Output_Setting.csv"))
-  count_need_2 = read.csv(paste0(data2, "Output_Need.csv"))
+  count_setting_2 = read.csv(paste0(output, data2, "Output_Setting.csv"))
+  count_need_2 = read.csv(paste0(output, data2, "Output_Need.csv"))
   
   settings = unique(count_setting_1$setting)
   needs = unique(count_need_1$need)
