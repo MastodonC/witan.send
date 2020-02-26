@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # svglite requires cairo dev packages
-packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite", 
+packages_to_check = c("dplyr", "ggplot2", "reshape2", "stringr", "svglite",
                       "logging", "optparse")
 
 install_missing_packages <- function(package_name) {
@@ -13,13 +13,13 @@ for(package in packages_to_check) {
 library("optparse")
 
 option_list = list(
-  make_option(c("-o", "--output-dir"), type="character", 
+  make_option(c("-o", "--output-dir"), type="character",
               help="output dir name [default= %default]", metavar="character"),
-  make_option(c("-p", "--population-file"), type="character", 
+  make_option(c("-p", "--population-file"), type="character",
               help="population file name", metavar="character"),
-  make_option(c("-x", "--exclude-settings"), type="character", default="", 
+  make_option(c("-x", "--exclude-settings"), type="character", default="",
               help="settings to exclude", metavar="character"),
-  make_option(c("-b", "--bound"), type="character", 
+  make_option(c("-b", "--bound"), type="character",
               help="confidence bound", metavar="character"));
 
 opt_parser = OptionParser(option_list=option_list);
@@ -388,30 +388,9 @@ evaluate_string(total_pop_text)
 save_plot(paste0(output_dir, "/Total_Population.png"))
 
 
-### SEND cost projection ####
-
-cost_projected <- read.csv(paste0(output_dir, "/Output_Cost.csv"))
-cost_projected[,-1] <-  cost_projected[,-1] / 1000000
-min_x = min(cost_projected$calendar.year)
-max_x = max(cost_projected$calendar.year)
-
-boxplot <- paste0("ggplot(cost_projected, aes(x=calendar.year)) +",
-         "geom_boxplot(aes(lower = q1, upper = q3, middle = median, ymin = ", as.name(low_bound),
-         ", ymax = ", as.name(high_bound), "), fill='snow', colour='darkcyan', stat = \"identity\") +",
-         "ggtitle(\"SEND Cost Projection\") +",
-         "scale_x_continuous(name='Calendar Year', breaks=seq(min_x, max_x, by=1), limits=c(min_x-0.5, max_x+0.5)) +",
-         "scale_y_continuous(name = \"Total projected SEND cost / £ million\", limits = c(0, max(cost_projected$",
-         as.name(high_bound),
-         "))) +",
-         "theme_bw()")
-
-evaluate_string(boxplot)
-
-save_plot(paste0(output_dir, "/Total_Cost.png"))
-
 ### Sankey plot ###
 
-colour_list <- c("#3cb44b", "#ffe119", "#4363d8", "#f58231", "#aaffc3", "#42d4f4", 
+colour_list <- c("#3cb44b", "#ffe119", "#4363d8", "#f58231", "#aaffc3", "#42d4f4",
                  "#f032e6", "#bfef45", "#fabebe", "#469990", "#e6beff", "#9A6324",
                  "#fffac8", "#800000", "#808000", "#ffd8b1", "#000075", "#a9a9a9",
                  "#e6194b", "#0099ff", "#ff99cc", "#ffcc00", "#cc9999", "#99ffcc")
@@ -552,13 +531,13 @@ df_mover_ribbon_data <- read.csv(paste0(output_dir, "/mover-rates.csv"), na.stri
 if(file_test("-f", pop_path)){
   ons <- read.csv(pop_path)
   ons <- ons[!ons$academic.year>20,]
-  ons$NCY <- ifelse(ons$academic.year <= 0, "NCY_00_under", 
+  ons$NCY <- ifelse(ons$academic.year <= 0, "NCY_00_under",
                      ifelse(ons$academic.year <= 6, "NCY_01_06",
                             ifelse(ons$academic.year <= 11, "NCY_07_11",
                                    ifelse(ons$academic.year <= 13, "NCY_12_13", "NCY_14_up"))))
   ons_ncy <- aggregate(ons$population, by=list(Year=ons$calendar.year, NCY=ons$NCY), FUN=sum)
   colnames(ons_ncy)[3] <- 'Population'
-  
+
   ggplot(ons_ncy, aes(x=Year, y=Population, group=NCY)) +
     geom_line(aes(color=NCY)) +
     geom_point(aes(color=NCY)) +
@@ -570,9 +549,9 @@ if(file_test("-f", pop_path)){
                        labels = c("Early years", "1 to 6", "7 to 11", "12 to 13", "14 and up")) +
     theme_bw() +
     ggtitle("General Population, grouped by National Curriculum Years")
-  
+
   save_plot(paste0(output_dir, "/General_Population_by_NCY.png"))
-  
+
   ons_total <- aggregate(ons$population, by=list(Year=ons$calendar.year), FUN=sum)
   colnames(ons_total)[2] <- 'Population'
   ggplot(ons_total, aes(x=Year, y=Population)) +
