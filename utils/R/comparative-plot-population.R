@@ -1,10 +1,10 @@
-comparative_plot_population = function(output, data1, data2){
+comparative_plot_population = function(output, historical_transitions, data1, data2){
   
   # DATA
   
   ### import historic data - taken from send_charts.R
   remove_colons <-  function(x) {str_replace(x, ':', '')}
-  df_historical <- read.csv(paste0(output, "data/baseline/transitions.csv")) %>%
+  df_historical <- read.csv(paste0(output, historical_transitions)) %>%
     mutate_all(funs(remove_colons)) %>%
     filter(need.1 != "NONSEND")
   
@@ -22,11 +22,11 @@ comparative_plot_population = function(output, data1, data2){
   ## projections
   
   ### import the baseline dataset
-  count_data1 = read.csv(paste0(data1, "Output_Count.csv"))
+  count_data1 = read.csv(paste0(output, data1, "Output_Count.csv"))
   
   ### import the scenario dataset
   ### then bind to historic data for use in plot
-  count_data2 = read.csv(paste0(data2, "Output_Count.csv")) %>%
+  count_data2 = read.csv(paste0(output, data2, "Output_Count.csv")) %>%
     bind_rows(count_data_historic)
   
   
