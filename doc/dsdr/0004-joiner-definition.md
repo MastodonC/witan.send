@@ -17,3 +17,7 @@ In review.
 ## Consequences
 
 The calendar year being moved to is assumed, not specified (in the example above, this would be 2017).
+
+Even though the "in SEND" information is on the "ending year" side (`need-2`, `setting-2`), a joiner transition is referred to be the calendar year stated in the transition data.
+
+Even though there is a possibility the person was actually issued an EHCP in Jan 2017, when the snapshot was recorded, this person would still be consider a 2016 joiner.
