@@ -2,7 +2,7 @@
 
 ## Context
 
-We need an agreed upon defintion of what a "transition" is. The model takes a ["transitions file"](data/demo/data/transitions.csv), which is a csv of all transitions each calendar year over two or more years.
+We need an agreed upon definition of what a "transition" is. The model takes a ["transitions file"](data/demo/data/transitions.csv), which is a csv of all transitions each calendar year over two or more years.
 
 ## Decision
 
