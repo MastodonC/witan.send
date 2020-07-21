@@ -156,7 +156,7 @@
           (into [k] (beta-params-expectation params))))
       (sort)))
 
-(defn normalisation-constant-dirichelt [params]
+(defn normalisation-constant-dirichlet [params]
   (reduce + (map val params)))
 
 (defn dirichlet-expectations
@@ -169,7 +169,7 @@
                                              ay+1 (inc (first v))]
                                          (conj v ay+1))
                                        [k])
-                              normalisation (normalisation-constant-dirichelt params)]
+                              normalisation (normalisation-constant-dirichlet params)]
                           (map (fn [p] (into []
                                              (concat prefix
                                                      (conj (mapv name (states/split-need-setting (key p)))
