@@ -163,20 +163,20 @@
   "Dirichlet distro parameters are stored in a map typically keyed by an entities index (ay, n, s)."
   [alphas]
   (reduce (fn [acc [k params]]
-            (concat acc
-                    (let [prefix (if (vector? k)
-                                   (let [v (states/split-entity k)
-                                         ay+1 (inc (first v))]
-                                     (conj v ay+1))
-                                   [k])
-                          normalisation (normalisation-constant-dirichlet params)]
-                      (map (fn [p] (into []
-                                         (concat prefix
-                                                 (conj (mapv name (states/split-need-setting (key p)))
-                                                       (/ (val p) normalisation)
-                                                       normalisation
-                                                       (val p)))))
-                           params))))
+            (into acc
+                  (let [prefix (if (vector? k)
+                                 (let [v (states/split-entity k)
+                                       ay+1 (inc (first v))]
+                                   (conj v ay+1))
+                                 [k])
+                        normalisation (normalisation-constant-dirichlet params)]
+                    (map (fn [p] (into []
+                                       (into prefix
+                                             (conj (mapv name (states/split-need-setting (key p)))
+                                                   (/ (val p) normalisation)
+                                                   normalisation
+                                                   (val p)))))
+                         params))))
           [] alphas))
 
 (defn output-beta-expectations
@@ -279,7 +279,7 @@
                                       (assoc :academic-year academic-year :need-setting (name need-setting) :calendar-year year)))
                                 (:by-state output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
-                 (concat [(map name columns)])
+                 (into [(mapv name columns)])
                  (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file (str dir "/Output_State_pop_only.csv")))]
           (let [columns [:calendar-year :academic-year :need-setting :mean]
@@ -292,7 +292,7 @@
                                            (:by-state output))) send-output (range initial-projection-year 3000))
                             (map (apply juxt columns))
                             (sort)
-                            (concat [(map name [:calendar-year :academic-year :need :setting :population])])
+                            (into [(mapv name [:calendar-year :academic-year :need :setting :population])])
                             (mapv flatten))]
             (csv/write-csv writer output)))
         (with-open [writer (io/writer (io/file (str dir "/Output_AY.csv")))]
@@ -303,7 +303,7 @@
                                       (assoc :academic-year academic-year :calendar-year year)))
                                 (:total-in-send-by-ay output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
-                 (concat [(map name columns)])
+                 (into [(mapv name columns)])
                  (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file (str dir "/Output_Need.csv")))]
           (let [columns [:calendar-year :need :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
@@ -313,7 +313,7 @@
                                       (assoc :need (name need) :calendar-year year)))
                                 (:total-in-send-by-need output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
-                 (concat [(map name columns)])
+                 (into [(mapv name columns)])
                  (csv/write-csv writer))))
         (setting-summary/->output-setting-csv dir initial-projection-year send-output)
         (setting-summary/->output-setting-cost-csv dir initial-projection-year send-output)
@@ -324,7 +324,7 @@
                             (assoc :calendar-year year)))
                       (map :total-in-send send-output) (range initial-projection-year 3000))
                  (map (apply juxt columns))
-                 (concat [(map name columns)])
+                 (into [(mapv name columns)])
                  (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file (str dir "/Output_Cost.csv")))]
           (let [columns [:calendar-year :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
@@ -333,7 +333,7 @@
                             (assoc :calendar-year year)))
                       (map :total-cost send-output) (range initial-projection-year 3000))
                  (map (apply juxt columns))
-                 (concat [(map name columns)])
+                 (into [(mapv name columns)])
                  (csv/write-csv writer))))
         (with-open [writer (io/writer (io/file (str dir "/Output_AY_Group.csv")))]
           (let [columns [:calendar-year :ay-group :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
@@ -343,7 +343,7 @@
                                       (assoc :ay-group ay-group :calendar-year year)))
                                 (:total-in-send-by-ay-group output))) send-output (range initial-projection-year 3000))
                  (map (apply juxt columns))
-                 (concat [(map name columns)])
+                 (into [(mapv name columns)])
                  (csv/write-csv writer))))
         (output-beta-expectations dir "joiner_beta_expectations" (standard-projection :joiner-beta-params)
                                   [:ay :alpha :beta :expectation])
