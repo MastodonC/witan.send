@@ -9,6 +9,7 @@
 
 (defn sample-dirichlet-multinomial
   [n alphas]
+  (when-not (seq alphas) (throw (ex-info "Missing alphas" {:n n :alphas alphas})))
   (let [[ks as] (apply mapv vector alphas)
         xs (if (pos? n)
              (d/draw (d/dirichlet-multinomial n as) {:seed (get-seed!)})

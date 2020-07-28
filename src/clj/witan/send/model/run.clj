@@ -87,18 +87,28 @@
    [[year state] population :as cohort]
    params calendar-year valid-transitions
    make-setting-invalid]
-  (cond
-    (= state c/non-send)
-    population-by-state
-    (or (<= year sc/min-academic-year)
-        (> year sc/max-academic-year))
-    [model
-     (cond-> transitions
-       (pos? population)
-       (update [calendar-year year state c/non-send] m/some+ population))]
-    :else
-    (apply-leavers-movers-for-cohort-unsafe population-by-state cohort params calendar-year
-                                            valid-transitions make-setting-invalid)))
+  (try
+    (cond
+      (= state c/non-send)
+      population-by-state
+      (or (<= year sc/min-academic-year)
+          (> year sc/max-academic-year))
+      [model
+       (cond-> transitions
+         (pos? population)
+         (update [calendar-year year state c/non-send] m/some+ population))]
+      :else
+      (apply-leavers-movers-for-cohort-unsafe population-by-state cohort params calendar-year
+                                              valid-transitions make-setting-invalid))
+    (catch Exception e
+      (throw (ex-info "Could not calculate leavers and movers for cohort."
+                      {:population-by-state population-by-state
+                       :cohort cohort
+                       :params params
+                       :calendar-year calendar-year
+                       :valid-transitions valid-transitions
+                       :make-setting-invalid make-setting-invalid}
+                      e)))))
 
 (defn predict-joiners
   "Returns a map of predicted need-setting counts for joiners for a
