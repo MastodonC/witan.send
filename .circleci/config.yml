@@ -24,7 +24,12 @@ jobs:
     executor: clojure/openjdk8
     steps: [{checkout_and_run: {clojure_version: "1.9.0"}}]
 
+  java-8-clojure-1_10:
+    executor: clojure/openjdk8
+    steps: [{checkout_and_run: {clojure_version: "1.10.0"}}]
+
 workflows:
   kaocha_test:
     jobs:
       - java-8-clojure-1_9
+      - java-8-clojure-1_10
