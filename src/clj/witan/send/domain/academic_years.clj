@@ -27,11 +27,7 @@
               18 18
               19 19
               20 20
-              21 21
-              22 22
-              23 23
-              24 24
-              25 25))
+              21 21))
 
 (defn inclusive-range [beginning end]
   (range beginning (inc end)))
@@ -55,7 +51,10 @@
   (into (sorted-set) (inclusive-range 12 14)))
 
 (def ncy-15+
-  (into (sorted-set) (inclusive-range 15 25)))
+  (into (sorted-set) (inclusive-range 15 20)))
+
+(def outside-of-send-age
+  (into (sorted-set) (inclusive-range 21 99)))
 
 (defn national-curriculum-stage [y]
   (cond
