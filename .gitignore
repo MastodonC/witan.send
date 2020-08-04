@@ -21,5 +21,5 @@ data/demo/validation/
 *.RData
 *.Rhistory
 .Rproj.user
+*.Rproj
 *.ipynb_checkpoints
-

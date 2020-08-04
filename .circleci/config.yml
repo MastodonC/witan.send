@@ -1,19 +1,35 @@
-version: 2
-jobs:
-  build:
-    working_directory: ~/MastodonC/witan.send
-    environment:
-      LEIN_ROOT: nbd
-      _JAVA_OPTIONS: -Xms512m -Xmx3072m
-    docker:
-      - image: circleci/clojure:lein-2.8.1
+version: 2.1
+
+orbs:
+  kaocha: lambdaisland/kaocha@dev:first
+  clojure: lambdaisland/clojure@dev:first
+
+commands:
+  checkout_and_run:
+    parameters:
+      clojure_version:
+        type: string
     steps:
       - checkout
-      - restore_cache:
-          key: witan-send-{{ checksum "project.clj" }}
-      - run: lein deps
-      - save_cache:
-          key: witan-send-{{ checksum "project.clj" }} 
-          paths:
-            - ~/.m2
-      - run: lein test
+      - clojure/with_cache:
+          cache_version: << parameters.clojure_version >>
+          steps:
+            - kaocha/execute:
+                args: "--reporter documentation --plugin cloverage --codecov"
+                clojure_version: << parameters.clojure_version >>
+      - kaocha/upload_codecov
+
+jobs:
+  java-8-clojure-1_9:
+    executor: clojure/openjdk8
+    steps: [{checkout_and_run: {clojure_version: "1.9.0"}}]
+
+  java-8-clojure-1_10:
+    executor: clojure/openjdk8
+    steps: [{checkout_and_run: {clojure_version: "1.10.0"}}]
+
+workflows:
+  kaocha_test:
+    jobs:
+      - java-8-clojure-1_9
+      - java-8-clojure-1_10
