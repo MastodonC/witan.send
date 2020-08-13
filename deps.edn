@@ -14,7 +14,8 @@
          ;; upgrading to 2.1.10 causes a test to fail
          org.hdrhistogram/HdrHistogram {:mvn/version "2.1.9"}}
  :aliases
- {:test {:jvm-opts ["-Xmx8g"]
+ {:big-mem {:jvm-opts ["-Xmx8g"]}
+  :test {:jvm-opts ["-Xmx8g"]
          :extra-paths ["test"]
          :extra-deps  {org.clojure/test.check {:mvn/version "0.9.0"}
                        lambdaisland/kaocha {:mvn/version "1.0.641"}}}}}
