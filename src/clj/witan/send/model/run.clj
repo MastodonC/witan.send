@@ -7,6 +7,8 @@
             [witan.send.step :as step]
             [witan.send.model.data-products :as dp]))
 
+(def exception-info (atom {}))
+
 (defn incorporate-new-ay-need-setting-populations
   "Take a model + transitions tuple as its first argument.
   Returns a model + transitions tuple with `predicted-populations`
@@ -101,13 +103,15 @@
       (apply-leavers-movers-for-cohort-unsafe population-by-state cohort params calendar-year
                                               valid-transitions make-setting-invalid))
     (catch Exception e
-      (throw (ex-info "Could not calculate leavers and movers for cohort."
-                      {:population-by-state population-by-state
-                       :cohort cohort
-                       :params params
-                       :calendar-year calendar-year
-                       :valid-transitions valid-transitions
-                       :make-setting-invalid make-setting-invalid}
+      (reset! exception-info {:population-by-state population-by-state
+                              :cohort cohort
+                              :params params
+                              :calendar-year calendar-year
+                              :valid-transitions valid-transitions
+                              :make-setting-invalid make-setting-invalid
+                              :exception e})
+      (throw (ex-info "Could not calculate leavers and movers for cohort. See the atom witan.send.model.run/@exception-info for details."
+                      {:cohort cohort}
                       e)))))
 
 (defn predict-joiners
