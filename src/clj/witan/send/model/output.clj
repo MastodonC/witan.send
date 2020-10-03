@@ -106,6 +106,35 @@
                                                     (m/round0 (/ transitions simulations))]))))))]
       (csv/write-csv writer (into [headers] rows)))))
 
+
+(defn format-transition-count [idx [[cy ay need-setting-1 need-setting-2] transition-count]]
+  (let [[need-1 setting-1]  (states/split-need-setting need-setting-1)
+        [need-2 setting-2]  (states/split-need-setting need-setting-2)]
+    [idx cy
+     (name setting-1) (name need-1) ay
+     (name setting-2) (name need-2) (inc ay)
+     transition-count]))
+
+(defn format-year [idx year]
+  (into []
+        (map (fn [transition-count]
+               (format-transition-count idx transition-count)))
+        year))
+
+(defn format-simulation [[idx years]]
+  (into []
+        (mapcat (partial format-year idx))
+        years))
+
+(defn output-simulated-transitions [dir filename simulated-transitions]
+  (with-open [writer (io/writer (io/file (str dir "/" filename ".csv")))]
+    (let [header
+          ["simulation" "calendar-year" "setting-1" "need-1" "academic-year-1" "setting-2" "need-2" "academic-year-2" "transition-count"]]
+      (csv/write-csv writer
+                     (into [header]
+                           (mapcat format-simulation)
+                           simulated-transitions)))))
+
 (defn ribbon-data-rows [ribbon-data]
   (mapv (fn [x] (mapv #(nth % x) (map val ribbon-data))) (range (count (val (last ribbon-data))))))
 
@@ -223,7 +252,7 @@
    to get the total cost."
   [{:keys [projection send-output transitions valid-states
            population standard-projection scenario-projection
-           simulations]}
+           simulations simulated-transitions]}
    {:keys [run-outputs run-charts project-dir output-dir settings-to-exclude-in-charts
            keep-temp-files? use-confidence-bound-or-interval population-file]}]
   (let [transform-transitions (->> transitions
@@ -271,6 +300,7 @@
         (report/info "Final year of projection: " (report/bold (+ (last years) (count (map :total-in-send send-output)))))
         (output-transitions-edn dir "transitions" projection)
         (output-transitions-csv dir "transitions" projection simulations)
+        (output-simulated-transitions dir "simulated-transitions" simulated-transitions)
         (with-open [writer (io/writer (io/file (str dir "/Output_State.csv")))]
           (let [columns [:calendar-year :academic-year :need-setting :mean :std-dev :iqr :min :low-95pc-bound :q1 :median :q3 :high-95pc-bound :max :low-ci :high-ci]]
             (->> (mapcat (fn [output year]

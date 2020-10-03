@@ -197,6 +197,11 @@
                       (projected-future-pop-by-year projected-population seed-year))))
    (range simulations)))
 
+(defn simulated-transitions [projection]
+  (into []
+        (map-indexed (fn [idx simulation] [idx (keep :transitions simulation)]))
+        projection))
+
 (defn run-send-model
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
@@ -221,6 +226,7 @@
                                        projected-population
                                        seed-year)]
     {:projection (projection->transitions projection)
+     :simulated-transitions (simulated-transitions projection)
      :simulations simulations
      :send-output (dp/->send-output-style (dp/data-products valid-states cost-lookup projection))
      :transitions transitions
