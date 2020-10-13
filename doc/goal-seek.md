@@ -1,6 +1,6 @@
 # Implementing goal-seek
 
-Goal-seek allows one to search for the best modifier config parameters with which to achieve a certain subpopulation within the SEND projection. See ["transtions to change"](config.md#transitions-to-change) for more information on applying transition modifiers.
+Goal-seek allows one to search for the best modifier config parameters with which to achieve a certain subpopulation within the SEND projection. See ["transitions to change"](config.md#transitions-to-change) for more information on applying transition modifiers.
 
 Goal-seek can run the SEND model multiple times with the same underlying data but varying the scenario parameters by input values, stopping when it hits the target subpopulation size.
 
