@@ -122,6 +122,7 @@
         target-pop-range (if (vector? target-pop)
                            target-pop
                            (vector (- target-pop 1) (+ target-pop 1)))
+        initial-modifier (math/round (/ (apply min target-pop-range) baseline-pop))]
     (loop [configs (map update-results-path
                         (-> (create-transition-modifier-seq
                              m
