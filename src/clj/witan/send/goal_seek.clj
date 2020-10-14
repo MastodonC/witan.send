@@ -91,7 +91,7 @@
                      (get-in [:transition-parameters :transitions-to-change])
                      first
                      :modify-transition-by)
-        result (do (main/run-recorded-send config)
+        result (do (main/run-recorded-send config false)
                    (get-target-pop (state-pop config)))
         current-pop (get-current-pop target-year result)
         achieved-pop (->> result
