@@ -52,8 +52,8 @@
                     (apply merge-with + (map (fn [m] (select-keys m [:population])) (val %)))))
        (sort-by :year)))
 
-(defn update-results-path [config]
-  (assoc-in config [:output-parameters :output-dir] (str "results/" (get-in config [:output-parameters :output-dir]))))
+(defn update-results-path [config results-path]
+  (assoc-in config [:output-parameters :output-dir] (str results-path (get-in config [:output-parameters :output-dir]))))
 
 (defn get-current-pop [year result]
   (if-let [out (:population (first (filter #(= year (:year %)) result)))]
@@ -106,7 +106,7 @@
   "Takes a baseline config to use as a template, a map containing a target population
    range and year, e.g. {:year 2019 :population 6}, a map of keys partially matching
    a transition and an optional range step value"
-  [base-config target m & step]
+  [base-config target m results-path & step]
   (let [step (if step
                step
                0.1)
@@ -123,7 +123,7 @@
                            target-pop
                            (vector (- target-pop 1) (+ target-pop 1)))
         initial-modifier (math/round (/ (apply min target-pop-range) baseline-pop))]
-    (loop [configs (map update-results-path
+    (loop [configs (map #(update-results-path % results-path)
                         (-> (create-transition-modifier-seq
                              m
                              (- (if (< initial-modifier 1)
