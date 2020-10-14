@@ -237,10 +237,11 @@
    row for each individual/year/simulation. Also includes age & state columns"
   [{:keys [transitions population costs valid-states]}
    {:keys [transitions-to-change filter-transitions-from
-           make-setting-invalid modify-transitions-date-range]}]
-  (run-input-checks transitions
-                    costs
-                    valid-states)
+           make-setting-invalid modify-transitions-date-range]}
+   print-warnings?]
+  (when print-warnings? (run-input-checks transitions
+                                          costs
+                                          valid-states))
   (let  [original-transitions transitions
          ages (distinct (map :academic-year population))
          initialise-validation valid-states
