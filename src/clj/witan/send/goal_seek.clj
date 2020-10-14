@@ -119,8 +119,9 @@
                           :population)
         target-pop (:population target)
         target-year (:year target)
-        target-pop-range (vector (- target-pop 1) (+ target-pop 1))
-        initial-modifier (math/round (/ target-pop baseline-pop))]
+        target-pop-range (if (vector? target-pop)
+                           target-pop
+                           (vector (- target-pop 1) (+ target-pop 1)))
     (loop [configs (map update-results-path
                         (-> (create-transition-modifier-seq
                              m
