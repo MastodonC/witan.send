@@ -3,7 +3,8 @@
             [witan.send.main :as main]
             [witan.send.model.input :as i]
             [witan.send.model.prepare :as p]
-            [witan.send.maths :as math]))
+            [witan.send.maths :as math]
+            [witan.send.send :as s]))
 
 (defn update-transition-modifier
   "Takes a map of keys partially matching a transition and a new modifier"
@@ -81,9 +82,9 @@
                   (first (second (first state)))))))
 
 (defn target-result
-  "Takes a baseline config to use as a template, a target year and an optional map of keys
-   partially matching a transition, and a value to modify by"
-  [config target-year & m]
+  "Takes a baseline config to use as a template, a target year, a boolean to output results and an optional
+   map of keys partially matching a transition, and a value to modify by"
+  [config target-year output-results? & m]
   (let [config (if m
                  (assoc-in config [:transition-parameters :transitions-to-change] (vec m))
                  config)
@@ -132,7 +133,7 @@
                              (+ initial-modifier 1) step)
                             (mc/generate-configs base-config)))]
       (let [[config & rest-configs] configs
-            [result current-pop] (target-result config target-year)
+            [result current-pop] (target-result config target-year output-results?)
             diff (pop-diff-by-year target-year result)]
         (if (target-pop-exceeded? current-pop target-pop-range)
           (println "Population exceeds target population")
