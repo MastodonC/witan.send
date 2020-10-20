@@ -126,9 +126,9 @@
     (loop [configs (map #(update-results-path % results-path)
                         (-> (create-transition-modifier-seq
                              m
-                             (- (if (< initial-modifier 1)
-                                  1
-                                  initial-modifier) 1)
+                             (if (< initial-modifier 1)
+                               1
+                               initial-modifier)
                              (+ initial-modifier 1) step)
                             (mc/generate-configs base-config)))]
       (let [[config & rest-configs] configs
