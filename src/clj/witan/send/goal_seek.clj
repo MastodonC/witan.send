@@ -91,6 +91,7 @@
                      (get-in [:transition-parameters :transitions-to-change])
                      first
                      :modify-transition-by)
+        _ (println "Modifier:" modifier)
         result (do (main/run-recorded-send config false)
                    (get-target-pop (state-pop config)))
         current-pop (get-current-pop target-year result)
@@ -98,15 +99,14 @@
                           (filter #(= (:year %) target-year))
                           first
                           :population)]
-    (println "Modifier:" modifier)
     (println "Population:" achieved-pop)
     [result current-pop]))
 
 (defn target-results
   "Takes a baseline config to use as a template, a map containing a target population
    range and year, e.g. {:year 2019 :population 6}, a map of keys partially matching
-   a transition and an optional range step value"
-  [base-config target m results-path & step]
+   a transition, a boolean to output results and an optional range step value"
+  [base-config target m results-path output-results? & step]
   (let [step (if step
                step
                0.1)
