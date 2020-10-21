@@ -38,7 +38,7 @@
   (conj [:output-parameters :output-dir]
         (string/replace
          (string/join (doall (map #(take-last 2 %) combo)))
-         #"[():,{} ]"
+         #"[():,{}\[\] ]"
          "")))
 
 (defn generate-params

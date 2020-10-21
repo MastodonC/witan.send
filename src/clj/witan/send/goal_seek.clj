@@ -4,7 +4,8 @@
             [witan.send.model.input :as i]
             [witan.send.model.prepare :as p]
             [witan.send.maths :as math]
-            [witan.send.send :as s]))
+            [witan.send.send :as s]
+            [witan.send.states :as st]))
 
 (defn update-transition-modifier
   "Takes a map of keys partially matching a transition and a new modifier"
@@ -26,32 +27,20 @@
                       (update :population i/->int)))
             filepath))
 
-(defn state-pop
-  "Takes a config and returns the state to be modified and output path of
-   Output_State_pop_only.csv results"
-  [config]
-  (let [state (-> (get-in config [:transition-parameters :transitions-to-change])
-                  first
-                  (clojure.set/rename-keys {:setting-2 :setting :need-2 :need :academic-year-2 :academic-year})
-                  (select-keys [:setting :need :academic-year]))
-        out-dir (:output-dir (:output-parameters config))
-        state-pop (str (:project-dir config)
-                       "/"
-                       out-dir
-                       "/Output_State_pop_only.csv")]
-    [state state-pop]))
-
 (defn get-target-pop
   "Takes a vector with a state to find (e.g. {:setting :SFSS, :need :ASD}) and filepath
   for a Output_State_pop_only.csv file to return summed populations sorted by calender year
   for ease of reading in REPL"
-  [[state state-pop]]
-  (->> (csv->state-pop state-pop)
-       (filter #(every? identity (p/test-predicates % state))) ;; need something to build predicates
-       (group-by :calendar-year)
-       (map #(merge (assoc {} :year (key %))
-                    (apply merge-with + (map (fn [m] (select-keys m [:population])) (val %)))))
-       (sort-by :year)))
+  [config state-pop]
+  (let [state (-> (get-in config [:transition-parameters :transitions-to-change])
+                  first
+                  (clojure.set/rename-keys {:setting-2 :setting :need-2 :need :academic-year-2 :academic-year})
+                  (select-keys [:setting :need :academic-year]))]
+    (->> state-pop
+         (filter #(= (second (key %)) (st/join-need-setting (:need state) (:setting state))))
+         (map val)
+         (apply merge-with +)
+         :median)))
 
 (defn update-results-path [config results-path]
   (assoc-in config [:output-parameters :output-dir] (str results-path (get-in config [:output-parameters :output-dir]))))
@@ -81,27 +70,28 @@
         (assoc-in (first (first state))
                   (first (second (first state)))))))
 
+(defn generate-configs [config m start end step]
+  (mc/generate-configs (create-transition-modifier-seq m 16 17 1)
+                       config))
+
 (defn target-result
-  "Takes a baseline config to use as a template, a target year, a boolean to output results and an optional
+  "Takes a baseline config to use as a template, a target year and a
    map of keys partially matching a transition, and a value to modify by"
-  [config target-year output-results? & m]
-  (let [config (if m
-                 (assoc-in config [:transition-parameters :transitions-to-change] (vec m))
-                 config)
+  [config target-year m]
+  (let [config (assoc-in config [:transition-parameters :transitions-to-change] (vector m))
         modifier (-> config
                      (get-in [:transition-parameters :transitions-to-change])
                      first
                      :modify-transition-by)
         _ (println "Modifier:" modifier)
-        result (do (main/run-recorded-send config false)
-                   (get-target-pop (state-pop config)))
-        current-pop (get-current-pop target-year result)
-        achieved-pop (->> result
-                          (filter #(= (:year %) target-year))
-                          first
-                          :population)]
-    (println "Population:" achieved-pop)
-    [result current-pop]))
+        projection (s/run-send-workflow config false)
+        base-year (+ 1 (apply max (into (sorted-set) (map :calendar-year (:transitions projection)))))
+        output (:send-output projection)
+        result (into {} (map #(assoc {} %1 %2) (range base-year (+ base-year (count output))) output))
+        target-year-result (get-in result [target-year :by-state])
+        target-pop-result (get-target-pop config target-year-result)]
+    (println "Population:" target-pop-result)
+    projection))
 
 (defn target-results
   "Takes a baseline config to use as a template, a map containing a target population
