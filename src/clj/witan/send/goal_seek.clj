@@ -71,7 +71,7 @@
                   (first (second (first state)))))))
 
 (defn generate-configs [config m start end step]
-  (mc/generate-configs (create-transition-modifier-seq m 16 17 1)
+  (mc/generate-configs (create-transition-modifier-seq m start end step)
                        config))
 
 (defn target-result
