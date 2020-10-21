@@ -116,7 +116,7 @@
         target-year-result (get-in result [target-year :by-state])
         target-pop-result (get-target-pop config target-year-result)]
     (println "Population:" target-pop-result)
-    projection))
+    [projection target-pop-result]))
 
 (defn target-results
   "Takes a baseline config to use as a template, a map containing a target population
