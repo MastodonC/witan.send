@@ -58,8 +58,11 @@
   (and (<= (first pop) diff)
        (>= (second pop) diff)))
 
-(defn target-pop-exceeded? [pop target-pop]
+(defn target-pop-to-high? [pop target-pop]
   (> pop (apply max target-pop)))
+
+(defn target-pop-to-low? [pop target-pop]
+  (< pop (apply min target-pop)))
 
 (defn assoc-transition-params
   "Takes a config and creates or updates :transitions-to-change key with a partial
