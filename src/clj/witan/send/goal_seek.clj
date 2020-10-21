@@ -5,7 +5,8 @@
             [witan.send.model.prepare :as p]
             [witan.send.maths :as math]
             [witan.send.send :as s]
-            [witan.send.states :as st]))
+            [witan.send.states :as st]
+            [witan.send.model.output :as so]))
 
 (defn update-transition-modifier
   "Takes a map of keys partially matching a transition and a new modifier"
@@ -138,20 +139,19 @@
         target-year (:year target)
         target-pop-range (if (vector? target-pop)
                            target-pop
-                           (vector (- target-pop 1) (+ target-pop 1)))
-        initial-modifier (math/round (/ (apply min target-pop-range) baseline-pop))]
-    (loop [configs (map #(update-results-path % results-path)
-                        (-> (create-transition-modifier-seq
-                             m
-                             (if (< initial-modifier 1)
-                               1
-                               initial-modifier)
-                             (+ initial-modifier 1) step)
-                            (mc/generate-configs base-config)))]
-      (let [[config & rest-configs] configs
-            [result current-pop] (target-result config target-year output-results?)
-            diff (pop-diff-by-year target-year result)]
-        (if (target-pop-exceeded? current-pop target-pop-range)
-          (println "Population exceeds target population")
-          (when-not (within-pop-range? target-pop-range diff)
-            (recur rest-configs)))))))
+                           (vector (- target-pop 1) (+ target-pop 1)))]
+    (loop [initial-modifier (math/round (/ (median target-pop) baseline-pop))]
+      (let [config (first (generate-configs base-config m initial-modifier (+ initial-modifier 1) step))
+            [projection target-pop-result] (target-result config
+                                                          target-year
+                                                          (first (get-in config [:transition-parameters :transitions-to-change])))]
+        (cond
+          (target-pop-to-high? target-pop-result target-pop-range)
+          (recur (- 1 initial-modifier))
+
+          (target-pop-to-low? target-pop-result target-pop-range)
+          (recur (+ 1 initial-modifier))
+
+          (within-pop-range? target-pop-range target-pop-result)
+          (let [config (update-results-path config results-path)]
+            (so/output-send-results projection (:output-parameters config))))))))
