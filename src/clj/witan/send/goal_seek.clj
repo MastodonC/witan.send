@@ -101,12 +101,13 @@
   (let [step (if step
                step
                0.1)
-        baseline-pop (->> m
-                          (assoc-transition-params base-config)
-                          state-pop
-                          get-target-pop
-                          (filter #(= (:year %) (:year target)))
-                          first
+        baseline-pop (->> (str (get-in base-config [:output-parameters :output-dir]) "/Output_State_pop_only.csv")
+                          csv->state-pop
+                          (filter #(and (= (:need %) (:need-2 m))
+                                        (= (:calendar-year %) (:year target))
+                                        (= (:setting %) (:setting-2 m))))
+                          (map #(select-keys % [:population]))
+                          (apply merge-with +)
                           :population)
         target-pop (:population target)
         target-year (:year target)
