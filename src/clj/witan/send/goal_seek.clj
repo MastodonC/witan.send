@@ -125,7 +125,7 @@
   [base-config target m results-path & step]
   (let [step (if step
                step
-               0.1)
+               1)
         baseline-pop (->> (str (get-in base-config [:output-parameters :output-dir]) "/Output_State_pop_only.csv")
                           csv->state-pop
                           (filter #(and (= (:need %) (:need-2 m))
