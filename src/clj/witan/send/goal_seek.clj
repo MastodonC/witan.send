@@ -74,6 +74,28 @@
   (mc/generate-configs (create-transition-modifier-seq m start end step)
                        config))
 
+;;;;;; From the Clojure Cookbook ;;;;;;;;
+
+(defn mean [coll]
+  (let [sum (apply + coll)
+        count (count coll)]
+    (if (pos? count)
+      (/ sum count)
+      0)))
+
+(defn median [coll]
+  (let [sorted (sort coll)
+        cnt (count sorted)
+        halfway (quot cnt 2)]
+    (if (odd? cnt)
+      (nth sorted halfway) ; (1)
+      (let [bottom (dec halfway)
+            bottom-val (nth sorted bottom)
+            top-val (nth sorted halfway)]
+        (mean [bottom-val top-val])))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn target-result
   "Takes a baseline config to use as a template, a target year and a
    map of keys partially matching a transition, and a value to modify by"
