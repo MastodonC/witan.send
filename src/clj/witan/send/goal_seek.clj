@@ -148,11 +148,19 @@
                                                    (first (get-in config [:transition-parameters :transitions-to-change])))]
         (cond
           (target-pop-to-high? pop-result target-pop-range)
-          (recur (math/round (* modifier (- (/ pop-result (median target-pop)) 1))))
+          (let [new-modifier (if (>= (apply min tested-modifiers)
+                                     (math/round (* modifier (- (/ pop-result (median target-pop)) 1))))
+                               (math/round (* modifier (- (/ pop-result (median target-pop)) 1)))
+                               (math/round (* modifier (- (/ pop-result (median target-pop)) 0.5))))]
+            (recur new-modifier
                    (into tested-modifiers [modifier])))
 
           (target-pop-to-low? pop-result target-pop-range)
-          (recur (math/round (* modifier (+ (/ pop-result (median target-pop)) 1))))
+          (let [new-modifier (if (<= (apply max tested-modifiers)
+                                     (math/round (* modifier (+ (/ pop-result (median target-pop)) 1))))
+                               (math/round (* modifier (+ (/ pop-result (median target-pop)) 1)))
+                               (math/round (* modifier (+ (/ pop-result (median target-pop)) 0.5))))]
+            (recur new-modifier
                    (into tested-modifiers [new-modifier])))
 
           (within-pop-range? target-pop-range pop-result)
