@@ -6,7 +6,8 @@
             [witan.send.maths :as math]
             [witan.send.send :as s]
             [witan.send.states :as st]
-            [witan.send.model.output :as so]))
+            [witan.send.model.output :as so]
+            [witan.send.metadata :as md]))
 
 (defn update-transition-modifier
   "Takes a map of keys partially matching a transition and a new modifier"
@@ -165,4 +166,6 @@
 
           (within-pop-range? target-pop-range pop-result)
           (let [config (update-results-path config results-path)]
-            (so/output-send-results projection (:output-parameters config))))))))
+            (so/output-send-results projection (:output-parameters config))
+            (main/save-runtime-config config)
+            (main/save-runtime-metadata config (md/metadata config))))))))
