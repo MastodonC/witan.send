@@ -140,7 +140,8 @@
         target-pop-range (if (vector? target-pop)
                            target-pop
                            (vector (- target-pop 1) (+ target-pop 1)))]
-    (loop [modifier (math/round (/ (median target-pop) baseline-pop))]
+    (loop [modifier (math/round (/ (median target-pop) baseline-pop))
+           tested-modifiers [1 modifier]]
       (let [config (first (generate-configs base-config m modifier (+ modifier 1) step))
             [projection pop-result] (target-result config
                                                    target-year
@@ -148,9 +149,11 @@
         (cond
           (target-pop-to-high? pop-result target-pop-range)
           (recur (math/round (* modifier (- (/ pop-result (median target-pop)) 1))))
+                   (into tested-modifiers [modifier])))
 
           (target-pop-to-low? pop-result target-pop-range)
           (recur (math/round (* modifier (+ (/ pop-result (median target-pop)) 1))))
+                   (into tested-modifiers [new-modifier])))
 
           (within-pop-range? target-pop-range pop-result)
           (let [config (update-results-path config results-path)]
