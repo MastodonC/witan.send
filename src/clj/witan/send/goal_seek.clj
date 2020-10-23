@@ -144,6 +144,7 @@
         target-pop-median (if (vector? target-pop)
                             (median target-pop)
                             target-pop)]
+    (println "Modifying:" m)
     (loop [modifier (math/round (/ target-pop-median baseline-pop))
            tested-modifiers [modifier]]
       (let [config (first (generate-configs base-config m modifier (+ modifier 1) step))
