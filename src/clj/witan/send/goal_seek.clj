@@ -140,9 +140,11 @@
         target-year (:year target)
         target-pop-range (if (vector? target-pop)
                            target-pop
-                           (vector (- target-pop 1) (+ target-pop 1)))]
-    (loop [modifier (math/round (/ (median target-pop) baseline-pop))
-           tested-modifiers [1 modifier]]
+                           (vector (- target-pop 1) (+ target-pop 1)))
+        target-pop-median (if (vector? target-pop)
+                            (median target-pop)
+                            target-pop)]
+    (loop [modifier (math/round (/ target-pop-median baseline-pop))
       (let [config (first (generate-configs base-config m modifier (+ modifier 1) step))
             [projection pop-result] (target-result config
                                                    target-year
@@ -150,17 +152,17 @@
         (cond
           (target-pop-to-high? pop-result target-pop-range)
           (let [new-modifier (if (>= (apply min tested-modifiers)
-                                     (math/round (* modifier (- (/ pop-result (median target-pop)) 1))))
-                               (math/round (* modifier (- (/ pop-result (median target-pop)) 1)))
-                               (math/round (* modifier (- (/ pop-result (median target-pop)) 0.5))))]
+                                     (math/round (* modifier (- (/ pop-result target-pop-median) 1))))
+                               (math/round (* modifier (- (/ pop-result target-pop-median) 1)))
+                               (math/round (* modifier (- (/ pop-result target-pop-median) 0.5))))]
             (recur new-modifier
                    (into tested-modifiers [modifier])))
 
           (target-pop-to-low? pop-result target-pop-range)
           (let [new-modifier (if (<= (apply max tested-modifiers)
-                                     (math/round (* modifier (+ (/ pop-result (median target-pop)) 1))))
-                               (math/round (* modifier (+ (/ pop-result (median target-pop)) 1)))
-                               (math/round (* modifier (+ (/ pop-result (median target-pop)) 0.5))))]
+                                     (math/round (* modifier (+ (/ pop-result target-pop-median) 1))))
+                               (math/round (* modifier (+ (/ pop-result target-pop-median) 1)))
+                               (math/round (* modifier (+ (/ pop-result target-pop-median) 0.5))))]
             (recur new-modifier
                    (into tested-modifiers [new-modifier])))
 
