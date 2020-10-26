@@ -48,7 +48,15 @@
                   (clojure.set/rename-keys {:setting-2 :setting :need-2 :need :academic-year-2 :academic-year})
                   (select-keys [:setting :need :academic-year]))]
     (->> state-pop
-         (filter #(= (second (key %)) (st/join-need-setting (:need state) (:setting state))))
+         (filter #(cond (every? (fn [k] (contains? state k)) [:setting :need :academic-year])
+                        (and (match-need-setting % state)
+                             (match-ay % state))
+
+                        (every? (fn [k] (contains? state k)) [:setting :need])
+                        (match-need-setting % state)
+
+                        (contains? state :academic-year)
+                        (match-ay % state)))
          (map val)
          (apply merge-with +)
          :median)))
