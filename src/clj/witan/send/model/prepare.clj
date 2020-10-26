@@ -187,7 +187,7 @@
 (defn test-predicates [data pred-map]
   "data can be any map, while pred-map must be a sequence of key-value pairs
    matching the key to filter on and the value to filter by"
-  (map (fn [[k v]] (if (vector? v)
+  (map (fn [[k v]] (if (coll? v)
                      (true? (some #(= (k data) %) v))
                      (= (k data) v))) pred-map))
 
