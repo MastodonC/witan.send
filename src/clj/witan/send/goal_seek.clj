@@ -137,11 +137,11 @@
   (let [step (if step
                step
                1)
+        baseline-m (clojure.set/rename-keys m {:setting-2 :setting :need-2 :need :academic-year-2 :academic-year})
         baseline-pop (->> (str (get-in base-config [:output-parameters :output-dir]) "/Output_State_pop_only.csv")
                           csv->state-pop
-                          (filter #(and (= (:need %) (:need-2 m))
-                                        (= (:calendar-year %) (:year target))
-                                        (= (:setting %) (:setting-2 m))))
+                          (filter #(and (= (:calendar-year %) (:year target))
+                                        (every? identity (witan.send.model.prepare/test-predicates % baseline-m))))
                           (map #(select-keys % [:population]))
                           (apply merge-with +)
                           :population)
