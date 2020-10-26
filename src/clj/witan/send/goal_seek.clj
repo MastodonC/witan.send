@@ -29,6 +29,15 @@
                       (update :population i/->int)))
             filepath))
 
+(defn match-need-setting [data state]
+  (= (second (key data)) (st/join-need-setting (:need state) (:setting state))))
+
+(defn match-ay [data state]
+  (let [ay-state (:academic-year state)]
+    (if (coll? ay-state)
+      (true? (some (fn [ay] (= (first (key data)) ay)) ay-state))
+      (= (first (key data)) ay-state))))
+
 (defn get-target-pop
   "Takes a vector with a state to find (e.g. {:setting :SFSS, :need :ASD}) and filepath
   for a Output_State_pop_only.csv file to return summed populations sorted by calender year
