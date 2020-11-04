@@ -170,6 +170,7 @@
                                               :target-population target-pop-median}))
                              :else
                              result))]
+    (println (str "Baseline population for " target-year ": " baseline-pop))
     (println "Modifying:" m)
     (loop [modifier (math/round (/ target-pop-median baseline-pop))
            tested-modifiers [modifier]]
