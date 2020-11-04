@@ -145,6 +145,14 @@
   (let [step (if step
                step
                1)
+        target-pop (:population target)
+        target-year (:year target)
+        target-pop-range (if (vector? target-pop)
+                           target-pop
+                           (vector (- target-pop 1) (+ target-pop 1)))
+        target-pop-median (if (vector? target-pop)
+                            (median target-pop)
+                            target-pop)
         baseline-m (clojure.set/rename-keys m {:setting-2 :setting :need-2 :need :academic-year-2 :academic-year})
         baseline-pop (let [result (->> (str (get-in base-config [:output-parameters :output-dir]) "/Output_State_pop_only.csv")
                                        csv->state-pop
@@ -153,18 +161,15 @@
                                        (map #(select-keys % [:population]))
                                        (apply merge-with +)
                                        :population)]
-                       (if (zero? result)
-                         (throw (ex-info "Baseline population is too low, can't modify"
-                                         {:population result}))
-                         result))
-        target-pop (:population target)
-        target-year (:year target)
-        target-pop-range (if (vector? target-pop)
-                           target-pop
-                           (vector (- target-pop 1) (+ target-pop 1)))
-        target-pop-median (if (vector? target-pop)
-                            (median target-pop)
-                            target-pop)]
+                       (cond (zero? result)
+                             (throw (ex-info "Baseline population is too low, can't modify"
+                                             {:population result}))
+                             (= result target-pop-median)
+                             (throw (ex-info "Baseline population already matches target population"
+                                             {:baseline-population result
+                                              :target-population target-pop-median}))
+                             :else
+                             result))]
     (println "Modifying:" m)
     (loop [modifier (math/round (/ target-pop-median baseline-pop))
            tested-modifiers [modifier]]
