@@ -219,8 +219,5 @@
               )))))))
 
 ;; TODO:
-;; 1. add logging of tested modifiers and population results
-;; 2. store tested modifiers in a map with a score on how close they got to the target population
+;; 1. store tested modifiers in a map with a score on how close they got to the target population
 ;;    use this score to inform the next attempt
-#_(with-open [writer (io/writer (io/file "temp.csv"))]
-    (clojure.data.csv/write-csv writer (into [["modifier" "population"]] (map #(into [%1 %2]) [1.1 2.1] [22 33]))))
