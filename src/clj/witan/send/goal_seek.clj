@@ -7,7 +7,9 @@
             [witan.send.send :as s]
             [witan.send.states :as st]
             [witan.send.model.output :as so]
-            [witan.send.metadata :as md]))
+            [witan.send.metadata :as md]
+            [clojure.java.io :as io]
+            [clojure.data.csv :as csv]))
 
 (defn update-transition-modifier
   "Takes a map of keys partially matching a transition and a new modifier"
@@ -180,31 +182,45 @@
                              result))]
     (println (str "Baseline population for " target-year ": " baseline-pop))
     (println "Modifying:" m)
-    (loop [modifier (math/round (/ target-pop-median baseline-pop))
-           tested-modifiers [modifier]]
-      (let [config (first (generate-configs base-config m modifier (+ modifier 1) step))
-            [projection pop-result] (target-result config
-                                                   target-year
-                                                   (first (get-in config [:transition-parameters :transitions-to-change])))]
-        (cond
-          (target-pop-to-high? pop-result target-pop-range)
-          (let [new-modifier (if (<= (apply min tested-modifiers)
-                                     (math/round (* modifier (- (/ pop-result target-pop-median) 1))))
-                               (math/round (* modifier (- (/ pop-result target-pop-median) 1)))
-                               (math/round (* modifier (- (/ pop-result target-pop-median) 0.5))))]
-            (recur new-modifier
-                   (into tested-modifiers [new-modifier])))
+    (with-open [writer (io/writer (io/output-stream (str results-path (create-log-filename m))))]
+      (csv/write-csv writer (into [["modifier" "population"]] (map #(into [%1 %2]) [1] [baseline-pop])))
+      (loop [modifier (math/round (/ target-pop-median baseline-pop))
+             tested-modifiers [modifier]
+             population []]
+        (let [config (first (generate-configs base-config m modifier (+ modifier 1) step))
+              [projection pop-result] (target-result config
+                                                     target-year
+                                                     (first (get-in config [:transition-parameters :transitions-to-change])))]
+          (csv/write-csv writer [[pop-result modifier]])
+          (cond
+            (target-pop-to-high? pop-result target-pop-range)
+            (let [new-modifier (if (<= (apply min tested-modifiers)
+                                       (math/round (* modifier (- (/ pop-result target-pop-median) 1))))
+                                 (math/round (* modifier (- (/ pop-result target-pop-median) 1)))
+                                 (math/round (* modifier (- (/ pop-result target-pop-median) 0.5))))]
+              (recur new-modifier
+                     (into tested-modifiers [new-modifier])
+                     (into population [pop-result])))
 
-          (target-pop-to-low? pop-result target-pop-range)
-          (let [new-modifier (if (<= (apply max tested-modifiers)
-                                     (math/round (* modifier (+ (/ pop-result target-pop-median) 1))))
-                               (math/round (* modifier (+ (/ pop-result target-pop-median) 1)))
-                               (math/round (* modifier (+ (/ pop-result target-pop-median) 0.5))))]
-            (recur new-modifier
-                   (into tested-modifiers [new-modifier])))
+            (target-pop-to-low? pop-result target-pop-range)
+            (let [new-modifier (if (<= (apply max tested-modifiers)
+                                       (math/round (* modifier (+ (/ pop-result target-pop-median) 1))))
+                                 (math/round (* modifier (+ (/ pop-result target-pop-median) 1)))
+                                 (math/round (* modifier (+ (/ pop-result target-pop-median) 0.5))))]
+              (recur new-modifier
+                     (into tested-modifiers [new-modifier])
+                     (into population [pop-result])))
 
-          (within-pop-range? target-pop-range pop-result)
-          (let [config (update-results-path config results-path)]
-            (so/output-send-results projection (:output-parameters config))
-            (main/save-runtime-config config)
-            (main/save-runtime-metadata config (md/metadata config))))))))
+            (within-pop-range? target-pop-range pop-result)
+            (let [config (update-results-path config results-path)]
+              (so/output-send-results projection (:output-parameters config))
+              (main/save-runtime-config config)
+              (main/save-runtime-metadata config (md/metadata config))
+              )))))))
+
+;; TODO:
+;; 1. add logging of tested modifiers and population results
+;; 2. store tested modifiers in a map with a score on how close they got to the target population
+;;    use this score to inform the next attempt
+#_(with-open [writer (io/writer (io/file "temp.csv"))]
+    (clojure.data.csv/write-csv writer (into [["modifier" "population"]] (map #(into [%1 %2]) [1.1 2.1] [22 33]))))
