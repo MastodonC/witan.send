@@ -116,6 +116,14 @@
             top-val (nth sorted halfway)]
         (mean [bottom-val top-val])))))
 
+(defn create-log-filename [m]
+  (-> m
+      vals
+      str
+      (clojure.string/replace #"[()#:,{}\[\]]" "")
+      (clojure.string/replace #" " "-")
+      (str "_log.csv")))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn target-result
