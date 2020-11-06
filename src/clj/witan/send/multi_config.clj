@@ -38,6 +38,7 @@
   (conj [:output-parameters :output-dir]
         (-> (string/join (doall (map #(take-last 2 %) combo)))
             (string/replace #"[()#:,{}\[\]]" "")
+            (string/replace #" " "-"))))
 
 (defn generate-params
   "Generates combinations of input parameters based on input vectors"
