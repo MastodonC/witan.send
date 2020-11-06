@@ -36,10 +36,8 @@
   "Adds unique output-dir val to combination map for given combination of parameters"
   [combo]
   (conj [:output-parameters :output-dir]
-        (string/replace
-         (string/join (doall (map #(take-last 2 %) combo)))
-         #"[():,{}\[\] ]"
-         "")))
+        (-> (string/join (doall (map #(take-last 2 %) combo)))
+            (string/replace #"[()#:,{}\[\]]" "")
 
 (defn generate-params
   "Generates combinations of input parameters based on input vectors"
