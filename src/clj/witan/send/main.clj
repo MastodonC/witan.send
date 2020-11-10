@@ -79,4 +79,8 @@
   ([config-path]
    (-> config-path
        read-config
-       run-recorded-send)))
+       (run-recorded-send true)))
+  ([config-path print-warnings?]
+   (-> config-path
+       read-config
+       (run-recorded-send print-warnings?))))
