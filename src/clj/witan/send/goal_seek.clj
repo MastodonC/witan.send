@@ -194,7 +194,7 @@
               [projection pop-result] (target-result config
                                                      target-year
                                                      (first (get-in config [:transition-parameters :transitions-to-change])))]
-          (csv/write-csv writer [[pop-result modifier]])
+          (csv/write-csv writer [[modifier pop-result]])
           (cond
             (target-pop-to-high? pop-result target-pop-range)
             (let [new-modifier (if (<= (apply min tested-modifiers)
