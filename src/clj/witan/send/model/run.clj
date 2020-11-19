@@ -1,11 +1,12 @@
 (ns witan.send.model.run
-  (:require [witan.send.constants :as c]
+  (:require [clojure.core.async :as a]
+            [witan.send.constants :as c]
             [witan.send.distributions :as d]
             [witan.send.maths :as m]
+            [witan.send.model.data-products :as dp]
             [witan.send.schemas :as sc]
             [witan.send.states :as states]
-            [witan.send.step :as step]
-            [witan.send.model.data-products :as dp]))
+            [witan.send.step :as step]))
 
 (def exception-info (atom {}))
 
@@ -178,7 +179,16 @@
 
 (defn projection->transitions
   [projections]
-  (apply merge-with + (mapcat #(map :transitions %) projections)))
+  ;; (apply merge-with + (mapcat #(map :transitions %) projections))
+  (transduce
+   (mapcat
+    (fn [p] (into [] (map :transitions) p)))
+   (fn merge-with-+
+     ([] {})
+     ([acc] acc)
+     ([acc m] (merge-with + acc m)))
+   projections))
+
 
 (defn projected-future-pop-by-year [projected-population seed-year]
   (->> projected-population
@@ -186,16 +196,22 @@
        (sort-by key)))
 
 (defn create-projections [simulations modify-transitions-date-range make-setting-invalid inputs modified-inputs population-by-state projected-population seed-year]
-  (sequence
-   (map (fn [simulation-run]
-          (reductions (partial run-model-iteration
-                               modify-transitions-date-range
-                               make-setting-invalid
-                               inputs
-                               modified-inputs)
-                      {:model population-by-state}
-                      (projected-future-pop-by-year projected-population seed-year))))
-   (range simulations)))
+  (let [parallelism (* 3 (quot (.availableProcessors (Runtime/getRuntime)) 4)) ;; use 3/4 the cores
+        in-chan (a/to-chan!! (range simulations))
+        out-chan (a/chan 1024)
+        run-model-f (partial run-model-iteration
+                             modify-transitions-date-range
+                             make-setting-invalid
+                             inputs
+                             modified-inputs)
+        projection-xf (map (fn [simulation-run]
+                             (when (zero? (rem simulation-run 50)) (println "Running simulation: " simulation-run))
+                             (into []
+                                   (reductions run-model-f
+                                               {:model population-by-state}
+                                               (projected-future-pop-by-year projected-population seed-year)))))
+        _ (a/pipeline parallelism out-chan projection-xf in-chan)]
+    (a/<!! (a/into [] out-chan))))
 
 (defn simulated-transitions [projection]
   (into []
@@ -224,11 +240,15 @@
                                        modified-inputs
                                        population-by-state
                                        projected-population
-                                       seed-year)]
-    {:projection (projection->transitions projection)
-     :simulated-transitions (simulated-transitions projection)
+                                       seed-year)
+        _ (println "Simulations complete.")
+        projection-transitions (future (projection->transitions projection))
+        simulated-transition-counts (future (simulated-transitions projection))
+        send-output (future (dp/->send-output-style (dp/data-products valid-states cost-lookup projection)))]
+    {:projection projection-transitions
+     :simulated-transitions simulated-transition-counts
      :simulations simulations
-     :send-output (dp/->send-output-style (dp/data-products valid-states cost-lookup projection))
+     :send-output send-output
      :transitions transitions
      :valid-states valid-states
      :population population

@@ -145,39 +145,54 @@
                              year))))
                simulation))))
 
-(defn summarise-results [rollup-fn projections]
-  (transduce
-   (comp
-    (rolled-up-simulations-with-n-to-simulations-with-histograms rollup-fn))
-   histogram-summary-rf
-   projections))
+(defn summarise-results [product-name rollup-fn projections]
+  (println "Producing " product-name)
+  (let [product (transduce
+                 (comp
+                  (rolled-up-simulations-with-n-to-simulations-with-histograms rollup-fn))
+                 histogram-summary-rf
+                 projections)]
+    (println product-name "... done!")
+    product))
 
 (defn data-products [valid-states cost-lookup simulations]
-  (let [by-state (future (summarise-results
-                          (partial roll-up-calendar-year-by-state
-                                   (states/calculate-valid-states-from-setting-academic-years valid-states))
-                          simulations)) ;; FIXME - this should be a state filter for all data products
-        total-in-send-by-ay (future (summarise-results roll-up-calendar-year-by-ay simulations))
-        total-in-send-by-ay-group (future (summarise-results roll-up-total-in-send-by-ay-group simulations))
+  (println "Creating data products.")
+  (let [total-in-send-by-ay (future (summarise-results
+                                     "Total in SEND by AY"
+                                     roll-up-calendar-year-by-ay simulations))
+        total-in-send-by-ay-group (future (summarise-results
+                                           "Total in SEND by AY Group"
+                                           roll-up-total-in-send-by-ay-group simulations))
         total-send-population (future (into []
                                             (map :total-population)
-                                            (summarise-results roll-up-calendar-year-by-total-send-population simulations)))
+                                            (summarise-results
+                                             "Total SEND Population"
+                                             roll-up-calendar-year-by-total-send-population simulations)))
         total-cost (future (into []
                                  (map :total-cost)
-                                 (summarise-results (partial roll-up-calendar-year-by-total-cost cost-lookup)
-                                                    simulations)))
-        total-in-send-by-need (future (summarise-results roll-up-calendar-year-by-total-in-send-by-need simulations))
-        population-by-setting (future (summarise-results setting-summary/population simulations))
+                                 (summarise-results
+                                  "Total Cost"
+                                  (partial roll-up-calendar-year-by-total-cost cost-lookup)
+                                  simulations)))
+        total-in-send-by-need (future (summarise-results
+                                       "Total in SEND by Need"
+                                       roll-up-calendar-year-by-total-in-send-by-need simulations))
+        population-by-setting (future (summarise-results
+                                       "Total in SEND by Setting"
+                                       setting-summary/population simulations))
         cost-by-setting (future (into []
-                                      (summarise-results (partial setting-summary/cost cost-lookup) simulations)))]
-    {:by-state @by-state
-     :total-in-send-by-ay @total-in-send-by-ay
-     :total-in-send-by-ay-group @total-in-send-by-ay-group
-     :total-in-send @total-send-population
-     :total-cost @total-cost
-     :total-in-send-by-need @total-in-send-by-need
-     :total-in-send-by-setting @population-by-setting
-     :setting-cost @cost-by-setting}))
+                                      (summarise-results
+                                       "SEND cost by Setting"
+                                       (partial setting-summary/cost cost-lookup) simulations)))
+        dp {:total-in-send-by-ay @total-in-send-by-ay
+            :total-in-send-by-ay-group @total-in-send-by-ay-group
+            :total-in-send @total-send-population
+            :total-cost @total-cost
+            :total-in-send-by-need @total-in-send-by-need
+            :total-in-send-by-setting @population-by-setting
+            :setting-cost @cost-by-setting}]
+    (println "Data products created.")
+    dp))
 
 (defn ->send-output-style [data-products]
   (let [data-keys (keys data-products)]

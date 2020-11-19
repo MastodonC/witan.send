@@ -60,14 +60,15 @@
 
 (defn run-recorded-send [config print-warnings?]
   (try
-    (let [metadata (md/metadata config)]
-      (so/output-send-results
-       (send/run-send-workflow config print-warnings?)
-       (:output-parameters config))
+    (let [metadata (md/metadata config)
+          model-results (so/output-send-results
+                         (send/run-send-workflow config print-warnings?)
+                         (:output-parameters config))]
       (when (get-in config [:validation-parameters :run-validation])
         (vm/run-send-validation config))
       (save-runtime-config config)
-      (save-runtime-metadata config metadata))
+      (save-runtime-metadata config metadata)
+      model-results)
     (catch Exception e
       (throw (ex-info "Couldn't run recorded send." {:config config} e)))))
 

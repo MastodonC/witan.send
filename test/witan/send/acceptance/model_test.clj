@@ -10,7 +10,7 @@
                             "Output_Count.csv"
                             "Output_Need.csv"
                             "Output_Setting.csv"
-                            "Output_State.csv"
+                            ;; "Output_State.csv"
                             "transitions.edn"])
 
 (def beta-files-to-check ["joiner_beta_expectations.csv"
