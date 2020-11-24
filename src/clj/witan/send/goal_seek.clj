@@ -224,3 +224,4 @@
 ;; TODO:
 ;; 1. store tested modifiers in a map with a score on how close they got to the target population
 ;;    use this score to inform the next attempt
+;; 2. consider removing default behaviour of outputting results and instead just produce the log of results
