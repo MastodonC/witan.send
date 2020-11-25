@@ -65,3 +65,9 @@
     (key-stage-4 y) :ks-4
     (key-stage-5 y) :ks-5
     (ncy-15+ y) :further-education))
+
+(def primary-school
+  (into (sorted-set 0) (into key-stage-1 key-stage-2)))
+
+(def secondary-school
+  (into key-stage-3 key-stage-4))

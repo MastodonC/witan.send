@@ -3,7 +3,13 @@
             [witan.send.main :as main]
             [witan.send.model.input :as i]
             [witan.send.model.prepare :as p]
-            [witan.send.maths :as math]))
+            [witan.send.maths :as math]
+            [witan.send.send :as s]
+            [witan.send.states :as st]
+            [witan.send.model.output :as so]
+            [witan.send.metadata :as md]
+            [clojure.java.io :as io]
+            [clojure.data.csv :as csv]))
 
 (defn update-transition-modifier
   "Takes a map of keys partially matching a transition and a new modifier"
@@ -25,35 +31,40 @@
                       (update :population i/->int)))
             filepath))
 
-(defn state-pop
-  "Takes a config and returns the state to be modified and output path of
-   Output_State_pop_only.csv results"
-  [config]
-  (let [state (-> (get-in config [:transition-parameters :transitions-to-change])
-                  first
-                  (clojure.set/rename-keys {:setting-2 :setting :need-2 :need :academic-year-2 :academic-year})
-                  (select-keys [:setting :need :academic-year]))
-        out-dir (:output-dir (:output-parameters config))
-        state-pop (str (:project-dir config)
-                       "/"
-                       out-dir
-                       "/Output_State_pop_only.csv")]
-    [state state-pop]))
+(defn match-need-setting [data state]
+  (= (second (key data)) (st/join-need-setting (:need state) (:setting state))))
+
+(defn match-ay [data state]
+  (let [ay-state (:academic-year state)]
+    (if (coll? ay-state)
+      (true? (some (fn [ay] (= (first (key data)) ay)) ay-state))
+      (= (first (key data)) ay-state))))
 
 (defn get-target-pop
   "Takes a vector with a state to find (e.g. {:setting :SFSS, :need :ASD}) and filepath
   for a Output_State_pop_only.csv file to return summed populations sorted by calender year
   for ease of reading in REPL"
-  [[state state-pop]]
-  (->> (csv->state-pop state-pop)
-       (filter #(every? identity (p/test-predicates % state))) ;; need something to build predicates
-       (group-by :calendar-year)
-       (map #(merge (assoc {} :year (key %))
-                    (apply merge-with + (map (fn [m] (select-keys m [:population])) (val %)))))
-       (sort-by :year)))
+  [config state-pop]
+  (let [state (-> (get-in config [:transition-parameters :transitions-to-change])
+                  first
+                  (clojure.set/rename-keys {:setting-2 :setting :need-2 :need :academic-year-2 :academic-year})
+                  (select-keys [:setting :need :academic-year]))]
+    (->> state-pop
+         (filter #(cond (every? (fn [k] (contains? state k)) [:setting :need :academic-year])
+                        (and (match-need-setting % state)
+                             (match-ay % state))
 
-(defn update-results-path [config]
-  (assoc-in config [:output-parameters :output-dir] (str "results/" (get-in config [:output-parameters :output-dir]))))
+                        (every? (fn [k] (contains? state k)) [:setting :need])
+                        (match-need-setting % state)
+
+                        (contains? state :academic-year)
+                        (match-ay % state)))
+         (map val)
+         (apply merge-with +)
+         :median)))
+
+(defn update-results-path [config results-path]
+  (assoc-in config [:output-parameters :output-dir] (str results-path (get-in config [:output-parameters :output-dir]))))
 
 (defn get-current-pop [year result]
   (if-let [out (:population (first (filter #(= year (:year %)) result)))]
@@ -68,8 +79,11 @@
   (and (<= (first pop) diff)
        (>= (second pop) diff)))
 
-(defn target-pop-exceeded? [pop target-pop]
+(defn target-pop-to-high? [pop target-pop]
   (> pop (apply max target-pop)))
+
+(defn target-pop-to-low? [pop target-pop]
+  (< pop (apply min target-pop)))
 
 (defn assoc-transition-params
   "Takes a config and creates or updates :transitions-to-change key with a partial
@@ -80,59 +94,134 @@
         (assoc-in (first (first state))
                   (first (second (first state)))))))
 
+(defn generate-configs [config m start end step]
+  (mc/generate-configs (create-transition-modifier-seq m start end step)
+                       config))
+
+(defn get-baseline-population [base-config year state-map]
+  (->> (str (get-in base-config [:output-parameters :output-dir]) "/Output_State_pop_only.csv")
+       csv->state-pop
+       (filter #(and (= (:calendar-year %) year)
+                     (every? identity (witan.send.model.prepare/test-predicates % state-map))))
+       (map #(select-keys % [:population]))
+       (apply merge-with +)
+       :population))
+
+;;;;;; From the Clojure Cookbook ;;;;;;;;
+
+(defn mean [coll]
+  (let [sum (apply + coll)
+        count (count coll)]
+    (if (pos? count)
+      (/ sum count)
+      0)))
+
+(defn median [coll]
+  (let [sorted (sort coll)
+        cnt (count sorted)
+        halfway (quot cnt 2)]
+    (if (odd? cnt)
+      (nth sorted halfway) ; (1)
+      (let [bottom (dec halfway)
+            bottom-val (nth sorted bottom)
+            top-val (nth sorted halfway)]
+        (mean [bottom-val top-val])))))
+
+(defn create-log-filename [m]
+  (-> m
+      vals
+      str
+      (clojure.string/replace #"[()#:,{}\[\]]" "")
+      (clojure.string/replace #" " "-")
+      (str "_log.csv")))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn target-result
-  "Takes a baseline config to use as a template, a target year and an optional map of keys
-   partially matching a transition, and a value to modify by"
-  [config target-year & m]
-  (let [config (if m
-                 (assoc-in config [:transition-parameters :transitions-to-change] (vec m))
-                 config)
+  "Takes a baseline config to use as a template, a target year and a
+   map of keys partially matching a transition, and a value to modify by"
+  [config target-year m]
+  (let [config (assoc-in config [:transition-parameters :transitions-to-change] (vector m))
         modifier (-> config
                      (get-in [:transition-parameters :transitions-to-change])
                      first
                      :modify-transition-by)
-        result (do (main/run-recorded-send config)
-                   (get-target-pop (state-pop config)))
-        current-pop (get-current-pop target-year result)
-        achieved-pop (->> result
-                          (filter #(= (:year %) target-year))
-                          first
-                          :population)]
-    (println "Modifier:" modifier)
-    (println "Population:" achieved-pop)
-    [result current-pop]))
+        _ (println "Modifier:" modifier)
+        projection (s/run-send-workflow config false)
+        base-year (+ 1 (apply max (into (sorted-set) (map :calendar-year (:transitions projection)))))
+        output (:send-output projection)
+        result (into {} (map #(assoc {} %1 %2) (range base-year (+ base-year (count output))) output))
+        target-year-result (get-in result [target-year :by-state])
+        target-pop-result (get-target-pop config target-year-result)]
+    (println "Population:" target-pop-result)
+    [projection target-pop-result]))
 
 (defn target-results
   "Takes a baseline config to use as a template, a map containing a target population
    range and year, e.g. {:year 2019 :population 6}, a map of keys partially matching
-   a transition and an optional range step value"
-  [base-config target m & step]
+   a transition, a boolean to output results and an optional range step value"
+  [base-config target m results-path & step]
   (let [step (if step
                step
-               0.1)
-        baseline-pop (->> m
-                          (assoc-transition-params base-config)
-                          state-pop
-                          get-target-pop
-                          (filter #(= (:year %) (:year target)))
-                          first
-                          :population)
+               1)
         target-pop (:population target)
         target-year (:year target)
-        target-pop-range (vector (- target-pop 1) (+ target-pop 1))
-        initial-modifier (math/round (/ target-pop baseline-pop))]
-    (loop [configs (map update-results-path
-                        (-> (create-transition-modifier-seq
-                             m
-                             (- (if (< initial-modifier 1)
-                                  1
-                                  initial-modifier) 1)
-                             (+ initial-modifier 1) step)
-                            (mc/generate-configs base-config)))]
-      (let [[config & rest-configs] configs
-            [result current-pop] (target-result config target-year)
-            diff (pop-diff-by-year target-year result)]
-        (if (target-pop-exceeded? current-pop target-pop-range)
-          (println "Population exceeds target population")
-          (when-not (within-pop-range? target-pop-range diff)
-            (recur rest-configs)))))))
+        target-pop-range (if (vector? target-pop)
+                           target-pop
+                           (vector (- target-pop 1) (+ target-pop 1)))
+        target-pop-median (if (vector? target-pop)
+                            (median target-pop)
+                            target-pop)
+        baseline-m (clojure.set/rename-keys m {:setting-2 :setting :need-2 :need :academic-year-2 :academic-year})
+        baseline-pop (let [result (get-baseline-population base-config target-year baseline-m)]
+                       (cond (zero? result)
+                             (throw (ex-info "Baseline population is too low, can't modify"
+                                             {:population result}))
+                             (= result target-pop-median)
+                             (throw (ex-info "Baseline population already matches target population"
+                                             {:baseline-population result
+                                              :target-population target-pop-median}))
+                             :else
+                             result))]
+    (println (str "Baseline population for " target-year ": " baseline-pop))
+    (println "Modifying:" m)
+    (with-open [writer (io/writer (io/output-stream (str results-path (create-log-filename m))))]
+      (csv/write-csv writer (into [["modifier" "population"]] (map #(into [%1 %2]) [1] [baseline-pop])))
+      (loop [modifier (math/round (/ target-pop-median baseline-pop))
+             tested-modifiers [modifier]
+             population []]
+        (let [config (first (generate-configs base-config m modifier (+ modifier 1) step))
+              [projection pop-result] (target-result config
+                                                     target-year
+                                                     (first (get-in config [:transition-parameters :transitions-to-change])))]
+          (csv/write-csv writer [[modifier pop-result]])
+          (cond
+            (target-pop-to-high? pop-result target-pop-range)
+            (let [new-modifier (if (<= (apply min tested-modifiers)
+                                       (math/round (* modifier (- (/ pop-result target-pop-median) 1))))
+                                 (math/round (* modifier (- (/ pop-result target-pop-median) 1)))
+                                 (math/round (* modifier (- (/ pop-result target-pop-median) 0.5))))]
+              (recur new-modifier
+                     (into tested-modifiers [new-modifier])
+                     (into population [pop-result])))
+
+            (target-pop-to-low? pop-result target-pop-range)
+            (let [new-modifier (if (<= (apply max tested-modifiers)
+                                       (math/round (* modifier (+ (/ pop-result target-pop-median) 1))))
+                                 (math/round (* modifier (+ (/ pop-result target-pop-median) 1)))
+                                 (math/round (* modifier (+ (/ pop-result target-pop-median) 0.5))))]
+              (recur new-modifier
+                     (into tested-modifiers [new-modifier])
+                     (into population [pop-result])))
+
+            (within-pop-range? target-pop-range pop-result)
+            (let [config (update-results-path config results-path)]
+              (so/output-send-results projection (:output-parameters config))
+              (main/save-runtime-config config)
+              (main/save-runtime-metadata config (md/metadata config))
+              )))))))
+
+;; TODO:
+;; 1. store tested modifiers in a map with a score on how close they got to the target population
+;;    use this score to inform the next attempt
+;; 2. consider removing default behaviour of outputting results and instead just produce the log of results

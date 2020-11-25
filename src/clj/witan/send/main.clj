@@ -58,11 +58,11 @@
   ([config]
    (vm/run-send-validation config)))
 
-(defn run-recorded-send [config]
+(defn run-recorded-send [config print-warnings?]
   (try
     (let [metadata (md/metadata config)]
       (so/output-send-results
-       (send/run-send-workflow config)
+       (send/run-send-workflow config print-warnings?)
        (:output-parameters config))
       (when (get-in config [:validation-parameters :run-validation])
         (vm/run-send-validation config))
@@ -79,4 +79,8 @@
   ([config-path]
    (-> config-path
        read-config
-       run-recorded-send)))
+       (run-recorded-send true)))
+  ([config-path print-warnings?]
+   (-> config-path
+       read-config
+       (run-recorded-send print-warnings?))))

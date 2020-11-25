@@ -23,18 +23,20 @@
   "Run the send model, the function expects a map as seen in
   data/demo/config.edn (typically use `(config \"data/demo\")` to
   generate it)"
-  ([config]
+  ([config print-warnings?]
    (reset-send-report)
    (let [input (build-input-datasets (:project-dir config) (:file-inputs config) (:schema-inputs config))
          ;; validate-input (i/check-if-dataset-is-valid input)
          ]
-     (-> (p/prepare-send-inputs input (:transition-parameters config))
+     (-> (p/prepare-send-inputs input (:transition-parameters config) print-warnings?)
          (r/run-send-model (:projection-parameters config)))
      ;; FIXME: Put in appropriate validation
      #_(if (= true validate-input)
          (-> (p/prepare-send-inputs input (:transition-parameters config))
              (r/run-send-model (:projection-parameters config)))
-         validate-input))))
+         validate-input)))
+  ([config]
+   (run-send-workflow config true)))
 
 (defn input-analysis
   ([config]
