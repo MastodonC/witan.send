@@ -79,3 +79,81 @@
       inputs))
 
   )
+
+
+;; Tests
+(deftest modify-transitions-test
+  (let [transitions {[2014 1 :NONSEND :SEMH-MMSIB] 2, [2014 1 :NONSEND :SP-MMSIB] 3, [2014 1 :SP-MU :SP-MU] 2}
+        state-change1 [[2014 1 :SP-MU :SP-MU] [2014 1 :NONSEND :SEMH-MMSIB]]
+        state-change2 [[2014 1 :NONSEND :SP-MMSIB] [2014 1 :NONSEND :SEMH-MMSIB]]]
+    (testing "modifies transitions"
+      (is (not= transitions (sut/modify-transitions transitions state-change1 * 0.5))))
+    (testing "state [2014 8 :SP-MU :SP-MU] is divided by two"
+      (is (= 1 (get (sut/modify-transitions transitions state-change1 * 0.5) [2014 1 :SP-MU :SP-MU]))))
+    (testing "state [2014 0 :NONSEND :SP-MMSIB] takes the joiners of state [2014 8 :SP-MU :SP-MU]"
+      (is (= 3 (get (sut/modify-transitions transitions state-change1 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB]))))
+    (testing "odd values are rounded and exchanged correctly"
+      (is (= 3 (get (sut/modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SEMH-MMSIB])))
+      (is (= 2 (get (sut/modify-transitions transitions state-change2 * 0.5) [2014 1 :NONSEND :SP-MMSIB]))))))
+
+(deftest remove-transitions-xf-test
+  ;; This test needs splitting to simpler cases but for speed captures
+  ;; most things.  There's some discussion to be had over how we
+  ;; should treat setting-2 as it moves into calendar year 2017
+  ;;
+  ;; Note: the test discovered the keyname is required not a string :-(
+  (let [transitions (list {:calendar-year 2015, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}
+                          {:calendar-year 2015, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :AK, :need-2 :NA, :academic-year-2 12}
+                          {:calendar-year 2015, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 9, :setting-2 :AK, :need-2 :NA, :academic-year-2 10}
+                          {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13}
+                          {:calendar-year 2016, :setting-1 :MU, :need-1 :NA, :academic-year-1 10, :setting-2 :MU, :need-2 :NA, :academic-year-2 11}
+                          {:calendar-year 2016, :setting-1 :AK, :need-1 :NA, :academic-year-1 10, :setting-2 :MU, :need-2 :NA, :academic-year-2 11}
+                          {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 12}
+                          {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13}
+                          {:calendar-year 2017, :setting-1 :MU, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12})
+        filter-transitions-from-a [:calendar-academic {:< 2017 :>= 12}]
+        filter-transitions-from-b [:calendar-setting {:< 2017 := :MU}]
+        filter-transitions-from-c {:calendar-academic {:< 2017 :>= 12} :calendar-setting {:< 2017 := :MU}}]
+    (testing "filters transitions from before 2017 and academic year 12+"
+      (is (= (sequence (sut/remove-transitions-xf filter-transitions-from-a) transitions)
+             (list
+              {:calendar-year 2015, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 9, :setting-2 :AK, :need-2 :NA, :academic-year-2 10}
+              {:calendar-year 2016, :setting-1 :MU, :need-1 :NA, :academic-year-1 10, :setting-2 :MU, :need-2 :NA, :academic-year-2 11}
+              {:calendar-year 2016, :setting-1 :AK, :need-1 :NA, :academic-year-1 10, :setting-2 :MU, :need-2 :NA, :academic-year-2 11}
+              {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 12}
+              {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13}
+              {:calendar-year 2017, :setting-1 :MU, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}))))
+    (testing "filters transitions from before 2017 in the setting MU"
+      (is (= (sequence (sut/remove-transitions-xf filter-transitions-from-b) transitions)
+             (list
+              {:calendar-year 2015, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :AK, :need-2 :NA, :academic-year-2 12}
+              {:calendar-year 2015, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 9, :setting-2 :AK, :need-2 :NA, :academic-year-2 10}
+              {:calendar-year 2016, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13}
+              {:calendar-year 2016, :setting-1 :AK, :need-1 :NA, :academic-year-1 10, :setting-2 :MU, :need-2 :NA, :academic-year-2 11}
+              {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 12}
+              {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13}
+              {:calendar-year 2017, :setting-1 :MU, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}))))
+    (testing "filters transitions from before 2017 and academic year 12+ and filters transitions from before 2017 in the setting MU"
+      (is (= (->> transitions
+                  (sequence (sut/remove-transitions-xf (first filter-transitions-from-c)))
+                  (sequence (sut/remove-transitions-xf (second filter-transitions-from-c))))
+             (list
+              {:calendar-year 2015, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 9, :setting-2 :AK, :need-2 :NA, :academic-year-2 10}
+              {:calendar-year 2016, :setting-1 :AK, :need-1 :NA, :academic-year-1 10, :setting-2 :MU, :need-2 :NA, :academic-year-2 11}
+              {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 12}
+              {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13}
+              {:calendar-year 2017, :setting-1 :MU, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}))))
+    (testing "with a reduce to allow more than two filters"
+      (is (= (reduce #(sequence (sut/remove-transitions-xf %2) %1) transitions filter-transitions-from-c)
+             (list
+              {:calendar-year 2015, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 9, :setting-2 :AK, :need-2 :NA, :academic-year-2 10}
+              {:calendar-year 2016, :setting-1 :AK, :need-1 :NA, :academic-year-1 10, :setting-2 :MU, :need-2 :NA, :academic-year-2 11}
+              {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 11, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 12}
+              {:calendar-year 2017, :setting-1 :NONSEND, :need-1 :NA, :academic-year-1 12, :setting-2 :MMSIB, :need-2 :NA, :academic-year-2 13}
+              {:calendar-year 2017, :setting-1 :MU, :need-1 :NA, :academic-year-1 11, :setting-2 :MU, :need-2 :NA, :academic-year-2 12}))))))
+
+(deftest update-ifelse-assoc-test
+  (testing "if key present +1 to val"
+    (is (= 2 (:foo (sut/update-ifelse-assoc {:foo 1 :bar 2} :foo + 1)))))
+  (testing "if key not present, insert key with val"
+    (is (= 1 (:foo (sut/update-ifelse-assoc {:baz 1 :bar 2} :foo + 1))))))
