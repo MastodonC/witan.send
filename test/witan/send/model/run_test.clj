@@ -16,6 +16,39 @@
         projection' @projection]
     (testing "Simulation count"
       (is (= 1 simulations)))
+
+    (testing "Apply leavers movers for cohort"
+      (let [population-by-state [ {} {} ]
+            cohort [ [ 11 :Y-F ] 1 ]
+            calendar-year 2018
+            valid-transitions {:F [:A :B :C :D :E :F :G :H :I :J :K :L :M :N :O :P :Q :R :S]}
+            make-setting-invalid nil
+            params {:mover-state-alphas {[10 :Y-F]
+                                         {:Y-H 0.0017035775127768312
+                                          :Y-L 0.04940374787052811
+                                          :Y-D 0.0017035775127768312
+                                          :Y-K 0.02555366269165247
+                                          :Y-A 0.02555366269165247
+                                          :Y-I 0.0017035775127768312
+                                          :Y-B 0.0017035775127768312
+                                          :Y-J 0.2402044293015332
+                                          :Y-C 0.07325383304940375
+                                          :Y-E 0.12095400340715501
+                                          :Y-R 0.0017035775127768312
+                                          :Y-G 0.07325383304940375
+                                          :Y-N 0.3594548551959114
+                                          :Y-S 0.023850085178875637}}
+                    :leaver-beta-params {[10 :Y-F]
+                                         {:beta 11.958035714285714
+                                          :alpha 0.04196428571428571}}
+                    :mover-beta-params {[10 :Y-F]
+                                        {:beta 11.920856610800746
+                                         :alpha 0.07914338919925512}}
+                    :valid-year-settings {12 #{:L :M :I :R :A :F :D :B :J :C :E :G :H :S :N :K}}}]
+        (is (= [{ [ 11 :Y-F ] 1 }
+                { [ 2018 11 :Y-F :Y-F ] 1, [ 2018 11 :Y-F :NONSEND ] 0 }]
+               (sut/apply-leavers-movers-for-cohort population-by-state cohort params calendar-year valid-transitions make-setting-invalid)))))
+
     (testing "Simulated transitions sample"
       (is (= #_{[2020 10 :Y-F :Y-F] 7,
                 [2020 12 :T-C :T-C] 3,
@@ -161,6 +194,43 @@
                     [ 2020 5 :V-B :V-B ]      ;; = 2
                     [ 2020 13 :NONSEND :U-D ] ;; = 1
                     ]))
+
+
+
+  )
+
+(comment
+
+  (let [population-by-state [ {} {} ]
+        cohort [ [ 11 :Y-F ] 1 ]
+        calendar-year 2018
+        valid-transitions {:F [:A :B :C :D :E :F :G :H :I :J :K :L :M :N :O :P :Q :R :S]}
+        make-setting-invalid nil
+        result [{ [ 11 :Y-F ] 1 }
+                { [ 2018 11 :Y-F :Y-F ] 1, [ 2018 11 :Y-F :NONSEND ] 0 }]
+        params {:mover-state-alphas {[10 :Y-F]
+                                     {:Y-H 0.0017035775127768312
+                                      :Y-L 0.04940374787052811
+                                      :Y-D 0.0017035775127768312
+                                      :Y-K 0.02555366269165247
+                                      :Y-A 0.02555366269165247
+                                      :Y-I 0.0017035775127768312
+                                      :Y-B 0.0017035775127768312
+                                      :Y-J 0.2402044293015332
+                                      :Y-C 0.07325383304940375
+                                      :Y-E 0.12095400340715501
+                                      :Y-R 0.0017035775127768312
+                                      :Y-G 0.07325383304940375
+                                      :Y-N 0.3594548551959114
+                                      :Y-S 0.023850085178875637}}
+                :leaver-beta-params {[10 :Y-F]
+                                     {:beta 11.958035714285714
+                                      :alpha 0.04196428571428571}}
+                :mover-beta-params {[10 :Y-F]
+                                    {:beta 11.920856610800746
+                                     :alpha 0.07914338919925512}}
+                :valid-year-settings {12 #{:L :M :I :R :A :F :D :B :J :C :E :G :H :S :N :K}}}]
+    (sut/apply-leavers-movers-for-cohort population-by-state cohort params calendar-year valid-transitions make-setting-invalid))
 
 
 
