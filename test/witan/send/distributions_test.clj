@@ -22,7 +22,10 @@
                   :Y-R 0.0017035775127768312
                   :Y-G 0.07325383304940375
                   :Y-N 0.3594548551959114
-                  :Y-S 0.023850085178875637}))))))
+                  :Y-S 0.023850085178875637})))))
+  (testing "Throws if no alphas"
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (d/sample-dirichlet-multinomial 3 nil)))))
 
 (deftest test-sample-beta-binomial
   (testing "Sample beta binomial"
@@ -31,4 +34,7 @@
                 (d/sample-beta-binomial 3 {:alpha 0.04196428571428571 :beta 11.958035714285714}))))
     (let [_ (d/set-seed! 42)]
       (is (ish? 0
-                (d/sample-beta-binomial 3 {:alpha 0.04196428571428571 :beta 11.958035714285714}))))))
+                (d/sample-beta-binomial 3 {:alpha 0.04196428571428571 :beta 11.958035714285714}))))
+    (let [_ (d/set-seed! 42)]
+      (is (zero?
+           (d/sample-beta-binomial -3 {:alpha 0.04196428571428571 :beta 11.958035714285714}))))))
