@@ -12,12 +12,12 @@
   (when-not (seq alphas) (throw (ex-info "Missing alphas" {:n n :alphas alphas})))
   (let [[ks as] (apply mapv vector alphas)
         xs (if (pos? n)
-             (d/draw (d/dirichlet-multinomial n as) {:seed (get-seed!)})
+             (d/draw (d/dirichlet-multinomial {:n n :alphas as}) #_(d/dirichlet-multinomial n as) {:seed (get-seed!)})
              (repeat 0))]
     (zipmap ks xs)))
 
 (defn sample-beta-binomial
-  [n params]
+  [n {:keys [alpha beta]} #_params]
   (if (pos? n)
-    (d/draw (d/beta-binomial n params) {:seed (get-seed!)})
+    (d/draw (d/beta-binomial {:n n :alpha alpha :beta beta}) #_(d/beta-binomial n params) {:seed (get-seed!)})
     0))
