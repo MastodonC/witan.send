@@ -64,10 +64,31 @@
     (key-stage-3 y) :ks-3
     (key-stage-4 y) :ks-4
     (key-stage-5 y) :ks-5
-    (ncy-15+ y) :further-education))
+    (ncy-15+ y) :further-education
+    :else :outside-of-send-age))
 
+(def key-stage-names
+  {:early-years "Early Years"
+   :ks-1 "Key Stage 1"
+   :ks-2 "Key Stage 2"
+   :ks-3 "Key Stage 3"
+   :ks-4 "Key Stage 4"
+   :ks-5 "Key Stage 5"
+   :further-education "Further Education"
+   :outside-of-send-age "Outside of SEND age"})
+
+;; Primary school - Reception + Years 1 to 6
 (def primary-school
   (into (sorted-set 0) (into key-stage-1 key-stage-2)))
+
+;; Infant school - Reception + Years 1 and 2
+(def infant-school (into (sorted-set) (inclusive-range 0 2)))
+
+;; Junior school - Years 3 to 6
+(def junior-school (into (sorted-set) (inclusive-range 3 6)))
+
+;; First school - Reception + Years 1 to 4
+(def first-school (into (sorted-set) (inclusive-range 0 4)))
 
 (def secondary-school
   (into key-stage-3 key-stage-4))
