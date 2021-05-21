@@ -64,7 +64,7 @@
     (key-stage-3 y) :ks-3
     (key-stage-4 y) :ks-4
     (key-stage-5 y) :ks-5
-    (ncy-15+ y) :further-education
+    (ncy-15+ y) :ncy-15+
     :else :outside-of-send-age))
 
 (def key-stage-names
@@ -74,7 +74,7 @@
    :ks-3 "Key Stage 3"
    :ks-4 "Key Stage 4"
    :ks-5 "Key Stage 5"
-   :further-education "Further Education"
+   :ncy-15+ "NCY 15+"
    :outside-of-send-age "Outside of SEND age"})
 
 ;; Primary school - Reception + Years 1 to 6
