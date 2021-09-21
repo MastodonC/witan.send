@@ -92,3 +92,11 @@
 
 (def secondary-school
   (into key-stage-3 key-stage-4))
+
+(defn primary-secondary-post16-ncy15+ [ncy]
+  (cond
+    (primary-school ncy) :primary
+    (secondary-school ncy) :secondary
+    (key-stage-5 ncy) :post-16
+    (ncy-15+ ncy) :ncy-15+
+    :else :outside-of-send-age))
