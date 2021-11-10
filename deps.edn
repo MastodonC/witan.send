@@ -4,14 +4,14 @@
          org.clojure/core.async           {:mvn/version "1.3.610"}
          org.clojure/data.csv             {:mvn/version "0.1.4"}
          org.clojure/math.combinatorics   {:mvn/version "0.1.4"}
-         aero                             {:mvn/version "1.1.3"}
-         clj-time                         {:mvn/version "0.15.1"}
+         aero/aero                        {:mvn/version "1.1.3"}
+         clj-time/clj-time                {:mvn/version "0.15.1"}
          com.cognitect/transit-clj        {:mvn/version "1.0.324"}
-         digest                           {:mvn/version "1.4.8"}
-         instaparse                       {:mvn/version "1.4.9"}
+         digest/digest                    {:mvn/version "1.4.8"}
+         instaparse/instaparse            {:mvn/version "1.4.9"}
          kixi/stats                       {:mvn/version "0.4.3" #_"0.5.4"}
          me.raynes/fs                     {:mvn/version "1.4.6"}
-         medley                           {:mvn/version "1.0.0"}
+         medley/medley                    {:mvn/version "1.0.0"}
          org.apache.commons/commons-math3 {:mvn/version "3.6.1"}
          ;; upgrading to 2.1.10 causes a test to fail
          org.hdrhistogram/HdrHistogram    {:mvn/version "2.1.9" #_"2.1.12"}
