@@ -95,8 +95,19 @@
 
 (defn primary-secondary-post16-ncy15+ [ncy]
   (cond
+    (disj early-years 0) :early-years
     (primary-school ncy) :primary
     (secondary-school ncy) :secondary
     (key-stage-5 ncy) :post-16
-    (ncy-15+ ncy) :ncy-15+
+    (ncy-15+ ncy) :post-19
+    :else :outside-of-send-age))
+
+(defn primary-secondary-postsecondary
+  "Sometimes we don't care about whether someone is post 16 or post 19."
+  [ncy]
+  (cond
+    ((disj early-years 0) ncy) :early-years
+    (primary-school ncy) :primary
+    (secondary-school ncy) :secondary
+    ((into key-stage-5 ncy-15+) ncy) :post-secondary
     :else :outside-of-send-age))
