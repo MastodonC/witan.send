@@ -1,11 +1,13 @@
 (ns witan.send.model.run
-  (:require [witan.send.constants :as c]
+  (:require [clojure.core.async :as a]
+            [net.cgrand.xforms :as x]
+            [witan.send.constants :as c]
             [witan.send.distributions :as d]
             [witan.send.maths :as m]
+            [witan.send.model.data-products :as dp]
             [witan.send.schemas :as sc]
             [witan.send.states :as states]
-            [witan.send.step :as step]
-            [witan.send.model.data-products :as dp]))
+            [witan.send.step :as step]))
 
 (def exception-info (atom {}))
 
@@ -178,7 +180,18 @@
 
 (defn projection->transitions
   [projections]
-  (apply merge-with + (mapcat #(map :transitions %) projections)))
+  (println "projection->transitions")
+  ;; (apply merge-with + (mapcat #(map :transitions %) projections))
+  (transduce
+   (comp
+    (mapcat #(map :transitions %)))
+   (fn
+     ([] {} #_(transient {}))
+     ([acc] acc #_(persistent! acc))
+     ([acc x]
+      ;; We could use a merge-with that worked with transient {}
+      (merge-with + acc x)))
+   projections))
 
 (defn projected-future-pop-by-year [projected-population seed-year]
   (->> projected-population
@@ -186,21 +199,40 @@
        (sort-by key)))
 
 (defn create-projections [simulations modify-transitions-date-range make-setting-invalid inputs modified-inputs population-by-state projected-population seed-year]
-  (sequence
-   (map (fn [simulation-run]
-          (reductions (partial run-model-iteration
-                               modify-transitions-date-range
-                               make-setting-invalid
-                               inputs
-                               modified-inputs)
-                      {:model population-by-state}
-                      (projected-future-pop-by-year projected-population seed-year))))
-   (range simulations)))
+  #_(sequence
+     (map (fn [simulation-run]
+            (reductions (partial run-model-iteration
+                                 modify-transitions-date-range
+                                 make-setting-invalid
+                                 inputs
+                                 modified-inputs)
+                        {:model population-by-state}
+                        (projected-future-pop-by-year projected-population seed-year))))
+     (range simulations))
+  (let [processors (.. Runtime getRuntime availableProcessors)
+        concurrent (max 2 (quot (.. Runtime getRuntime availableProcessors) 2) #_(- processors 4))
+        _ (println (format "Running %d concurrent simulations on %d processors" concurrent processors))
+        output-chan (a/chan)]
+    (a/pipeline concurrent
+                output-chan
+                (map (fn [simulation-run]
+                       (when (zero? (mod simulation-run 10)) (println (format "Simulation #%d running" simulation-run)))
+                       (x/into []
+                               (x/reductions (partial run-model-iteration
+                                                      modify-transitions-date-range
+                                                      make-setting-invalid
+                                                      inputs
+                                                      modified-inputs)
+                                             {:model population-by-state})
+                               (projected-future-pop-by-year projected-population seed-year))))
+                (a/to-chan (range simulations)))
+    (a/<!! (a/into [] output-chan))))
 
 (defn simulated-transitions [projection]
-  (into []
-        (map-indexed (fn [idx simulation] [idx (keep :transitions simulation)]))
-        projection))
+  (println "simulated-transitions")
+  (x/into []
+          (map-indexed (fn [idx simulation] [idx (keep :transitions simulation)]))
+          projection))
 
 (defn run-send-model
   "Outputs the population for the last year of historic data, with one
@@ -225,10 +257,11 @@
                                        population-by-state
                                        projected-population
                                        seed-year)]
+    (println "Projections Created.")
     {:projection (projection->transitions projection)
      :simulated-transitions (simulated-transitions projection)
      :simulations simulations
-     :send-output (dp/->send-output-style (dp/data-products valid-states cost-lookup projection))
+     ;; :send-output (dp/->send-output-style (dp/data-products valid-states cost-lookup projection))
      :transitions transitions
      :valid-states valid-states
      :population population

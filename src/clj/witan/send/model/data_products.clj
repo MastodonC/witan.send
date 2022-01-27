@@ -153,6 +153,7 @@
    projections))
 
 (defn data-products [valid-states cost-lookup simulations]
+  (println "Creating data products.")
   (let [by-state (future (summarise-results
                           (partial roll-up-calendar-year-by-state
                                    (states/calculate-valid-states-from-setting-academic-years valid-states))
