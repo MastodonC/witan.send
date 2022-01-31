@@ -98,14 +98,13 @@
   (mc/generate-configs (create-transition-modifier-seq m start end step)
                        config))
 
-(defn get-baseline-population [base-config year state-map]
-  (->> (str (get-in base-config [:output-parameters :output-dir]) "/Output_State_pop_only.csv")
-       csv->state-pop
-       (filter #(and (= (:calendar-year %) year)
-                     (every? identity (witan.send.model.prepare/test-predicates % state-map))))
-       (map #(select-keys % [:population]))
-       (apply merge-with +)
-       :population))
+(defn get-baseline-population [baseline year state-map]
+  (let [result (->> baseline
+                    (filter #(and (= (:calendar-year %) year)
+                                  (every? identity (witan.send.model.prepare/test-predicates % state-map))))
+                    (map #(select-keys % [:population :median]))
+                    (apply merge-with +))]
+    (get result :population (get result :median))))
 
 ;;;;;; From the Clojure Cookbook ;;;;;;;;
 
@@ -173,7 +172,7 @@
                             (median target-pop)
                             target-pop)
         baseline-m (clojure.set/rename-keys m {:setting-2 :setting :need-2 :need :academic-year-2 :academic-year})
-        baseline-pop (let [result (get-baseline-population base-config target-year baseline-m)]
+        baseline-pop (let [result (get-baseline-population baseline target-year baseline-m)]
                        (cond (zero? result)
                              (throw (ex-info "Baseline population is too low, can't modify"
                                              {:population result}))
