@@ -154,7 +154,7 @@
         result (tc/dataset (eduction stcio/simulated-transitions->transition-counts-xf (:simulated-transitions projection)))
         census (stc/transition-counts->census-counts result (apply min (:calendar-year result)))
         summary (summary/seven-number-summary census [:calendar-year :setting :need :academic-year] :transition-count)
-        target-pop-result (get-baseline-population (tc/rows summary :as-maps) target-year m)]
+        target-pop-result (get-baseline-population (tc/rows summary :as-maps) target-year (dissoc m :modify-transition-by))]
     (println "Population:" target-pop-result)
     [projection target-pop-result]))
 
