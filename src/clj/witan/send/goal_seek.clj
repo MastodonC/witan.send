@@ -160,7 +160,7 @@
   "Takes a baseline config to use as a template, a map containing a target population
    range and year, e.g. {:year 2019 :population 6}, a map of keys partially matching
    a transition, a boolean to output results and an optional range step value"
-  [base-config target m results-path & step]
+  [base-config target m results-path baseline & step]
   (let [step (if step
                step
                1)
