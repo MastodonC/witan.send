@@ -93,6 +93,9 @@
 (def secondary-school
   (into key-stage-3 key-stage-4))
 
+;; Key Stages 1 to 5
+(def school-age (reduce #(into %1 %2) (sorted-set) [primary-school secondary-school key-stage-5]))
+
 (defn primary-secondary-post16-ncy15+ [ncy]
   (cond
     (primary-school ncy) :primary
