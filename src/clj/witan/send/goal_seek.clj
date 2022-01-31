@@ -9,7 +9,8 @@
             [witan.send.model.output :as so]
             [witan.send.metadata :as md]
             [clojure.java.io :as io]
-            [clojure.data.csv :as csv]))
+            [clojure.data.csv :as csv]
+            [witan.send.adroddiad.simulated-transition-counts :as stc]))
 
 (defn update-transition-modifier
   "Takes a map of keys partially matching a transition and a new modifier"
@@ -146,14 +147,20 @@
                      first
                      :modify-transition-by)
         _ (println "Modifier:" modifier)
-        projection (s/run-send-workflow config false)
-        base-year (+ 1 (apply max (into (sorted-set) (map :calendar-year (:transitions projection)))))
-        output (:send-output projection)
-        result (into {} (map #(assoc {} %1 %2) (range base-year (+ base-year (count output))) output))
-        target-year-result (get-in result [target-year :by-state])
-        target-pop-result (get-target-pop config target-year-result)]
-    (println "Population:" target-pop-result)
-    [projection target-pop-result]))
+        projection (:simulated-transitions (s/run-send-workflow config false))
+
+        ;;census (stc/transition-counts->census-counts projection (apply min (map :calendar-year projection)))
+
+        ;;base-year (+ 1 (apply max (into (sorted-set) (map :calendar-year (:transitions projection)))))
+        ;;output (:send-output projection)
+        ;;result (into {} (map #(assoc {} %1 %2) (range base-year (+ base-year (count output))) output))
+        ;;target-year-result (get-in result [target-year :by-state])
+
+        ;;target-pop-result (get-baseline-population census target-year m)
+        ]
+    #_(println "Population:" target-pop-result)
+    [projection ;;target-pop-result
+     ]))
 
 (defn target-results
   "Takes a baseline config to use as a template, a map containing a target population
