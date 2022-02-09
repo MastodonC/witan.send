@@ -35,8 +35,43 @@
       (assoc input-datasets :settings-to-change (wistc/csv->settings-to-change (str project-dir "/" settings-to-change))) ;; do we need this?
       input-datasets)))
 
-(defn train-model [{:keys [input-datasets config print-warnings?]
-                    :as state}]
+(defn train-model
+  "train-model returns a map of:
+    - :standard-projection
+    - :scenario-projection
+    - :seed-year
+    - :make-setting-invalid
+    - :modify-transitions-date-range
+
+  Under the :standard-projection and :scenario-projection key is a map with the following keys:
+   Starting data for the projection
+   - :population-by-state which is a map of [ academic-year need-setting ] population-count of the SEND population
+   - :transitions a seq of maps containing
+     - :calendar-year the January census point year for the *-1 side
+     - :academic-year-1 :setting-1 :need-1
+     - :academic-year-2 :setting-2 :need-2
+   - :population a seq of
+    - :calendar-year
+    - :academic-year
+    - :population - representing the background population for that NCY not the SEND population
+   - :projected-population a map of calendar-year to maps of academic-year to background population.
+     A simple transformation of :population
+
+  Distributions for the projection
+   - :joiner-beta-params The odds (alpha beta) of joining SEND my NCY
+   - :joiner-state-alphas A map of academic-year to a map of need-setting odds of arriving in that need-setting
+   - :mover-beta-params - The odds of a NCY/need/setting moving to another SEND setting
+   - :mover-state-alphas - a map of [ NCY need-setting ] to a map of {need-setting odds of being in that need-setting}
+   - :leaver-beta-params - The odds of [ NCY need-setting ] leaving SEND
+
+  Cost Data
+   - :cost-lookup - currently not used, but is a mapping on need/setting to cost
+
+  Valid transition movement data
+   - :valid-transitions
+   - valid-states"
+  [{:keys [input-datasets config print-warnings?]
+    :as state}]
   (p/prepare-send-inputs input-datasets (:transition-parameters config) print-warnings?))
 
 #_(defn run-model [{:keys [model config]
