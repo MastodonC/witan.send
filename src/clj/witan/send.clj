@@ -108,8 +108,10 @@
                                    [need-2 setting-2] (-> key
                                                           (nth 3)
                                                           (states/split-need-setting))]
-                               {:calendar-year (nth key 0)
-                                :academic-year (nth key 1)
+                               {:calendar-year (dec (nth key 0))
+                                :calendar-year-2 (nth key 0)
+                                :academic-year-1 (dec (nth key 1))
+                                :academic-year-2 (nth key 1)
                                 :need-1 need-1
                                 :setting-1 setting-1
                                 :need-2 need-2
@@ -119,8 +121,10 @@
                            transitions))
                     $)
             (tc/dataset $)
-            (tc/convert-types $ {:academic-year :int16
+            (tc/convert-types $ {:academic-year-1 :int16
+                                 :academic-year-2 :int16
                                  :calendar-year :int16
+                                 :calendar-year-2 :int16
                                  :simulation :int16
                                  :transition-count :int32}))))))
 
@@ -182,11 +186,13 @@
 
   (-> foo
       first
-      (tc/info));; => _unnamed: descriptive-stats [8 12]:
+      (tc/info));; => _unnamed: descriptive-stats [10 12]:
   ;;    |         :col-name | :datatype | :n-valid | :n-missing |   :min |         :mean |    :mode |   :max | :standard-deviation |       :skew |   :first |    :last |
   ;;    |-------------------|-----------|---------:|-----------:|-------:|--------------:|----------|-------:|--------------------:|------------:|----------|----------|
-  ;;    |    :academic-year |    :int16 |     4637 |          0 |   -2.0 |    8.34699159 |          |   20.0 |          4.90374763 | -0.12309428 |       15 |        3 |
-  ;;    |    :calendar-year |    :int16 |     4637 |          0 | 2018.0 | 2020.04356265 |          | 2022.0 |          1.41598178 | -0.03550839 |     2018 |     2022 |
+  ;;    |  :academic-year-1 |    :int16 |     4637 |          0 |   -3.0 |    7.34699159 |          |   19.0 |          4.90374763 | -0.12309428 |       14 |        2 |
+  ;;    |  :academic-year-2 |    :int16 |     4637 |          0 |   -2.0 |    8.34699159 |          |   20.0 |          4.90374763 | -0.12309428 |       15 |        3 |
+  ;;    |    :calendar-year |    :int16 |     4637 |          0 | 2017.0 | 2019.04356265 |          | 2021.0 |          1.41598178 | -0.03550839 |     2017 |     2021 |
+  ;;    |  :calendar-year-2 |    :int16 |     4637 |          0 | 2018.0 | 2020.04356265 |          | 2022.0 |          1.41598178 | -0.03550839 |     2018 |     2022 |
   ;;    |           :need-1 |  :keyword |     4637 |          0 |        |               |       :T |        |                     |             |       :T |       :U |
   ;;    |           :need-2 |  :keyword |     4637 |          0 |        |               | :NONSEND |        |                     |             | :NONSEND | :NONSEND |
   ;;    |        :setting-1 |  :keyword |     4637 |          0 |        |               |       :B |        |                     |             |       :N |       :J |
