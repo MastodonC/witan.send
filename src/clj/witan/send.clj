@@ -89,43 +89,46 @@
                                      (r/projected-future-pop-by-year projected-population seed-year))])
        (range simulations)))
 
+
+(defn unpack-transition-counts [{:keys [transitions simulation]}]
+  (map (fn [map-entry]
+         (let [key (first map-entry)
+               transition-count (second map-entry)
+               [need-1 setting-1] (-> key
+                                      (nth 2)
+                                      (states/split-need-setting))
+               [need-2 setting-2] (-> key
+                                      (nth 3)
+                                      (states/split-need-setting))]
+           {:calendar-year (dec (nth key 0))
+            :calendar-year-2 (nth key 0)
+            :academic-year-1 (dec (nth key 1))
+            :academic-year-2 (nth key 1)
+            :need-1 need-1
+            :setting-1 setting-1
+            :need-2 need-2
+            :setting-2 setting-2
+            :transition-count transition-count
+            :simulation simulation}))
+       transitions))
+
+(defn add-simulation-idx [simulation-idx sd]
+  (assoc sd :simulation simulation-idx))
+
 (def ->dataset-seq-xf
   (comp
    (map (fn [[simulation-idx simulation-data]]
-          (map (fn [sd]
-                 (assoc sd :simulation simulation-idx))
-               simulation-data)))
+          (map (partial add-simulation-idx simulation-idx) simulation-data)))
    (map (fn [simulation]
           (as-> simulation $
             (filter :transitions $)
-            (mapcat (fn [{:keys [transitions simulation]}]
-                      (map (fn [map-entry]
-                             (let [key (first map-entry)
-                                   transition-count (second map-entry)
-                                   [need-1 setting-1] (-> key
-                                                          (nth 2)
-                                                          (states/split-need-setting))
-                                   [need-2 setting-2] (-> key
-                                                          (nth 3)
-                                                          (states/split-need-setting))]
-                               {:calendar-year (dec (nth key 0))
-                                :calendar-year-2 (nth key 0)
-                                :academic-year-1 (dec (nth key 1))
-                                :academic-year-2 (nth key 1)
-                                :need-1 need-1
-                                :setting-1 setting-1
-                                :need-2 need-2
-                                :setting-2 setting-2
-                                :transition-count transition-count
-                                :simulation simulation}))
-                           transitions))
-                    $)
+            (mapcat unpack-transition-counts $)
             (tc/dataset $)
-            (tc/convert-types $ {:academic-year-1 :int16
-                                 :academic-year-2 :int16
-                                 :calendar-year :int16
-                                 :calendar-year-2 :int16
-                                 :simulation :int16
+            (tc/convert-types $ {:academic-year-1  :int16
+                                 :academic-year-2  :int16
+                                 :calendar-year    :int16
+                                 :calendar-year-2  :int16
+                                 :simulation       :int16
                                  :transition-count :int32}))))))
 
 (defn ->dataset-seq [simulations]
