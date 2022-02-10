@@ -89,6 +89,16 @@
                                      (r/projected-future-pop-by-year projected-population seed-year))])
        (range simulations)))
 
+(defn create-projections-xf [modify-transitions-date-range make-setting-invalid inputs modified-inputs population-by-state projected-population seed-year]
+  (map (fn [simulation-run]
+         [simulation-run (reductions (partial r/run-model-iteration
+                                              modify-transitions-date-range
+                                              make-setting-invalid
+                                              inputs
+                                              modified-inputs)
+                                     {:model population-by-state}
+                                     (r/projected-future-pop-by-year projected-population seed-year))])))
+
 
 (defn unpack-transition-counts [{:keys [transitions simulation]}]
   (map (fn [map-entry]
@@ -170,6 +180,40 @@
                                        projected-population
                                        seed-year)]
     (->dataset-seq projection)))
+
+(defn run-model-xf
+  "Outputs a seq of datasets. One for each simulation.
+
+  Each simulation is made up of
+  :simulation
+  :calendar-year
+  :academic-year
+  :need-1 :setting-1
+  :need-2 :setting-2
+  :transition-count"
+  [{:keys [standard-projection scenario-projection modify-transition-by
+           modify-transitions-date-range seed-year make-setting-invalid]
+    :as _trained-model}
+   {:keys [random-seed simulations]
+    :as _projection-parameters}]
+  (d/set-seed! random-seed)
+  (let [{:keys [population population-by-state
+                projected-population cost-lookup
+                valid-states transitions] :as inputs} standard-projection
+        modified-inputs (when ((complement nil?) scenario-projection)
+                          (assoc scenario-projection :valid-year-settings
+                                 (states/calculate-valid-year-settings-from-setting-academic-years valid-states)))
+        inputs (assoc inputs :valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years valid-states))]
+    (comp
+     (create-projections-xf
+      modify-transitions-date-range
+      make-setting-invalid
+      inputs
+      modified-inputs
+      population-by-state
+      projected-population
+      seed-year)
+     ->dataset-seq-xf)))
 
 
 (comment
