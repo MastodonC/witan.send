@@ -23,10 +23,10 @@
   [config-path]
   (let [project-dir (or (.getParent (io/as-file config-path))
                         (System/getProperty "user.dir"))]
-    (merge (aero/read-config config-path)
-           default-schemas
+    (merge default-schemas
            {:project-dir project-dir}
-           {:output-parameters {:project-dir project-dir}})))
+           {:output-parameters {:project-dir project-dir}}
+           (aero/read-config config-path))))
 
 (defn get-output-dir [config]
   (string/join "/" [(:project-dir config)
