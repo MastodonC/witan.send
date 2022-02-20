@@ -231,3 +231,4 @@
 ;;    use this score to inform the next attempt
 ;; 2. consider removing default behaviour of outputting results and instead just produce the log of results
 ;; 3. Modifiers shouldn't be tested more than once (thought this had been implemented)
+;; 4. If target is more than baseline, modifier should not fall below 1.
