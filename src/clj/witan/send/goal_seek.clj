@@ -13,7 +13,8 @@
             [tablecloth.api :as tc]
             [witan.send.adroddiad.simulated-transition-counts :as stc]
             [witan.send.adroddiad.simulated-transition-counts.io :as stcio]
-            [witan.send.adroddiad.summary :as summary]))
+            [witan.send.adroddiad.summary :as summary]
+            [tech.v3.datatype.functional :as dfn]))
 
 (defn update-transition-modifier
   "Takes a map of keys partially matching a transition and a new modifier"
@@ -103,12 +104,15 @@
                        config))
 
 (defn get-baseline-population [baseline year state-map]
-  (let [result (->> baseline
-                    (filter #(and (= (:calendar-year %) year)
-                                  (every? identity (witan.send.model.prepare/test-predicates % state-map))))
-                    (map #(select-keys % [:population :median]))
-                    (apply merge-with +))]
-    (get result :population (get result :median))))
+  (let [result (-> baseline
+                   (tc/select-rows
+                    (fn [row]
+                      (and (every? identity (p/test-predicates row state-map))
+                           (= (:calendar-year row) year))))
+                   (tc/group-by [:simulation :calendar-year])
+                   (tc/aggregate {:transition-count #(dfn/sum (:transition-count %))})
+                   (summary/seven-number-summary [:calendar-year] :transition-count))]
+    (first (:median result))))
 
 ;;;;;; From the Clojure Cookbook ;;;;;;;;
 
@@ -153,8 +157,7 @@
         projection (s/run-send-workflow config false)
         result (tc/dataset (eduction stcio/simulated-transitions->transition-counts-xf (:simulated-transitions projection)))
         census (stc/transition-counts->census-counts result (apply min (:calendar-year result)))
-        summary (summary/seven-number-summary census [:calendar-year :setting :need :academic-year] :transition-count)
-        target-pop-result (get-baseline-population (tc/rows summary :as-maps) target-year (dissoc m :modify-transition-by))]
+        target-pop-result (get-baseline-population census target-year (dissoc m :modify-transition-by))]
     (println "Population:" target-pop-result)
     [projection target-pop-result]))
 
