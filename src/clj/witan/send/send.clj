@@ -41,5 +41,6 @@
 (defn input-analysis
   ([config]
    (reset-send-report)
-   (-> (build-input-datasets (:project-dir config) (:file-inputs config) (:schema-inputs config))
-       (p/prepare-send-inputs (:transition-parameters config)))))
+   (let [print-warnings? true]
+     (-> (build-input-datasets (:project-dir config) (:file-inputs config) (:schema-inputs config))
+         (p/prepare-send-inputs (:transition-parameters config) print-warnings?)))))
