@@ -15,7 +15,8 @@
          org.apache.commons/commons-math3 {:mvn/version "3.6.1"}
          ;; upgrading to 2.1.10 causes a test to fail
          org.hdrhistogram/HdrHistogram    {:mvn/version "2.1.9" #_"2.1.12"}
-         same/ish                         {:mvn/version "0.1.4"}}
+         same/ish                         {:mvn/version "0.1.4"}
+         witan.send.adroddiad/witan.send.adroddiad {:local/root "../witan.send.adroddiad"}}
  :aliases
  {:big-mem {:jvm-opts ["-Xmx8g"]}
   :test    {:jvm-opts    ["-Xmx8g"]

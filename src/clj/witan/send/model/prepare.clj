@@ -224,13 +224,17 @@
     (does-not-contain? pred-map :calendar-year) (assoc :calendar-year year)))
 
 (defn filter-transitions [pred-map transitions ages year]
-  (let [result (filter (fn [t] (every? identity (test-predicates t pred-map))) transitions)]
-    (if result
-      result
+  (let [pred-map (-> pred-map
+                     (rename-keys {:setting :setting-2, :need :need-2 :academic-year :academic-year-2})
+                     (update :setting-2 keyword)
+                     (update :need-2 keyword))
+        result (filter (fn [t] (every? identity (test-predicates t pred-map))) transitions)]
+    (if (empty? result)
       (-> pred-map
           (incomplete-transition ages year)
           (academic-years? ages)
-          vector))))
+          vector)
+      result)))
 
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one

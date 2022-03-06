@@ -228,7 +228,7 @@
     {:projection (projection->transitions projection)
      :simulated-transitions (simulated-transitions projection)
      :simulations simulations
-     :send-output (dp/->send-output-style (dp/data-products valid-states cost-lookup projection))
+     ;;:send-output (dp/->send-output-style (dp/data-products valid-states cost-lookup projection))
      :transitions transitions
      :valid-states valid-states
      :population population

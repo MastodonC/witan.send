@@ -9,7 +9,12 @@
             [witan.send.model.output :as so]
             [witan.send.metadata :as md]
             [clojure.java.io :as io]
-            [clojure.data.csv :as csv]))
+            [clojure.data.csv :as csv]
+            [tablecloth.api :as tc]
+            [witan.send.adroddiad.simulated-transition-counts :as stc]
+            [witan.send.adroddiad.simulated-transition-counts.io :as stcio]
+            [witan.send.adroddiad.summary :as summary]
+            [tech.v3.datatype.functional :as dfn]))
 
 (defn update-transition-modifier
   "Takes a map of keys partially matching a transition and a new modifier"
@@ -98,14 +103,16 @@
   (mc/generate-configs (create-transition-modifier-seq m start end step)
                        config))
 
-(defn get-baseline-population [base-config year state-map]
-  (->> (str (get-in base-config [:output-parameters :output-dir]) "/Output_State_pop_only.csv")
-       csv->state-pop
-       (filter #(and (= (:calendar-year %) year)
-                     (every? identity (witan.send.model.prepare/test-predicates % state-map))))
-       (map #(select-keys % [:population]))
-       (apply merge-with +)
-       :population))
+(defn get-baseline-population [baseline year state-map]
+  (let [result (-> baseline
+                   (tc/select-rows
+                    (fn [row]
+                      (and (every? identity (p/test-predicates row state-map))
+                           (= (:calendar-year row) year))))
+                   (tc/group-by [:simulation :calendar-year])
+                   (tc/aggregate {:transition-count #(dfn/sum (:transition-count %))})
+                   (summary/seven-number-summary [:calendar-year] :transition-count))]
+    (first (:median result))))
 
 ;;;;;; From the Clojure Cookbook ;;;;;;;;
 
@@ -148,11 +155,9 @@
                      :modify-transition-by)
         _ (println "Modifier:" modifier)
         projection (s/run-send-workflow config false)
-        base-year (+ 1 (apply max (into (sorted-set) (map :calendar-year (:transitions projection)))))
-        output (:send-output projection)
-        result (into {} (map #(assoc {} %1 %2) (range base-year (+ base-year (count output))) output))
-        target-year-result (get-in result [target-year :by-state])
-        target-pop-result (get-target-pop config target-year-result)]
+        result (tc/dataset (eduction stcio/simulated-transitions->transition-counts-xf (:simulated-transitions projection)))
+        census (stc/transition-counts->census-counts result (apply min (:calendar-year result)))
+        target-pop-result (get-baseline-population census target-year (dissoc m :modify-transition-by))]
     (println "Population:" target-pop-result)
     [projection target-pop-result]))
 
@@ -160,7 +165,7 @@
   "Takes a baseline config to use as a template, a map containing a target population
    range and year, e.g. {:year 2019 :population 6}, a map of keys partially matching
    a transition, a boolean to output results and an optional range step value"
-  [base-config target m results-path & step]
+  [base-config target m results-path baseline & step]
   (let [step (if step
                step
                1)
@@ -173,7 +178,7 @@
                             (median target-pop)
                             target-pop)
         baseline-m (clojure.set/rename-keys m {:setting-2 :setting :need-2 :need :academic-year-2 :academic-year})
-        baseline-pop (let [result (get-baseline-population base-config target-year baseline-m)]
+        baseline-pop (let [result (get-baseline-population baseline target-year baseline-m)]
                        (cond (zero? result)
                              (throw (ex-info "Baseline population is too low, can't modify"
                                              {:population result}))
@@ -225,3 +230,5 @@
 ;; 1. store tested modifiers in a map with a score on how close they got to the target population
 ;;    use this score to inform the next attempt
 ;; 2. consider removing default behaviour of outputting results and instead just produce the log of results
+;; 3. Modifiers shouldn't be tested more than once (thought this had been implemented)
+;; 4. If target is more than baseline, modifier should not fall below 1.
