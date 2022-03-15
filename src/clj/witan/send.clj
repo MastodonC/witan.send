@@ -2,14 +2,17 @@
   (:require [aero.core :as aero]
             [clojure.java.io :as io]
             [clojure.core.async :as async]
+            [medley.core :as medley]
             [tablecloth.api :as tc]
             [witan.send.distributions :as d]
+            [witan.send.maths :as m]
             [witan.send.model.prepare :as p]
             [witan.send.model.input.population :as wip]
             [witan.send.model.input.settings-to-change :as wistc]
             [witan.send.model.input.transitions :as wit]
             [witan.send.model.input.valid-states :as wivs]
             [witan.send.model.run :as r]
+            [witan.send.params :as params]
             [witan.send.states :as states]))
 
 ;; FIXME: this should go in its own config namespace
@@ -35,16 +38,27 @@
       (assoc input-datasets :settings-to-change (wistc/csv->settings-to-change (str project-dir "/" settings-to-change))) ;; do we need this?
       input-datasets)))
 
-(defn train-model
-  "train-model returns a map of:
-    - :standard-projection
-    - :scenario-projection
-    - :seed-year
-    - :make-setting-invalid
-    - :modify-transitions-date-range
+(def total-by-academic-year
+  "Given a sequence of {:academic-year year :population population}
+  sums the total population for each year"
+  (partial reduce (fn [coll {:keys [academic-year population]}]
+                    (update coll academic-year m/some+ population))
+           {}))
 
-  Under the :standard-projection and :scenario-projection key is a map with the following keys:
-   Starting data for the projection
+(defn transitions-map
+  [dataset]
+  (reduce (fn [coll {:keys [setting-1 need-1 setting-2 need-2 academic-year-2]}]
+            (let [need-setting-1 (states/join-need-setting need-1 setting-1)
+                  need-setting-2 (states/join-need-setting need-2 setting-2)]
+              (update coll [academic-year-2 need-setting-1 need-setting-2] m/some+ 1)))
+          {}
+          dataset))
+
+
+(defn train-model
+  "train-model returns a map that can populate `:standard-projection`
+  or `:scenario-projection` when running the model.
+
    - :population-by-state which is a map of [ academic-year need-setting ] population-count of the SEND population
    - :transitions a seq of maps containing
      - :calendar-year the January census point year for the *-1 side
@@ -64,30 +78,49 @@
    - :mover-state-alphas - a map of [ NCY need-setting ] to a map of {need-setting odds of being in that need-setting}
    - :leaver-beta-params - The odds of [ NCY need-setting ] leaving SEND
 
-  Cost Data
-   - :cost-lookup - currently not used, but is a mapping on need/setting to cost
-
   Valid transition movement data
    - :valid-transitions
    - valid-states"
-  [{:keys [input-datasets config print-warnings?]
-    :as state}]
-  (p/prepare-send-inputs input-datasets (:transition-parameters config) print-warnings?))
+  [input-datasets]
+  (let [{:keys [transitions population valid-states]} input-datasets
+        valid-transitions (states/calculate-valid-mover-transitions valid-states)
+        validate-valid-states (states/calculate-valid-states-from-setting-academic-years valid-states)
+        max-transition-year (reduce max (map :calendar-year transitions))
+        initial-send-pop (p/create-initial-send-pop max-transition-year transitions)]
+    {:population-by-state initial-send-pop
+     :valid-transitions valid-transitions
+     :valid-states valid-states
+     :transitions transitions
+     :population population
+     :projected-population (->> population
+                                (group-by :calendar-year)
+                                (medley/map-vals #(total-by-academic-year %)))
+     :joiner-beta-params (params/beta-params-joiners validate-valid-states
+                                                     transitions
+                                                     population)
+     :leaver-beta-params (params/beta-params-leavers validate-valid-states transitions)
+     :joiner-state-alphas (params/alpha-params-joiners validate-valid-states (transitions-map transitions))
+     :mover-beta-params (params/beta-params-movers validate-valid-states valid-transitions transitions)
+     :mover-state-alphas  (params/alpha-params-movers validate-valid-states valid-transitions transitions)}))
+
+(defn seed-year [transitions]
+  (inc (reduce max (map :calendar-year transitions))))
 
 #_(defn run-model [{:keys [model config]
                     :as state}]
     (r/run-send-model model (:projection-parameters config)))
 
-(defn create-projections [simulations modify-transitions-date-range make-setting-invalid inputs modified-inputs population-by-state projected-population seed-year]
-  (map (fn [simulation-run]
-         [simulation-run (reductions (partial r/run-model-iteration
-                                              modify-transitions-date-range
-                                              make-setting-invalid
-                                              inputs
-                                              modified-inputs)
-                                     {:model population-by-state}
-                                     (r/projected-future-pop-by-year projected-population seed-year))])
-       (range simulations)))
+;; Deprecated
+;; (defn create-projections [simulations modify-transitions-date-range make-setting-invalid inputs modified-inputs population-by-state projected-population seed-year]
+;;   (map (fn [simulation-run]
+;;          [simulation-run (reductions (partial r/run-model-iteration
+;;                                               modify-transitions-date-range
+;;                                               make-setting-invalid
+;;                                               inputs
+;;                                               modified-inputs)
+;;                                      {:model population-by-state}
+;;                                      (r/projected-future-pop-by-year projected-population seed-year))])
+;;        (range simulations)))
 
 (defn create-projections-xf [modify-transitions-date-range make-setting-invalid inputs modified-inputs population-by-state projected-population seed-year]
   (map (fn [simulation-run]
@@ -134,6 +167,10 @@
             (filter :transitions $)
             (mapcat unpack-transition-counts $)
             (tc/dataset $)
+            (tc/map-columns $ :need-1 [:need-1] name)
+            (tc/map-columns $ :need-2 [:need-2] name)
+            (tc/map-columns $ :setting-1 [:setting-1] name)
+            (tc/map-columns $ :setting-2 [:setting-2] name)
             (tc/convert-types $ {:academic-year-1  :int16
                                  :academic-year-2  :int16
                                  :calendar-year    :int16
@@ -146,40 +183,40 @@
    ->dataset-seq-xf
    simulations))
 
+;; Deprecated
+;; (defn run-model
+;;   "Outputs a seq of datasets. One for each simulation.
 
-(defn run-model
-  "Outputs a seq of datasets. One for each simulation.
-
-  Each simulation is made up of
-  :simulation
-  :calendar-year
-  :academic-year
-  :need-1 :setting-1
-  :need-2 :setting-2
-  :transition-count"
-  [{:keys [standard-projection scenario-projection modify-transition-by
-           modify-transitions-date-range seed-year make-setting-invalid]
-    :as _trained-model}
-   {:keys [random-seed simulations]
-    :as _projection-parameters}]
-  (d/set-seed! random-seed)
-  (println "Preparing" simulations "simulations...")
-  (let [{:keys [population population-by-state
-                projected-population cost-lookup
-                valid-states transitions] :as inputs} standard-projection
-        modified-inputs (when ((complement nil?) scenario-projection)
-                          (assoc scenario-projection :valid-year-settings
-                                 (states/calculate-valid-year-settings-from-setting-academic-years valid-states)))
-        inputs (assoc inputs :valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years valid-states))
-        projection (create-projections simulations
-                                       modify-transitions-date-range
-                                       make-setting-invalid
-                                       inputs
-                                       modified-inputs
-                                       population-by-state
-                                       projected-population
-                                       seed-year)]
-    (->dataset-seq projection)))
+;;   Each simulation is made up of
+;;   :simulation
+;;   :calendar-year
+;;   :academic-year
+;;   :need-1 :setting-1
+;;   :need-2 :setting-2
+;;   :transition-count"
+;;   [{:keys [standard-projection scenario-projection modify-transition-by
+;;            modify-transitions-date-range seed-year make-setting-invalid]
+;;     :as _trained-model}
+;;    {:keys [random-seed simulations]
+;;     :as _projection-parameters}]
+;;   (d/set-seed! random-seed)
+;;   (println "Preparing" simulations "simulations...")
+;;   (let [{:keys [population population-by-state
+;;                 projected-population cost-lookup
+;;                 valid-states transitions] :as inputs} standard-projection
+;;         modified-inputs (when ((complement nil?) scenario-projection)
+;;                           (assoc scenario-projection :valid-year-settings
+;;                                  (states/calculate-valid-year-settings-from-setting-academic-years valid-states)))
+;;         inputs (assoc inputs :valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years valid-states))
+;;         projection (create-projections simulations
+;;                                        modify-transitions-date-range
+;;                                        make-setting-invalid
+;;                                        inputs
+;;                                        modified-inputs
+;;                                        population-by-state
+;;                                        projected-population
+;;                                        seed-year)]
+;;     (->dataset-seq projection)))
 
 (defn run-model-xf
   "Outputs a seq of datasets. One for each simulation.
@@ -199,21 +236,19 @@
   (d/set-seed! random-seed)
   (let [{:keys [population population-by-state
                 projected-population cost-lookup
-                valid-states transitions] :as inputs} standard-projection
-        modified-inputs (when ((complement nil?) scenario-projection)
-                          (assoc scenario-projection :valid-year-settings
-                                 (states/calculate-valid-year-settings-from-setting-academic-years valid-states)))
-        inputs (assoc inputs :valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years valid-states))]
-    (comp
-     (create-projections-xf
-      modify-transitions-date-range
-      make-setting-invalid
-      inputs
-      modified-inputs
-      population-by-state
-      projected-population
-      seed-year)
-     ->dataset-seq-xf)))
+                valid-states transitions]} standard-projection
+        scenario-projection' (when scenario-projection
+                               (assoc scenario-projection :valid-year-settings
+                                      (states/calculate-valid-year-settings-from-setting-academic-years valid-states)))
+        standard-projection' (assoc standard-projection :valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years valid-states))]
+    (create-projections-xf
+     modify-transitions-date-range
+     make-setting-invalid
+     standard-projection'
+     scenario-projection'
+     population-by-state
+     projected-population
+     seed-year)))
 
 
 (comment
