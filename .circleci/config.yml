@@ -40,5 +40,7 @@ jobs:
 workflows:
   kaocha_test:
     jobs:
+      - java-17-clojure-1_10
+      - java-17-clojure-1_11
       - java-8-clojure-1_9
       - java-8-clojure-1_10
