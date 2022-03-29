@@ -86,7 +86,7 @@
     (testing "Simulated transitions sample"
       (is (= {[2019 4 :X-A :X-A] 4,
               [2019 16 :T-L :NONSEND] 0,
-              [2019 6 :U-J :NONSEND] 1,
+              [2019 6 :U-J :NONSEND] 0,
               [2019 5 :T-F :T-F] 8,
               [2019 5 :U-L :NONSEND] 0,
               [2019 7 :NONSEND :U-B] 2}
