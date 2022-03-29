@@ -232,6 +232,19 @@
           (academic-years? ages)
           vector))))
 
+(defn create-initial-send-pop
+  "Create a map of [NCY need-setting] total SEND population count for
+  the *-2 side of the maximum calendar year"
+  [max-transition-year transitions]
+  (->> transitions
+       (filter #(= (:calendar-year %) max-transition-year))
+       (filter #(not= (:setting-2 %) :NONSEND))
+       (map #(select-keys % [:academic-year-2 :setting-2 :need-2] ))
+       (frequencies)
+       (map #(assoc (first %) :population (last %) :calendar-year (inc max-transition-year)))
+       (map #(rename-keys % {:setting-2 :setting, :need-2 :need :academic-year-2 :academic-year}))
+       (initialise-model)))
+
 (defn prepare-send-inputs
   "Outputs the population for the last year of historic data, with one
    row for each individual/year/simulation. Also includes age & state columns"
@@ -259,26 +272,20 @@
                                                       (map (fn [[k v]] [k (* v (:modify-transition-by %))]))))
                                               transitions-to-change)
                                       no-change (-> (reduce (fn [x s] (let [pred-map (dissoc s :modify-transition-by)]
-                                                                        (remove (fn [t] (every? identity (test-predicates t pred-map))) x)))
+                                                                       (remove (fn [t] (every? identity (test-predicates t pred-map))) x)))
                                                             transitions transitions-to-change)
                                                     full-transitions-map)]
                                   (mapcat (fn [[k v]] (back-to-transitions k v)) (concat change no-change))))
          transitions-filtered (when filter-transitions-from
                                 (reduce #(sequence (remove-transitions-xf %2) %1) (or modified-transitions transitions) filter-transitions-from))
          max-transition-year (apply max (map :calendar-year transitions))
-         initial-send-pop (->> (filter #(= (:calendar-year %) max-transition-year) transitions)
-                               (filter #(not= (:setting-2 %) :NONSEND))
-                               (postwalk #(if (map? %) (dissoc % :calendar-year :setting-1 :need-1 :academic-year-1) %))
-                               (frequencies)
-                               (map #(assoc (first %) :population (last %) :calendar-year (inc max-transition-year)))
-                               (map #(rename-keys % {:setting-2 :setting, :need-2 :need :academic-year-2 :academic-year}))
-                               (initialise-model))]
+         initial-send-pop (create-initial-send-pop max-transition-year transitions)]
     (if modified-transitions
       (report/info "\nUsed " (report/bold "modified") " transitions matrix\n")
       (report/info "\nUsed " (report/bold "input") " transitions matrix\n"))
     ;; TODO - better validation here
-    #_(s/validate (sc/TransitionsMap+ valid-needs valid-settings) map-of-transitions)
-    #_(s/validate (sc/NeedSettingCost+ valid-needs valid-settings) costs)
+    ;; (s/validate (sc/TransitionsMap+ valid-needs valid-settings) map-of-transitions)
+    ;; (s/validate (sc/NeedSettingCost+ valid-needs valid-settings) costs)
     {:standard-projection (prep-inputs initial-send-pop validate-valid-states
                                        valid-transitions transitions
                                        transitions-filtered population valid-states

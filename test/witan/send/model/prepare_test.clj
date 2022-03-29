@@ -5,6 +5,29 @@
             [witan.send.model.prepare :as sut]
             [witan.send.send :as send]))
 
+(deftest test-initial-send-pop
+  (testing "Simple transformation"
+    (is (= (sut/create-initial-send-pop 2018
+                                        [{:calendar-year 2017
+                                          :academic-year-1 0 :need-1 :N1 :setting-1 :S1
+                                          :academic-year-2 1 :need-2 :N1 :setting-2 :S1}
+                                         {:calendar-year 2018
+                                          :academic-year-1 1 :need-1 :N1 :setting-1 :S1
+                                          :academic-year-2 2 :need-2 :N1 :setting-2 :S1}
+                                         {:calendar-year 2018
+                                          :academic-year-1 1 :need-1 :N1 :setting-1 :S1
+                                          :academic-year-2 2 :need-2 :N1 :setting-2 :S1}
+                                         {:calendar-year 2018
+                                          :academic-year-1 1 :need-1 :N2 :setting-1 :S2
+                                          :academic-year-2 2 :need-2 :N1 :setting-2 :S2}
+                                         {:calendar-year 2018
+                                          :academic-year-1 1 :need-1 :N1 :setting-1 :S2
+                                          :academic-year-2 2 :need-2 :N1 :setting-2 :S2}
+                                         {:calendar-year 2018
+                                          :academic-year-1 1 :need-1 :N1 :setting-1 :S2
+                                          :academic-year-2 2 :need-2 :NONSEND :setting-2 :NONSEND}])
+           {[2 :N1-S1] 2, [2 :N1-S2] 2}))))
+
 (deftest test-predicates-test
   (testing "filter by single key-value pair"
     (is (every? true? (sut/test-predicates {:a 1 :b 2 :c 3} {:a 1})))

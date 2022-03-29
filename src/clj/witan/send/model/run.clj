@@ -165,7 +165,7 @@
   (let [valid-transitions (:valid-transitions standard-projection)
         params (modify-transitions-params modify-transitions-date-range scenario-projection
                                           standard-projection calendar-year)
-        cohorts (step/age-population projected-population population-by-state)
+        cohorts (step/age-population population-by-state)
         [population-by-state transitions] (reduce (fn [pop cohort]
                                                     (apply-leavers-movers-for-cohort pop cohort params calendar-year valid-transitions make-setting-invalid))
                                                   [{} {}]
