@@ -43,8 +43,9 @@
                                         {:beta 11.920856610800746
                                          :alpha 0.07914338919925512}}
                     :valid-year-settings {12 #{:L :M :I :R :A :F :D :B :J :C :E :G :H :S :N :K}}}]
-        (is (= [{ [ 11 :Y-F ] 1 }
-                { [ 2018 11 :Y-F :Y-F ] 1, [ 2018 11 :Y-F :NONSEND ] 0 }]
+        (is (= [{[11 :Y-F] 1} {[2018 11 :Y-F :Y-F] 1, [2018 11 :Y-F :NONSEND] 0}]
+               #_[{ [ 11 :Y-F ] 1 }
+                  { [ 2018 11 :Y-F :Y-F ] 1, [ 2018 11 :Y-F :NONSEND ] 0 }]
                (sut/apply-leavers-movers-for-cohort population-by-state cohort params calendar-year valid-transitions make-setting-invalid)))))
 
     (testing "Apply joiners for academic year with seed 42"
@@ -63,6 +64,7 @@
             model {}
             transitions {}]
         (is (= [{[7 :U-B] 2, [7 :X-A] 4} {[2018 7 :NONSEND :U-B] 2, [2018 7 :NONSEND :X-A] 4}]
+               #_[{[7 :U-B] 2, [7 :X-A] 4} {[2018 7 :NONSEND :U-B] 2, [2018 7 :NONSEND :X-A] 4}]
                (sut/apply-joiners-for-academic-year [model transitions] academic-year population {:joiner-beta-params joiner-beta-params :joiner-state-alphas joiner-state-alphas} calendar-year)))))
 
     (testing "Apply joiners for academic year with seed 50"
@@ -81,12 +83,13 @@
             model {}
             transitions {}]
         (is (= [{[7 :U-B] 5, [7 :Y-B] 2, [7 :T-B] 5, [7 :V-J] 1, [7 :Y-F] 3, [7 :X-B] 1, [7 :U-R] 1} {[2019 7 :NONSEND :U-B] 5, [2019 7 :NONSEND :Y-B] 2, [2019 7 :NONSEND :T-B] 5, [2019 7 :NONSEND :V-J] 1, [2019 7 :NONSEND :Y-F] 3, [2019 7 :NONSEND :X-B] 1, [2019 7 :NONSEND :U-R] 1}]
+               #_[{[7 :U-B] 5, [7 :Y-B] 2, [7 :T-B] 5, [7 :V-J] 1, [7 :Y-F] 3, [7 :X-B] 1, [7 :U-R] 1} {[2019 7 :NONSEND :U-B] 5, [2019 7 :NONSEND :Y-B] 2, [2019 7 :NONSEND :T-B] 5, [2019 7 :NONSEND :V-J] 1, [2019 7 :NONSEND :Y-F] 3, [2019 7 :NONSEND :X-B] 1, [2019 7 :NONSEND :U-R] 1}]
                (sut/apply-joiners-for-academic-year [model transitions] academic-year population {:joiner-beta-params joiner-beta-params :joiner-state-alphas joiner-state-alphas} calendar-year)))))
 
     (testing "Simulated transitions sample"
       (is (= {[2019 4 :X-A :X-A] 4,
               [2019 16 :T-L :NONSEND] 0,
-              [2019 6 :U-J :NONSEND] 1,
+              [2019 6 :U-J :NONSEND] 0,
               [2019 5 :T-F :T-F] 8,
               [2019 5 :U-L :NONSEND] 0,
               [2019 7 :NONSEND :U-B] 2}
@@ -104,12 +107,18 @@
                                [ 2019 7 :NONSEND :U-B ]])))))
 
     (testing "Testing projection sample"
-      (is (= {[2018 14 :V-J :NONSEND] 0,
+      (is (= {[2019 10 :U-B :U-N] 2,
+              [2018 14 :V-J :NONSEND] 0,
               [2022 8 :X-B :NONSEND] 0,
               [2019 9 :T-A :T-A] 17,
-              [2021 2 :NONSEND :X-B] 1,
-              [2022 8 :NONSEND :T-A] 2,
               [2019 10 :X-B :NONSEND] 0}
+             ;; Old test
+             #_{[2018 14 :V-J :NONSEND] 0,
+                [2022 8 :X-B :NONSEND] 0,
+                [2019 9 :T-A :T-A] 17,
+                [2021 2 :NONSEND :X-B] 1,
+                [2022 8 :NONSEND :T-A] 2,
+                [2019 10 :X-B :NONSEND] 0}
              (-> projection
                  (select-keys [[ 2019 10 :U-B :U-N ]
                                [ 2018 14 :V-J :NONSEND ]
@@ -120,182 +129,193 @@
                                [ 2022 8 :NONSEND :T-A ]
                                [ 2019 10 :X-B :NONSEND ]])))))
 
-    (testing "Testing send output samples"
-      (is (= {:min 199,
-              :q1 199,
-              :q3 199,
-              :low-ci 199.0,
-              :mean 199.0,
-              :high-ci 199.0,
-              :iqr 0,
-              :high-95pc-bound 199,
-              :low-95pc-bound 199,
-              :median 199,
-              :max 199,
-              :std-dev 0.0}
-             (-> send-output (nth 3) :total-in-send-by-ay (get 7)))))
-    (testing "Total cost sample"
-      (is (= {:min 2418687,
-              :q1 2420734,
-              :q3 2420734,
-              :low-ci 2419711.0,
-              :mean 2419711.0,
-              :high-ci 2419711.0,
-              :iqr 0,
-              :high-95pc-bound 2420734,
-              :low-95pc-bound 2420734,
-              :median 2420734,
-              :max 2420734,
-              :std-dev 0.0}
-             (-> send-output (nth 3) :total-cost))))
-    (testing "Total in send by AY Group Sample"
-      (is (= {:min 943,
-              :q1 943,
-              :q3 943,
-              :low-ci 943.0,
-              :mean 943.0,
-              :high-ci 943.0,
-              :iqr 0,
-              :high-95pc-bound 943,
-              :low-95pc-bound 943,
-              :median 943,
-              :max 943,
-              :std-dev 0.0}
-             (-> send-output (nth 4) :total-in-send-by-ay-group (get "NCY 7-11")))))
-    (testing "Total in send sample"
-      (is (= {:min 2153,
-              :q1 2154,
-              :q3 2154,
-              :low-ci 2154.0,
-              :mean 2154.0,
-              :high-ci 2154.0,
-              :iqr 0,
-              :high-95pc-bound 2154,
-              :low-95pc-bound 2154,
-              :median 2154,
-              :max 2154,
-              :std-dev 0.0}
-             (-> send-output (nth 0) :total-in-send))))
-    (testing "Total by need sample"
-      (is (= {:T
-              {:min 1506,
-               :q1 1506,
-               :q3 1506,
-               :low-ci 1506.0,
-               :mean 1506.0,
-               :high-ci 1506.0,
-               :iqr 0,
-               :high-95pc-bound 1506,
-               :low-95pc-bound 1506,
-               :median 1506,
-               :max 1506,
-               :std-dev 0.0},
-              :U
-              {:min 545,
-               :q1 545,
-               :q3 545,
-               :low-ci 545.0,
-               :mean 545.0,
-               :high-ci 545.0,
-               :iqr 0,
-               :high-95pc-bound 545,
-               :low-95pc-bound 545,
-               :median 545,
-               :max 545,
-               :std-dev 0.0},
-              :X
-              {:min 206,
-               :q1 206,
-               :q3 206,
-               :low-ci 206.0,
-               :mean 206.0,
-               :high-ci 206.0,
-               :iqr 0,
-               :high-95pc-bound 206,
-               :low-95pc-bound 206,
-               :median 206,
-               :max 206,
-               :std-dev 0.0}}
-             (-> send-output (nth 5) :total-in-send-by-need (select-keys [:T :U :X])))))
-    (testing "Total by setting sample"
-      (is (= {:L
-              {:min 58,
-               :q1 58,
-               :q3 58,
-               :low-ci 58.0,
-               :mean 58.0,
-               :high-ci 58.0,
-               :iqr 0,
-               :high-95pc-bound 58,
-               :low-95pc-bound 58,
-               :median 58,
-               :max 58,
-               :std-dev 0.0},
-              :M
-              {:min 3,
-               :q1 3,
-               :q3 3,
-               :low-ci 3.0,
-               :mean 3.0,
-               :high-ci 3.0,
-               :iqr 0,
-               :high-95pc-bound 3,
-               :low-95pc-bound 3,
-               :median 3,
-               :max 3,
-               :std-dev 0.0},
-              :N
-              {:min 30,
-               :q1 30,
-               :q3 30,
-               :low-ci 30.0,
-               :mean 30.0,
-               :high-ci 30.0,
-               :iqr 0,
-               :high-95pc-bound 30,
-               :low-95pc-bound 30,
-               :median 30,
-               :max 30,
-               :std-dev 0.0}}
-             (-> send-output (nth 2) :total-in-send-by-setting (select-keys [:L :M :N])))))
-    (testing "Setting cost sample"
-      (is (= {:L
-              {:min 53983,
-               :q1 54014,
-               :q3 54014,
-               :low-ci 53999.0,
-               :mean 53999.0,
-               :high-ci 53999.0,
-               :iqr 0,
-               :high-95pc-bound 54014,
-               :low-95pc-bound 54014,
-               :median 54014,
-               :max 54014,
-               :std-dev 0.0},
-              :M
-              {:min 1000,
-               :q1 1000,
-               :q3 1000,
-               :low-ci 1000.0,
-               :mean 1000.0,
-               :high-ci 1000.0,
-               :iqr 0,
-               :high-95pc-bound 1000,
-               :low-95pc-bound 1000,
-               :median 1000,
-               :max 1000,
-               :std-dev 0.0},
-              :N
-              {:min 31999,
-               :q1 32014,
-               :q3 32014,
-               :low-ci 32007.0,
-               :mean 32007.0,
-               :high-ci 32007.0,
-               :iqr 0,
-               :high-95pc-bound 32014,
-               :low-95pc-bound 32014,
-               :median 32014,
-               :max 32014,
-               :std-dev 0.0}}
-             (-> send-output (nth 1) :setting-cost (select-keys [:L :M :N])))))))
+    ;; We don't do this output any more
+    #_(testing "Testing send output samples"
+        (is (= {:min 199,
+                :q1 199,
+                :q3 199,
+                :low-ci 199.0,
+                :mean 199.0,
+                :high-ci 199.0,
+                :iqr 0,
+                :high-95pc-bound 199,
+                :low-95pc-bound 199,
+                :median 199,
+                :max 199,
+                :std-dev 0.0}
+               (-> send-output (nth 3) :total-in-send-by-ay (get 7)))))
+
+    ;; We don't do this output any more
+    #_(testing "Total cost sample"
+        (is (= {:min 2418687,
+                :q1 2420734,
+                :q3 2420734,
+                :low-ci 2419711.0,
+                :mean 2419711.0,
+                :high-ci 2419711.0,
+                :iqr 0,
+                :high-95pc-bound 2420734,
+                :low-95pc-bound 2420734,
+                :median 2420734,
+                :max 2420734,
+                :std-dev 0.0}
+               (-> send-output (nth 3) :total-cost))))
+
+    ;; We don't do this output any more
+    #_(testing "Total in send by AY Group Sample"
+        (is (= {:min 943,
+                :q1 943,
+                :q3 943,
+                :low-ci 943.0,
+                :mean 943.0,
+                :high-ci 943.0,
+                :iqr 0,
+                :high-95pc-bound 943,
+                :low-95pc-bound 943,
+                :median 943,
+                :max 943,
+                :std-dev 0.0}
+               (-> send-output (nth 4) :total-in-send-by-ay-group (get "NCY 7-11")))))
+    ;; We don't do this output any more
+    #_(testing "Total in send sample"
+        (is (= {:min 2153,
+                :q1 2154,
+                :q3 2154,
+                :low-ci 2154.0,
+                :mean 2154.0,
+                :high-ci 2154.0,
+                :iqr 0,
+                :high-95pc-bound 2154,
+                :low-95pc-bound 2154,
+                :median 2154,
+                :max 2154,
+                :std-dev 0.0}
+               (-> send-output (nth 0) :total-in-send))))
+    ;; We don't do this output any more
+    #_(testing "Total by need sample"
+        (is (= {:T
+                {:min 1506,
+                 :q1 1506,
+                 :q3 1506,
+                 :low-ci 1506.0,
+                 :mean 1506.0,
+                 :high-ci 1506.0,
+                 :iqr 0,
+                 :high-95pc-bound 1506,
+                 :low-95pc-bound 1506,
+                 :median 1506,
+                 :max 1506,
+                 :std-dev 0.0},
+                :U
+                {:min 545,
+                 :q1 545,
+                 :q3 545,
+                 :low-ci 545.0,
+                 :mean 545.0,
+                 :high-ci 545.0,
+                 :iqr 0,
+                 :high-95pc-bound 545,
+                 :low-95pc-bound 545,
+                 :median 545,
+                 :max 545,
+                 :std-dev 0.0},
+                :X
+                {:min 206,
+                 :q1 206,
+                 :q3 206,
+                 :low-ci 206.0,
+                 :mean 206.0,
+                 :high-ci 206.0,
+                 :iqr 0,
+                 :high-95pc-bound 206,
+                 :low-95pc-bound 206,
+                 :median 206,
+                 :max 206,
+                 :std-dev 0.0}}
+               (-> send-output (nth 5) :total-in-send-by-need (select-keys [:T :U :X])))))
+
+    ;; We don't do this output any more
+    #_(testing "Total by setting sample"
+        (is (= {:L
+                {:min 58,
+                 :q1 58,
+                 :q3 58,
+                 :low-ci 58.0,
+                 :mean 58.0,
+                 :high-ci 58.0,
+                 :iqr 0,
+                 :high-95pc-bound 58,
+                 :low-95pc-bound 58,
+                 :median 58,
+                 :max 58,
+                 :std-dev 0.0},
+                :M
+                {:min 3,
+                 :q1 3,
+                 :q3 3,
+                 :low-ci 3.0,
+                 :mean 3.0,
+                 :high-ci 3.0,
+                 :iqr 0,
+                 :high-95pc-bound 3,
+                 :low-95pc-bound 3,
+                 :median 3,
+                 :max 3,
+                 :std-dev 0.0},
+                :N
+                {:min 30,
+                 :q1 30,
+                 :q3 30,
+                 :low-ci 30.0,
+                 :mean 30.0,
+                 :high-ci 30.0,
+                 :iqr 0,
+                 :high-95pc-bound 30,
+                 :low-95pc-bound 30,
+                 :median 30,
+                 :max 30,
+                 :std-dev 0.0}}
+               (-> send-output (nth 2) :total-in-send-by-setting (select-keys [:L :M :N])))))
+
+    ;; We don't do this output any more
+    #_(testing "Setting cost sample"
+        (is (= {:L
+                {:min 53983,
+                 :q1 54014,
+                 :q3 54014,
+                 :low-ci 53999.0,
+                 :mean 53999.0,
+                 :high-ci 53999.0,
+                 :iqr 0,
+                 :high-95pc-bound 54014,
+                 :low-95pc-bound 54014,
+                 :median 54014,
+                 :max 54014,
+                 :std-dev 0.0},
+                :M
+                {:min 1000,
+                 :q1 1000,
+                 :q3 1000,
+                 :low-ci 1000.0,
+                 :mean 1000.0,
+                 :high-ci 1000.0,
+                 :iqr 0,
+                 :high-95pc-bound 1000,
+                 :low-95pc-bound 1000,
+                 :median 1000,
+                 :max 1000,
+                 :std-dev 0.0},
+                :N
+                {:min 31999,
+                 :q1 32014,
+                 :q3 32014,
+                 :low-ci 32007.0,
+                 :mean 32007.0,
+                 :high-ci 32007.0,
+                 :iqr 0,
+                 :high-95pc-bound 32014,
+                 :low-95pc-bound 32014,
+                 :median 32014,
+                 :max 32014,
+                 :std-dev 0.0}}
+               (-> send-output (nth 1) :setting-cost (select-keys [:L :M :N])))))))
