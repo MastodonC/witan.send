@@ -20,10 +20,6 @@ commands:
       - kaocha/upload_codecov
 
 jobs:
-  java-8-clojure-1_9:
-    executor: clojure/openjdk8
-    steps: [{checkout_and_run: {clojure_version: "1.9.0"}}]
-
   java-8-clojure-1_10:
     executor: clojure/openjdk8
     steps: [{checkout_and_run: {clojure_version: "1.10.3"}}]
@@ -42,5 +38,4 @@ workflows:
     jobs:
       - java-17-clojure-1_10
       - java-17-clojure-1_11
-      - java-8-clojure-1_9
       - java-8-clojure-1_10
