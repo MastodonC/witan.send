@@ -87,12 +87,21 @@
                (sut/apply-joiners-for-academic-year [model transitions] academic-year population {:joiner-beta-params joiner-beta-params :joiner-state-alphas joiner-state-alphas} calendar-year)))))
 
     (testing "Simulated transitions sample"
-      (is (= {[2019 4 :X-A :X-A] 4,
+      (is (= {[2019 9 :NONSEND :U-L] 2,
+              [2019 4 :X-A :X-A] 4,
               [2019 16 :T-L :NONSEND] 0,
-              [2019 6 :U-J :NONSEND] 0,
+              [2019 6 :U-J :NONSEND] 1,
               [2019 5 :T-F :T-F] 8,
               [2019 5 :U-L :NONSEND] 0,
-              [2019 7 :NONSEND :U-B] 2}
+              [2019 9 :NONSEND :U-B] 1,
+              [2019 7 :NONSEND :U-B] 1}
+             ;; kixi.stats 0.4.3 test
+             #_{[2019 4 :X-A :X-A] 4,
+                [2019 16 :T-L :NONSEND] 0,
+                [2019 6 :U-J :NONSEND] 0,
+                [2019 5 :T-F :T-F] 8,
+                [2019 5 :U-L :NONSEND] 0,
+                [2019 7 :NONSEND :U-B] 2}
              (-> simulated-transitions
                  first
                  second
@@ -107,11 +116,20 @@
                                [ 2019 7 :NONSEND :U-B ]])))))
 
     (testing "Testing projection sample"
-      (is (= {[2019 10 :U-B :U-N] 2,
+      (is (= {[2019 10 :U-B :U-N] 1,
               [2018 14 :V-J :NONSEND] 0,
-              [2022 8 :X-B :NONSEND] 0,
-              [2019 9 :T-A :T-A] 17,
+              [2022 8 :X-B :NONSEND] 1,
+              [2019 9 :T-A :T-A] 15,
+              [2021 2 :NONSEND :X-B] 2,
+              [2022 5 :X-E :X-E] 1,
+              [2022 8 :NONSEND :T-A] 1,
               [2019 10 :X-B :NONSEND] 0}
+             ;; kixi.stats 0.4.3 test
+             #_{[2019 10 :U-B :U-N] 2,
+                [2018 14 :V-J :NONSEND] 0,
+                [2022 8 :X-B :NONSEND] 0,
+                [2019 9 :T-A :T-A] 17,
+                [2019 10 :X-B :NONSEND] 0}
              ;; Old test
              #_{[2018 14 :V-J :NONSEND] 0,
                 [2022 8 :X-B :NONSEND] 0,
