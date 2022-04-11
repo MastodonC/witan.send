@@ -1,5 +1,5 @@
 {:paths ["src/clj"]
- :deps  {org.clojure/clojure              {:mvn/version #_"1.9.0" "1.10.1"}
+ :deps  {org.clojure/clojure              {:mvn/version "1.11.1"}
          org.clojure/core.async           {:mvn/version "1.5.648"}
          org.clojure/data.csv             {:mvn/version "0.1.4"}
          org.clojure/math.combinatorics   {:mvn/version "0.1.4"}
@@ -8,7 +8,10 @@
          com.cognitect/transit-clj        {:mvn/version "1.0.324"}
          digest/digest                    {:mvn/version "1.4.8"}
          instaparse/instaparse            {:mvn/version "1.4.9"}
-         kixi/stats                       {:mvn/version "0.4.3" #_ "0.5.4"}
+         kixi/stats                       {:mvn/version
+                                           #_"0.4.3" ;; Original Version
+                                           #_"0.4.4" ;; This changes the test results
+                                           "0.5.4"}
          me.raynes/fs                     {:mvn/version "1.4.6"}
          medley/medley                    {:mvn/version "1.0.0"}
          org.apache.commons/commons-math3 {:mvn/version "3.6.1"}
@@ -18,12 +21,12 @@
 
          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
          ;; All of this should probably go in adroddiad or similar
-         techascent/tech.ml.dataset       {:mvn/version "6.077"} ;; has claypoole in dtype.next
-         scicloj/tablecloth               {:mvn/version "6.076"
-                                           :exclusions  [techascent/tech.ml.dataset
-                                                         org.apache.poi/poi-ooxml-schemas
-                                                         org.apache.poi/poi
-                                                         org.apache.poi/poi-ooxml]}
+         techascent/tech.ml.dataset                     {:mvn/version "6.077"} ;; has claypoole in dtype.next
+         scicloj/tablecloth                             {:mvn/version "6.076"
+                                                         :exclusions  [techascent/tech.ml.dataset
+                                                                       org.apache.poi/poi-ooxml-schemas
+                                                                       org.apache.poi/poi
+                                                                       org.apache.poi/poi-ooxml]}
          org.apache.parquet/parquet-hadoop              {:mvn/version "1.12.0"
                                                          :exclusions  [org.slf4j/slf4j-log4j12]}
          org.apache.hadoop/hadoop-common                {:mvn/version "3.3.0"
