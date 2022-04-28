@@ -11,7 +11,7 @@
          kixi/stats                       {:mvn/version
                                            #_"0.4.3" ;; Original Version
                                            #_"0.4.4" ;; This changes the test results
-                                           "0.5.4"}
+                                           "0.5.5"}
          me.raynes/fs                     {:mvn/version "1.4.6"}
          medley/medley                    {:mvn/version "1.0.0"}
          org.apache.commons/commons-math3 {:mvn/version "3.6.1"}
@@ -21,7 +21,7 @@
 
          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
          ;; All of this should probably go in adroddiad or similar
-         techascent/tech.ml.dataset                     {:mvn/version "6.077"} ;; has claypoole in dtype.next
+         techascent/tech.ml.dataset                     {:mvn/version "6.085"} ;; has claypoole in dtype.next
          scicloj/tablecloth                             {:mvn/version "6.076"
                                                          :exclusions  [techascent/tech.ml.dataset
                                                                        org.apache.poi/poi-ooxml-schemas
