@@ -97,6 +97,10 @@
   saturate the cores of whatever machine is running the simulation.
   "
   [{:keys [config] :as projection-config}]
+  (when (false? (.exists (io/file "resources")))
+    (.mkdir (java.io.File. "resources")))
+  (io/copy (io/file (io/resource "logback.xml"))
+           (io/file "resources/logback.xml"))
   (cp/with-shutdown! [cpu-pool (cp/threadpool (- (cp/ncpus) 2))]
     (->> (range (get-in config [:projection-parameters :simulations] 1)) ;; Just 1 simulation if nothing is specified
          (partition-all 50)
