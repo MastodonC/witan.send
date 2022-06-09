@@ -4,7 +4,8 @@
             [tablecloth.api :as tc]
             [tech.v3.libs.parquet :as parquet]
             [witan.send :as send]
-            [witan.send.states :as states]))
+            [witan.send.states :as states]
+            [clojure.java.io :as io]))
 
 (defn unpack-transition-counts [{:keys [transitions simulation]}]
   (map (fn [map-entry]
@@ -53,6 +54,8 @@
 
 (defn output-ds-seq
   [out-dir prefix ds-seq]
+  (when (false? (.exists (io/file out-dir)))
+    (.mkdir (java.io.File. out-dir)))
   (let [start          (System/currentTimeMillis)
         idx            (-> ds-seq first :simulation first)
         num-ds         (count ds-seq)
