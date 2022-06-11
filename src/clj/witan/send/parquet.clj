@@ -55,6 +55,7 @@
 (defn output-ds-seq
   [out-dir prefix ds-seq]
   (when (false? (.exists (io/file out-dir)))
+    (println (format "Creating out-dir: %s as it doesn't exist yet."))
     (.mkdir (java.io.File. out-dir)))
   (let [start          (System/currentTimeMillis)
         idx            (-> ds-seq first :simulation first)
@@ -98,9 +99,12 @@
   "
   [{:keys [config] :as projection-config}]
   (when (false? (.exists (io/file "resources")))
-    (.mkdir (java.io.File. "resources")))
-  (io/copy (io/file (io/resource "logback.xml"))
-           (io/file "resources/logback.xml"))
+    (.mkdir (java.io.File. "resources"))
+    (io/copy (io/file (io/resource "logback.xml"))
+             (io/file "resources/logback.xml"))
+    (throw (ex-info "Creating missing logback.xml file."
+                    {:reason "parquet output is painfully slow without turning down the logging."
+                     :action-required "Restart your repl to pick up the new logback.xml"})))
   (cp/with-shutdown! [cpu-pool (cp/threadpool (- (cp/ncpus) 2))]
     (->> (range (get-in config [:projection-parameters :simulations] 1)) ;; Just 1 simulation if nothing is specified
          (partition-all 50)
