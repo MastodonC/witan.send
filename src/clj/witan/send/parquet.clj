@@ -55,7 +55,7 @@
 (defn output-ds-seq
   [out-dir prefix ds-seq]
   (when (false? (.exists (io/file out-dir)))
-    (println (format "Creating out-dir: %s as it doesn't exist yet."))
+    (println (format "Creating out-dir: %s as it doesn't exist yet." out-dir))
     (.mkdir (java.io.File. out-dir)))
   (let [start          (System/currentTimeMillis)
         idx            (-> ds-seq first :simulation first)
