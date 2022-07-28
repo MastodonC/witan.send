@@ -21,8 +21,8 @@
 
          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
          ;; All of this should probably go in adroddiad or similar
-         techascent/tech.ml.dataset                     {:mvn/version "6.085"} ;; has claypoole in dtype.next
-         scicloj/tablecloth                             {:mvn/version "6.076"
+         techascent/tech.ml.dataset                     {:mvn/version "6.090"} ;; has claypoole in dtype.next
+         scicloj/tablecloth                             {:mvn/version "6.090"
                                                          :exclusions  [techascent/tech.ml.dataset
                                                                        org.apache.poi/poi-ooxml-schemas
                                                                        org.apache.poi/poi
