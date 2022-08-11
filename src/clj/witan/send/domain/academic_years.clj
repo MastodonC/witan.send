@@ -93,6 +93,10 @@
    :ncy-15+ "NCY 15+"
    :outside-of-send-age "Outside of SEND age"})
 
+;; Nursery - anything less than Reception/NCY 0
+(def nursery
+  (disj early-years 0))
+
 ;; Primary school - Reception + Years 1 to 6
 (def primary-school
   (into (sorted-set 0) (into key-stage-1 key-stage-2)))
@@ -115,7 +119,7 @@
 
 (defn primary-secondary-post16-ncy15+ [ncy]
   (cond
-    (disj early-years 0) :early-years
+    (nursery ncy) :early-years
     (primary-school ncy) :primary
     (secondary-school ncy) :secondary
     (key-stage-5 ncy) :post-16
@@ -126,7 +130,7 @@
   "Sometimes we don't care about whether someone is post 16 or post 19."
   [ncy]
   (cond
-    ((disj early-years 0) ncy) :early-years
+    (nursery ncy) :early-years
     (primary-school ncy) :primary
     (secondary-school ncy) :secondary
     ((into key-stage-5 ncy-15+) ncy) :post-secondary
