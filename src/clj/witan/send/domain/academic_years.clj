@@ -97,26 +97,60 @@
 (def nursery
   (disj early-years 0))
 
-;; Primary school - Reception + Years 1 to 6
+;; Primary school - Reception and Key Stages 1 + 2 - Reception + Years 1 to 6
 (def primary-school
   (into (sorted-set 0) (into key-stage-1 key-stage-2)))
 
-;; Infant school - Reception + Years 1 and 2
+;; Infant school - Reception and Key Stage 1 - Reception + Years 1 to 2
 (def infant-school (into (sorted-set) (inclusive-range 0 2)))
 
-;; Junior school - Years 3 to 6
+;; Junior school - Key Stage 2 - Years 3 to 6
 (def junior-school (into (sorted-set) (inclusive-range 3 6)))
 
 ;; First school - Reception + Years 1 to 4
 (def first-school (into (sorted-set) (inclusive-range 0 4)))
 
+;; Secondary school - Key Stages 3 + 4 - Years 7 to 11
 (def secondary-school
   (into key-stage-3 key-stage-4))
 
-;; Key Stages 1 to 5
+;; Post 16 - Key Stage 5 - Years 12 to 14
+(def post-16 key-stage-5)
+
+;; Post 19 - Post Key Stage 5 up to 25 years of age - Years 15 to 20
+(def post-19 ncy-15+)
+
+;; School age - Reception + Key Stages 1 to 5
 (def school-age
   (into (sorted-set) cat [primary-school secondary-school key-stage-5]))
 
+;; School phase
+(defn ncy->school-phase
+  "National Curriculum Year to School Phase keyword"
+  [ncy]
+  (cond
+    (nursery ncy)          :nursery
+    (primary-school ncy)   :primary
+    (secondary-school ncy) :secondary
+    (post-16 ncy)          :post-16
+    (post-19 ncy)          :post-19
+    :else                  :outside-of-send-age
+    ))
+
+(def school-phase-names
+  {:nursery   "Nursery"
+   :primary   "Primary"
+   :secondary "Secondary"
+   :post-16   "Post 16"
+   :post-19   "Post 19"})
+
+(defn ncy->school-phase-name
+  "National Curriculum Year to School Phase name"
+  [ncy]
+  (-> ncy ncy->school-phase school-phase-names))
+
+;; School phase but using :early-years as keyword for NCYs -5 to -1
+;; NOTE: Discordant with definition of early-years which includes Reception
 (defn primary-secondary-post16-ncy15+ [ncy]
   (cond
     (nursery ncy) :early-years
