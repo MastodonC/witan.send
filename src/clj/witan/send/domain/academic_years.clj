@@ -147,8 +147,7 @@
 (defn ncy->school-phase-name
   "National Curriculum Year to School Phase name"
   [ncy]
-  (school-phase-names (ncy->school-phase ncy))
-  )
+  (-> ncy ncy->school-phase school-phase-names))
 
 ;; School phase but using :early-years as keyword for NCYs -5 to -1
 ;; NOTE: Discordant with definition of early-years which includes Reception
