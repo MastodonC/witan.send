@@ -111,7 +111,7 @@
         (fn [coll cy]
           (let [j (get-in joiners [cy ay])
                 p (get-in population [cy ay])]
-            (if j
+            (if (and j p)
               (-> coll
                   (update-in [ay :alpha] m/some+ (/ j n))
                   (update-in [ay :beta] m/some+ (/ (- p j) n)))
