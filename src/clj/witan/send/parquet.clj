@@ -105,7 +105,7 @@
     (throw (ex-info "Creating missing logback.xml file."
                     {:reason "parquet output is painfully slow without turning down the logging."
                      :action-required "Restart your repl to pick up the new logback.xml"})))
-  (cp/with-shutdown! [cpu-pool (cp/threadpool (- (cp/ncpus) 2))]
+  (cp/with-shutdown! [cpu-pool (cp/threadpool (- (cp/ncpus) 2))] ;; FIXME consider moving to hamfisted
     (->> (range (get-in config [:projection-parameters :simulations] 1)) ;; Just 1 simulation if nothing is specified
          (partition-all 50)
          (lazy/upmap cpu-pool (partial create-projections-and-save projection-config))

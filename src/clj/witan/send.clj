@@ -93,7 +93,7 @@
      :population population
      :projected-population (->> population
                                 (group-by :calendar-year)
-                                (medley/map-vals #(total-by-academic-year %)))
+                                (medley/map-vals #(total-by-academic-year %))) ;; FIXME lines 84 to 96 this is not model training, consider moving to prep inputs
      :joiner-beta-params (params/beta-params-joiners validate-valid-states
                                                      transitions
                                                      population)
@@ -127,7 +127,8 @@
         scenario-projection' (when scenario-projection
                                (assoc scenario-projection :valid-year-settings
                                       (states/calculate-valid-year-settings-from-setting-academic-years valid-states)))
-        standard-projection' (assoc standard-projection :valid-year-settings (states/calculate-valid-year-settings-from-setting-academic-years valid-states))]
+        standard-projection' (assoc standard-projection :valid-year-settings
+                                    (states/calculate-valid-year-settings-from-setting-academic-years valid-states))]
     (map (fn [simulation-run]
            [simulation-run (reductions (partial r/run-model-iteration
                                                 modify-transitions-date-range

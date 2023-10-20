@@ -138,7 +138,7 @@
                                                     :calendar-year calendar-year})
       [model transitions])))
 
-(defn modify-transitions-params
+(defn modify-transitions-params ;; FIXME this what we need to change to apply different models to particular years
   [modify-transitions-date-range scenario-projection standard-projection calendar-year]
   (if (nil? modify-transitions-date-range)
     (if ((complement nil?) scenario-projection)
