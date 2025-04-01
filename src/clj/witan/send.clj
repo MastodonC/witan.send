@@ -1,7 +1,6 @@
 (ns witan.send
-  (:require [aero.core :as aero]
-            [clojure.java.io :as io]
-            [medley.core :as medley]
+  (:require [medley.core :as medley]
+            [witan.send.config :as con]
             [witan.send.distributions :as d]
             [witan.send.maths :as m]
             [witan.send.model.prepare :as p]
@@ -13,17 +12,6 @@
             [witan.send.params :as params]
             [witan.send.states :as states]))
 
-;; FIXME: this should go into witan.send.config
-(defn read-config
-  "Read a config file and merge it with schema inputs"
-  [config-path]
-  (let [project-dir (or (.getParent (io/as-file config-path))
-                        (System/getProperty "user.dir"))]
-    (merge-with merge
-                (aero/read-config config-path)
-                ;; default-schemas
-                {:project-dir project-dir}
-                {:output-parameters {:project-dir project-dir}})))
 
 ;; FIXME: this should go into witan.send.input
 (defn build-input-datasets
