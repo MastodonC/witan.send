@@ -12,6 +12,8 @@
             [witan.send.params :as params]
             [witan.send.states :as states]))
 
+(defn read-config [config-path]
+  (con/read-config config-path))
 
 ;; FIXME: this should go into witan.send.input
 (defn build-input-datasets
