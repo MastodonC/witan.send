@@ -11,4 +11,5 @@
                 (aero/read-config config-path)
                 ;; default-schemas
                 {:project-dir project-dir}
-                {:output-parameters {:project-dir project-dir}})))
+                {:output-parameters {:project-dir project-dir}}
+                {:file-inputs {:config config-path}})))
