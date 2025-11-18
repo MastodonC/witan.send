@@ -1,7 +1,5 @@
 # witan.send
 
-[![CircleCI](https://circleci.com/gh/MastodonC/witan.send.svg?style=svg)](https://circleci.com/gh/MastodonC/witan.send)
-
 ## Description
 
 Special educational needs and disability (demand and costs) model in development to be used on MastodonC's [Witan](http://www.mastodonc.com/products/witan/) city decision-making platform or as a standalone modelling library.
